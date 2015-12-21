@@ -13,8 +13,8 @@
 
 ## 安装方法
 ### GitHub安装
-> - 执行命令`go get github.com/baiyubin/aliyun-oss-go-sdk/oss`获取远程代码包。
-> - 在您的代码中使用`import "github.com/baiyubin/aliyun-oss-go-sdk/oss"`引入OSS Go SDK的包。
+> - 执行命令`go get github.com/aliyun/aliyun-oss-go-sdk/oss`获取远程代码包。
+> - 在您的代码中使用`import "github.com/aliyun/aliyun-oss-go-sdk/oss"`引入OSS Go SDK的包。
 
 ## 快速使用
 #### 获取存储空间列表（List Bucket）
@@ -137,12 +137,12 @@
 ```
 
 #### 其它
-更多的示例程序，请参看OSS Go SDK安装路径（即GOPATH变量中的第一个路径）下的`src\github.com\baiyubin\aliyun-oss-go-sdk\sample`，该目录下为示例程序，
-或者参看`https://github.com/baiyubin/aliyun-oss-go-sdk`下sample目录中的示例文件。
+更多的示例程序，请参看OSS Go SDK安装路径（即GOPATH变量中的第一个路径）下的`src\github.com\aliyun\aliyun-oss-go-sdk\sample`，该目录下为示例程序，
+或者参看`https://github.com/aliyun/aliyun-oss-go-sdk`下sample目录中的示例文件。
 
 ## 注意事项
 ### 运行sample
-> - 拷贝示例文件。到OSS Go SDK的安装路径（即GOPATH变量中的第一个路径），进入OSS Go SDK的代码目录`src\github.com\baiyubin\aliyun-oss-go-sdk`，
+> - 拷贝示例文件。到OSS Go SDK的安装路径（即GOPATH变量中的第一个路径），进入OSS Go SDK的代码目录`src\github.com\aliyun\aliyun-oss-go-sdk`，
 把其下的sample目录和sample.go复制到您的测试工程src目录下。
 > - 修改sample/config.go里的endpoint、AccessKeyId、AccessKeySecret、BucketName等配置。
 > - 请在您的工程目录下执行`go run src/sample.go`。
