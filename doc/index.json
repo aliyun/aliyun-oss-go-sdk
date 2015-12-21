@@ -1,0 +1,100 @@
+[
+  {
+    "key": "安装",
+    "name_en": "install",
+    "name_cn": "安装",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "快速开始",
+    "name_en": "getting-started",
+    "name_cn": "快速开始",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "管理Bucket",
+    "name_en": "bucket-management",
+    "name_cn": "管理Bucket",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "上传文件",
+    "name_en": "put-object",
+    "name_cn": "上传文件",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "下载文件",
+    "name_en": "get-object",
+    "name_cn": "下载文件",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "管理文件",
+    "name_en": "object-management",
+    "name_cn": "管理文件",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "自定义域名绑定",
+    "name_en": "custom-domain",
+    "name_cn": "自定义域名绑定",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "设置访问权限",
+    "name_en": "acl",
+    "name_cn": "设置访问权限",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "管理生命周期",
+    "name_en": "lifecycle-management",
+    "name_cn": "管理生命周期",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "设置访问日志",
+    "name_en": "object-logging",
+    "name_cn": "设置访问日志",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "静态网站托管",
+    "name_en": "website-hosting",
+    "name_cn": "静态网站托管",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "设置防盗链",
+    "name_en": "anti-hotlinking",
+    "name_cn": "设置防盗链",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "设置跨域资源共享",
+    "name_en": "cors",
+    "name_cn": "设置跨域资源共享",
+    "tag": [],
+    "isFolder": false
+  },
+  {
+    "key": "错误",
+    "name_en": "error",
+    "name_cn": "错误",
+    "tag": [],
+    "isFolder": false
+  }
+]
