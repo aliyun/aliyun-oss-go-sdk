@@ -26,9 +26,6 @@ func main() {
 	sample.PutObjectSample()
 	sample.GetObjectSample()
 
-	sample.MultipartUploadSample()
-	sample.MultipartCopySample()
-
 	sample.CnameSample()
 
 	fmt.Println("All samples completed")

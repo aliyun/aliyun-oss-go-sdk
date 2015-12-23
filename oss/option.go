@@ -2,6 +2,7 @@ package oss
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -13,8 +14,15 @@ import (
 type optionType string
 
 const (
-	optionParam optionType = "parameter" // URL中的参数
-	optionHTTP  optionType = "http"      // HTTP头
+	optionParam optionType = "HTTPParameter" // URL参数
+	optionHTTP  optionType = "HTTPHeader"    // HTTP头
+	optionArg   optionType = "FuncArgument"  // 函数参数
+)
+
+const (
+	deleteObjectsQuiet = "delete-objects-quiet"
+	routineNum         = "x-routine-num"
+	checkpointConfig   = "x-cp-config"
 )
 
 type (
@@ -189,44 +197,68 @@ func UploadIDMarker(value string) Option {
 	return addParam("upload-id-marker", value)
 }
 
-const deleteObjectsQuiet = "delete-objects-quiet"
-
-// DeleteObjectsQuiet DeleteObjects详细(verbose)模式或简单(quiet)模式，默认是详细模式。
+// DeleteObjectsQuiet DeleteObjects详细(verbose)模式或简单(quiet)模式，默认详细模式。
 func DeleteObjectsQuiet(isQuiet bool) Option {
-	return addParam(deleteObjectsQuiet, strconv.FormatBool(isQuiet))
+	return addArg(deleteObjectsQuiet, strconv.FormatBool(isQuiet))
+}
+
+type cpConfig struct {
+	IsEnable bool
+	FilePath string
+}
+
+// Checkpoint DownloadFile/UploadFile是否开启checkpoint及checkpoint文件路径
+func Checkpoint(isEnable bool, filePath string) Option {
+	res, _ := json.Marshal(cpConfig{isEnable, filePath})
+	return addArg(checkpointConfig, string(res))
+}
+
+// Routines DownloadFile/UploadFile并发数
+func Routines(n int) Option {
+	return addArg(routineNum, strconv.Itoa(n))
 }
 
 func setHeader(key, value string) Option {
-	return func(args map[string]optionValue) error {
+	return func(params map[string]optionValue) error {
 		if value == "" {
 			return nil
 		}
-		args[key] = optionValue{value, optionHTTP}
+		params[key] = optionValue{value, optionHTTP}
 		return nil
 	}
 }
 
 func addParam(key, value string) Option {
-	return func(args map[string]optionValue) error {
+	return func(params map[string]optionValue) error {
 		if value == "" {
 			return nil
 		}
-		args[key] = optionValue{value, optionParam}
+		params[key] = optionValue{value, optionParam}
+		return nil
+	}
+}
+
+func addArg(key, value string) Option {
+	return func(params map[string]optionValue) error {
+		if value == "" {
+			return nil
+		}
+		params[key] = optionValue{value, optionArg}
 		return nil
 	}
 }
 
 func handleOptions(headers map[string]string, options []Option) error {
-	args := map[string]optionValue{}
+	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
-			if err := option(args); err != nil {
+			if err := option(params); err != nil {
 				return err
 			}
 		}
 	}
 
-	for k, v := range args {
+	for k, v := range params {
 		if v.Type == optionHTTP {
 			headers[k] = v.Value
 		}
@@ -236,10 +268,10 @@ func handleOptions(headers map[string]string, options []Option) error {
 
 func handleParams(options []Option) (string, error) {
 	// option
-	args := map[string]optionValue{}
+	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
-			if err := option(args); err != nil {
+			if err := option(params); err != nil {
 				return "", err
 			}
 		}
@@ -247,8 +279,8 @@ func handleParams(options []Option) (string, error) {
 
 	// sort
 	var buf bytes.Buffer
-	keys := make([]string, 0, len(args))
-	for k, v := range args {
+	keys := make([]string, 0, len(params))
+	for k, v := range params {
 		if v.Type == optionParam {
 			keys = append(keys, k)
 		}
@@ -257,7 +289,7 @@ func handleParams(options []Option) (string, error) {
 
 	// serialize
 	for _, k := range keys {
-		vs := args[k]
+		vs := params[k]
 		prefix := url.QueryEscape(k) + "="
 
 		if buf.Len() > 0 {
@@ -271,16 +303,16 @@ func handleParams(options []Option) (string, error) {
 }
 
 func findOption(options []Option, param, defaultVal string) (string, error) {
-	args := map[string]optionValue{}
+	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
-			if err := option(args); err != nil {
+			if err := option(params); err != nil {
 				return "", err
 			}
 		}
 	}
 
-	if val, ok := args[param]; ok {
+	if val, ok := params[param]; ok {
 		return val.Value, nil
 	}
 	return defaultVal, nil

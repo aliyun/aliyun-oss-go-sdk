@@ -196,6 +196,7 @@ func (s *OssBucketSuite) TestPutObjectType(c *C) {
 	c.Assert(err, IsNil)
 
 	// Check
+	time.Sleep(time.Second)
 	body, err := s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
@@ -926,7 +927,6 @@ func (s *OssBucketSuite) TestGetObjectDetailedMeta(c *C) {
 	c.Assert(len(meta.Get("Last-Modified")) > 0, Equals, true)
 
 	// IfModifiedSince/IfModifiedSince
-	time.Sleep(time.Second * 3)
 	_, err = s.bucket.GetObjectDetailedMeta(objectName, IfModifiedSince(futureDate))
 	c.Assert(err, NotNil)
 

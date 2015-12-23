@@ -3,7 +3,6 @@ package oss
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -247,91 +246,4 @@ func (bucket Bucket) ListMultipartUploads(options ...Option) (ListMultipartUploa
 	}
 	err = decodeListMultipartUploadResult(&out)
 	return out, err
-}
-
-//
-// UploadFile 分块上传文件，适合加大文件
-//
-// objectKey  object名称。
-// filePath   本地文件。需要上传的文件。
-// partSize   本次上传文件片的大小，字节数。比如100 * 1024为每片100KB。
-// options    上传Object时可以指定Object的属性。详见InitiateMultipartUpload。
-//
-// error 操作成功为nil，非nil为错误信息。
-//
-func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, options ...Option) error {
-	if partSize < MinPartSize || partSize > MaxPartSize {
-		return errors.New("oss: part size invalid range (1024KB, 5GB]")
-	}
-
-	chunks, err := SplitFileByPartSize(filePath, partSize)
-	if err != nil {
-		return err
-	}
-
-	imur, err := bucket.InitiateMultipartUpload(objectKey, options...)
-	if err != nil {
-		return err
-	}
-
-	parts := []UploadPart{}
-	for _, chunk := range chunks {
-		part, err := bucket.UploadPartFromFile(imur, filePath, chunk.Offset, chunk.Size,
-			chunk.Number)
-		if err != nil {
-			bucket.AbortMultipartUpload(imur)
-			return err
-		}
-		parts = append(parts, part)
-	}
-
-	_, err = bucket.CompleteMultipartUpload(imur, parts)
-	if err != nil {
-		bucket.AbortMultipartUpload(imur)
-		return err
-	}
-	return nil
-}
-
-//
-// DownloadFile 分块下载文件，适合加大Object
-//
-// objectKey  object key。
-// filePath   本地文件。objectKey下载到文件。
-// partSize   本次上传文件片的大小，字节数。比如100 * 1024为每片100KB。
-// options    Object的属性限制项。详见GetObject。
-//
-// error 操作成功error为nil，非nil为错误信息。
-//
-func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, options ...Option) error {
-	if partSize < 1 || partSize > MaxPartSize {
-		return errors.New("oss: part size invalid range (1, 5GB]")
-	}
-
-	meta, err := bucket.GetObjectDetailedMeta(objectKey)
-	if err != nil {
-		return err
-	}
-
-	fd, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0660)
-	if err != nil {
-		return err
-	}
-	defer fd.Close()
-
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
-	for i := int64(0); i < objectSize; i += partSize {
-		option := Range(i, GetPartEnd(i, objectSize, partSize))
-		options = append(options, option)
-		r, err := bucket.GetObject(objectKey, options...)
-		if err != nil {
-			return err
-		}
-		defer r.Close()
-		_, err = io.Copy(fd, r)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
