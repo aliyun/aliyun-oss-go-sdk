@@ -418,8 +418,6 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 			ucp.dump(cpFilePath)
 		case err := <-failed:
 			return err
-		default:
-			time.Sleep(time.Second)
 		}
 
 		if completed >= len(chunks) {

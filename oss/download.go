@@ -382,8 +382,6 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 			dcp.dump(cpFilePath)
 		case err := <-failed:
 			return err
-		default:
-			time.Sleep(time.Second)
 		}
 
 		if completed >= len(parts) {
