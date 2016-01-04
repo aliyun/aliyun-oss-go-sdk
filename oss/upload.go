@@ -162,8 +162,6 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 		case err := <-failed:
 			bucket.AbortMultipartUpload(imur)
 			return err
-		default:
-			time.Sleep(time.Second)
 		}
 
 		if completed >= len(chunks) {

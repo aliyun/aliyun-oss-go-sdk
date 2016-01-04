@@ -10,7 +10,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 )
 
 //
@@ -180,8 +179,6 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 			ps[part.Index] = part
 		case err := <-failed:
 			return err
-		default:
-			time.Sleep(time.Second)
 		}
 
 		if completed >= len(parts) {
