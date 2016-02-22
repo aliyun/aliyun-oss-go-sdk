@@ -172,7 +172,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	// 等待分片下载完成
 	completed := 0
 	ps := make([]downloadPart, len(parts))
-	for {
+	for completed < len(parts) {
 		select {
 		case part := <-results:
 			completed++
@@ -371,7 +371,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 
 	// 等待分片下载完成
 	completed := 0
-	for {
+	for completed < len(parts) {
 		select {
 		case part := <-results:
 			completed++

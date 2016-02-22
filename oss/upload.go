@@ -154,7 +154,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	// 等待分配分片上传完成
 	completed := 0
 	parts := make([]UploadPart, len(chunks))
-	for {
+	for completed < len(chunks) {
 		select {
 		case part := <-results:
 			completed++
@@ -408,7 +408,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 
 	// 等待分配分片上传完成
 	completed := 0
-	for {
+	for completed < len(chunks) {
 		select {
 		case part := <-results:
 			completed++
