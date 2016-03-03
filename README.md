@@ -6,7 +6,7 @@
 > - 使用此SDK，用户可以方便地在任何应用、任何时间、任何地点上传，下载和管理数据。
 
 ## 版本
-> 当前版本：0.1.1
+> - 当前版本：0.1.2
 
 ## 运行环境
 > - 推荐使用Go 1.4及以上。
@@ -148,7 +148,14 @@
 > - 请在您的工程目录下执行`go run src/sample.go`。
 
 ## 联系我们
-- [阿里云OSS官方网站](http://oss.aliyun.com)
-- [阿里云OSS官方论坛](http://bbs.aliyun.com)
-- [阿里云OSS官方文档中心](http://www.aliyun.com/product/oss#Docs)
-- 阿里云官方技术支持：[提交工单](https://workorder.console.aliyun.com/#/ticket/createIndex)
+> - [阿里云OSS官方网站](http://oss.aliyun.com)
+> - [阿里云OSS官方论坛](http://bbs.aliyun.com)
+> - [阿里云OSS官方文档中心](http://www.aliyun.com/product/oss#Docs)
+> - 阿里云官方技术支持：[提交工单](https://workorder.console.aliyun.com/#/ticket/createIndex)
+
+## 作者
+> - Yubin Bai
+> - Hǎiliàng Wáng
+
+## License
+> - Apache License 2.0
