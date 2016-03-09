@@ -365,7 +365,7 @@ func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePa
 	if err != nil {
 		return err
 	}
-	err = os.Remove(cpFilePath)
+	os.Remove(cpFilePath)
 	return err
 }
 
