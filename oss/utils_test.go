@@ -1,7 +1,6 @@
 package oss
 
 import (
-	"fmt"
 	. "gopkg.in/check.v1"
 )
 
@@ -22,7 +21,7 @@ func (s *OssUtilsSuite) TestUtilsSplitFile(c *C) {
 	parts, err := SplitFileByPartNum(localFile, 4)
 	c.Assert(err, IsNil)
 	c.Assert(len(parts), Equals, 4)
-	fmt.Println("parts 4:", parts)
+	testLogger.Println("parts 4:", parts)
 	for i, part := range parts {
 		c.Assert(part.Number, Equals, i+1)
 		c.Assert(part.Offset, Equals, int64(i*120512))
@@ -32,7 +31,7 @@ func (s *OssUtilsSuite) TestUtilsSplitFile(c *C) {
 	parts, err = SplitFileByPartNum(localFile, 5)
 	c.Assert(err, IsNil)
 	c.Assert(len(parts), Equals, 5)
-	fmt.Println("parts 5:", parts)
+	testLogger.Println("parts 5:", parts)
 	for i, part := range parts {
 		c.Assert(part.Number, Equals, i+1)
 		c.Assert(part.Offset, Equals, int64(i*96409))
@@ -54,7 +53,7 @@ func (s *OssUtilsSuite) TestUtilsSplitFile(c *C) {
 	parts, err = SplitFileByPartSize(localFile, 120512)
 	c.Assert(err, IsNil)
 	c.Assert(len(parts), Equals, 4)
-	fmt.Println("parts 4:", parts)
+	testLogger.Println("parts 4:", parts)
 	for i, part := range parts {
 		c.Assert(part.Number, Equals, i+1)
 		c.Assert(part.Offset, Equals, int64(i*120512))
@@ -64,7 +63,7 @@ func (s *OssUtilsSuite) TestUtilsSplitFile(c *C) {
 	parts, err = SplitFileByPartSize(localFile, 96409)
 	c.Assert(err, IsNil)
 	c.Assert(len(parts), Equals, 6)
-	fmt.Println("parts 6:", parts)
+	testLogger.Println("parts 6:", parts)
 	for i, part := range parts {
 		c.Assert(part.Number, Equals, i+1)
 		c.Assert(part.Offset, Equals, int64(i*96409))

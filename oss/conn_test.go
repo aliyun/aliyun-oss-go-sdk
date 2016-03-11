@@ -1,7 +1,6 @@
 package oss
 
 import (
-	"fmt"
 	"net/http"
 
 	. "gopkg.in/check.v1"
@@ -94,7 +93,7 @@ func (s *OssConnSuite) TestAuth(c *C) {
 	req.Header.Set("Content-Md5", "ODBGOERFMDMzQTczRUY3NUE3NzA5QzdFNUYzMDQxNEM=")
 
 	conn.signHeader(req, um.getResource("bucket", "object", ""))
-	fmt.Println("AUTHORIZATION:", req.Header.Get(HTTPHeaderAuthorization))
+	testLogger.Println("AUTHORIZATION:", req.Header.Get(HTTPHeaderAuthorization))
 }
 
 func (s *OssConnSuite) TestConnToolFunc(c *C) {

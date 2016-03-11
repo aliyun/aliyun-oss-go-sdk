@@ -3,7 +3,6 @@
 package oss
 
 import (
-	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -25,14 +24,13 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.client = client
 
-	err = s.client.CreateBucket(bucketName)
-	c.Assert(err, IsNil)
+	s.client.CreateBucket(bucketName)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 	s.bucket = bucket
 
-	fmt.Println("SetUpSuite")
+	testLogger.Println("test multipart started")
 }
 
 // Run before each test or benchmark starts running
@@ -61,15 +59,13 @@ func (s *OssBucketMultipartSuite) TearDownSuite(c *C) {
 	err = s.client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 
-	fmt.Println("TearDownSuite")
+	testLogger.Println("test multipart completed")
 }
 
 // Run after each test or benchmark runs
 func (s *OssBucketMultipartSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
-
-	fmt.Println("SetUpTest")
 }
 
 // Run once after all tests or benchmarks have finished running
@@ -82,8 +78,6 @@ func (s *OssBucketMultipartSuite) TearDownTest(c *C) {
 
 	err = removeTempFiles("../oss", ".txt2")
 	c.Assert(err, IsNil)
-
-	fmt.Println("TearDownTest")
 }
 
 // TestMultipartUpload
@@ -93,7 +87,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUpload(c *C) {
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	options := []Option{
 		Expires(futureDate), Meta("my", "myprop"),
@@ -115,11 +109,11 @@ func (s *OssBucketMultipartSuite) TestMultipartUpload(c *C) {
 
 	cmur, err := s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
-	fmt.Println("cmur:", cmur)
+	testLogger.Println("cmur:", cmur)
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 	c.Assert(meta.Get("X-Oss-Meta-My"), Equals, "myprop")
 	c.Assert(meta.Get("Expires"), Equals, futureDate.Format(http.TimeFormat))
 	c.Assert(meta.Get("X-Oss-Object-Type"), Equals, "Multipart")
@@ -138,7 +132,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFile(c *C) {
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	options := []Option{
 		Expires(futureDate), Meta("my", "myprop"),
@@ -154,11 +148,11 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFile(c *C) {
 
 	cmur, err := s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
-	fmt.Println("cmur:", cmur)
+	testLogger.Println("cmur:", cmur)
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 	c.Assert(meta.Get("X-Oss-Meta-My"), Equals, "myprop")
 	c.Assert(meta.Get("Expires"), Equals, futureDate.Format(http.TimeFormat))
 	c.Assert(meta.Get("X-Oss-Object-Type"), Equals, "Multipart")
@@ -178,7 +172,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopy(c *C) {
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	err = s.bucket.PutObjectFromFile(objectSrc, fileName)
 	c.Assert(err, IsNil)
@@ -197,11 +191,11 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopy(c *C) {
 
 	cmur, err := s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
-	fmt.Println("cmur:", cmur)
+	testLogger.Println("cmur:", cmur)
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectDesc)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 	c.Assert(meta.Get("X-Oss-Meta-My"), Equals, "myprop")
 	c.Assert(meta.Get("Expires"), Equals, futureDate.Format(http.TimeFormat))
 	c.Assert(meta.Get("X-Oss-Object-Type"), Equals, "Multipart")
@@ -223,7 +217,7 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 
 	chunks, err := SplitFileByPartSize(fileName, 100*1024)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	err = s.bucket.PutObjectFromFile(objectSrc, fileName)
 	c.Assert(err, IsNil)
@@ -249,17 +243,17 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 	// list
 	lupr, err := s.bucket.ListUploadedParts(imurUpload)
 	c.Assert(err, IsNil)
-	fmt.Println("lupr:", lupr)
+	testLogger.Println("lupr:", lupr)
 	c.Assert(len(lupr.UploadedParts), Equals, len(chunks))
 
 	lupr, err = s.bucket.ListUploadedParts(imurCopy)
 	c.Assert(err, IsNil)
-	fmt.Println("lupr:", lupr)
+	testLogger.Println("lupr:", lupr)
 	c.Assert(len(lupr.UploadedParts), Equals, len(chunks))
 
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
-	fmt.Println("lmur:", lmur)
+	testLogger.Println("lmur:", lmur)
 	c.Assert(len(lmur.Uploads), Equals, 2)
 
 	// complete
@@ -290,7 +284,7 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 
 	chunks, err := SplitFileByPartSize(fileName, 100*1024)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	err = s.bucket.PutObjectFromFile(objectSrc, fileName)
 	c.Assert(err, IsNil)
@@ -316,17 +310,17 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 	// list
 	lupr, err := s.bucket.ListUploadedParts(imurUpload)
 	c.Assert(err, IsNil)
-	fmt.Println("lupr:", lupr)
+	testLogger.Println("lupr:", lupr)
 	c.Assert(len(lupr.UploadedParts), Equals, len(chunks))
 
 	lupr, err = s.bucket.ListUploadedParts(imurCopy)
 	c.Assert(err, IsNil)
-	fmt.Println("lupr:", lupr)
+	testLogger.Println("lupr:", lupr)
 	c.Assert(len(lupr.UploadedParts), Equals, len(chunks))
 
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
-	fmt.Println("lmur:", lmur)
+	testLogger.Println("lmur:", lmur)
 	c.Assert(len(lmur.Uploads), Equals, 2)
 
 	// abort
@@ -337,7 +331,7 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 
 	lmur, err = s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
-	fmt.Println("lmur:", lmur)
+	testLogger.Println("lmur:", lmur)
 	c.Assert(len(lmur.Uploads), Equals, 0)
 
 	// download
@@ -355,7 +349,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	err = s.bucket.PutObjectFromFile(objectSrc, fileName)
 	c.Assert(err, IsNil)
@@ -376,7 +370,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectSrc)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 
 	for _, chunk := range chunks {
 		_, err = s.bucket.UploadPartCopy(imur, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
@@ -393,7 +387,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 
 	cmur, err := s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
-	fmt.Println("cmur:", cmur)
+	testLogger.Println("cmur:", cmur)
 
 	err = s.bucket.GetObjectToFile(objectDesc, "newpic5.jpg")
 	c.Assert(err, IsNil)
@@ -412,7 +406,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileOutofOrder(c *C) {
 	chunks, err := SplitFileByPartSize(fileName, 1024*100)
 	shuffleArray(chunks)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	imur, err := s.bucket.InitiateMultipartUpload(objectName)
 	var parts []UploadPart
@@ -429,7 +423,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileOutofOrder(c *C) {
 
 	cmur, err := s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
-	fmt.Println("cmur:", cmur)
+	testLogger.Println("cmur:", cmur)
 
 	err = s.bucket.GetObjectToFile(objectName, "newpic6.jpg")
 	c.Assert(err, IsNil)
@@ -447,7 +441,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 	chunks, err := SplitFileByPartSize(fileName, 1024*100)
 	shuffleArray(chunks)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	err = s.bucket.PutObjectFromFile(objectSrc, fileName)
 	c.Assert(err, IsNil)
@@ -467,7 +461,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 
 	cmur, err := s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
-	fmt.Println("cmur:", cmur)
+	testLogger.Println("cmur:", cmur)
 
 	err = s.bucket.GetObjectToFile(objectDesc, "newpic7.jpg")
 	c.Assert(err, IsNil)
@@ -485,7 +479,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileType(c *C) {
 
 	chunks, err := SplitFileByPartNum(fileName, 4)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	imur, err := s.bucket.InitiateMultipartUpload(objectName)
 	var parts []UploadPart
@@ -495,10 +489,10 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileType(c *C) {
 		parts = append(parts, part)
 	}
 
-	fmt.Println("parts:", parts)
+	testLogger.Println("parts:", parts)
 	cmur, err := s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
-	fmt.Println("cmur:", cmur)
+	testLogger.Println("cmur:", cmur)
 
 	err = s.bucket.GetObjectToFile(objectName, "newpic8.jpg")
 	c.Assert(err, IsNil)
@@ -558,7 +552,7 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploads(c *C) {
 	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker(objectName+"12"), UploadIDMarker("EEE"))
 	c.Assert(err, IsNil)
 	c.Assert(len(lmpu.Uploads), Equals, 15)
-	//fmt.Println("UploadIDMarker", lmpu.Uploads)
+	//testLogger.Println("UploadIDMarker", lmpu.Uploads)
 
 	for _, imur := range imurs {
 		err = s.bucket.AbortMultipartUpload(imur)
@@ -580,18 +574,18 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploadsEncodingKey(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(lmpu.Uploads), Equals, 3)
 
-	lmpu, err = s.bucket.ListMultipartUploads(Prefix("myobject让你任性让你狂tlmuek1"))
+	lmpu, err = s.bucket.ListMultipartUploads(Prefix("my-object-让你任性让你狂tlmuek1"))
 	c.Assert(err, IsNil)
 	c.Assert(len(lmpu.Uploads), Equals, 1)
 
-	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker("myobject让你任性让你狂tlmuek1"))
+	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker("my-object-让你任性让你狂tlmuek1"))
 	c.Assert(err, IsNil)
 	c.Assert(len(lmpu.Uploads), Equals, 1)
 
 	lmpu, err = s.bucket.ListMultipartUploads(EncodingType("url"))
 	c.Assert(err, IsNil)
 	for i, upload := range lmpu.Uploads {
-		c.Assert(upload.Key, Equals, "myobject让你任性让你狂tlmuek"+strconv.Itoa(i))
+		c.Assert(upload.Key, Equals, "my-object-让你任性让你狂tlmuek"+strconv.Itoa(i))
 	}
 
 	for _, imur := range imurs {
@@ -672,7 +666,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileBigFile(c *C) {
 
 	chunks, err := SplitFileByPartNum(bigFile, 64)
 	c.Assert(err, IsNil)
-	fmt.Println("chunks:", chunks)
+	testLogger.Println("chunks:", chunks)
 
 	imur, err := s.bucket.InitiateMultipartUpload(objectName)
 	var parts []UploadPart
@@ -683,9 +677,9 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileBigFile(c *C) {
 		parts = append(parts, part)
 	}
 	end := GetNowSec()
-	fmt.Println("Uplaod big file:", bigFile, "use sec:", end-start)
+	testLogger.Println("Uplaod big file:", bigFile, "use sec:", end-start)
 
-	fmt.Println("parts:", parts)
+	testLogger.Println("parts:", parts)
 	_, err = s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
 
@@ -693,14 +687,14 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileBigFile(c *C) {
 	err = s.bucket.GetObjectToFile(objectName, newFile)
 	c.Assert(err, IsNil)
 	end = GetNowSec()
-	fmt.Println("Download big file:", bigFile, "use sec:", end-start)
+	testLogger.Println("Download big file:", bigFile, "use sec:", end-start)
 
 	start = GetNowSec()
 	eq, err := compareFiles(bigFile, newFile)
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 	end = GetNowSec()
-	fmt.Println("Compare big file:", bigFile, "use sec:", end-start)
+	testLogger.Println("Compare big file:", bigFile, "use sec:", end-start)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
@@ -791,12 +785,12 @@ func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
 
 	acl, err := s.bucket.GetObjectACL(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectAcl:", acl)
+	testLogger.Println("GetObjectAcl:", acl)
 	c.Assert(acl.ACL, Equals, "default")
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "mypropval")
 }
 
@@ -813,7 +807,7 @@ func (s *OssBucketMultipartSuite) TestUploadFileNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	// 文件不存在
-	err = s.bucket.UploadFile(objectName, "/tmp/x", 1024*1024*1024)
+	err = s.bucket.UploadFile(objectName, "/root/123abc9874", 1024*1024*1024)
 	c.Assert(err, NotNil)
 
 	// Key无效
@@ -881,7 +875,7 @@ func (s *OssBucketMultipartSuite) TestDownloadFile(c *C) {
 	// option
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 
 	// If-Match
 	err = s.bucket.DownloadFile(objectName, newFile, 482048/4, IfMatch(meta.Get("Etag")))
