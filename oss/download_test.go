@@ -21,14 +21,13 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.client = client
 
-	err = s.client.CreateBucket(bucketName)
-	c.Assert(err, IsNil)
+	s.client.CreateBucket(bucketName)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 	s.bucket = bucket
 
-	fmt.Println("SetUpSuite")
+	testLogger.Println("test download started")
 }
 
 // Run before each test or benchmark starts running
@@ -57,23 +56,19 @@ func (s *OssDownloadSuite) TearDownSuite(c *C) {
 	err = s.client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 
-	fmt.Println("TearDownSuite")
+	testLogger.Println("test download completed")
 }
 
 // Run after each test or benchmark runs
 func (s *OssDownloadSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
-
-	fmt.Println("SetUpTest")
 }
 
 // Run once after all tests or benchmarks have finished running
 func (s *OssDownloadSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
-
-	fmt.Println("TearDownTest")
 }
 
 // TestUploadRoutineWithoutRecovery 多线程无断点恢复的下载

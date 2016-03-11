@@ -5,7 +5,8 @@
 package oss
 
 import (
-	"fmt"
+	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -17,27 +18,32 @@ func Test(t *testing.T) {
 	TestingT(t)
 }
 
-type OssClientSuite struct{}
+type OssClientSuite struct {}
 
 var _ = Suite(&OssClientSuite{})
 
 const (
 	// Update before running test
-	endpoint         = "<endpoint>"
-	accessID         = "<AccessKeyId>"
-	accessKey        = "<AccessKeySecret>"
-	bucketNamePrefix = "<my-go-bucket>"
-	stsServer        = "<STSServerHost>"
-	stsEndpoint      = "<endpoint>"
-	stsBucketName    = "<my-sts-bucket>"
+	endpoint         = "<testEndpoint>"
+	accessID         = "<testAccessID>"
+	accessKey        = "<testAccessKey>"
+	bucketNamePrefix = "go-sdk-test-"
+)
+
+var (
+	logPath = "go_sdk_test_" + time.Now().Format("20060102_150405") + ".log"
+	testLogFile, _ = os.OpenFile(logPath, os.O_RDWR|os.O_CREATE, 0664)
+	testLogger = log.New(testLogFile, "", log.Ldate|log.Ltime|log.Lshortfile)
 )
 
 // Run once when the suite starts running
 func (s *OssClientSuite) SetUpSuite(c *C) {
+	testLogger.Println("test client started")
 }
 
 // Run before each test or benchmark starts running
 func (s *OssClientSuite) TearDownSuite(c *C) {
+	testLogger.Println("test client completed")
 }
 
 // Run after each test or benchmark runs
@@ -120,16 +126,16 @@ func (s *OssClientSuite) TestCreateBucketNegative(c *C) {
 
 	err = client.CreateBucket("XXXX")
 	c.Assert(err, NotNil)
-	fmt.Println(err)
+	testLogger.Println(err)
 
 	err = client.CreateBucket("_bucket")
 	c.Assert(err, NotNil)
-	fmt.Println(err)
+	testLogger.Println(err)
 
 	// Acl invalid
 	err = client.CreateBucket(bucketNamePrefix+"tcbn", ACL("InvaldAcl"))
 	c.Assert(err, NotNil)
-	fmt.Println(err)
+	testLogger.Println(err)
 }
 
 // TestDeleteBucket
@@ -361,7 +367,7 @@ func (s *OssClientSuite) TestBucketAclNegative(c *C) {
 
 	err = client.SetBucketACL(bucketNameTest, "InvalidACL")
 	c.Assert(err, NotNil)
-	fmt.Println(err)
+	testLogger.Println(err)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -612,12 +618,12 @@ func (s *OssClientSuite) TestBucketRefererNegative(c *C) {
 	// not exist
 	_, err = client.GetBucketReferer(bucketNameTest)
 	c.Assert(err, NotNil)
-	fmt.Println(err)
+	testLogger.Println(err)
 
 	// not exist
 	err = client.SetBucketReferer(bucketNameTest, referers, true)
 	c.Assert(err, NotNil)
-	fmt.Println(err)
+	testLogger.Println(err)
 }
 
 // TestSetBucketLogging
@@ -1120,10 +1126,10 @@ func (s *OssClientSuite) TestEndpointFormat(c *C) {
 }
 
 // TestCname
-func (s *OssClientSuite) TestCname(c *C) {
+func (s *OssClientSuite) _TestCname(c *C) {
 	var bucketNameTest = "<my-bucket-cname>"
 
-	client, err := New("<endpoint>","<AccessKeyId>", "<AccessKeySecret>", UseCname(true))
+	client, err := New("<endpoint>", "<AccessKeyId>", "<AccessKeySecret>", UseCname(true))
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)
@@ -1138,10 +1144,10 @@ func (s *OssClientSuite) TestCname(c *C) {
 }
 
 // TestCname
-func (s *OssClientSuite) TestCnameNegative(c *C) {
+func (s *OssClientSuite) _TestCnameNegative(c *C) {
 	var bucketNameTest = "<my-bucket-cname>"
 
-	client, err := New("<endpoint>","<AccessKeyId>", "<AccessKeySecret>", UseCname(true))
+	client, err := New("<endpoint>", "<AccessKeyId>", "<AccessKeySecret>", UseCname(true))
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)
@@ -1155,10 +1161,10 @@ func (s *OssClientSuite) TestCnameNegative(c *C) {
 }
 
 // TestHttps
-func (s *OssClientSuite) TestHttps(c *C) {
+func (s *OssClientSuite) _TestHttps(c *C) {
 	var bucketNameTest = "<my-bucket-https>"
 
-	client, err := New("<endpoint>","<AccessKeyId>", "<AccessKeySecret>")
+	client, err := New("<endpoint>", "<AccessKeyId>", "<AccessKeySecret>")
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)

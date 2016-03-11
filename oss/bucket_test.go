@@ -28,8 +28,12 @@ type OssBucketSuite struct {
 var _ = Suite(&OssBucketSuite{})
 
 const (
-	bucketName       = "mygobucketobj"
-	objectNamePrefix = "myobject"
+	bucketName       = "go-sdk-test-obj"
+	objectNamePrefix = "my-object-"
+
+	stsServer     = "<StsServer>"
+	stsEndpoint   = "<StsEndpoint>"
+	stsBucketName = "<StsBucketName>"
 )
 
 var (
@@ -43,14 +47,13 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.client = client
 
-	err = s.client.CreateBucket(bucketName)
-	c.Assert(err, IsNil)
+	s.client.CreateBucket(bucketName)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 	s.bucket = bucket
 
-	fmt.Println("SetUpSuite")
+	testLogger.Println("test bucket started")
 }
 
 // Run before each test or benchmark starts running
@@ -68,15 +71,13 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 	err = s.client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 
-	fmt.Println("TearDownSuite")
+	testLogger.Println("test bucket completed")
 }
 
 // Run after each test or benchmark runs
 func (s *OssBucketSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
-
-	fmt.Println("SetUpTest")
 }
 
 // Run once after all tests or benchmarks have finished running
@@ -92,8 +93,6 @@ func (s *OssBucketSuite) TearDownTest(c *C) {
 
 	err = removeTempFiles("../oss", ".txt2")
 	c.Assert(err, IsNil)
-
-	fmt.Println("TearDownTest")
 }
 
 // TestPutObject
@@ -115,7 +114,7 @@ func (s *OssBucketSuite) TestPutObject(c *C) {
 
 	acl, err := s.bucket.GetObjectACL(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("aclRes:", acl)
+	testLogger.Println("aclRes:", acl)
 	c.Assert(acl.ACL, Equals, "default")
 
 	err = s.bucket.DeleteObject(objectName)
@@ -174,12 +173,12 @@ func (s *OssBucketSuite) TestPutObject(c *C) {
 
 	acl, err = s.bucket.GetObjectACL(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectACL:", acl)
+	testLogger.Println("GetObjectACL:", acl)
 	c.Assert(acl.ACL, Equals, string(ACLPublicRead))
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "mypropval")
 
 	err = s.bucket.DeleteObject(objectName)
@@ -356,7 +355,7 @@ func (s *OssBucketSuite) TestPutObjectFromFile(c *C) {
 
 	acl, err := s.bucket.GetObjectACL(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("aclRes:", acl)
+	testLogger.Println("aclRes:", acl)
 	c.Assert(acl.ACL, Equals, "default")
 
 	err = s.bucket.DeleteObject(objectName)
@@ -381,12 +380,12 @@ func (s *OssBucketSuite) TestPutObjectFromFile(c *C) {
 
 	acl, err = s.bucket.GetObjectACL(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectACL:", acl)
+	testLogger.Println("GetObjectACL:", acl)
 	c.Assert(acl.ACL, Equals, string(ACLPublicRead))
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "mypropval")
 
 	err = s.bucket.DeleteObject(objectName)
@@ -436,7 +435,7 @@ func (s *OssBucketSuite) TestGetObject(c *C) {
 	body.Close()
 	str := string(data)
 	c.Assert(str, Equals, objectValue)
-	fmt.Println("GetObjec:", str)
+	testLogger.Println("GetObjec:", str)
 
 	// Range
 	var subObjectValue = string(([]byte(objectValue))[15:36])
@@ -446,7 +445,7 @@ func (s *OssBucketSuite) TestGetObject(c *C) {
 	body.Close()
 	str = string(data)
 	c.Assert(str, Equals, subObjectValue)
-	fmt.Println("GetObject:", str, ",", subObjectValue)
+	testLogger.Println("GetObject:", str, ",", subObjectValue)
 
 	// If-Modified-Since
 	_, err = s.bucket.GetObject(objectName, IfModifiedSince(futureDate))
@@ -495,7 +494,7 @@ func (s *OssBucketSuite) TestGetObjectToWriterNegative(c *C) {
 	c.Assert(err, IsNil)
 
 	// no exist
-	err = s.bucket.GetObjectToFile(objectName, "/tmp/x")
+	err = s.bucket.GetObjectToFile(objectName, "/root/123abc9874")
 	c.Assert(err, NotNil)
 
 	// invalid option
@@ -550,7 +549,7 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 
 	// If-Match
 	err = s.bucket.GetObjectToFile(objectName, newFile, IfMatch(meta.Get("Etag")))
@@ -641,7 +640,7 @@ func (s *OssBucketSuite) TestListObjectsEncodingType(c *C) {
 	lor, err = s.bucket.ListObjects(Prefix(objectNamePrefix + "床前明月光"))
 	c.Assert(err, IsNil)
 	for i, obj := range lor.Objects {
-		c.Assert(obj.Key, Equals, "myobject床前明月光，疑是地上霜。举头望明月，低头思故乡。tloet"+strconv.Itoa(i))
+		c.Assert(obj.Key, Equals, "my-object-床前明月光，疑是地上霜。举头望明月，低头思故乡。tloet"+strconv.Itoa(i))
 	}
 
 	for i := 0; i < 10; i++ {
@@ -863,7 +862,7 @@ func (s *OssBucketSuite) TestSetObjectMeta(c *C) {
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("Meta:", meta)
+	testLogger.Println("Meta:", meta)
 	c.Assert(meta.Get("Expires"), Equals, futureDate.Format(http.TimeFormat))
 	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "mypropval")
 
@@ -918,7 +917,7 @@ func (s *OssBucketSuite) TestGetObjectDetailedMeta(c *C) {
 	// Check
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 	c.Assert(meta.Get("Expires"), Equals, futureDate.Format(http.TimeFormat))
 	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "mypropval")
 	c.Assert(meta.Get("Content-Length"), Equals, "0")
@@ -1008,7 +1007,7 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 	// check
 	lor, err := s.bucket.ListObjects(Prefix(objectName))
 	c.Assert(err, IsNil)
-	fmt.Println("objects:", lor.Objects)
+	testLogger.Println("objects:", lor.Objects)
 	c.Assert(len(lor.Objects), Equals, 2)
 
 	body, err := s.bucket.GetObject(objectName)
@@ -1023,7 +1022,7 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 	// copy with constraints x-oss-copy-source-if-modified-since
 	_, err = s.bucket.CopyObject(objectName, objectNameDest, CopySourceIfModifiedSince(futureDate))
 	c.Assert(err, NotNil)
-	fmt.Println("CopyObject:", err)
+	testLogger.Println("CopyObject:", err)
 
 	// copy with constraints x-oss-copy-source-if-unmodified-since
 	_, err = s.bucket.CopyObject(objectName, objectNameDest, CopySourceIfUnmodifiedSince(futureDate))
@@ -1032,7 +1031,7 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 	// check
 	lor, err = s.bucket.ListObjects(Prefix(objectName))
 	c.Assert(err, IsNil)
-	fmt.Println("objects:", lor.Objects)
+	testLogger.Println("objects:", lor.Objects)
 	c.Assert(len(lor.Objects), Equals, 2)
 
 	body, err = s.bucket.GetObject(objectName)
@@ -1047,7 +1046,7 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 	// copy with constraints x-oss-copy-source-if-match
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta)
+	testLogger.Println("GetObjectDetailedMeta:", meta)
 
 	_, err = s.bucket.CopyObject(objectName, objectNameDest, CopySourceIfMatch(meta.Get("Etag")))
 	c.Assert(err, IsNil)
@@ -1216,7 +1215,7 @@ func (s *OssBucketSuite) TestAppendObject(c *C) {
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta:", meta, ",", nextPos)
+	testLogger.Println("GetObjectDetailedMeta:", meta, ",", nextPos)
 	c.Assert(meta.Get("X-Oss-Object-Type"), Equals, "Appendable")
 	c.Assert(meta.Get("X-Oss-Meta-My"), Equals, "myprop")
 	c.Assert(meta.Get("x-oss-Meta-Mine"), Equals, "")
@@ -1224,7 +1223,7 @@ func (s *OssBucketSuite) TestAppendObject(c *C) {
 
 	acl, err := s.bucket.GetObjectACL(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectACL:", acl)
+	testLogger.Println("GetObjectACL:", acl)
 	c.Assert(acl.ACL, Equals, string(ACLPublicReadWrite))
 
 	// second append
@@ -1247,7 +1246,7 @@ func (s *OssBucketSuite) TestAppendObject(c *C) {
 
 	meta, err = s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	fmt.Println("GetObjectDetailedMeta xxx:", meta)
+	testLogger.Println("GetObjectDetailedMeta xxx:", meta)
 	c.Assert(meta.Get("X-Oss-Object-Type"), Equals, "Appendable")
 	c.Assert(meta.Get("X-Oss-Meta-My"), Equals, "myprop")
 	c.Assert(meta.Get("x-Oss-Meta-Mine"), Equals, "")
@@ -1320,7 +1319,7 @@ func (s *OssBucketSuite) _TestSTSTonek(c *C) {
 
 	stsRes, err := getSTSToken(stsServer)
 	c.Assert(err, IsNil)
-	fmt.Println("sts:", stsRes)
+	testLogger.Println("sts:", stsRes)
 
 	client, err := New(stsEndpoint, stsRes.AccessID, stsRes.AccessKey,
 		SecurityToken(stsRes.SecurityToken))
@@ -1343,7 +1342,7 @@ func (s *OssBucketSuite) _TestSTSTonek(c *C) {
 	// List
 	lor, err := bucket.ListObjects()
 	c.Assert(err, IsNil)
-	fmt.Println("Objects:", lor.Objects)
+	testLogger.Println("Objects:", lor.Objects)
 
 	// Delete
 	err = bucket.DeleteObject(objectName)
@@ -1428,21 +1427,21 @@ func (s *OssBucketSuite) TestUploadBigFile(c *C) {
 	err = s.bucket.PutObjectFromFile(objectName, bigFile)
 	c.Assert(err, IsNil)
 	end := GetNowSec()
-	fmt.Println("Put big file:", bigFile, "use sec:", end-start)
+	testLogger.Println("Put big file:", bigFile, "use sec:", end-start)
 
 	// Check
 	start = GetNowSec()
 	err = s.bucket.GetObjectToFile(objectName, newFile)
 	c.Assert(err, IsNil)
 	end = GetNowSec()
-	fmt.Println("Get big file:", bigFile, "use sec:", end-start)
+	testLogger.Println("Get big file:", bigFile, "use sec:", end-start)
 
 	start = GetNowSec()
 	eq, err := compareFiles(bigFile, newFile)
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 	end = GetNowSec()
-	fmt.Println("Compare big file:", bigFile, "use sec:", end-start)
+	testLogger.Println("Compare big file:", bigFile, "use sec:", end-start)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
@@ -1583,7 +1582,6 @@ func removeTempFiles(path string, prefix string) error {
 	}
 
 	for _, file := range files {
-		fmt.Println("Remove file:", file)
 		os.Remove(file)
 	}
 
