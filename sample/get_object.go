@@ -82,16 +82,16 @@ func GetObjectSample() {
 	if err != nil {
 		HandleError(err)
 	}
-	md5 := meta.Get(oss.HTTPHeaderEtag)
+	etag := meta.Get(oss.HTTPHeaderEtag)
 	// 校验内容，约束条件满足，执行下载。
-	body, err = bucket.GetObject(objectKey, oss.IfMatch(md5))
+	body, err = bucket.GetObject(objectKey, oss.IfMatch(etag))
 	if err != nil {
 		HandleError(err)
 	}
 	body.Close()
 
 	// 校验内容，约束条件不满足，不执行下载。
-	body, err = bucket.GetObject(objectKey, oss.IfNoneMatch(md5))
+	body, err = bucket.GetObject(objectKey, oss.IfNoneMatch(etag))
 	if err == nil {
 		HandleError(err)
 	}

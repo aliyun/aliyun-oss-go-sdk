@@ -14,12 +14,13 @@ type ServiceError struct {
 	Message    string   `xml:"Message"`   // OSS给出的详细错误信息
 	RequestID  string   `xml:"RequestId"` // 用于唯一标识该次请求的UUID
 	HostID     string   `xml:"HostId"`    // 用于标识访问的OSS集群
+	RawMessage string   // OSS返回的原始消息内容
 	StatusCode int      // HTTP状态码
 }
 
 // Implement interface error
 func (e ServiceError) Error() string {
-	return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=%s, RequestId=%s",
+	return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=%s, RequestId=%s", 
 		e.StatusCode, e.Code, e.Message, e.RequestID)
 }
 

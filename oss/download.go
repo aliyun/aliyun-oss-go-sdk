@@ -143,7 +143,7 @@ func getDownloadPart(bucket *Bucket, objectKey string, partSize int64) ([]downlo
 
 // 并发无断点续传的下载
 func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, options []Option, routines int) error {
-	// 如果文件不存在则创建
+	// 如果文件不存在则创建，存在不清空，下载分片会重写文件内容
 	fd, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {
 		return err
@@ -348,7 +348,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		os.Remove(cpFilePath)
 	}
 
-	// 文件不存在创建
+	// 如果文件不存在则创建，存在不清空，下载分片会重写文件内容
 	fd, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {
 		return err
