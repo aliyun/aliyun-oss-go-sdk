@@ -640,6 +640,17 @@ func SecurityToken(token string) ClientOption {
 	}
 }
 
+//
+// EnableMD5 上传时是否启用MD5校验，默认启用。
+//
+// isEnableMD5 true启用MD5校验，false不启用MD5校验，默认true
+//
+func EnableMD5(isEnableMD5 bool) ClientOption {
+	return func(client *Client) {
+		client.Config.IsEnableMD5 = isEnableMD5
+	}
+}
+
 // Private
 func (client Client) do(method, bucketName, urlParams, subResource string,
 	headers map[string]string, data io.Reader) (*Response, error) {

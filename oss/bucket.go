@@ -97,8 +97,9 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 		return err
 	}
 	defer resp.body.Close()
-
-	fd, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0660)
+	
+	// 如果文件不存在则创建，存在则清空
+	fd, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 	if err != nil {
 		return err
 	}

@@ -1297,7 +1297,7 @@ func (s *OssBucketSuite) TestAddContentType(c *C) {
 
 func (s *OssBucketSuite) TestGetConfig(c *C) {
 	client, err := New(endpoint, accessID, accessKey, UseCname(true),
-		Timeout(11, 12), SecurityToken("token"))
+		Timeout(11, 12), SecurityToken("token"), EnableMD5(false))
 	c.Assert(err, IsNil)
 
 	bucket, err := client.Bucket(bucketName)
@@ -1310,6 +1310,7 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 
 	c.Assert(bucket.getConfig().SecurityToken, Equals, "token")
 	c.Assert(bucket.getConfig().IsCname, Equals, true)
+	c.Assert(bucket.getConfig().IsEnableMD5, Equals, false)
 }
 
 // TestSTSTonek

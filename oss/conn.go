@@ -110,7 +110,7 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader) {
 	req.Header.Set(HTTPHeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
 
 	// md5
-	if req.Body != nil {
+	if req.Body != nil && conn.config.IsEnableMD5 {
 		buf, _ := ioutil.ReadAll(req.Body)
 		req.Body = ioutil.NopCloser(bytes.NewReader(buf))
 		sum := md5.Sum(buf)
@@ -186,6 +186,7 @@ func serviceErrFromXML(body []byte, statusCode int, requestID string) (ServiceEr
 	}
 	storageErr.StatusCode = statusCode
 	storageErr.RequestID = requestID
+	storageErr.RawMessage = string(body)
 	return storageErr, nil
 }
 

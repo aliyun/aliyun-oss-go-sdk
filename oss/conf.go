@@ -24,6 +24,7 @@ type Config struct {
 	SecurityToken   string      // STS Token
 	IsCname         bool        // Endpoint是否是CNAME
 	HTTPTimeout     HTTPTimeout // HTTP的超时时间设置
+	IsEnableMD5     bool        // 上传数据时是否启用MD5校验
 }
 
 // 获取默认配置
@@ -39,6 +40,7 @@ func getDefaultOssConfig() *Config {
 	config.Timeout = 60 // seconds
 	config.SecurityToken = ""
 	config.IsCname = false
+	config.IsEnableMD5 = true
 
 	config.HTTPTimeout.ConnectTimeout = time.Second * 30   // 30s
 	config.HTTPTimeout.ReadWriteTimeout = time.Second * 60 // 60s
