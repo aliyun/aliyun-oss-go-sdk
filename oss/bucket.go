@@ -140,8 +140,9 @@ func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...O
 }
 
 //
-// CopyObjectToBucket bucket间拷贝object。
+// CopyObjectTo bucket间拷贝object。
 //
+// srcBucketName  Copy的源Bucket。
 // srcObjectKey   Copy的源对象。
 // destBucket     Copy的目标Bucket。
 // destObjectKey  Copy的目标Object。
@@ -149,7 +150,17 @@ func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...O
 //
 // error  操作无错误为nil，非nil为错误信息。
 //
-func (bucket Bucket) CopyObjectToBucket(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
+func (bucket Bucket) CopyObjectTo(srcBucketName, srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
+	var out CopyObjectResult
+	srcBucket, err := bucket.Client.Bucket(srcBucketName)
+	if err != nil {
+		return out, err
+	}
+
+	return srcBucket.copyObjectTo(srcObjectKey, destBucketName, destObjectKey, options...);
+}
+
+func (bucket Bucket) copyObjectTo(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
 	options = append(options, CopySource(bucket.BucketName, srcObjectKey))
 	headers := make(map[string]string)

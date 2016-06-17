@@ -13,7 +13,7 @@ import (
 )
 
 //
-// DownloadFile 分块下载文件，适合加大Object
+// DownloadFile 分片下载文件
 //
 // objectKey  object key。
 // filePath   本地文件。objectKey下载到文件。
@@ -62,7 +62,7 @@ func defaultDownloadPartHook(part downloadPart) error {
 }
 
 // 工作协程
-func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, results chan<- downloadPart, failed chan<- error) {
+func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, results chan<- downloadPart, failed chan<- error, die <- chan bool) {
 	for part := range jobs {
 		if err := arg.hook(part); err != nil {
 			failed <- err
@@ -77,6 +77,12 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			break
 		}
 		defer rd.Close()
+
+		select {
+			case <-die:
+				return
+			default:
+		}
 
 		fd, err := os.OpenFile(arg.filePath, os.O_WRONLY, 0660)
 		if err != nil {
@@ -159,11 +165,12 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	jobs := make(chan downloadPart, len(parts))
 	results := make(chan downloadPart, len(parts))
 	failed := make(chan error)
+	die := make(chan bool)
 
 	// 启动工作协程
 	arg := downloadWorkerArg{&bucket, objectKey, filePath, options, downloadPartHooker}
 	for w := 1; w <= routines; w++ {
-		go downloadWorker(w, arg, jobs, results, failed)
+		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
 
 	// 并发上传分片
@@ -178,6 +185,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 			completed++
 			ps[part.Index] = part
 		case err := <-failed:
+			close(die)
 			return err
 		}
 
@@ -360,11 +368,12 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	jobs := make(chan downloadPart, len(parts))
 	results := make(chan downloadPart, len(parts))
 	failed := make(chan error)
+	die := make(chan bool)
 
 	// 启动工作协程
 	arg := downloadWorkerArg{&bucket, objectKey, filePath, options, downloadPartHooker}
 	for w := 1; w <= routines; w++ {
-		go downloadWorker(w, arg, jobs, results, failed)
+		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
 
 	// 并发下载分片
@@ -379,6 +388,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 			dcp.PartStat[part.Index] = true
 			dcp.dump(cpFilePath)
 		case err := <-failed:
+			close(die)
 			return err
 		}
 

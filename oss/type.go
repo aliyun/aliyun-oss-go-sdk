@@ -188,6 +188,24 @@ type CORSRule struct {
 // GetBucketCORSResult GetBucketCORS请求返回的结果
 type GetBucketCORSResult CORSXML
 
+// GetBucketInfoResult GetBucketInfo请求返回结果
+type GetBucketInfoResult struct {
+	XMLName        xml.Name `xml:"BucketInfo"`
+	BucketInfo     BucketInfo   `xml:"Bucket"`
+}
+
+// BucketInfo Bucket信息
+type BucketInfo struct {
+	XMLName          xml.Name  `xml:"Bucket"`
+	Name             string    `xml:"Name"`                    // Bucket名称
+	Location         string    `xml:"Location"`                // Bucket所在的数据中心
+	CreationDate     time.Time `xml:"CreationDate"`            // Bucket创建时间
+	ExtranetEndpoint string    `xml:"ExtranetEndpoint"`        // Bucket访问的外网域名 
+	IntranetEndpoint string    `xml:"IntranetEndpoint"`        // Bucket访问的内网域名
+	ACL              string    `xml:"AccessControlList>Grant"` // Bucket权限
+	Owner            Owner     `xml:"Owner"`                   // Bucket拥有者信息
+}
+
 // ListObjectsResult ListObjects请求返回结果
 type ListObjectsResult struct {
 	XMLName        xml.Name           `xml:"ListBucketResult"`
@@ -206,7 +224,7 @@ type ObjectProperties struct {
 	XMLName      xml.Name  `xml:"Contents"`
 	Key          string    `xml:"Key"`          // Object的Key
 	Type         string    `xml:"Type"`         // Object Type
-	Size         uint      `xml:"Size"`         // Object的长度字节数
+	Size         int64     `xml:"Size"`         // Object的长度字节数
 	ETag         string    `xml:"ETag"`         // 标示Object的内容
 	Owner        Owner     `xml:"Owner"`        // 保存Object拥有者信息的容器
 	LastModified time.Time `xml:"LastModified"` // Object最后修改时间

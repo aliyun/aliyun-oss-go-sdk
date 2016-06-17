@@ -1135,11 +1135,11 @@ func (s *OssBucketSuite) TestCopyObjectToBucket(c *C) {
 	c.Assert(err, IsNil)
 
 	// copy
-	_, err = s.bucket.CopyObjectToBucket(objectName, descBucket, objectNameDest)
+	_, err = s.bucket.CopyObjectTo(bucketName, objectName, descBucket, objectNameDest)
 	c.Assert(err, IsNil)
 
 	// check
-	body, err := s.bucket.GetObject(objectName)
+	body, err := descBuck.GetObject(objectNameDest)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
 	c.Assert(err, IsNil)

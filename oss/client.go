@@ -599,6 +599,26 @@ func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, erro
 }
 
 //
+// GetBucketInfo 获得Bucket的日志设置。
+//
+// bucketName  需要删除访问日志的Bucket。
+// GetBucketInfoResult  操作成功的返回值，error为nil时该返回值有效。
+//
+// error 操作无错误为nil，非nil为错误信息。
+//
+func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, error) {
+	var out GetBucketInfoResult
+	resp, err := client.do("GET", bucketName, "bucketInfo", "bucketInfo", nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.body.Close()
+
+	err = xmlUnmarshal(resp.body, &out)
+	return out, err
+}
+
+//
 // UseCname 设置是否使用CNAME，默认不使用。
 //
 // isUseCname true设置endpoint格式是cname格式，false为非cname格式，默认false
