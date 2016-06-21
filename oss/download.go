@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"sync"
 )
 
 //
@@ -123,7 +122,7 @@ type downloadPart struct {
 }
 
 // 文件分片
-func getDownloadPart(bucket *Bucket, objectKey string, partSize int64) ([]downloadPart, error) {
+func getDownloadParts(bucket *Bucket, objectKey string, partSize int64) ([]downloadPart, error) {
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return nil, err
@@ -157,7 +156,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	fd.Close()
 
 	// 分割文件
-	parts, err := getDownloadPart(&bucket, objectKey, partSize)
+	parts, err := getDownloadParts(&bucket, objectKey, partSize)
 	if err != nil {
 		return err
 	}
@@ -209,7 +208,6 @@ type downloadCheckpoint struct {
 	ObjStat  objectStat     // 文件状态
 	Parts    []downloadPart // 全部分片
 	PartStat []bool         // 分片下载是否完成
-	mutex    sync.Mutex     // Lock
 }
 
 type objectStat struct {
@@ -321,7 +319,7 @@ func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
 	// parts
-	cp.Parts, err = getDownloadPart(bucket, objectKey, partSize)
+	cp.Parts, err = getDownloadParts(bucket, objectKey, partSize)
 	if err != nil {
 		return err
 	}

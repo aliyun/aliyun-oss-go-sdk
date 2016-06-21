@@ -1066,7 +1066,7 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 	c.Assert(err, NotNil)
 
 	// copy with constraints x-oss-metadata-directive
-	_, err = s.bucket.CopyObject(objectName, objectNameDest, Meta("my", "mydescprop"),
+	_, err = s.bucket.CopyObject(objectName, objectNameDest, Meta("my", "mydestprop"),
 		MetadataDirective(MetaCopy))
 	c.Assert(err, IsNil)
 
@@ -1088,10 +1088,10 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 	err = s.bucket.DeleteObject(objectNameDest)
 	c.Assert(err, IsNil)
 
-	// copy with constraints x-oss-metadata-directive and self defined desc object meta
+	// copy with constraints x-oss-metadata-directive and self defined dest object meta
 	options := []Option{
 		ObjectACL(ACLPublicReadWrite),
-		Meta("my", "mydescprop"),
+		Meta("my", "mydestprop"),
 		MetadataDirective(MetaReplace),
 	}
 	_, err = s.bucket.CopyObject(objectName, objectNameDest, options...)
@@ -1106,7 +1106,7 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 
 	destMeta, err = s.bucket.GetObjectDetailedMeta(objectNameDest)
 	c.Assert(err, IsNil)
-	c.Assert(destMeta.Get("X-Oss-Meta-My"), Equals, "mydescprop")
+	c.Assert(destMeta.Get("X-Oss-Meta-My"), Equals, "mydestprop")
 
 	acl, err = s.bucket.GetObjectACL(objectNameDest)
 	c.Assert(err, IsNil)
@@ -1122,36 +1122,36 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 func (s *OssBucketSuite) TestCopyObjectToBucket(c *C) {
 	objectName := objectNamePrefix + "tcotb"
 	objectValue := "男儿何不带吴钩，收取关山五十州。请君暂上凌烟阁，若个书生万户侯？"
-	descBucket := "my-bucket-desc"
+	destBucket := bucketName + "-dest"
 	objectNameDest := objectName + "dest"
 
-	err := s.client.CreateBucket(descBucket)
+	err := s.client.CreateBucket(destBucket)
 	c.Assert(err, IsNil)
 
-	descBuck, err := s.client.Bucket(descBucket)
+	destBuck, err := s.client.Bucket(destBucket)
 	c.Assert(err, IsNil)
 
 	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
 	// copy
-	_, err = s.bucket.CopyObjectTo(bucketName, objectName, descBucket, objectNameDest)
+	_, err = s.bucket.CopyObjectTo(bucketName, objectName, destBucket, objectNameDest)
 	c.Assert(err, IsNil)
 
 	// check
-	body, err := descBuck.GetObject(objectNameDest)
+	body, err := destBuck.GetObject(objectNameDest)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
 
-	err = descBuck.DeleteObject(objectNameDest)
+	err = destBuck.DeleteObject(objectNameDest)
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	err = s.client.DeleteBucket(descBucket)
+	err = s.client.DeleteBucket(destBucket)
 	c.Assert(err, IsNil)
 }
 

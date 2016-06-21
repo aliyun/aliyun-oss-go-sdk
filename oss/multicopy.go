@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"sync"
 )
 
 //
@@ -80,10 +79,10 @@ func copyWorker(id int, arg copyWorkerArg, jobs <-chan copyPart, results chan<- 
 			break
 		}
 		select {
-        	case <-die:
-            	return
+			case <-die:
+				return
 			default:
-        }
+		}
 		results <- part
 	}
 }
@@ -98,13 +97,13 @@ func copyScheduler(jobs chan copyPart, parts []copyPart) {
 
 // 分片
 type copyPart struct {
-	Number int   // 片序号[1, 10000]
+	Number int  // 片序号[1, 10000]
 	Start int64 // 片起始位置
 	End   int64 // 片结束位置
 }
 
 // 文件分片
-func getCopyPart(bucket *Bucket, objectKey string, partSize int64) ([]copyPart, error) {
+func getCopyParts(bucket *Bucket, objectKey string, partSize int64) ([]copyPart, error) {
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return nil, err
@@ -135,7 +134,7 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
 	
 	// 分割文件
-	parts, err := getCopyPart(srcBucket, srcObjectKey, partSize)
+	parts, err := getCopyParts(srcBucket, srcObjectKey, partSize)
 	if err != nil {
 		return err
 	}
@@ -204,7 +203,6 @@ type copyCheckpoint struct {
 	Parts     []copyPart     // 全部分片
 	CopyParts []UploadPart   // 分片上传成功后的返回值
 	PartStat  []bool         // 分片下载是否完成
-	mutex     sync.Mutex     // Lock
 }
 
 // CP数据是否有效，CP有效且Object没有更新时有效
@@ -319,7 +317,7 @@ func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBu
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
 	// parts
-	cp.Parts, err = getCopyPart(srcBucket, srcObjectKey, partSize)
+	cp.Parts, err = getCopyParts(srcBucket, srcObjectKey, partSize)
 	if err != nil {
 		return err
 	}

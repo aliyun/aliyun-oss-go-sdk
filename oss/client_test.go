@@ -1127,7 +1127,7 @@ func (s *OssClientSuite) TestGetBucketInfoNegative(c *C) {
 	_, err = client.GetBucketInfo(bucketNameTest)
 	c.Assert(err, NotNil)
 
-	// not exist
+	// bucket name invalid
 	_, err = client.GetBucketInfo("InvalidBucketName_")
 	c.Assert(err, NotNil)
 }

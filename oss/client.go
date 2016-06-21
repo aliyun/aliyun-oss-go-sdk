@@ -599,9 +599,9 @@ func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, erro
 }
 
 //
-// GetBucketInfo 获得Bucket的日志设置。
+// GetBucketInfo 获得Bucket的信息。
 //
-// bucketName  需要删除访问日志的Bucket。
+// bucketName  存储空间名称。
 // GetBucketInfoResult  操作成功的返回值，error为nil时该返回值有效。
 //
 // error 操作无错误为nil，非nil为错误信息。
