@@ -12,7 +12,7 @@ import (
 )
 
 //
-// UploadFile 分块上传文件，适合加大文件
+// UploadFile 分片上传文件
 //
 // objectKey  object名称。
 // filePath   本地文件。需要上传的文件。
@@ -102,7 +102,7 @@ type workerArg struct {
 }
 
 // 工作协程
-func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadPart, failed chan<- error) {
+func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadPart, failed chan<- error, die <- chan bool) {
 	for chunk := range jobs {
 		if err := arg.hook(id, chunk); err != nil {
 			failed <- err
@@ -112,6 +112,11 @@ func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadP
 		if err != nil {
 			failed <- err
 			break
+		}
+		select {
+			case <-die:
+				return
+			default:
 		}
 		results <- part
 	}
@@ -141,11 +146,12 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	jobs := make(chan FileChunk, len(chunks))
 	results := make(chan UploadPart, len(chunks))
 	failed := make(chan error)
+	die := make(chan bool)
 
 	// 启动工作协程
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
-		go worker(w, arg, jobs, results, failed)
+		go worker(w, arg, jobs, results, failed, die)
 	}
 
 	// 并发上传分片
@@ -160,6 +166,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 			completed++
 			parts[part.PartNumber-1] = part
 		case err := <-failed:
+			close(die)
 			bucket.AbortMultipartUpload(imur)
 			return err
 		}
@@ -396,11 +403,12 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	jobs := make(chan FileChunk, len(chunks))
 	results := make(chan UploadPart, len(chunks))
 	failed := make(chan error)
+	die := make(chan bool)
 
 	// 启动工作协程
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
-		go worker(w, arg, jobs, results, failed)
+		go worker(w, arg, jobs, results, failed, die)
 	}
 
 	// 并发上传分片
@@ -415,6 +423,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 			ucp.updatePart(part)
 			ucp.dump(cpFilePath)
 		case err := <-failed:
+			close(die)
 			return err
 		}
 

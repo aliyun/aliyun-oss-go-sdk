@@ -119,12 +119,12 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 // ETag及上传数据的MD5。error为nil时有效。
 // error 操作成功error为nil，非nil为错误信息。
 //
-func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, copySrc string, startPosition,
-	partSize int64, partNumber int, options ...Option) (UploadPart, error) {
+func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucketName, srcObjectKey string,
+	startPosition, partSize int64, partNumber int, options ...Option) (UploadPart, error) {
 	var out UploadPartCopyResult
 	var part UploadPart
 
-	opts := []Option{CopySource(bucket.BucketName, copySrc),
+	opts := []Option{CopySource(srcBucketName, srcObjectKey),
 		CopySourceRange(startPosition, partSize)}
 	opts = append(opts, options...)
 	params := "partNumber=" + strconv.Itoa(partNumber) + "&uploadId=" + imur.UploadID

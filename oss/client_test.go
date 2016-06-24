@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"strings"
 	"time"
 
 	. "gopkg.in/check.v1"
@@ -1092,6 +1093,45 @@ func (s *OssClientSuite) TestSetBucketCORSNegative(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestGetBucketInfo
+func (s *OssClientSuite) TestGetBucketInfo(c *C) {
+	var bucketNameTest = bucketNamePrefix + "tgbi"
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	res, err := client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.Name, Equals, bucketNameTest)
+	c.Assert(strings.HasPrefix(res.BucketInfo.Location, "oss-cn-"), Equals, true)
+	c.Assert(res.BucketInfo.ACL, Equals, "private")
+	c.Assert(strings.HasSuffix(res.BucketInfo.ExtranetEndpoint, ".com"), Equals, true)
+	c.Assert(strings.HasSuffix(res.BucketInfo.IntranetEndpoint, ".com"), Equals, true)
+	c.Assert(res.BucketInfo.CreationDate, NotNil)
+	
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestGetBucketInfoNegative
+func (s *OssClientSuite) TestGetBucketInfoNegative(c *C) {
+	var bucketNameTest = bucketNamePrefix + "tgbig"
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// not exist
+	_, err = client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, NotNil)
+
+	// bucket name invalid
+	_, err = client.GetBucketInfo("InvalidBucketName_")
+	c.Assert(err, NotNil)
+}
+
 // TestEndpointFormat
 func (s *OssClientSuite) TestEndpointFormat(c *C) {
 	var bucketNameTest = bucketNamePrefix + "tef"
@@ -1143,7 +1183,7 @@ func (s *OssClientSuite) _TestCname(c *C) {
 	c.Assert(res.ACL, Equals, string(ACLPrivate))
 }
 
-// TestCname
+// TestCnameNegative
 func (s *OssClientSuite) _TestCnameNegative(c *C) {
 	var bucketNameTest = "<my-bucket-cname>"
 

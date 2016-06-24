@@ -140,16 +140,41 @@ func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...O
 }
 
 //
-// CopyObjectToBucket bucket间拷贝object。
+// CopyObjectTo bucket间拷贝object。
 //
-// srcObjectKey   Copy的源对象。
-// destBucket     Copy的目标Bucket。
-// destObjectKey  Copy的目标Object。
+// srcObjectKey   源Object名称。源Bucket名称为Bucket.BucketName。
+// destBucketName  目标Bucket名称。
+// destObjectKey  目标Object名称。
 // options        Copy选项，详见CopyObject的options。
 //
 // error  操作无错误为nil，非nil为错误信息。
 //
-func (bucket Bucket) CopyObjectToBucket(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
+func (bucket Bucket) CopyObjectTo(destBucketName, destObjectKey, srcObjectKey string, options ...Option) (CopyObjectResult, error) {
+	return bucket.copy(srcObjectKey, destBucketName, destObjectKey, options...)
+}
+
+//
+// CopyObjectFrom bucket间拷贝object。
+//
+// srcBucketName  源Bucket名称。
+// srcObjectKey   源Object名称。
+// destObjectKey  目标Object名称。目标Bucket名称为Bucket.BucketName。
+// options        Copy选项，详见CopyObject的options。
+//
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) CopyObjectFrom(srcBucketName, srcObjectKey, destObjectKey string, options ...Option) (CopyObjectResult, error) {
+	destBucketName := bucket.BucketName
+	var out CopyObjectResult
+	srcBucket, err := bucket.Client.Bucket(srcBucketName)
+	if err != nil {
+		return out, err
+	}
+
+	return srcBucket.copy(srcObjectKey, destBucketName, destObjectKey, options...);
+}
+
+func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
 	options = append(options, CopySource(bucket.BucketName, srcObjectKey))
 	headers := make(map[string]string)
@@ -398,7 +423,7 @@ func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 //
 func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 	options := []Option{ObjectACL(objectACL)}
-	resp, err := bucket.do("PUT", objectKey, "", "", options, nil)
+	resp, err := bucket.do("PUT", objectKey, "acl", "acl", options, nil)
 	if err != nil {
 		return err
 	}

@@ -75,5 +75,5 @@ const (
 	MaxPartSize = 5 * 1024 * 1024 * 1024 // 文件片最大值，5GB
 	MinPartSize = 100 * 1024             // 文件片最小值，100KB
 
-	Version = "0.1.1" // Go sdk版本
+	Version = "0.2.0" // Go sdk版本
 )
