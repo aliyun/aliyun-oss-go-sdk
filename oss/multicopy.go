@@ -14,15 +14,16 @@ import (
 //
 // CopyFile 分片复制文件
 //
-// objectKey  object key。
-// filePath   本地文件。objectKey下载到文件。
-// partSize   本次上传文件片的大小，字节数。比如100 * 1024为每片100KB。
+// srcBucketName  源Bucket名称。
+// srcObjectKey   源Object名称。
+// destObjectKey   目标Object名称。目标Bucket名称为Bucket.BucketName。
+// partSize   复制文件片的大小，字节数。比如100 * 1024为每片100KB。
 // options    Object的属性限制项。详见InitiateMultipartUpload。
 //
 // error 操作成功error为nil，非nil为错误信息。
 //
-func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destBucketName, destObjectKey string, 
-	partSize int64, options ...Option) error {
+func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string, partSize int64, options ...Option) error {
+	destBucketName := bucket.BucketName
 	if partSize < MinPartSize || partSize > MaxPartSize {
 		return errors.New("oss: part size invalid range (1024KB, 5GB]")
 	}

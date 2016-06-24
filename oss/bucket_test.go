@@ -1128,8 +1128,9 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s *OssBucketSuite) TestCopyObjectToBucket(c *C) {
-	objectName := objectNamePrefix + "tcotb"
+// TestCopyObjectToOrFrom
+func (s *OssBucketSuite) TestCopyObjectToOrFrom(c *C) {
+	objectName := objectNamePrefix + "tcotof"
 	objectValue := "男儿何不带吴钩，收取关山五十州。请君暂上凌烟阁，若个书生万户侯？"
 	destBucket := bucketName + "-dest"
 	objectNameDest := objectName + "dest"
@@ -1143,8 +1144,8 @@ func (s *OssBucketSuite) TestCopyObjectToBucket(c *C) {
 	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// copy
-	_, err = s.bucket.CopyObjectTo(bucketName, objectName, destBucket, objectNameDest)
+	// copy from
+	_, err = destBuck.CopyObjectFrom(bucketName, objectName, objectNameDest)
 	c.Assert(err, IsNil)
 
 	// check
@@ -1154,6 +1155,21 @@ func (s *OssBucketSuite) TestCopyObjectToBucket(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
 
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// copy to
+	_, err = destBuck.CopyObjectTo(bucketName, objectName, objectNameDest)
+	c.Assert(err, IsNil)
+
+	// check
+	body, err = s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+
+	// clean
 	err = destBuck.DeleteObject(objectNameDest)
 	c.Assert(err, IsNil)
 
@@ -1162,6 +1178,21 @@ func (s *OssBucketSuite) TestCopyObjectToBucket(c *C) {
 
 	err = s.client.DeleteBucket(destBucket)
 	c.Assert(err, IsNil)
+}
+
+// TestCopyObjectToOrFromNegative
+func (s *OssBucketSuite) TestCopyObjectToOrFromNegative(c *C) {
+	objectName := objectNamePrefix + "tcotofn"
+	destBucket := bucketName + "-dest"
+	objectNameDest := objectName + "dest"
+
+	// object no exist
+	_, err := s.bucket.CopyObjectTo(bucketName, objectName, objectNameDest)
+	c.Assert(err, NotNil)
+
+	// bucket no exist
+	_, err = s.bucket.CopyObjectFrom(destBucket, objectNameDest, objectName)
+	c.Assert(err, NotNil)
 }
 
 // TestAppendObject
