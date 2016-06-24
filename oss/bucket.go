@@ -409,7 +409,7 @@ func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 //
 func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 	options := []Option{ObjectACL(objectACL)}
-	resp, err := bucket.do("PUT", objectKey, "", "", options, nil)
+	resp, err := bucket.do("PUT", objectKey, "acl", "acl", options, nil)
 	if err != nil {
 		return err
 	}

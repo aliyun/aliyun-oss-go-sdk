@@ -990,6 +990,15 @@ func (s *OssBucketSuite) TestSetAndGetObjectAcl(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestSetAndGetObjectAclNegative
+func (s *OssBucketSuite) TestSetAndGetObjectAclNegative(c *C) {
+	objectName := objectNamePrefix + "tsgban"
+
+	// object not exist
+	err := s.bucket.SetObjectACL(objectName, ACLPublicRead)
+	c.Assert(err, NotNil)
+}
+
 // TestCopyObject
 func (s *OssBucketSuite) TestCopyObject(c *C) {
 	objectName := objectNamePrefix + "tco"
