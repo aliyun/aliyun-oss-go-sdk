@@ -42,7 +42,9 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	headers map[string]string, data io.Reader) (*Response, error) {
 	httpTimeOut := conn.config.HTTPTimeout
 	method = strings.ToUpper(method)
-	uri.Opaque = uri.Path
+	if !conn.config.IsUseProxy {
+		uri.Opaque = uri.Path
+	}
 	req := &http.Request{
 		Method:     method,
 		URL:        uri,
@@ -70,17 +72,48 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 
 	conn.signHeader(req, canonicalizedResource)
 
-	timeoutClient := &http.Client{Transport: &http.Transport{
-		Dial: func(netw, addr string) (net.Conn, error) {
-			conn, err := net.DialTimeout(netw, addr, httpTimeOut.ConnectTimeout)
-			if err != nil {
-				return nil, err
-			}
-			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
-		},
-		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
-		MaxIdleConnsPerHost:   2000,
-	}}
+	var transport *http.Transport
+	if conn.config.IsUseProxy {
+		// proxy
+		proxyURL, err := url.Parse(conn.config.ProxyHost)
+		if err != nil {
+			return nil, err
+		}
+
+		transport = &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+			Dial: func(netw, addr string) (net.Conn, error) {
+				conn, err := net.DialTimeout(netw, addr, httpTimeOut.ConnectTimeout)
+				if err != nil {
+					return nil, err
+				}
+				return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
+			},
+			ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
+			MaxIdleConnsPerHost:   2000,
+		}
+
+		if conn.config.IsAuthProxy {
+			auth := conn.config.ProxyUser + ":" + conn.config.ProxyPassword
+			basic := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+			req.Header.Set("Proxy-Authorization", basic)
+		}
+	} else {
+		// no proxy
+		transport = &http.Transport{
+			Dial: func(netw, addr string) (net.Conn, error) {
+				conn, err := net.DialTimeout(netw, addr, httpTimeOut.ConnectTimeout)
+				if err != nil {
+					return nil, err
+				}
+				return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
+			},
+			ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
+			MaxIdleConnsPerHost:   2000,
+		}
+	}
+
+	timeoutClient := &http.Client{Transport: transport}
 
 	resp, err := timeoutClient.Do(req)
 	if err != nil {
@@ -260,13 +293,14 @@ const (
 )
 
 type urlMaker struct {
-	Scheme string // http or https
-	NetLoc string // host or ip
-	Type   int    // 1 CNAME 2 IP 3 ALIYUN
+	Scheme  string // http or https
+	NetLoc  string // host or ip
+	Type    int    // 1 CNAME 2 IP 3 ALIYUN
+	IsProxy bool   // proxy
 }
 
 // Parse endpoint
-func (um *urlMaker) Init(endpoint string, isCname bool) {
+func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 	if strings.HasPrefix(endpoint, "http://") {
 		um.Scheme = "http"
 		um.NetLoc = endpoint[len("http://"):]
@@ -290,13 +324,18 @@ func (um *urlMaker) Init(endpoint string, isCname bool) {
 	} else {
 		um.Type = urlTypeAliyun
 	}
+	um.IsProxy = isProxy
 }
 
 // Build URL
 func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	var host = ""
 	var path = ""
-	object = url.QueryEscape(object)
+
+	if !um.IsProxy {
+		object = url.QueryEscape(object)
+	}
+
 	if um.Type == urlTypeCname {
 		host = um.NetLoc
 		path = "/" + object
