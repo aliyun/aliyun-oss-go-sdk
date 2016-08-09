@@ -7,8 +7,8 @@ package oss
 import (
 	"log"
 	"os"
-	"testing"
 	"strings"
+	"testing"
 	"time"
 
 	. "gopkg.in/check.v1"
@@ -19,7 +19,7 @@ func Test(t *testing.T) {
 	TestingT(t)
 }
 
-type OssClientSuite struct {}
+type OssClientSuite struct{}
 
 var _ = Suite(&OssClientSuite{})
 
@@ -29,12 +29,13 @@ const (
 	accessID         = "<testAccessID>"
 	accessKey        = "<testAccessKey>"
 	bucketNamePrefix = "go-sdk-test-"
+	proxyHost        = "<http://testProxy>"
 )
 
 var (
-	logPath = "go_sdk_test_" + time.Now().Format("20060102_150405") + ".log"
+	logPath        = "go_sdk_test_" + time.Now().Format("20060102_150405") + ".log"
 	testLogFile, _ = os.OpenFile(logPath, os.O_RDWR|os.O_CREATE, 0664)
-	testLogger = log.New(testLogFile, "", log.Ldate|log.Ltime|log.Lshortfile)
+	testLogger     = log.New(testLogFile, "", log.Ldate|log.Ltime|log.Lshortfile)
 )
 
 // Run once when the suite starts running
@@ -1111,7 +1112,7 @@ func (s *OssClientSuite) TestGetBucketInfo(c *C) {
 	c.Assert(strings.HasSuffix(res.BucketInfo.ExtranetEndpoint, ".com"), Equals, true)
 	c.Assert(strings.HasSuffix(res.BucketInfo.IntranetEndpoint, ".com"), Equals, true)
 	c.Assert(res.BucketInfo.CreationDate, NotNil)
-	
+
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 }
@@ -1223,10 +1224,10 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	var bucketNameTest = bucketNamePrefix + "tco"
 
 	client, err := New(endpoint, accessID, accessKey, UseCname(true),
-		Timeout(11, 12), SecurityToken("token"))
+		Timeout(11, 12), SecurityToken("token"), Proxy(proxyHost))
 	c.Assert(err, IsNil)
 
-	// Create
+	// Create Bucket timeout
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, NotNil)
 
@@ -1237,6 +1238,51 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 
 	c.Assert(client.Conn.config.SecurityToken, Equals, "token")
 	c.Assert(client.Conn.config.IsCname, Equals, true)
+
+	c.Assert(client.Conn.config.IsUseProxy, Equals, true)
+	c.Assert(client.Config.ProxyHost, Equals, proxyHost)
+
+	client, err = New(endpoint, accessID, accessKey, AuthProxy(proxyHost, "user", "passwd"))
+
+	c.Assert(client.Conn.config.IsUseProxy, Equals, true)
+	c.Assert(client.Config.ProxyHost, Equals, proxyHost)
+	c.Assert(client.Conn.config.IsAuthProxy, Equals, true)
+	c.Assert(client.Conn.config.ProxyUser, Equals, "user")
+	c.Assert(client.Conn.config.ProxyPassword, Equals, "passwd")
+}
+
+func (s *OssClientSuite) TestProxy(c *C) {
+	bucketNameTest := bucketNamePrefix + "tp"
+	objectName := "体育/奥运/首金"
+	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。"
+
+	client, err := New(endpoint, accessID, accessKey, Proxy(proxyHost))
+
+	// Create bucket
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Get bucket info
+	_, err = client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+
+	// Put object
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get Object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Delete Object
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Delete bucket
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
 }
 
 // private

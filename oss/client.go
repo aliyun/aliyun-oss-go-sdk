@@ -45,7 +45,7 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	config.AccessKeySecret = accessKeySecret
 
 	url := &urlMaker{}
-	url.Init(config.Endpoint, config.IsCname)
+	url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
 	conn := &Conn{config, url}
 
 	client := &Client{
@@ -626,7 +626,7 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 func UseCname(isUseCname bool) ClientOption {
 	return func(client *Client) {
 		client.Config.IsCname = isUseCname
-		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname)
+		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
 	}
 }
 
@@ -661,13 +661,44 @@ func SecurityToken(token string) ClientOption {
 }
 
 //
-// EnableMD5 上传时是否启用MD5校验，默认启用。
+// EnableMD5 是否启用MD5校验，默认启用。
 //
 // isEnableMD5 true启用MD5校验，false不启用MD5校验，默认true
 //
 func EnableMD5(isEnableMD5 bool) ClientOption {
 	return func(client *Client) {
 		client.Config.IsEnableMD5 = isEnableMD5
+	}
+}
+
+//
+// Proxy 设置代理服务器，默认不使用代理。
+//
+// proxyHost 代理服务器地址，格式是host或host:port
+//
+func Proxy(proxyHost string) ClientOption {
+	return func(client *Client) {
+		client.Config.IsUseProxy = true
+		client.Config.ProxyHost = proxyHost
+		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
+	}
+}
+
+//
+// AuthProxy 设置需要认证的代理服务器，默认不使用代理。
+//
+// proxyHost 代理服务器地址，格式是host或host:port
+// proxyUser 代理服务器认证的用户名
+// proxyPassword 代理服务器认证的用户密码
+//
+func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
+	return func(client *Client) {
+		client.Config.IsUseProxy = true
+		client.Config.ProxyHost = proxyHost
+		client.Config.IsAuthProxy = true
+		client.Config.ProxyUser = proxyUser
+		client.Config.ProxyPassword = proxyPassword
+		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
 	}
 }
 

@@ -25,6 +25,11 @@ type Config struct {
 	IsCname         bool        // Endpoint是否是CNAME
 	HTTPTimeout     HTTPTimeout // HTTP的超时时间设置
 	IsEnableMD5     bool        // 上传数据时是否启用MD5校验
+	IsUseProxy      bool        // 是否使用代理
+	ProxyHost       string      // 代理服务器地址
+	IsAuthProxy     bool        // 代理服务器是否使用用户认证
+	ProxyUser       string      // 代理服务器认证用户名
+	ProxyPassword   string      // 代理服务器认证密码
 }
 
 // 获取默认配置
@@ -46,6 +51,12 @@ func getDefaultOssConfig() *Config {
 	config.HTTPTimeout.ReadWriteTimeout = time.Second * 60 // 60s
 	config.HTTPTimeout.HeaderTimeout = time.Second * 60    // 60s
 	config.HTTPTimeout.LongTimeout = time.Second * 300     // 300s
+
+	config.IsUseProxy = false
+	config.ProxyHost = ""
+	config.IsAuthProxy = false
+	config.ProxyUser = ""
+	config.ProxyPassword = ""
 
 	return &config
 }
