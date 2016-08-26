@@ -22,6 +22,7 @@ func (s *OssCopySuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
+	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -52,10 +53,6 @@ func (s *OssCopySuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// delete bucket
-	err = s.client.DeleteBucket(bucketName)
-	c.Assert(err, IsNil)
-
 	testLogger.Println("test copy completed")
 }
 
@@ -74,7 +71,7 @@ func (s *OssCopySuite) TearDownTest(c *C) {
 // TestCopyRoutineWithoutRecovery 多线程无断点恢复的复制
 func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwr"
-	destObjectName := srcObjectName + "-copy" 
+	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "copy-new-file.jpg"
 
@@ -86,7 +83,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	// 不指定Routines，默认单线程
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024)
 	c.Assert(err, IsNil)
-	
+
 	err = s.bucket.GetObjectToFile(destObjectName, newFile)
 	c.Assert(err, IsNil)
 
@@ -204,11 +201,10 @@ func CopyErrorHooker(part copyPart) error {
 	return nil
 }
 
-
 // TestCopyRoutineWithoutRecoveryNegative 多线程无断点恢复的复制
 func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwrn"
-	destObjectName := srcObjectName + "-copy" 
+	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// 上传源文件
@@ -245,7 +241,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 // TestCopyRoutineWithRecovery 多线程且有断点恢复的复制
 func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	srcObjectName := objectNamePrefix + "tcrtr"
-	destObjectName := srcObjectName + "-copy" 
+	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "copy-new-file.jpg"
 
@@ -398,7 +394,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 // TestCopyRoutineWithRecoveryNegative 多线程无断点恢复的复制
 func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwrn"
-	destObjectName := srcObjectName + "-copy" 
+	destObjectName := srcObjectName + "-copy"
 
 	// 源Bucket不存在
 	err := s.bucket.CopyFile("NotExist", srcObjectName, destObjectName, 100*1024, Checkpoint(true, ""))
@@ -410,7 +406,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	// 指定的分片大小无效
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024,  Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*1024*1024*100, Routines(2), Checkpoint(true, ""))
@@ -421,10 +417,10 @@ func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	destBucketName := bucketName + "-desc"
 	srcObjectName := objectNamePrefix + "tcrtr"
-	destObjectName := srcObjectName + "-copy" 
+	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "copy-new-file.jpg"
-	
+
 	destBucket, err := s.client.Bucket(destBucketName)
 	c.Assert(err, IsNil)
 
@@ -436,7 +432,7 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	err = s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
-	
+
 	// 复制文件
 	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(5), Checkpoint(true, ""))
 	c.Assert(err, IsNil)

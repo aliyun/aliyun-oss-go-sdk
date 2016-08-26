@@ -12,7 +12,7 @@ var _ = Suite(&OssConnSuite{})
 
 func (s *OssConnSuite) TestURLMarker(c *C) {
 	um := urlMaker{}
-	um.Init("docs.github.com", true)
+	um.Init("docs.github.com", true, false)
 	c.Assert(um.Type, Equals, urlTypeCname)
 	c.Assert(um.Scheme, Equals, "http")
 	c.Assert(um.NetLoc, Equals, "docs.github.com")
@@ -24,17 +24,17 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.getResource("bucket", "object", ""), Equals, "/bucket/object")
 	c.Assert(um.getResource("", "object", ""), Equals, "/")
 
-	um.Init("https://docs.github.com", true)
+	um.Init("https://docs.github.com", true, false)
 	c.Assert(um.Type, Equals, urlTypeCname)
 	c.Assert(um.Scheme, Equals, "https")
 	c.Assert(um.NetLoc, Equals, "docs.github.com")
 
-	um.Init("http://docs.github.com", true)
+	um.Init("http://docs.github.com", true, false)
 	c.Assert(um.Type, Equals, urlTypeCname)
 	c.Assert(um.Scheme, Equals, "http")
 	c.Assert(um.NetLoc, Equals, "docs.github.com")
 
-	um.Init("docs.github.com:8080", false)
+	um.Init("docs.github.com:8080", false, true)
 	c.Assert(um.Type, Equals, urlTypeAliyun)
 	c.Assert(um.Scheme, Equals, "http")
 	c.Assert(um.NetLoc, Equals, "docs.github.com:8080")
@@ -46,22 +46,22 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.getResource("bucket", "object", ""), Equals, "/bucket/object")
 	c.Assert(um.getResource("", "object", ""), Equals, "/")
 
-	um.Init("https://docs.github.com:8080", false)
+	um.Init("https://docs.github.com:8080", false, true)
 	c.Assert(um.Type, Equals, urlTypeAliyun)
 	c.Assert(um.Scheme, Equals, "https")
 	c.Assert(um.NetLoc, Equals, "docs.github.com:8080")
 
-	um.Init("127.0.0.1", false)
+	um.Init("127.0.0.1", false, true)
 	c.Assert(um.Type, Equals, urlTypeIP)
 	c.Assert(um.Scheme, Equals, "http")
 	c.Assert(um.NetLoc, Equals, "127.0.0.1")
 
-	um.Init("http://127.0.0.1", false)
+	um.Init("http://127.0.0.1", false, false)
 	c.Assert(um.Type, Equals, urlTypeIP)
 	c.Assert(um.Scheme, Equals, "http")
 	c.Assert(um.NetLoc, Equals, "127.0.0.1")
 
-	um.Init("https://127.0.0.1:8080", false)
+	um.Init("https://127.0.0.1:8080", false, false)
 	c.Assert(um.Type, Equals, urlTypeIP)
 	c.Assert(um.Scheme, Equals, "https")
 	c.Assert(um.NetLoc, Equals, "127.0.0.1:8080")
@@ -71,7 +71,7 @@ func (s *OssConnSuite) TestAuth(c *C) {
 	endpoint := "https://github.com/"
 	cfg := getDefaultOssConfig()
 	um := urlMaker{}
-	um.Init(endpoint, false)
+	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um}
 	uri := um.getURL("bucket", "object", "")
 	req := &http.Request{

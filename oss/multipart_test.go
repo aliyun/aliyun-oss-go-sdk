@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -25,10 +26,31 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
+	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 	s.bucket = bucket
+
+	// Delete Part
+	lmur, err := s.bucket.ListMultipartUploads()
+	c.Assert(err, IsNil)
+
+	for _, upload := range lmur.Uploads {
+		var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
+			Key: upload.Key, UploadID: upload.UploadID}
+		err = s.bucket.AbortMultipartUpload(imur)
+		c.Assert(err, IsNil)
+	}
+
+	// Delete Objects
+	lor, err := s.bucket.ListObjects()
+	c.Assert(err, IsNil)
+
+	for _, object := range lor.Objects {
+		err = s.bucket.DeleteObject(object.Key)
+		c.Assert(err, IsNil)
+	}
 
 	testLogger.Println("test multipart started")
 }
@@ -54,10 +76,6 @@ func (s *OssBucketMultipartSuite) TearDownSuite(c *C) {
 		err = s.bucket.DeleteObject(object.Key)
 		c.Assert(err, IsNil)
 	}
-
-	// delete bucket
-	err = s.client.DeleteBucket(bucketName)
-	c.Assert(err, IsNil)
 
 	testLogger.Println("test multipart completed")
 }
@@ -254,7 +272,6 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
 	testLogger.Println("lmur:", lmur)
-	c.Assert(len(lmur.Uploads), Equals, 2)
 
 	// complete
 	_, err = s.bucket.CompleteMultipartUpload(imurUpload, partsUpload)
@@ -574,18 +591,18 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploadsEncodingKey(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(lmpu.Uploads), Equals, 3)
 
-	lmpu, err = s.bucket.ListMultipartUploads(Prefix("my-object-让你任性让你狂tlmuek1"))
+	lmpu, err = s.bucket.ListMultipartUploads(Prefix(objectNamePrefix + "让你任性让你狂tlmuek1"))
 	c.Assert(err, IsNil)
 	c.Assert(len(lmpu.Uploads), Equals, 1)
 
-	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker("my-object-让你任性让你狂tlmuek1"))
+	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker(objectNamePrefix + "让你任性让你狂tlmuek1"))
 	c.Assert(err, IsNil)
 	c.Assert(len(lmpu.Uploads), Equals, 1)
 
 	lmpu, err = s.bucket.ListMultipartUploads(EncodingType("url"))
 	c.Assert(err, IsNil)
 	for i, upload := range lmpu.Uploads {
-		c.Assert(upload.Key, Equals, "my-object-让你任性让你狂tlmuek"+strconv.Itoa(i))
+		c.Assert(upload.Key, Equals, objectNamePrefix+"让你任性让你狂tlmuek"+strconv.Itoa(i))
 	}
 
 	for _, imur := range imurs {

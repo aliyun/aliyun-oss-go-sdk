@@ -22,6 +22,7 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
+	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -51,10 +52,6 @@ func (s *OssDownloadSuite) TearDownSuite(c *C) {
 		err = s.bucket.DeleteObject(object.Key)
 		c.Assert(err, IsNil)
 	}
-
-	// delete bucket
-	err = s.client.DeleteBucket(bucketName)
-	c.Assert(err, IsNil)
 
 	testLogger.Println("test download completed")
 }
