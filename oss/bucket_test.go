@@ -27,15 +27,6 @@ type OssBucketSuite struct {
 
 var _ = Suite(&OssBucketSuite{})
 
-const (
-	bucketName       = "go-sdk-test-obj"
-	objectNamePrefix = "my-object-"
-
-	stsServer     = "<StsServer>"
-	stsEndpoint   = "<StsEndpoint>"
-	stsBucketName = "<StsBucketName>"
-)
-
 var (
 	pastDate   = time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	futureDate = time.Date(2049, time.January, 10, 23, 0, 0, 0, time.UTC)
@@ -48,6 +39,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
+	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -58,6 +50,16 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 
 // Run before each test or benchmark starts running
 func (s *OssBucketSuite) TearDownSuite(c *C) {
+	// Delete Multipart
+	lmu, err := s.bucket.ListMultipartUploads()
+	c.Assert(err, IsNil)
+
+	for _, upload := range lmu.Uploads {
+		imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
+		err = s.bucket.AbortMultipartUpload(imur)
+		c.Assert(err, IsNil)
+	}
+
 	// Delete Objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
@@ -66,10 +68,6 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 		err = s.bucket.DeleteObject(object.Key)
 		c.Assert(err, IsNil)
 	}
-
-	// Delete Bucket
-	err = s.client.DeleteBucket(bucketName)
-	c.Assert(err, IsNil)
 
 	testLogger.Println("test bucket completed")
 }
@@ -640,7 +638,7 @@ func (s *OssBucketSuite) TestListObjectsEncodingType(c *C) {
 	lor, err = s.bucket.ListObjects(Prefix(objectNamePrefix + "床前明月光"))
 	c.Assert(err, IsNil)
 	for i, obj := range lor.Objects {
-		c.Assert(obj.Key, Equals, "my-object-床前明月光，疑是地上霜。举头望明月，低头思故乡。tloet"+strconv.Itoa(i))
+		c.Assert(obj.Key, Equals, objectNamePrefix+"床前明月光，疑是地上霜。举头望明月，低头思故乡。tloet"+strconv.Itoa(i))
 	}
 
 	for i := 0; i < 10; i++ {
@@ -1357,6 +1355,9 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 func (s *OssBucketSuite) _TestSTSTonek(c *C) {
 	objectName := objectNamePrefix + "tst"
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
+	stsServer := ""
+	stsEndpoint := ""
+	stsBucketName := ""
 
 	stsRes, err := getSTSToken(stsServer)
 	c.Assert(err, IsNil)
@@ -1504,7 +1505,7 @@ func createFileAndWrite(fileName string, data []byte) error {
 	}
 
 	if bytes != len(data) {
-		return fmt.Errorf(fmt.Sprintf("write %s bytes not equal data length %s", bytes, len(data)))
+		return fmt.Errorf(fmt.Sprintf("write %d bytes not equal data length %d", bytes, len(data)))
 	}
 
 	return nil
