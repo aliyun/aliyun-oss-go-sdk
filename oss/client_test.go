@@ -1198,8 +1198,8 @@ func (s *OssClientSuite) TestGetBucketInfoNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestendpointFormat
-func (s *OssClientSuite) TestendpointFormat(c *C) {
+// TestEndpointFormat
+func (s *OssClientSuite) TestEndpointFormat(c *C) {
 	var bucketNameTest = bucketNamePrefix + "tef"
 
 	// http://host
