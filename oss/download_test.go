@@ -21,7 +21,7 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.client = client
 
-	s.client.CreateBccket(bucketName)
+	s.client.CreateBucket(bucketName)
 	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)

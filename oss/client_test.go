@@ -953,6 +953,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteNegative(c *C) {
 	err = client.DeleteBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	_, err = client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, NotNil)
 
