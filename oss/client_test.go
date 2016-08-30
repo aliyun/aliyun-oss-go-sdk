@@ -904,6 +904,7 @@ func (s *OssClientSuite) TestDeleteBucketWebsite(c *C) {
 	err = client.DeleteBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	res, err = client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, NotNil)
 
