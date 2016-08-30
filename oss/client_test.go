@@ -25,7 +25,7 @@ var _ = Suite(&OssClientSuite{})
 
 var (
 	// endpoint/id/key
-	endpoint  = os.Getenv("OSS_TEST_endpoint")
+	endpoint  = os.Getenv("OSS_TEST_ENDPOINT")
 	accessID  = os.Getenv("OSS_TEST_ACCESS_KEY_ID")
 	accessKey = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
 
