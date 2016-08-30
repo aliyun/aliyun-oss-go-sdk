@@ -17,7 +17,7 @@ var _ = Suite(&OssDownloadSuite{})
 
 // Run once when the suite starts running
 func (s *OssDownloadSuite) SetUpSuite(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
+	client, err := New(Endpoint, AccessID, AccessKey)
 	c.Assert(err, IsNil)
 	s.client = client
 

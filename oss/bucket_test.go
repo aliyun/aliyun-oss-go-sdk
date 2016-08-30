@@ -34,7 +34,7 @@ var (
 
 // Run once when the suite starts running
 func (s *OssBucketSuite) SetUpSuite(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
+	client, err := New(Endpoint, AccessID, AccessKey)
 	c.Assert(err, IsNil)
 	s.client = client
 
@@ -1333,7 +1333,7 @@ func (s *OssBucketSuite) TestAddContentType(c *C) {
 }
 
 func (s *OssBucketSuite) TestGetConfig(c *C) {
-	client, err := New(endpoint, accessID, accessKey, UseCname(true),
+	client, err := New(Endpoint, AccessID, AccessKey, UseCname(true),
 		Timeout(11, 12), SecurityToken("token"), EnableMD5(false))
 	c.Assert(err, IsNil)
 
@@ -1394,7 +1394,7 @@ func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
 	objectName := objectNamePrefix + "tstg"
 	localFile := objectName + ".jpg"
 
-	client, err := New(endpoint, accessID, accessKey, SecurityToken("Invalid"))
+	client, err := New(Endpoint, AccessID, AccessKey, SecurityToken("Invalid"))
 	c.Assert(err, IsNil)
 
 	_, err = client.ListBuckets()

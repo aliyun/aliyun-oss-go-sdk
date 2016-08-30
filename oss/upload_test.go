@@ -18,7 +18,7 @@ var _ = Suite(&OssUploadSuite{})
 
 // Run once when the suite starts running
 func (s *OssUploadSuite) SetUpSuite(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
+	client, err := New(Endpoint, AccessID, AccessKey)
 	c.Assert(err, IsNil)
 	s.client = client
 
