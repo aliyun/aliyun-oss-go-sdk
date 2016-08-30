@@ -291,7 +291,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(len(ucp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
 	c.Assert(ucp.FilePath, Equals, fileName)
 	c.Assert(ucp.FileStat.Size, Equals, int64(482048))
-	c.Assert(ucp.FileStat.LastModified.String(), Equals, "2015-12-17 18:43:03 +0800 CST")
+	c.Assert(len(ucp.FileStat.LastModified.String()), Equals, len("2015-12-17 18:43:03 +0800 CST"))
 	c.Assert(ucp.FileStat.MD5, Equals, "")
 	c.Assert(ucp.ObjectKey, Equals, objectName)
 	c.Assert(len(ucp.UploadID), Equals, len("3F79722737D1469980DACEDCA325BB52"))
