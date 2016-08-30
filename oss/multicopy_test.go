@@ -415,7 +415,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 
 // TestCopyFileCrossBucket 跨Bucket直接的复制
 func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
-	destBucketName := bucketName + "-desc"
+	destBucketName := bucketName + "-cfcb-desc"
 	srcObjectName := objectNamePrefix + "tcrtr"
 	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -426,7 +426,6 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 
 	// 创建目标Bucket
 	err = s.client.CreateBucket(destBucketName)
-	c.Assert(err, IsNil)
 
 	// 上传源文件
 	err = s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
