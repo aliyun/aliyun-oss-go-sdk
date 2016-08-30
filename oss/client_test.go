@@ -479,7 +479,7 @@ func (s *OssClientSuite) TestGetBucketLocation(c *C) {
 	c.Assert(err, IsNil)
 
 	loc, err := client.GetBucketLocation(bucketNameTest)
-	c.Assert(loc, Equals, "oss-cn-hangzhou")
+	c.Assert(strings.HasPrefix(loc, "oss-"), Equals, true)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -683,8 +683,8 @@ func (s *OssClientSuite) TestBucketRefererNegative(c *C) {
 
 // TestSetBucketLogging
 func (s *OssClientSuite) TestSetBucketLogging(c *C) {
-	var bucketNameTest = bucketNamePrefix + "tsbl"
-	var bucketNameTarget = bucketNamePrefix + "tsblt"
+	var bucketNameTest = bucketNamePrefix + "tsbll"
+	var bucketNameTarget = bucketNamePrefix + "tsbllt"
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -781,8 +781,8 @@ func (s *OssClientSuite) TestDeleteBucketLogging(c *C) {
 
 // TestSetBucketLoggingNegative
 func (s *OssClientSuite) TestSetBucketLoggingNegative(c *C) {
-	var bucketNameTest = bucketNamePrefix + "tsbln"
-	var bucketNameTarget = bucketNamePrefix + "tsblnt"
+	var bucketNameTest = bucketNamePrefix + "tsblnn"
+	var bucketNameTarget = bucketNamePrefix + "tsblnnt"
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -1169,7 +1169,7 @@ func (s *OssClientSuite) TestGetBucketInfo(c *C) {
 	res, err := client.GetBucketInfo(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(res.BucketInfo.Name, Equals, bucketNameTest)
-	c.Assert(strings.HasPrefix(res.BucketInfo.Location, "oss-cn-"), Equals, true)
+	c.Assert(strings.HasPrefix(res.BucketInfo.Location, "oss-"), Equals, true)
 	c.Assert(res.BucketInfo.ACL, Equals, "private")
 	c.Assert(strings.HasSuffix(res.BucketInfo.ExtranetEndpoint, ".com"), Equals, true)
 	c.Assert(strings.HasSuffix(res.BucketInfo.IntranetEndpoint, ".com"), Equals, true)
