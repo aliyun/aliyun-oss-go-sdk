@@ -35,18 +35,18 @@ var (
 	proxyPasswd = os.Getenv("OSS_TEST_PROXY_PASSWORD")
 
 	// sts
-	stsAccessID  = os.Getenv("OSS_TEST_STS_ID")
-	stsAccessKey = os.Getenv("OSS_TEST_STS_KEY")
+	stsaccessID  = os.Getenv("OSS_TEST_STS_ID")
+	stsaccessKey = os.Getenv("OSS_TEST_STS_KEY")
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
 )
 
 const (
 	// prefix of bucket name for bucket ops test
-	bucketNamePrefix = "my-go-bucket-"
+	bucketNamePrefix = "go-sdk-test-bucket-xyz-"
 	// bucket name for object ops test
-	bucketName = "my-go-test-bucket"
+	bucketName = "go-sdk-test-bucket-xyz-for-object"
 	// object name for object ops test
-	objectNamePrefix = "my-go-object-"
+	objectNamePrefix = "go-sdk-test-object-"
 
 	stsRegion = "cn-hangzhou"
 )
@@ -246,8 +246,8 @@ func (s *OssClientSuite) TestDeleteBucketNegative(c *C) {
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	accessID := "<AccessKeyId>"
-	accessKey := "<AccessKeySecret>"
+	accessID := "<accessKeyId>"
+	accessKey := "<accessKeySecret>"
 	clientOtherUser, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
@@ -479,7 +479,7 @@ func (s *OssClientSuite) TestGetBucketLocation(c *C) {
 	c.Assert(err, IsNil)
 
 	loc, err := client.GetBucketLocation(bucketNameTest)
-	c.Assert(loc, Equals, "oss-cn-hangzhou")
+	c.Assert(strings.HasPrefix(loc, "oss-"), Equals, true)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -683,8 +683,8 @@ func (s *OssClientSuite) TestBucketRefererNegative(c *C) {
 
 // TestSetBucketLogging
 func (s *OssClientSuite) TestSetBucketLogging(c *C) {
-	var bucketNameTest = bucketNamePrefix + "tsbl"
-	var bucketNameTarget = bucketNamePrefix + "tsblt"
+	var bucketNameTest = bucketNamePrefix + "tsbll"
+	var bucketNameTarget = bucketNamePrefix + "tsbllt"
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -781,8 +781,8 @@ func (s *OssClientSuite) TestDeleteBucketLogging(c *C) {
 
 // TestSetBucketLoggingNegative
 func (s *OssClientSuite) TestSetBucketLoggingNegative(c *C) {
-	var bucketNameTest = bucketNamePrefix + "tsbln"
-	var bucketNameTarget = bucketNamePrefix + "tsblnt"
+	var bucketNameTest = bucketNamePrefix + "tsblnn"
+	var bucketNameTarget = bucketNamePrefix + "tsblnnt"
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -904,6 +904,7 @@ func (s *OssClientSuite) TestDeleteBucketWebsite(c *C) {
 	err = client.DeleteBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	res, err = client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, NotNil)
 
@@ -953,6 +954,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteNegative(c *C) {
 	err = client.DeleteBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	_, err = client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, NotNil)
 
@@ -1034,6 +1036,7 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	err = client.SetBucketCORS(bucketNameTest, []CORSRule{rule1, rule2})
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	gbcr, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(len(gbcr.CORSRules), Equals, 2)
@@ -1045,6 +1048,7 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	err = client.SetBucketCORS(bucketNameTest, []CORSRule{rule1, rule2})
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	gbcr, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(len(gbcr.CORSRules), Equals, 2)
@@ -1056,7 +1060,7 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSetBucketCORSNegative
+// TestDeleteBucketCORS
 func (s *OssClientSuite) TestDeleteBucketCORS(c *C) {
 	var bucketNameTest = bucketNamePrefix + "tdbc"
 	var rule = CORSRule{
@@ -1089,6 +1093,7 @@ func (s *OssClientSuite) TestDeleteBucketCORS(c *C) {
 	err = client.DeleteBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	_, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, NotNil)
 
@@ -1145,6 +1150,7 @@ func (s *OssClientSuite) TestSetBucketCORSNegative(c *C) {
 	err = client.DeleteBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
+	time.Sleep(5 * time.Second)
 	_, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, NotNil)
 
@@ -1169,7 +1175,7 @@ func (s *OssClientSuite) TestGetBucketInfo(c *C) {
 	res, err := client.GetBucketInfo(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(res.BucketInfo.Name, Equals, bucketNameTest)
-	c.Assert(strings.HasPrefix(res.BucketInfo.Location, "oss-cn-"), Equals, true)
+	c.Assert(strings.HasPrefix(res.BucketInfo.Location, "oss-"), Equals, true)
 	c.Assert(res.BucketInfo.ACL, Equals, "private")
 	c.Assert(strings.HasSuffix(res.BucketInfo.ExtranetEndpoint, ".com"), Equals, true)
 	c.Assert(strings.HasSuffix(res.BucketInfo.IntranetEndpoint, ".com"), Equals, true)
@@ -1234,7 +1240,7 @@ func (s *OssClientSuite) TestEndpointFormat(c *C) {
 func (s *OssClientSuite) _TestCname(c *C) {
 	var bucketNameTest = "<my-bucket-cname>"
 
-	client, err := New("<endpoint>", "<AccessKeyId>", "<AccessKeySecret>", UseCname(true))
+	client, err := New("<endpoint>", "<accessKeyId>", "<accessKeySecret>", UseCname(true))
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)
@@ -1252,7 +1258,7 @@ func (s *OssClientSuite) _TestCname(c *C) {
 func (s *OssClientSuite) _TestCnameNegative(c *C) {
 	var bucketNameTest = "<my-bucket-cname>"
 
-	client, err := New("<endpoint>", "<AccessKeyId>", "<AccessKeySecret>", UseCname(true))
+	client, err := New("<endpoint>", "<accessKeyId>", "<accessKeySecret>", UseCname(true))
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)
@@ -1269,7 +1275,7 @@ func (s *OssClientSuite) _TestCnameNegative(c *C) {
 func (s *OssClientSuite) _TestHTTPS(c *C) {
 	var bucketNameTest = "<my-bucket-https>"
 
-	client, err := New("<endpoint>", "<AccessKeyId>", "<AccessKeySecret>")
+	client, err := New("<endpoint>", "<accessKeyId>", "<accessKeySecret>")
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)
