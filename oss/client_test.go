@@ -1060,7 +1060,7 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSetBucketCORSNegative
+// TestDeleteBucketCORS
 func (s *OssClientSuite) TestDeleteBucketCORS(c *C) {
 	var bucketNameTest = bucketNamePrefix + "tdbc"
 	var rule = CORSRule{
