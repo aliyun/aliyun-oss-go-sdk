@@ -1,4 +1,5 @@
 # Aliyun OSS SDK for Go
+[![GitHub version](https://badge.fury.io/gh/aliyun%2Faliyun-oss-go-sdk.svg)](https://badge.fury.io/gh/aliyun%2Faliyun-oss-go-sdk)
 [![Build Status](https://travis-ci.org/aliyun/aliyun-oss-go-sdk.svg?branch=master)](https://travis-ci.org/aliyun/aliyun-oss-go-sdk)
 [![Coverage Status](https://coveralls.io/repos/github/aliyun/aliyun-oss-go-sdk/badge.svg?branch=master)](https://coveralls.io/github/aliyun/aliyun-oss-go-sdk?branch=master)
 ## 关于
