@@ -2,8 +2,13 @@ package oss
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/base64"
 	"encoding/xml"
+	"hash"
+	"hash/crc64"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,8 +37,15 @@ func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Op
 	if err != nil {
 		return err
 	}
-
 	defer resp.body.Close()
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "PutObject")
+		if err != nil {
+			return err
+		}
+	}
+
 	return checkRespCode(resp.statusCode, []int{http.StatusOK})
 }
 
@@ -60,6 +72,14 @@ func (bucket Bucket) PutObjectFromFile(objectKey, filePath string, options ...Op
 		return err
 	}
 	defer resp.body.Close()
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "PutObjectFromFile")
+		if err != nil {
+			return err
+		}
+	}
+
 	return checkRespCode(resp.statusCode, []int{http.StatusOK})
 }
 
@@ -83,6 +103,35 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 }
 
 //
+// GetObjectWithCRC 下载文件同时计算CRC。
+//
+// objectKey 下载的文件名称。
+// options   对象的属性限制项，可选值有Range、IfModifiedSince、IfUnmodifiedSince、IfMatch、
+// IfNoneMatch、AcceptEncoding，详细请参考
+// https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
+//
+// io.ReadCloser  body，文件内容，读取数据后需要close。error为nil时有效。
+// hash.Hash64 clientCRCCalculator，读取数据的CRC计算器。数据读取介绍通过clientCRCCalculator.Sum64()获取。
+// int64 serverCRC 服务器端存储数据的CRC值。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) GetObjectWithCRC(objectKey string, options ...Option) (body io.ReadCloser, clientCRCCalculator hash.Hash64, serverCRC uint64, err error) {
+	resp, err := bucket.do("GET", objectKey, "", "", options, nil)
+	if err != nil {
+		return
+	}
+
+	body = resp.body
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		serverCRC = resp.serverCRC
+		clientCRCCalculator = crc64.New(crcTable())
+		body = ioutil.NopCloser(io.TeeReader(body, clientCRCCalculator))
+	}
+	return
+}
+
+//
 // GetObjectToFile 下载文件。
 //
 // objectKey  下载的文件名称。
@@ -97,7 +146,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 		return err
 	}
 	defer resp.body.Close()
-	
+
 	// 如果文件不存在则创建，存在则清空
 	fd, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 	if err != nil {
@@ -105,9 +154,27 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	}
 	defer fd.Close()
 
-	_, err = io.Copy(fd, resp.body)
+	// 读取数据同时计算CRC
+	body := resp.body
+	var crc hash.Hash64
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		crc = crc64.New(crcTable())
+		body = ioutil.NopCloser(io.TeeReader(body, crc))
+	}
+
+	_, err = io.Copy(fd, body)
 	if err != nil {
 		return err
+	}
+
+	// 比较CRC值
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		resp.clientCRC = crc.Sum64()
+		err = checkCRC(resp, "GetObjectToFile")
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -171,7 +238,7 @@ func (bucket Bucket) CopyObjectFrom(srcBucketName, srcObjectKey, destObjectKey s
 		return out, err
 	}
 
-	return srcBucket.copy(srcObjectKey, destBucketName, destObjectKey, options...);
+	return srcBucket.copy(srcObjectKey, destBucketName, destObjectKey, options...)
 }
 
 func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
@@ -272,6 +339,9 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 
 	contentType := http.DetectContentType(buffer.Bytes())
 	options = append(options, ContentType(contentType))
+	sum := md5.Sum(bs)
+	b64 := base64.StdEncoding.EncodeToString(sum[:])
+	options = append(options, ContentMD5(b64))
 	resp, err := bucket.do("POST", "", "delete"+encode, "delete", options, buffer)
 	if err != nil {
 		return out, err

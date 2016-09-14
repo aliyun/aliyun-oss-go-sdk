@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"hash/crc64"
 	"net/http"
 	"os"
 	"os/exec"
@@ -156,4 +157,9 @@ func GetPartEnd(begin int64, total int64, per int64) int64 {
 		return total - 1
 	}
 	return begin + per - 1
+}
+
+// crcTable returns the Table constructed from the specified polynomial
+var crcTable = func() *crc64.Table {
+	return crc64.MakeTable(crc64.ECMA)
 }
