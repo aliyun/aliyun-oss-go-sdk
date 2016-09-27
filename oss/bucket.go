@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 )
@@ -195,7 +196,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 //
 func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
-	options = append(options, CopySource(bucket.BucketName, srcObjectKey))
+	options = append(options, CopySource(bucket.BucketName, url.QueryEscape(srcObjectKey)))
 	resp, err := bucket.do("PUT", destObjectKey, "", "", options, nil)
 	if err != nil {
 		return out, err
@@ -243,7 +244,7 @@ func (bucket Bucket) CopyObjectFrom(srcBucketName, srcObjectKey, destObjectKey s
 
 func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
-	options = append(options, CopySource(bucket.BucketName, srcObjectKey))
+	options = append(options, CopySource(bucket.BucketName, url.QueryEscape(srcObjectKey)))
 	headers := make(map[string]string)
 	err := handleOptions(headers, options)
 	if err != nil {
