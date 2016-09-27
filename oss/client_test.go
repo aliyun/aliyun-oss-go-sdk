@@ -1319,6 +1319,10 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	c.Assert(client.Conn.config.IsAuthProxy, Equals, true)
 	c.Assert(client.Conn.config.ProxyUser, Equals, proxyUser)
 	c.Assert(client.Conn.config.ProxyPassword, Equals, proxyPasswd)
+
+	client, err = New(endpoint, accessID, accessKey, UserAgent("go sdk user agent"))
+
+	c.Assert(client.Conn.config.UserAgent, Equals, "go sdk user agent")
 }
 
 // _TestProxy

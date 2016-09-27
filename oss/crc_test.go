@@ -3,6 +3,7 @@ package oss
 import (
 	"crypto/md5"
 	"encoding/base64"
+	"hash/crc64"
 	"io"
 	"io/ioutil"
 	"os"
@@ -72,13 +73,65 @@ func (s *OssCrcSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestCRCGolden 测试OSS实现的CRC64
+func (s *OssCrcSuite) TestCRCGolden(c *C) {
+	type crcTest struct {
+		out uint64
+		in  string
+	}
+
+	var crcGolden = []crcTest{
+		{0x0, ""},
+		{0x3420000000000000, "a"},
+		{0x36c4200000000000, "ab"},
+		{0x3776c42000000000, "abc"},
+		{0x336776c420000000, "abcd"},
+		{0x32d36776c4200000, "abcde"},
+		{0x3002d36776c42000, "abcdef"},
+		{0x31b002d36776c420, "abcdefg"},
+		{0xe21b002d36776c4, "abcdefgh"},
+		{0x8b6e21b002d36776, "abcdefghi"},
+		{0x7f5b6e21b002d367, "abcdefghij"},
+		{0x8ec0e7c835bf9cdf, "Discard medicine more than two years old."},
+		{0xc7db1759e2be5ab4, "He who has a shady past knows that nice guys finish last."},
+		{0xfbf9d9603a6fa020, "I wouldn't marry him with a ten foot pole."},
+		{0xeafc4211a6daa0ef, "Free! Free!/A trip/to Mars/for 900/empty jars/Burma Shave"},
+		{0x3e05b21c7a4dc4da, "The days of the digital watch are numbered.  -Tom Stoppard"},
+		{0x5255866ad6ef28a6, "Nepal premier won't resign."},
+		{0x8a79895be1e9c361, "For every action there is an equal and opposite government program."},
+		{0x8878963a649d4916, "His money is twice tainted: 'taint yours and 'taint mine."},
+		{0xa7b9d53ea87eb82f, "There is no reason for any individual to have a computer in their home. -Ken Olsen, 1977"},
+		{0xdb6805c0966a2f9c, "It's a tiny change to the code and not completely disgusting. - Bob Manchek"},
+		{0xf3553c65dacdadd2, "size:  a.out:  bad magic"},
+		{0x9d5e034087a676b9, "The major problem is with sendmail.  -Mark Horton"},
+		{0xa6db2d7f8da96417, "Give me a rock, paper and scissors and I will move the world.  CCFestoon"},
+		{0x325e00cd2fe819f9, "If the enemy is within range, then so are you."},
+		{0x88c6600ce58ae4c6, "It's well we cannot hear the screams/That we create in others' dreams."},
+		{0x28c4a3f3b769e078, "You remind me of a TV show, but that's all right: I watch it anyway."},
+		{0xa698a34c9d9f1dca, "C is as portable as Stonehedge!!"},
+		{0xf6c1e2a8c26c5cfc, "Even if I could be Shakespeare, I think I should still choose to be Faraday. - A. Huxley"},
+		{0xd402559dfe9b70c, "The fugacity of a constituent in a mixture of gases at a given temperature is proportional to its mole fraction.  Lewis-Randall Rule"},
+		{0xdb6efff26aa94946, "How can you write a big system without C++?  -Paul Glick"},
+	}
+
+	var tab = crc64.MakeTable(crc64.ISO)
+
+	for i := 0; i < len(crcGolden); i++ {
+		golden := crcGolden[i]
+		crc := NewCRC(tab, 0)
+		io.WriteString(crc, golden.in)
+		sum := crc.Sum64()
+
+		c.Assert(sum, Equals, golden.out)
+	}
+}
+
 // TestEnableCRCAndMD5 开启MD5和CRC校验
 func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-2.jpg"
-	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
-		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+	objectValue := "空山新雨后，天气晚来秋。明月松间照，清泉石上流。竹喧归浣女，莲动下渔舟。随意春芳歇，王孙自可留。"
 
 	client, err := New(endpoint, accessID, accessKey, EnableCRC(true), EnableMD5(true), MD5ThresholdCalcInMemory(200*1024))
 	c.Assert(err, IsNil)
@@ -123,6 +176,18 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	var nextPos int64
 	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
 	c.Assert(err, IsNil)
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	nextPos = 0
+	var initCRC uint64
+	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	c.Assert(err, IsNil)
+	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
@@ -159,8 +224,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-3.jpg"
-	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
-		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+	objectValue := "中岁颇好道，晚家南山陲。兴来每独往，胜事空自知。行到水穷处，坐看云起时。偶然值林叟，谈笑无还期。"
 
 	client, err := New(endpoint, accessID, accessKey, EnableCRC(false), EnableMD5(false))
 	c.Assert(err, IsNil)
@@ -204,6 +268,18 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	var nextPos int64
 	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
 	c.Assert(err, IsNil)
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	nextPos = 0
+	var initCRC uint64
+	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	c.Assert(err, IsNil)
+	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
@@ -239,8 +315,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
-		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+	objectValue := "积雨空林烟火迟，蒸藜炊黍饷东菑。漠漠水田飞白鹭，阴阴夏木啭黄鹂。山中习静观朝槿，松下清斋折露葵。野老与人争席罢，海鸥何事更相疑。"
 
 	mh := md5.Sum([]byte(objectValue))
 	md5B64 := base64.StdEncoding.EncodeToString(mh[:])
@@ -262,7 +337,19 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 
 	// AppendObject
 	var nextPos int64
-	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos, ContentMD5(md5B64))
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
+	c.Assert(err, IsNil)
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	nextPos = 0
+	var initCRC uint64
+	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	c.Assert(err, IsNil)
+	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
@@ -283,4 +370,18 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	// DeleteObject
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
+}
+
+// TestCopyObjectToOrFromNegative
+func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
+	objectName := objectNamePrefix + "taoncrc"
+	objectValue := "空山不见人，但闻人语响。返影入深林，复照青苔上。"
+	var nextPos int64
+	var initCRC uint64
+
+	nextPos, initCRC, err := s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	c.Assert(err, IsNil)
+
+	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC-1)
+	c.Assert(err, NotNil)
 }

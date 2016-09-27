@@ -250,7 +250,7 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 	if err != nil {
 		return out, err
 	}
-	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, "", "", headers, nil)
+	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, "", "", headers, nil, 0)
 	if err != nil {
 		return out, err
 	}
@@ -273,8 +273,8 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 // appendPosition  object追加的起始位置。
 // destObjectProperties  第一次追加时指定新对象的属性，如CacheControl、ContentDisposition、ContentEncoding、
 // Expires、ServerSideEncryption、ObjectACL。
-// int64 下次追加的开始位置，error为nil空时有效。
 //
+// int64 下次追加的开始位置，error为nil空时有效。
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosition int64, options ...Option) (int64, error) {
@@ -283,16 +283,63 @@ func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosi
 	opts := addContentType(options, objectKey)
 	resp, err := bucket.do("POST", objectKey, params, params, opts, reader)
 	if err != nil {
-		return nextAppendPosition, err
+		return appendPosition, err
 	}
 	defer resp.body.Close()
 
-	napint, err := strconv.Atoi(resp.headers.Get(HTTPHeaderOssNextAppendPosition))
+	nextAppendPosition, err = strconv.ParseInt(resp.headers.Get(HTTPHeaderOssNextAppendPosition), 10, 64)
 	if err != nil {
 		return nextAppendPosition, err
 	}
-	nextAppendPosition = int64(napint)
+
 	return nextAppendPosition, nil
+}
+
+//
+// AppendObjectWithCRC 追加方式上传。
+//
+// AppendObject参数必须包含position，其值指定从何处进行追加。首次追加操作的position必须为0，
+// 后续追加操作的position是Object的当前长度。例如，第一次Append Object请求指定position值为0，
+// content-length是65536；那么，第二次Append Object需要指定position为65536。
+// 每次操作成功后，响应头部x-oss-next-append-position也会标明下一次追加的position。
+//
+// objectKey  需要追加的Object。
+// reader     io.Reader，读取追的内容。
+// appendPosition  object追加的起始位置。
+// initCRC  上次追加的返回的CRC校验值，第一次填0。
+// destObjectProperties  第一次追加时指定新对象的属性，如CacheControl、ContentDisposition、ContentEncoding、
+// Expires、ServerSideEncryption、ObjectACL。
+//
+// int64 下次追加的开始位置，error为nil空时有效。
+// int64 本次追加后文件的CRC值，作为下次的初始化值。
+// error 操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) AppendObjectWithCRC(objectKey string, reader io.Reader, appendPosition int64, initCRC uint64, options ...Option) (int64, uint64, error) {
+	var nextAppendPosition int64
+	params := "append&position=" + strconv.Itoa(int(appendPosition))
+	opts := addContentType(options, objectKey)
+	headers := make(map[string]string)
+
+	handleOptions(headers, opts)
+	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, objectKey, params, params, headers, reader, initCRC)
+	if err != nil {
+		return nextAppendPosition, initCRC, err
+	}
+	defer resp.body.Close()
+
+	nextAppendPosition, err = strconv.ParseInt(resp.headers.Get(HTTPHeaderOssNextAppendPosition), 10, 64)
+	if err != nil {
+		return nextAppendPosition, initCRC, err
+	}
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "AppendObject")
+		if err != nil {
+			return nextAppendPosition, resp.serverCRC, err
+		}
+	}
+
+	return nextAppendPosition, resp.serverCRC, nil
 }
 
 //
@@ -531,14 +578,13 @@ func (bucket Bucket) do(method, objectName, urlParams, subResource string,
 		return nil, err
 	}
 	return bucket.Client.Conn.Do(method, bucket.BucketName, objectName,
-		urlParams, subResource, headers, data)
+		urlParams, subResource, headers, data, 0)
 }
 
 func (bucket Bucket) getConfig() *Config {
 	return bucket.Client.Config
 }
 
-// Private
 func addContentType(options []Option, keys ...string) []Option {
 	typ := TypeByExtension("")
 	for _, key := range keys {

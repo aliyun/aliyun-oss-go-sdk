@@ -690,6 +690,17 @@ func EnableCRC(isEnableCRC bool) ClientOption {
 }
 
 //
+// UserAgent 指定UserAgent，默认如下aliyun-sdk-go/1.2.0 (windows/-/amd64;go1.5.2)。
+//
+// userAgent user agent字符串。
+//
+func UserAgent(userAgent string) ClientOption {
+	return func(client *Client) {
+		client.Config.UserAgent = userAgent
+	}
+}
+
+//
 // Proxy 设置代理服务器，默认不使用代理。
 //
 // proxyHost 代理服务器地址，格式是host或host:port
@@ -724,5 +735,5 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 func (client Client) do(method, bucketName, urlParams, subResource string,
 	headers map[string]string, data io.Reader) (*Response, error) {
 	return client.Conn.Do(method, bucketName, "", urlParams,
-		subResource, headers, data)
+		subResource, headers, data, 0)
 }
