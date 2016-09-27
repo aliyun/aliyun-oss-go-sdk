@@ -384,4 +384,5 @@ func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
 
 	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC-1)
 	c.Assert(err, NotNil)
+	c.Assert(strings.HasPrefix(err.Error(), "oss: the crc"), Equals, true)
 }
