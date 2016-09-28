@@ -5,6 +5,7 @@ package oss
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -247,6 +248,8 @@ func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule
 	buffer := new(bytes.Buffer)
 	buffer.Write(bs)
 
+	fmt.Println("xml:", string(bs))
+
 	contentType := http.DetectContentType(buffer.Bytes())
 	headers := map[string]string{}
 	headers[HTTPHeaderContentType] = contentType
@@ -395,6 +398,7 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 
 	buffer := new(bytes.Buffer)
 	buffer.Write(bs)
+	fmt.Println(isEnable, "; xml: ", string(bs))
 
 	contentType := http.DetectContentType(buffer.Bytes())
 	headers := map[string]string{}
@@ -646,7 +650,7 @@ func Timeout(connectTimeoutSec, readWriteTimeout int64) ClientOption {
 }
 
 //
-// SecurityToken 临时用户设置SecurityToken。
+// SecurityToken 临时用户设置SecurityToken
 //
 // token STS token
 //
@@ -659,44 +663,11 @@ func SecurityToken(token string) ClientOption {
 //
 // EnableMD5 是否启用MD5校验，默认启用。
 //
-// isEnableMD5 true启用MD5校验，false不启用MD5校验
+// isEnableMD5 true启用MD5校验，false不启用MD5校验，默认true
 //
 func EnableMD5(isEnableMD5 bool) ClientOption {
 	return func(client *Client) {
 		client.Config.IsEnableMD5 = isEnableMD5
-	}
-}
-
-//
-// MD5ThresholdCalcInMemory 使用内存计算MD5值的上限，默认16MB。
-//
-// threshold 单位Byte。上传内容小于threshold在MD5在内存中计算，大于使用临时文件计算MD5
-//
-func MD5ThresholdCalcInMemory(threshold int64) ClientOption {
-	return func(client *Client) {
-		client.Config.MD5Threshold = threshold
-	}
-}
-
-//
-// EnableCRC 上传是否启用CRC校验，默认启用。
-//
-// isEnableCRC true启用CRC校验，false不启用CRC校验
-//
-func EnableCRC(isEnableCRC bool) ClientOption {
-	return func(client *Client) {
-		client.Config.IsEnableCRC = isEnableCRC
-	}
-}
-
-//
-// UserAgent 指定UserAgent，默认如下aliyun-sdk-go/1.2.0 (windows/-/amd64;go1.5.2)。
-//
-// userAgent user agent字符串。
-//
-func UserAgent(userAgent string) ClientOption {
-	return func(client *Client) {
-		client.Config.UserAgent = userAgent
 	}
 }
 
@@ -735,5 +706,5 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 func (client Client) do(method, bucketName, urlParams, subResource string,
 	headers map[string]string, data io.Reader) (*Response, error) {
 	return client.Conn.Do(method, bucketName, "", urlParams,
-		subResource, headers, data, 0)
+		subResource, headers, data)
 }

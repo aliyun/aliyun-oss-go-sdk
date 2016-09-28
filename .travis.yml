@@ -10,7 +10,7 @@ install:
 - go get gopkg.in/check.v1
 script:
 - cd oss
-- travis_wait 30 go test -v -covermode=count -coverprofile=coverage.out -timeout=30m
+- go test -v -covermode=count -coverprofile=coverage.out -timeout=30m
 - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci
 env:
   global:

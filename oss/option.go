@@ -65,11 +65,6 @@ func ContentEncoding(value string) Option {
 	return setHeader(HTTPHeaderContentEncoding, value)
 }
 
-// ContentMD5 is an option to set Content-MD5 header
-func ContentMD5(value string) Option {
-	return setHeader(HTTPHeaderContentMD5, value)
-}
-
 // Expires is an option to set Expires header
 func Expires(t time.Time) Option {
 	return setHeader(HTTPHeaderExpires, t.Format(http.TimeFormat))
@@ -321,20 +316,4 @@ func findOption(options []Option, param, defaultVal string) (string, error) {
 		return val.Value, nil
 	}
 	return defaultVal, nil
-}
-
-func isOptionSet(options []Option, option string) (bool, string, error) {
-	params := map[string]optionValue{}
-	for _, option := range options {
-		if option != nil {
-			if err := option(params); err != nil {
-				return false, "", err
-			}
-		}
-	}
-
-	if val, ok := params[option]; ok {
-		return true, val.Value, nil
-	}
-	return false, "", nil
 }

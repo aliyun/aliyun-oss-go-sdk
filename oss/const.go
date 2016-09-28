@@ -68,7 +68,6 @@ const (
 	HTTPHeaderOssMetadataDirective           = "X-Oss-Metadata-Directive"
 	HTTPHeaderOssNextAppendPosition          = "X-Oss-Next-Append-Position"
 	HTTPHeaderOssRequestID                   = "X-Oss-Request-Id"
-	HTTPHeaderOssCRC64                       = "X-Oss-Hash-Crc64ecma"
 )
 
 // 其它常量
@@ -76,7 +75,5 @@ const (
 	MaxPartSize = 5 * 1024 * 1024 * 1024 // 文件片最大值，5GB
 	MinPartSize = 100 * 1024             // 文件片最小值，100KB
 
-	TempFilePrefix = "oss-go-temp-" // 临时文件前缀
-
-	Version = "1.2.0" // Go sdk版本
+	Version = "1.1.0" // Go sdk版本
 )

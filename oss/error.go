@@ -20,7 +20,7 @@ type ServiceError struct {
 
 // Implement interface error
 func (e ServiceError) Error() string {
-	return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=%s, RequestId=%s",
+	return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=%s, RequestId=%s", 
 		e.StatusCode, e.Code, e.Message, e.RequestID)
 }
 
@@ -58,25 +58,4 @@ func checkRespCode(respCode int, allowed []int) error {
 		}
 	}
 	return UnexpectedStatusCodeError{allowed, respCode}
-}
-
-// CRCCheckError is returned when crc check is inconsistent between client and server
-type CRCCheckError struct {
-	clientCRC uint64 // 客户端计算的CRC64值
-	serverCRC uint64 // 服务端计算的CRC64值
-	operation string // 上传操作，如PutObject/AppendObject/UploadPart等
-	requestID string // 本次操作的RequestID
-}
-
-// Implement interface error
-func (e CRCCheckError) Error() string {
-	return fmt.Sprintf("oss: the crc of %s is inconsistent, client %d but server %d; request id is %s",
-		e.operation, e.clientCRC, e.serverCRC, e.requestID)
-}
-
-func checkCRC(resp *Response, operation string) error {
-	if resp.clientCRC == resp.serverCRC {
-		return nil
-	}
-	return CRCCheckError{resp.clientCRC, resp.serverCRC, operation, resp.headers.Get(HTTPHeaderOssRequestID)}
 }
