@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"net"
@@ -28,18 +29,20 @@ type Response struct {
 	statusCode int
 	headers    http.Header
 	body       io.ReadCloser
+	clientCRC  uint64
+	serverCRC  uint64
 }
 
 // Do 处理请求，返回响应结果。
 func (conn Conn) Do(method, bucketName, objectName, urlParams, subResource string,
-	headers map[string]string, data io.Reader) (*Response, error) {
+	headers map[string]string, data io.Reader, initCRC uint64) (*Response, error) {
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
 	resource := conn.url.getResource(bucketName, objectName, subResource)
-	return conn.doRequest(method, uri, resource, headers, data)
+	return conn.doRequest(method, uri, resource, headers, data, initCRC)
 }
 
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string,
-	headers map[string]string, data io.Reader) (*Response, error) {
+	headers map[string]string, data io.Reader, initCRC uint64) (*Response, error) {
 	httpTimeOut := conn.config.HTTPTimeout
 	method = strings.ToUpper(method)
 	if !conn.config.IsUseProxy {
@@ -54,7 +57,14 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		Header:     make(http.Header),
 		Host:       uri.Host,
 	}
-	conn.handleBody(req, data)
+
+	fd, crc := conn.handleBody(req, data, initCRC)
+	if fd != nil {
+		defer func() {
+			fd.Close()
+			os.Remove(fd.Name())
+		}()
+	}
 
 	date := time.Now().UTC().Format(http.TimeFormat)
 	req.Header.Set(HTTPHeaderDate, date)
@@ -120,16 +130,16 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		return nil, err
 	}
 
-	return conn.handleResponse(resp)
+	return conn.handleResponse(resp, crc)
 }
 
 // handle request body
-func (conn Conn) handleBody(req *http.Request, body io.Reader) {
-	rc, ok := body.(io.ReadCloser)
-	if !ok && body != nil {
-		rc = ioutil.NopCloser(body)
-	}
-	req.Body = rc
+func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64) (*os.File, hash.Hash64) {
+	var file *os.File
+	var crc hash.Hash64
+	reader := body
+
+	// length
 	switch v := body.(type) {
 	case *bytes.Buffer:
 		req.ContentLength = int64(v.Len())
@@ -143,13 +153,43 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader) {
 	req.Header.Set(HTTPHeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
 
 	// md5
-	if req.Body != nil && conn.config.IsEnableMD5 {
-		buf, _ := ioutil.ReadAll(req.Body)
-		req.Body = ioutil.NopCloser(bytes.NewReader(buf))
-		sum := md5.Sum(buf)
-		b64 := base64.StdEncoding.EncodeToString(sum[:])
-		req.Header.Set(HTTPHeaderContentMD5, b64)
+	if body != nil && conn.config.IsEnableMD5 && req.Header.Get(HTTPHeaderContentMD5) == "" {
+		if req.ContentLength == 0 || req.ContentLength > conn.config.MD5Threshold {
+			// huge body, use temporary file
+			file, _ = ioutil.TempFile(os.TempDir(), TempFilePrefix)
+			if file != nil {
+				io.Copy(file, body)
+				file.Seek(0, os.SEEK_SET)
+				md5 := md5.New()
+				io.Copy(md5, file)
+				sum := md5.Sum(nil)
+				b64 := base64.StdEncoding.EncodeToString(sum[:])
+				req.Header.Set(HTTPHeaderContentMD5, b64)
+				file.Seek(0, os.SEEK_SET)
+				reader = file
+			}
+		} else {
+			// small body, use memory
+			buf, _ := ioutil.ReadAll(body)
+			sum := md5.Sum(buf)
+			b64 := base64.StdEncoding.EncodeToString(sum[:])
+			req.Header.Set(HTTPHeaderContentMD5, b64)
+			reader = bytes.NewReader(buf)
+		}
 	}
+
+	if reader != nil && conn.config.IsEnableCRC {
+		crc = NewCRC(crcTable(), initCRC)
+		reader = io.TeeReader(reader, crc)
+	}
+
+	rc, ok := reader.(io.ReadCloser)
+	if !ok && reader != nil {
+		rc = ioutil.NopCloser(reader)
+	}
+	req.Body = rc
+
+	return file, crc
 }
 
 func tryGetFileSize(f *os.File) int64 {
@@ -158,7 +198,10 @@ func tryGetFileSize(f *os.File) int64 {
 }
 
 // handle response
-func (conn Conn) handleResponse(resp *http.Response) (*Response, error) {
+func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response, error) {
+	var cliCRC uint64
+	var srvCRC uint64
+
 	statusCode := resp.StatusCode
 	if statusCode >= 400 && statusCode <= 505 {
 		// 4xx and 5xx indicate that the operation has error occurred
@@ -183,7 +226,7 @@ func (conn Conn) handleResponse(resp *http.Response) (*Response, error) {
 		return &Response{
 			statusCode: resp.StatusCode,
 			headers:    resp.Header,
-			body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body//
+			body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body
 		}, err
 	} else if statusCode >= 300 && statusCode <= 307 {
 		// oss use 3xx, but response has no body
@@ -195,11 +238,18 @@ func (conn Conn) handleResponse(resp *http.Response) (*Response, error) {
 		}, err
 	}
 
+	if conn.config.IsEnableCRC && crc != nil {
+		cliCRC = crc.Sum64()
+	}
+	srvCRC, _ = strconv.ParseUint(resp.Header.Get(HTTPHeaderOssCRC64), 10, 64)
+
 	// 2xx, successful
 	return &Response{
 		statusCode: resp.StatusCode,
 		headers:    resp.Header,
 		body:       resp.Body,
+		clientCRC:  cliCRC,
+		serverCRC:  srvCRC,
 	}, nil
 }
 

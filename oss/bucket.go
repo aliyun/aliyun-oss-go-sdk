@@ -2,9 +2,15 @@ package oss
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/base64"
 	"encoding/xml"
+	"hash"
+	"hash/crc64"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 )
@@ -32,8 +38,15 @@ func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Op
 	if err != nil {
 		return err
 	}
-
 	defer resp.body.Close()
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "PutObject")
+		if err != nil {
+			return err
+		}
+	}
+
 	return checkRespCode(resp.statusCode, []int{http.StatusOK})
 }
 
@@ -60,6 +73,14 @@ func (bucket Bucket) PutObjectFromFile(objectKey, filePath string, options ...Op
 		return err
 	}
 	defer resp.body.Close()
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "PutObjectFromFile")
+		if err != nil {
+			return err
+		}
+	}
+
 	return checkRespCode(resp.statusCode, []int{http.StatusOK})
 }
 
@@ -83,6 +104,35 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 }
 
 //
+// GetObjectWithCRC 下载文件同时计算CRC。
+//
+// objectKey 下载的文件名称。
+// options   对象的属性限制项，可选值有Range、IfModifiedSince、IfUnmodifiedSince、IfMatch、
+// IfNoneMatch、AcceptEncoding，详细请参考
+// https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
+//
+// io.ReadCloser  body，文件内容，读取数据后需要close。error为nil时有效。
+// hash.Hash64 clientCRCCalculator，读取数据的CRC计算器。数据读取介绍通过clientCRCCalculator.Sum64()获取。
+// int64 serverCRC 服务器端存储数据的CRC值。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) GetObjectWithCRC(objectKey string, options ...Option) (body io.ReadCloser, clientCRCCalculator hash.Hash64, serverCRC uint64, err error) {
+	resp, err := bucket.do("GET", objectKey, "", "", options, nil)
+	if err != nil {
+		return
+	}
+
+	body = resp.body
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		serverCRC = resp.serverCRC
+		clientCRCCalculator = crc64.New(crcTable())
+		body = ioutil.NopCloser(io.TeeReader(body, clientCRCCalculator))
+	}
+	return
+}
+
+//
 // GetObjectToFile 下载文件。
 //
 // objectKey  下载的文件名称。
@@ -97,7 +147,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 		return err
 	}
 	defer resp.body.Close()
-	
+
 	// 如果文件不存在则创建，存在则清空
 	fd, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 	if err != nil {
@@ -105,9 +155,27 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	}
 	defer fd.Close()
 
-	_, err = io.Copy(fd, resp.body)
+	// 读取数据同时计算CRC
+	body := resp.body
+	var crc hash.Hash64
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		crc = crc64.New(crcTable())
+		body = ioutil.NopCloser(io.TeeReader(body, crc))
+	}
+
+	_, err = io.Copy(fd, body)
 	if err != nil {
 		return err
+	}
+
+	// 比较CRC值
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		resp.clientCRC = crc.Sum64()
+		err = checkCRC(resp, "GetObjectToFile")
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -128,7 +196,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 //
 func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
-	options = append(options, CopySource(bucket.BucketName, srcObjectKey))
+	options = append(options, CopySource(bucket.BucketName, url.QueryEscape(srcObjectKey)))
 	resp, err := bucket.do("PUT", destObjectKey, "", "", options, nil)
 	if err != nil {
 		return out, err
@@ -171,18 +239,18 @@ func (bucket Bucket) CopyObjectFrom(srcBucketName, srcObjectKey, destObjectKey s
 		return out, err
 	}
 
-	return srcBucket.copy(srcObjectKey, destBucketName, destObjectKey, options...);
+	return srcBucket.copy(srcObjectKey, destBucketName, destObjectKey, options...)
 }
 
 func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
-	options = append(options, CopySource(bucket.BucketName, srcObjectKey))
+	options = append(options, CopySource(bucket.BucketName, url.QueryEscape(srcObjectKey)))
 	headers := make(map[string]string)
 	err := handleOptions(headers, options)
 	if err != nil {
 		return out, err
 	}
-	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, "", "", headers, nil)
+	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, "", "", headers, nil, 0)
 	if err != nil {
 		return out, err
 	}
@@ -205,8 +273,8 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 // appendPosition  object追加的起始位置。
 // destObjectProperties  第一次追加时指定新对象的属性，如CacheControl、ContentDisposition、ContentEncoding、
 // Expires、ServerSideEncryption、ObjectACL。
-// int64 下次追加的开始位置，error为nil空时有效。
 //
+// int64 下次追加的开始位置，error为nil空时有效。
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosition int64, options ...Option) (int64, error) {
@@ -215,16 +283,63 @@ func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosi
 	opts := addContentType(options, objectKey)
 	resp, err := bucket.do("POST", objectKey, params, params, opts, reader)
 	if err != nil {
-		return nextAppendPosition, err
+		return appendPosition, err
 	}
 	defer resp.body.Close()
 
-	napint, err := strconv.Atoi(resp.headers.Get(HTTPHeaderOssNextAppendPosition))
+	nextAppendPosition, err = strconv.ParseInt(resp.headers.Get(HTTPHeaderOssNextAppendPosition), 10, 64)
 	if err != nil {
 		return nextAppendPosition, err
 	}
-	nextAppendPosition = int64(napint)
+
 	return nextAppendPosition, nil
+}
+
+//
+// AppendObjectWithCRC 追加方式上传。
+//
+// AppendObject参数必须包含position，其值指定从何处进行追加。首次追加操作的position必须为0，
+// 后续追加操作的position是Object的当前长度。例如，第一次Append Object请求指定position值为0，
+// content-length是65536；那么，第二次Append Object需要指定position为65536。
+// 每次操作成功后，响应头部x-oss-next-append-position也会标明下一次追加的position。
+//
+// objectKey  需要追加的Object。
+// reader     io.Reader，读取追的内容。
+// appendPosition  object追加的起始位置。
+// initCRC  上次追加的返回的CRC校验值，第一次填0。
+// destObjectProperties  第一次追加时指定新对象的属性，如CacheControl、ContentDisposition、ContentEncoding、
+// Expires、ServerSideEncryption、ObjectACL。
+//
+// int64 下次追加的开始位置，error为nil空时有效。
+// int64 本次追加后文件的CRC值，作为下次的初始化值。
+// error 操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) AppendObjectWithCRC(objectKey string, reader io.Reader, appendPosition int64, initCRC uint64, options ...Option) (int64, uint64, error) {
+	var nextAppendPosition int64
+	params := "append&position=" + strconv.Itoa(int(appendPosition))
+	opts := addContentType(options, objectKey)
+	headers := make(map[string]string)
+
+	handleOptions(headers, opts)
+	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, objectKey, params, params, headers, reader, initCRC)
+	if err != nil {
+		return nextAppendPosition, initCRC, err
+	}
+	defer resp.body.Close()
+
+	nextAppendPosition, err = strconv.ParseInt(resp.headers.Get(HTTPHeaderOssNextAppendPosition), 10, 64)
+	if err != nil {
+		return nextAppendPosition, initCRC, err
+	}
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "AppendObject")
+		if err != nil {
+			return nextAppendPosition, resp.serverCRC, err
+		}
+	}
+
+	return nextAppendPosition, resp.serverCRC, nil
 }
 
 //
@@ -272,6 +387,9 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 
 	contentType := http.DetectContentType(buffer.Bytes())
 	options = append(options, ContentType(contentType))
+	sum := md5.Sum(bs)
+	b64 := base64.StdEncoding.EncodeToString(sum[:])
+	options = append(options, ContentMD5(b64))
 	resp, err := bucket.do("POST", "", "delete"+encode, "delete", options, buffer)
 	if err != nil {
 		return out, err
@@ -460,14 +578,13 @@ func (bucket Bucket) do(method, objectName, urlParams, subResource string,
 		return nil, err
 	}
 	return bucket.Client.Conn.Do(method, bucket.BucketName, objectName,
-		urlParams, subResource, headers, data)
+		urlParams, subResource, headers, data, 0)
 }
 
 func (bucket Bucket) getConfig() *Config {
 	return bucket.Client.Config
 }
 
-// Private
 func addContentType(options []Option, keys ...string) []Option {
 	typ := TypeByExtension("")
 	for _, key := range keys {

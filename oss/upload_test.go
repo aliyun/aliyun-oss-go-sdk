@@ -395,7 +395,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	objectName := objectNamePrefix + "tulfc"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	localFile := "../sample/BingWallpaper-2015-11-07-2.jpg"
+	localFile := "BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file-3.jpg"
 
 	os.Remove(localFile)

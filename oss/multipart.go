@@ -63,6 +63,13 @@ func (bucket Bucket) UploadPart(imur InitiateMultipartUploadResult, reader io.Re
 	}
 	defer resp.body.Close()
 
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "UploadPart")
+		if err != nil {
+			return part, err
+		}
+	}
+
 	part.ETag = resp.headers.Get(HTTPHeaderEtag)
 	part.PartNumber = partNumber
 	return part, nil
@@ -97,6 +104,13 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 		return part, err
 	}
 	defer resp.body.Close()
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "UploadPartFromFile")
+		if err != nil {
+			return part, err
+		}
+	}
 
 	part.ETag = resp.headers.Get(HTTPHeaderEtag)
 	part.PartNumber = partNumber
