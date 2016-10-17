@@ -150,12 +150,12 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	body.Close()
 
 	// GetObjectWithCRC
-	body, calcCRC, srvCRC, err := bucket.GetObjectWithCRC(objectName)
+	getResult, err := bucket.DoGetObject(&GetObjectRequest{objectName}, nil)
 	c.Assert(err, IsNil)
-	str, err := readBody(body)
+	str, err := readBody(getResult.Response.Body)
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
-	c.Assert(calcCRC.Sum64(), Equals, srvCRC)
+	c.Assert(getResult.ClientCRC.Sum64(), Equals, getResult.ServerCRC)
 
 	// PutObjectFromFile
 	err = bucket.PutObjectFromFile(objectName, fileName)
@@ -174,19 +174,23 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 
 	// AppendObject
 	var nextPos int64
-	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
 	c.Assert(err, IsNil)
-	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
-	c.Assert(err, IsNil)
-
-	err = s.bucket.DeleteObject(objectName)
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
 	c.Assert(err, IsNil)
 
-	nextPos = 0
-	var initCRC uint64
-	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	err = bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
-	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+
+	request := &AppendObjectRequest{
+		ObjectKey: objectName,
+		Reader:    strings.NewReader(objectValue),
+		Position:  0,
+	}
+	appendResult, err := bucket.DoAppendObject(request, []Option{InitCRC(0)})
+	c.Assert(err, IsNil)
+	request.Position = appendResult.NextPosition
+	appendResult, err = bucket.DoAppendObject(request, []Option{InitCRC(appendResult.CRC)})
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
@@ -243,9 +247,9 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	body.Close()
 
 	// GetObjectWithCRC
-	body, _, _, err = bucket.GetObjectWithCRC(objectName)
+	getResult, err := bucket.DoGetObject(&GetObjectRequest{objectName}, nil)
 	c.Assert(err, IsNil)
-	str, err := readBody(body)
+	str, err := readBody(getResult.Response.Body)
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
 
@@ -266,19 +270,23 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 
 	// AppendObject
 	var nextPos int64
-	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
 	c.Assert(err, IsNil)
-	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
-	c.Assert(err, IsNil)
-
-	err = s.bucket.DeleteObject(objectName)
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos)
 	c.Assert(err, IsNil)
 
-	nextPos = 0
-	var initCRC uint64
-	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	err = bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
-	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+
+	request := &AppendObjectRequest{
+		ObjectKey: objectName,
+		Reader:    strings.NewReader(objectValue),
+		Position:  0,
+	}
+	appendResult, err := bucket.DoAppendObject(request, []Option{InitCRC(0)})
+	c.Assert(err, IsNil)
+	request.Position = appendResult.NextPosition
+	appendResult, err = bucket.DoAppendObject(request, []Option{InitCRC(appendResult.CRC)})
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
@@ -311,7 +319,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDisableCRCAndMD5 关闭MD5和CRC校验
+// TestSpecifyContentMD5 指定MD5
 func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -345,11 +353,15 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	nextPos = 0
-	var initCRC uint64
-	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	request := &AppendObjectRequest{
+		ObjectKey: objectName,
+		Reader:    strings.NewReader(objectValue),
+		Position:  0,
+	}
+	appendResult, err := s.bucket.DoAppendObject(request, []Option{InitCRC(0)})
 	c.Assert(err, IsNil)
-	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	request.Position = appendResult.NextPosition
+	appendResult, err = s.bucket.DoAppendObject(request, []Option{InitCRC(appendResult.CRC)})
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
@@ -376,13 +388,11 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
 	objectName := objectNamePrefix + "taoncrc"
 	objectValue := "空山不见人，但闻人语响。返影入深林，复照青苔上。"
-	var nextPos int64
-	var initCRC uint64
 
-	nextPos, initCRC, err := s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC)
+	nextPos, err := s.bucket.AppendObject(objectName, strings.NewReader(objectValue), 0, InitCRC(0))
 	c.Assert(err, IsNil)
 
-	nextPos, initCRC, err = s.bucket.AppendObjectWithCRC(objectName, strings.NewReader(objectValue), nextPos, initCRC-1)
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader(objectValue), nextPos, InitCRC(0))
 	c.Assert(err, NotNil)
 	c.Assert(strings.HasPrefix(err.Error(), "oss: the crc"), Equals, true)
 }

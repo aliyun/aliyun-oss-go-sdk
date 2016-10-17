@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/xml"
-	"hash"
 	"hash/crc64"
 	"io"
 	"io/ioutil"
@@ -34,20 +33,18 @@ type Bucket struct {
 //
 func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Option) error {
 	opts := addContentType(options, objectKey)
-	resp, err := bucket.do("PUT", objectKey, "", "", opts, reader)
+
+	request := &PutObjectRequest{
+		ObjectKey: objectKey,
+		Reader:    reader,
+	}
+	resp, err := bucket.DoPutObject(request, opts)
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	if bucket.getConfig().IsEnableCRC {
-		err = checkCRC(resp, "PutObject")
-		if err != nil {
-			return err
-		}
-	}
-
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	return err
 }
 
 //
@@ -68,20 +65,49 @@ func (bucket Bucket) PutObjectFromFile(objectKey, filePath string, options ...Op
 
 	opts := addContentType(options, filePath, objectKey)
 
-	resp, err := bucket.do("PUT", objectKey, "", "", opts, fd)
+	request := &PutObjectRequest{
+		ObjectKey: objectKey,
+		Reader:    fd,
+	}
+	resp, err := bucket.DoPutObject(request, opts)
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
+
+	return err
+}
+
+//
+// DoPutObject 上传文件。
+//
+// request  上传请求。
+// options  上传选项。
+//
+// Response 上传请求返回值。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*Response, error) {
+	isOptSet, _, _ := isOptionSet(options, HTTPHeaderContentType)
+	if !isOptSet {
+		options = addContentType(options, request.ObjectKey)
+	}
+
+	resp, err := bucket.do("PUT", request.ObjectKey, "", "", options, request.Reader)
+	if err != nil {
+		return nil, err
+	}
 
 	if bucket.getConfig().IsEnableCRC {
-		err = checkCRC(resp, "PutObjectFromFile")
+		err = checkCRC(resp, "DoPutObject")
 		if err != nil {
-			return err
+			return resp, err
 		}
 	}
 
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	err = checkRespCode(resp.StatusCode, []int{http.StatusOK})
+
+	return resp, err
 }
 
 //
@@ -96,40 +122,11 @@ func (bucket Bucket) PutObjectFromFile(objectKey, filePath string, options ...Op
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadCloser, error) {
-	resp, err := bucket.do("GET", objectKey, "", "", options, nil)
+	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
 	if err != nil {
 		return nil, err
 	}
-	return resp.body, nil
-}
-
-//
-// GetObjectWithCRC 下载文件同时计算CRC。
-//
-// objectKey 下载的文件名称。
-// options   对象的属性限制项，可选值有Range、IfModifiedSince、IfUnmodifiedSince、IfMatch、
-// IfNoneMatch、AcceptEncoding，详细请参考
-// https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
-//
-// io.ReadCloser  body，文件内容，读取数据后需要close。error为nil时有效。
-// hash.Hash64 clientCRCCalculator，读取数据的CRC计算器。数据读取介绍通过clientCRCCalculator.Sum64()获取。
-// int64 serverCRC 服务器端存储数据的CRC值。
-// error  操作无错误为nil，非nil为错误信息。
-//
-func (bucket Bucket) GetObjectWithCRC(objectKey string, options ...Option) (body io.ReadCloser, clientCRCCalculator hash.Hash64, serverCRC uint64, err error) {
-	resp, err := bucket.do("GET", objectKey, "", "", options, nil)
-	if err != nil {
-		return
-	}
-
-	body = resp.body
-	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
-	if bucket.getConfig().IsEnableCRC && !hasRange {
-		serverCRC = resp.serverCRC
-		clientCRCCalculator = crc64.New(crcTable())
-		body = ioutil.NopCloser(io.TeeReader(body, clientCRCCalculator))
-	}
-	return
+	return result.Response.Body, nil
 }
 
 //
@@ -142,11 +139,12 @@ func (bucket Bucket) GetObjectWithCRC(objectKey string, options ...Option) (body
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
 func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Option) error {
-	resp, err := bucket.do("GET", objectKey, "", "", options, nil)
+	// 读取Object内容
+	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
+	defer result.Response.Body.Close()
 
 	// 如果文件不存在则创建，存在则清空
 	fd, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
@@ -155,30 +153,53 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	}
 	defer fd.Close()
 
-	// 读取数据同时计算CRC
-	body := resp.body
-	var crc hash.Hash64
-	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
-	if bucket.getConfig().IsEnableCRC && !hasRange {
-		crc = crc64.New(crcTable())
-		body = ioutil.NopCloser(io.TeeReader(body, crc))
-	}
-
-	_, err = io.Copy(fd, body)
+	// 存储数据到文件
+	_, err = io.Copy(fd, result.Response.Body)
 	if err != nil {
 		return err
 	}
 
 	// 比较CRC值
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if bucket.getConfig().IsEnableCRC && !hasRange {
-		resp.clientCRC = crc.Sum64()
-		err = checkCRC(resp, "GetObjectToFile")
+		result.Response.ClientCRC = result.ClientCRC.Sum64()
+		err = checkCRC(result.Response, "GetObjectToFile")
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+//
+// DoGetObject 下载文件
+//
+// request 下载请求
+// options    对象的属性限制项。详见GetObject的options。
+//
+// GetObjectResult 下载请求返回值。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*GetObjectResult, error) {
+	resp, err := bucket.do("GET", request.ObjectKey, "", "", options, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &GetObjectResult{
+		Response: resp,
+	}
+
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		crcCalc := crc64.New(crcTable())
+		resp.Body = ioutil.NopCloser(io.TeeReader(resp.Body, crcCalc))
+		result.ServerCRC = resp.ServerCRC
+		result.ClientCRC = crcCalc
+	}
+
+	return result, nil
 }
 
 //
@@ -201,9 +222,9 @@ func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...O
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -254,9 +275,9 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -278,68 +299,60 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosition int64, options ...Option) (int64, error) {
-	var nextAppendPosition int64
-	params := "append&position=" + strconv.Itoa(int(appendPosition))
-	opts := addContentType(options, objectKey)
-	resp, err := bucket.do("POST", objectKey, params, params, opts, reader)
-	if err != nil {
-		return appendPosition, err
-	}
-	defer resp.body.Close()
-
-	nextAppendPosition, err = strconv.ParseInt(resp.headers.Get(HTTPHeaderOssNextAppendPosition), 10, 64)
-	if err != nil {
-		return nextAppendPosition, err
+	request := &AppendObjectRequest{
+		ObjectKey: objectKey,
+		Reader:    reader,
+		Position:  appendPosition,
 	}
 
-	return nextAppendPosition, nil
+	result, err := bucket.DoAppendObject(request, options)
+
+	return result.NextPosition, err
 }
 
 //
-// AppendObjectWithCRC 追加方式上传。
+// DoAppendObject 追加上传。
 //
-// AppendObject参数必须包含position，其值指定从何处进行追加。首次追加操作的position必须为0，
-// 后续追加操作的position是Object的当前长度。例如，第一次Append Object请求指定position值为0，
-// content-length是65536；那么，第二次Append Object需要指定position为65536。
-// 每次操作成功后，响应头部x-oss-next-append-position也会标明下一次追加的position。
+// request 追加上传请求。
+// options 追加上传选项。
 //
-// objectKey  需要追加的Object。
-// reader     io.Reader，读取追的内容。
-// appendPosition  object追加的起始位置。
-// initCRC  上次追加的返回的CRC校验值，第一次填0。
-// destObjectProperties  第一次追加时指定新对象的属性，如CacheControl、ContentDisposition、ContentEncoding、
-// Expires、ServerSideEncryption、ObjectACL。
+// AppendObjectResult 追加上传请求返回值。
+// error  操作无错误为nil，非nil为错误信息。
 //
-// int64 下次追加的开始位置，error为nil空时有效。
-// int64 本次追加后文件的CRC值，作为下次的初始化值。
-// error 操作无错误为nil，非nil为错误信息。
-//
-func (bucket Bucket) AppendObjectWithCRC(objectKey string, reader io.Reader, appendPosition int64, initCRC uint64, options ...Option) (int64, uint64, error) {
-	var nextAppendPosition int64
-	params := "append&position=" + strconv.Itoa(int(appendPosition))
-	opts := addContentType(options, objectKey)
+func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Option) (*AppendObjectResult, error) {
+	params := "append&position=" + strconv.FormatInt(request.Position, 10)
 	headers := make(map[string]string)
 
+	opts := addContentType(options, request.ObjectKey)
 	handleOptions(headers, opts)
-	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, objectKey, params, params, headers, reader, initCRC)
-	if err != nil {
-		return nextAppendPosition, initCRC, err
-	}
-	defer resp.body.Close()
 
-	nextAppendPosition, err = strconv.ParseInt(resp.headers.Get(HTTPHeaderOssNextAppendPosition), 10, 64)
-	if err != nil {
-		return nextAppendPosition, initCRC, err
+	var initCRC uint64
+	isCRCSet, initCRCStr, _ := isOptionSet(options, initCRC64)
+	if isCRCSet {
+		initCRC, _ = strconv.ParseUint(initCRCStr, 10, 64)
 	}
 
-	if bucket.getConfig().IsEnableCRC {
+	handleOptions(headers, opts)
+	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, request.ObjectKey, params, params, headers, request.Reader, initCRC)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	nextPosition, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderOssNextAppendPosition), 10, 64)
+	result := &AppendObjectResult{
+		NextPosition: nextPosition,
+		CRC:          resp.ServerCRC,
+	}
+
+	if bucket.getConfig().IsEnableCRC && isCRCSet {
 		err = checkCRC(resp, "AppendObject")
 		if err != nil {
-			return nextAppendPosition, resp.serverCRC, err
+			return result, err
 		}
 	}
 
-	return nextAppendPosition, resp.serverCRC, nil
+	return result, nil
 }
 
 //
@@ -354,8 +367,8 @@ func (bucket Bucket) DeleteObject(objectKey string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusNoContent})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -394,10 +407,10 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
 	if !dxml.Quiet {
-		if err = xmlUnmarshal(resp.body, &out); err == nil {
+		if err = xmlUnmarshal(resp.Body, &out); err == nil {
 			err = decodeDeleteObjectsResult(&out)
 		}
 	}
@@ -455,9 +468,9 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	if err != nil {
 		return out, err
 	}
@@ -496,9 +509,9 @@ func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	return resp.headers, nil
+	return resp.Headers, nil
 }
 
 //
@@ -517,9 +530,9 @@ func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	return resp.headers, nil
+	return resp.Headers, nil
 }
 
 //
@@ -545,8 +558,8 @@ func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -563,9 +576,9 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
