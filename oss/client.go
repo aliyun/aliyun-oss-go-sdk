@@ -93,8 +93,8 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 		return err
 	}
 
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -119,9 +119,9 @@ func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -158,8 +158,8 @@ func (client Client) DeleteBucket(bucketName string) error {
 		return err
 	}
 
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusNoContent})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -178,10 +178,10 @@ func (client Client) GetBucketLocation(bucketName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
 	var LocationConstraint string
-	err = xmlUnmarshal(resp.body, &LocationConstraint)
+	err = xmlUnmarshal(resp.Body, &LocationConstraint)
 	return LocationConstraint, err
 }
 
@@ -200,8 +200,8 @@ func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -218,9 +218,9 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -255,8 +255,8 @@ func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -272,8 +272,8 @@ func (client Client) DeleteBucketLifecycle(bucketName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusNoContent})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -290,9 +290,9 @@ func (client Client) GetBucketLifecycle(bucketName string) (GetBucketLifecycleRe
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -338,8 +338,8 @@ func (client Client) SetBucketReferer(bucketName string, referers []string, allo
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -356,9 +356,9 @@ func (client Client) GetBucketReferer(bucketName string) (GetBucketRefererResult
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -404,8 +404,8 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -420,8 +420,8 @@ func (client Client) DeleteBucketLogging(bucketName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusNoContent})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -438,9 +438,9 @@ func (client Client) GetBucketLogging(bucketName string) (GetBucketLoggingResult
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -476,8 +476,8 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -492,8 +492,8 @@ func (client Client) DeleteBucketWebsite(bucketName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusNoContent})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -510,9 +510,9 @@ func (client Client) GetBucketWebsite(bucketName string) (GetBucketWebsiteResult
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -553,8 +553,8 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) erro
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusOK})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 //
@@ -569,8 +569,8 @@ func (client Client) DeleteBucketCORS(bucketName string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusNoContent})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -588,9 +588,9 @@ func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, erro
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -608,9 +608,9 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -690,6 +690,17 @@ func EnableCRC(isEnableCRC bool) ClientOption {
 }
 
 //
+// UserAgent 指定UserAgent，默认如下aliyun-sdk-go/1.2.0 (windows/-/amd64;go1.5.2)。
+//
+// userAgent user agent字符串。
+//
+func UserAgent(userAgent string) ClientOption {
+	return func(client *Client) {
+		client.Config.UserAgent = userAgent
+	}
+}
+
+//
 // Proxy 设置代理服务器，默认不使用代理。
 //
 // proxyHost 代理服务器地址，格式是host或host:port
@@ -724,5 +735,5 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 func (client Client) do(method, bucketName, urlParams, subResource string,
 	headers map[string]string, data io.Reader) (*Response, error) {
 	return client.Conn.Do(method, bucketName, "", urlParams,
-		subResource, headers, data)
+		subResource, headers, data, 0)
 }

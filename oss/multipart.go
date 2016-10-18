@@ -28,9 +28,9 @@ func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option
 	if err != nil {
 		return imur, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &imur)
+	err = xmlUnmarshal(resp.Body, &imur)
 	return imur, err
 }
 
@@ -53,26 +53,17 @@ func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option
 // error 操作成功error为nil，非nil为错误信息。
 //
 func (bucket Bucket) UploadPart(imur InitiateMultipartUploadResult, reader io.Reader,
-	size int64, partNumber int) (UploadPart, error) {
-	var part = UploadPart{}
-	params := "partNumber=" + strconv.Itoa(partNumber) + "&uploadId=" + imur.UploadID
-	opts := []Option{ContentLength(size)}
-	resp, err := bucket.do("PUT", imur.Key, params, params, opts, &io.LimitedReader{R: reader, N: size})
-	if err != nil {
-		return part, err
-	}
-	defer resp.body.Close()
-
-	if bucket.getConfig().IsEnableCRC {
-		err = checkCRC(resp, "UploadPart")
-		if err != nil {
-			return part, err
-		}
+	partSize int64, partNumber int) (UploadPart, error) {
+	request := &UploadPartRequest{
+		InitResult: &imur,
+		Reader:     reader,
+		PartSize:   partSize,
+		PartNumber: partNumber,
 	}
 
-	part.ETag = resp.headers.Get(HTTPHeaderEtag)
-	part.PartNumber = partNumber
-	return part, nil
+	result, err := bucket.DoUploadPart(request)
+
+	return result.Part, err
 }
 
 //
@@ -98,23 +89,49 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 	defer fd.Close()
 	fd.Seek(startPosition, os.SEEK_SET)
 
-	params := "partNumber=" + strconv.Itoa(partNumber) + "&uploadId=" + imur.UploadID
-	resp, err := bucket.do("PUT", imur.Key, params, params, nil, &io.LimitedReader{R: fd, N: partSize})
-	if err != nil {
-		return part, err
+	request := &UploadPartRequest{
+		InitResult: &imur,
+		Reader:     fd,
+		PartSize:   partSize,
+		PartNumber: partNumber,
 	}
-	defer resp.body.Close()
+
+	result, err := bucket.DoUploadPart(request)
+
+	return result.Part, err
+}
+
+//
+// DoUploadPart 上传分片。
+//
+// request 上传分片请求。
+//
+// UploadPartResult 上传分片请求返回值。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) DoUploadPart(request *UploadPartRequest) (*UploadPartResult, error) {
+	params := "partNumber=" + strconv.Itoa(request.PartNumber) + "&uploadId=" + request.InitResult.UploadID
+	opts := []Option{ContentLength(request.PartSize)}
+	resp, err := bucket.do("PUT", request.InitResult.Key, params, params, opts,
+		&io.LimitedReader{R: request.Reader, N: request.PartSize})
+	if err != nil {
+		return &UploadPartResult{}, err
+	}
+	defer resp.Body.Close()
+
+	part := UploadPart{
+		ETag:       resp.Headers.Get(HTTPHeaderEtag),
+		PartNumber: request.PartNumber,
+	}
 
 	if bucket.getConfig().IsEnableCRC {
-		err = checkCRC(resp, "UploadPartFromFile")
+		err = checkCRC(resp, "DoUploadPart")
 		if err != nil {
-			return part, err
+			return &UploadPartResult{part}, err
 		}
 	}
 
-	part.ETag = resp.headers.Get(HTTPHeaderEtag)
-	part.PartNumber = partNumber
-	return part, nil
+	return &UploadPartResult{part}, nil
 }
 
 //
@@ -146,9 +163,9 @@ func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucke
 	if err != nil {
 		return part, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	if err != nil {
 		return part, err
 	}
@@ -186,9 +203,9 @@ func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -205,8 +222,8 @@ func (bucket Bucket) AbortMultipartUpload(imur InitiateMultipartUploadResult) er
 	if err != nil {
 		return err
 	}
-	defer resp.body.Close()
-	return checkRespCode(resp.statusCode, []int{http.StatusNoContent})
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -224,9 +241,9 @@ func (bucket Bucket) ListUploadedParts(imur InitiateMultipartUploadResult) (List
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }
 
@@ -252,9 +269,9 @@ func (bucket Bucket) ListMultipartUploads(options ...Option) (ListMultipartUploa
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	if err != nil {
 		return out, err
 	}

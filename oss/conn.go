@@ -7,7 +7,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"hash"
-	"hash/crc64"
 	"io"
 	"io/ioutil"
 	"net"
@@ -25,25 +24,16 @@ type Conn struct {
 	url    *urlMaker
 }
 
-// Response Http response from oss
-type Response struct {
-	statusCode int
-	headers    http.Header
-	body       io.ReadCloser
-	clientCRC  uint64
-	serverCRC  uint64
-}
-
 // Do 处理请求，返回响应结果。
 func (conn Conn) Do(method, bucketName, objectName, urlParams, subResource string,
-	headers map[string]string, data io.Reader) (*Response, error) {
+	headers map[string]string, data io.Reader, initCRC uint64) (*Response, error) {
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
 	resource := conn.url.getResource(bucketName, objectName, subResource)
-	return conn.doRequest(method, uri, resource, headers, data)
+	return conn.doRequest(method, uri, resource, headers, data, initCRC)
 }
 
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string,
-	headers map[string]string, data io.Reader) (*Response, error) {
+	headers map[string]string, data io.Reader, initCRC uint64) (*Response, error) {
 	httpTimeOut := conn.config.HTTPTimeout
 	method = strings.ToUpper(method)
 	if !conn.config.IsUseProxy {
@@ -59,7 +49,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		Host:       uri.Host,
 	}
 
-	fd, crc := conn.handleBody(req, data)
+	fd, crc := conn.handleBody(req, data, initCRC)
 	if fd != nil {
 		defer func() {
 			fd.Close()
@@ -135,7 +125,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 }
 
 // handle request body
-func (conn Conn) handleBody(req *http.Request, body io.Reader) (*os.File, hash.Hash64) {
+func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64) (*os.File, hash.Hash64) {
 	var file *os.File
 	var crc hash.Hash64
 	reader := body
@@ -180,7 +170,7 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader) (*os.File, hash.H
 	}
 
 	if reader != nil && conn.config.IsEnableCRC {
-		crc = crc64.New(crcTable())
+		crc = NewCRC(crcTable(), initCRC)
 		reader = io.TeeReader(reader, crc)
 	}
 
@@ -225,17 +215,17 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 			err = srvErr
 		}
 		return &Response{
-			statusCode: resp.StatusCode,
-			headers:    resp.Header,
-			body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body
+			StatusCode: resp.StatusCode,
+			Headers:    resp.Header,
+			Body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body
 		}, err
 	} else if statusCode >= 300 && statusCode <= 307 {
 		// oss use 3xx, but response has no body
 		err := fmt.Errorf("oss: service returned %d,%s", resp.StatusCode, resp.Status)
 		return &Response{
-			statusCode: resp.StatusCode,
-			headers:    resp.Header,
-			body:       resp.Body,
+			StatusCode: resp.StatusCode,
+			Headers:    resp.Header,
+			Body:       resp.Body,
 		}, err
 	}
 
@@ -246,11 +236,11 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 
 	// 2xx, successful
 	return &Response{
-		statusCode: resp.StatusCode,
-		headers:    resp.Header,
-		body:       resp.Body,
-		clientCRC:  cliCRC,
-		serverCRC:  srvCRC,
+		StatusCode: resp.StatusCode,
+		Headers:    resp.Header,
+		Body:       resp.Body,
+		ClientCRC:  cliCRC,
+		ServerCRC:  srvCRC,
 	}, nil
 }
 

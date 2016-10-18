@@ -23,6 +23,7 @@ const (
 	deleteObjectsQuiet = "delete-objects-quiet"
 	routineNum         = "x-routine-num"
 	checkpointConfig   = "x-cp-config"
+	initCRC64          = "init-crc64"
 )
 
 type (
@@ -221,6 +222,11 @@ func Checkpoint(isEnable bool, filePath string) Option {
 // Routines DownloadFile/UploadFile并发数
 func Routines(n int) Option {
 	return addArg(routineNum, strconv.Itoa(n))
+}
+
+// InitCRC AppendObject CRC的校验的初始值
+func InitCRC(initCRC uint64) Option {
+	return addArg(initCRC64, strconv.FormatUint(initCRC, 10))
 }
 
 func setHeader(key, value string) Option {

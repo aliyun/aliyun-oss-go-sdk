@@ -534,6 +534,9 @@ func (s *OssClientSuite) TestSetBucketLifecycle(c *C) {
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
 
+	// eliminate effect of cache
+	time.Sleep(5 * time.Second)
+
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(len(res.Rules), Equals, 2)
@@ -859,6 +862,9 @@ func (s *OssClientSuite) TestSetBucketWebsite(c *C) {
 	// set after delete
 	err = client.SetBucketWebsite(bucketNameTest, indexWebsite, errorWebsite)
 	c.Assert(err, IsNil)
+
+	// eliminate effect of cache
+	time.Sleep(5 * time.Second)
 
 	res, err = client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -1319,6 +1325,10 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	c.Assert(client.Conn.config.IsAuthProxy, Equals, true)
 	c.Assert(client.Conn.config.ProxyUser, Equals, proxyUser)
 	c.Assert(client.Conn.config.ProxyPassword, Equals, proxyPasswd)
+
+	client, err = New(endpoint, accessID, accessKey, UserAgent("go sdk user agent"))
+
+	c.Assert(client.Conn.config.UserAgent, Equals, "go sdk user agent")
 }
 
 // _TestProxy
