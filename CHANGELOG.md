@@ -1,5 +1,12 @@
 ﻿# ChangeLog - Aliyun OSS SDK for Go
 
+## 版本号：1.2.0 日期：2016-10-18
+### 变更内容
+ - 支持CRC64校验
+ - 修复计算MD5占用内存大的问题
+ - 修复CopyObject时Object名称没有URL编码的问题
+ - 支持指定Useragent
+
 ## 版本号：1.1.0 日期：2016-08-09
 ### 变更内容
  - 支持代理服务器
