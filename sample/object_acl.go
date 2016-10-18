@@ -7,7 +7,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ObjectACLSample Set/Get Object ACL Sample
+// ObjectACLSample 展示了如何设置、读取文件权限(object acl)
 func ObjectACLSample() {
 	// 创建Bucket
 	bucket, err := GetTestBucket(bucketName)

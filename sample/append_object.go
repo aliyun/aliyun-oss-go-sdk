@@ -12,7 +12,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// AppendObjectSample Append Object Sample
+// AppendObjectSample 展示了追加上传的用法
 func AppendObjectSample() {
 	// 创建Bucket
 	bucket, err := GetTestBucket(bucketName)

@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketRefererSample Set/Get Bucket Referer Sample
+// BucketRefererSample 展示了如何设置/读取/清除存储空间的白名单(Bucket Referer)
 func BucketRefererSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

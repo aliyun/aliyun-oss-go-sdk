@@ -2,10 +2,11 @@ package sample
 
 import (
 	"fmt"
+
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ListBucketsSample List Buckets Sample
+// ListBucketsSample 展示了列举存储空间的用法，包括默认参数列举、指定参数列举
 func ListBucketsSample() {
 	var myBuckets = []string{
 		"my-bucket-1",

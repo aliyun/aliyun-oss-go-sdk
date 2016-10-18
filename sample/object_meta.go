@@ -7,7 +7,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ObjectMetaSample Set/Get Object Meta Sample
+// ObjectMetaSample 展示了如何设置、读取文件元数据(object meta)
 func ObjectMetaSample() {
 	// 创建Bucket
 	bucket, err := GetTestBucket(bucketName)

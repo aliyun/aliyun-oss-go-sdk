@@ -8,7 +8,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CnameSample Cname Sample
+// CnameSample 展示了Cname的用法
 func CnameSample() {
 	// NewClient
 	client, err := oss.New(endpoint4Cname, accessID4Cname, accessKey4Cname,

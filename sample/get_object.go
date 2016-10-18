@@ -10,7 +10,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// GetObjectSample Get Object Sample
+// GetObjectSample 展示了流式下载、范围下载、断点续传下载的用法
 func GetObjectSample() {
 	// 创建Bucket
 	bucket, err := GetTestBucket(bucketName)

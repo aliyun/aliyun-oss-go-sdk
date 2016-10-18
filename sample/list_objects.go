@@ -2,10 +2,11 @@ package sample
 
 import (
 	"fmt"
+
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ListObjectsSample List Objects Sample
+// ListObjectsSample 展示了列举文件的用法，包括默认参数列举、指定参数列举
 func ListObjectsSample() {
 	var myObjects = []Object{
 		{"my-object-1", ""},

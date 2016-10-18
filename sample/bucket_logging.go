@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketLoggingSample Set/Get/Delete Bucket Logging Sample
+// BucketLoggingSample 展示了如何设置/读取/清除存储空间的日志(Bucket Logging)
 func BucketLoggingSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

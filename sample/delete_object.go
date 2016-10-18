@@ -7,7 +7,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// DeleteObjectSample Delete Object Sample
+// DeleteObjectSample 展示了删除单个文件、批量删除文件的方法
 func DeleteObjectSample() {
 	// 创建Bucket
 	bucket, err := GetTestBucket(bucketName)
