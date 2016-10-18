@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketCORSSample Set/Get/Delete Bucket CORS Sample
+// BucketCORSSample 展示了如何设置/读取/清除存储空间的跨域访问(Bucket CORS)
 func BucketCORSSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

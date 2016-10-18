@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CreateBucketSample Create Bucket Sample
+// CreateBucketSample 展示了如何创建存储空间
 func CreateBucketSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketACLSample Set/Get Bucket ACL Sample
+// BucketACLSample 展示了如何读取/设置存储空间的权限(Bucket ACL)
 func BucketACLSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

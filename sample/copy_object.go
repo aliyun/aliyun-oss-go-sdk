@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CopyObjectSample Copy Object Sample
+// CopyObjectSample 展示了拷贝文件的用法
 func CopyObjectSample() {
 	// 创建Bucket
 	bucket, err := GetTestBucket(bucketName)
@@ -78,6 +78,31 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 	fmt.Println("meta:", meta)
+
+	// 场景6：大文件分片拷贝，支持并发、断点续传功能。
+	// 分片上传，分片大小为100K。默认使用不使用并发上传，不使用断点续传。
+	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024)
+	if err != nil {
+		HandleError(err)
+	}
+
+	// 分片大小为100K，3个协程并发拷贝。
+	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Routines(3))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// 分片大小为100K，3个协程并发拷贝，使用断点续传拷贝文件。
+	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// 断点续传功能需要使用本地文件，记录哪些分片已经上传。该文件路径可以Checkpoint的第二个参数指定，如果为空，则为当前目录下的{descObjectKey}.cp。
+	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Checkpoint(true, localFile+".cp"))
+	if err != nil {
+		HandleError(err)
+	}
 
 	// 删除object和bucket
 	err = DeleteTestBucketAndObject(bucketName)

@@ -9,7 +9,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// PutObjectSample Put Object Sample
+// PutObjectSample 展示了简单上传、断点续传的使用方法
 func PutObjectSample() {
 	// 创建Bucket
 	bucket, err := GetTestBucket(bucketName)
