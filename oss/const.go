@@ -78,5 +78,5 @@ const (
 
 	TempFilePrefix = "oss-go-temp-" // 临时文件前缀
 
-	Version = "1.2.0" // Go sdk版本
+	Version = "1.2.1" // Go sdk版本
 )
