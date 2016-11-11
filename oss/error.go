@@ -75,7 +75,7 @@ func (e CRCCheckError) Error() string {
 }
 
 func checkCRC(resp *Response, operation string) error {
-	if resp.ClientCRC == resp.ServerCRC {
+	if resp.Headers.Get(HTTPHeaderOssCRC64) == "" || resp.ClientCRC == resp.ServerCRC {
 		return nil
 	}
 	return CRCCheckError{resp.ClientCRC, resp.ServerCRC, operation, resp.Headers.Get(HTTPHeaderOssRequestID)}
