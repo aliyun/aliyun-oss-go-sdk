@@ -91,6 +91,9 @@ func (s *OssBucketMultipartSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 
+	err = removeTempFiles("../oss", ".temp")
+	c.Assert(err, IsNil)
+
 	err = removeTempFiles("../oss", ".txt1")
 	c.Assert(err, IsNil)
 
@@ -928,7 +931,7 @@ func (s *OssBucketMultipartSuite) TestDownloadFileNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	// 文件不存在
-	err = s.bucket.DownloadFile(objectName, "D:\\work\\oss\\", 1024*1024*1024+1)
+	err = s.bucket.DownloadFile(objectName, "/OSS/TEMP/ZIBI/QUQU/BALA", 1024*1024*1024+1)
 	c.Assert(err, NotNil)
 
 	// Key不存在

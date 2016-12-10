@@ -66,6 +66,9 @@ func (s *OssDownloadSuite) SetUpTest(c *C) {
 func (s *OssDownloadSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
+
+	err = removeTempFiles("../oss", ".temp")
+	c.Assert(err, IsNil)
 }
 
 // TestUploadRoutineWithoutRecovery 多线程无断点恢复的下载

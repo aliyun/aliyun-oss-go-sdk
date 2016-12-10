@@ -57,7 +57,7 @@ func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
 	}
 
 	if cpc.IsEnable && cpc.FilePath == "" {
-		cpc.FilePath = filePath + ".cp"
+		cpc.FilePath = filePath + CheckpointFileSuffix
 	}
 
 	return &cpc, nil
@@ -102,7 +102,7 @@ type workerArg struct {
 }
 
 // 工作协程
-func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadPart, failed chan<- error, die <- chan bool) {
+func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadPart, failed chan<- error, die <-chan bool) {
 	for chunk := range jobs {
 		if err := arg.hook(id, chunk); err != nil {
 			failed <- err
@@ -114,9 +114,9 @@ func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadP
 			break
 		}
 		select {
-			case <-die:
-				return
-			default:
+		case <-die:
+			return
+		default:
 		}
 		results <- part
 	}
@@ -282,7 +282,7 @@ func (cp *uploadCheckpoint) dump(filePath string) error {
 	}
 
 	// dump
-	return ioutil.WriteFile(filePath, js, 0644)
+	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
 // 更新分片状态

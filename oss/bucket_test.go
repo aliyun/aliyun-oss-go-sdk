@@ -86,6 +86,9 @@ func (s *OssBucketSuite) TearDownTest(c *C) {
 	err = removeTempFiles("../oss", ".txt")
 	c.Assert(err, IsNil)
 
+	err = removeTempFiles("../oss", ".temp")
+	c.Assert(err, IsNil)
+
 	err = removeTempFiles("../oss", ".txt1")
 	c.Assert(err, IsNil)
 

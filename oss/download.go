@@ -61,7 +61,7 @@ func defaultDownloadPartHook(part downloadPart) error {
 }
 
 // 工作协程
-func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, results chan<- downloadPart, failed chan<- error, die <- chan bool) {
+func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, results chan<- downloadPart, failed chan<- error, die <-chan bool) {
 	for part := range jobs {
 		if err := arg.hook(part); err != nil {
 			failed <- err
@@ -78,12 +78,12 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 		defer rd.Close()
 
 		select {
-			case <-die:
-				return
-			default:
+		case <-die:
+			return
+		default:
 		}
 
-		fd, err := os.OpenFile(arg.filePath, os.O_WRONLY, 0660)
+		fd, err := os.OpenFile(arg.filePath, os.O_WRONLY, FilePermMode)
 		if err != nil {
 			failed <- err
 			break
@@ -148,8 +148,10 @@ func getDownloadParts(bucket *Bucket, objectKey string, partSize int64) ([]downl
 
 // 并发无断点续传的下载
 func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, options []Option, routines int) error {
+	tempFilePath := filePath + TempFileSuffix
+
 	// 如果文件不存在则创建，存在不清空，下载分片会重写文件内容
-	fd, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0660)
+	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
 	if err != nil {
 		return err
 	}
@@ -167,7 +169,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	die := make(chan bool)
 
 	// 启动工作协程
-	arg := downloadWorkerArg{&bucket, objectKey, filePath, options, downloadPartHooker}
+	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
@@ -193,7 +195,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 		}
 	}
 
-	return nil
+	return os.Rename(tempFilePath, filePath)
 }
 
 // ----- 并发有断点的下载  -----
@@ -282,7 +284,7 @@ func (cp *downloadCheckpoint) dump(filePath string) error {
 	}
 
 	// dump
-	return ioutil.WriteFile(filePath, js, 0644)
+	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
 // 未完成的分片
@@ -331,13 +333,15 @@ func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string
 	return nil
 }
 
-func (cp *downloadCheckpoint) complete(cpFilePath string) error {
+func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
 	os.Remove(cpFilePath)
-    return nil
+	return os.Rename(downFilepath, cp.FilePath)
 }
 
 // 并发带断点的下载
 func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int) error {
+	tempFilePath := filePath + TempFileSuffix
+
 	// LOAD CP数据
 	dcp := downloadCheckpoint{}
 	err := dcp.load(cpFilePath)
@@ -355,7 +359,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	}
 
 	// 如果文件不存在则创建，存在不清空，下载分片会重写文件内容
-	fd, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0660)
+	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
 	if err != nil {
 		return err
 	}
@@ -369,7 +373,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	die := make(chan bool)
 
 	// 启动工作协程
-	arg := downloadWorkerArg{&bucket, objectKey, filePath, options, downloadPartHooker}
+	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
@@ -395,5 +399,5 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		}
 	}
 
-	return dcp.complete(cpFilePath)
+	return dcp.complete(cpFilePath, tempFilePath)
 }
