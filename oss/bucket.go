@@ -139,6 +139,8 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
 func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Option) error {
+	tempFilePath := filePath + TempFileSuffix
+
 	// 读取Object内容
 	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
 	if err != nil {
@@ -147,14 +149,14 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	defer result.Response.Body.Close()
 
 	// 如果文件不存在则创建，存在则清空
-	fd, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
+	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
 	if err != nil {
 		return err
 	}
-	defer fd.Close()
 
 	// 存储数据到文件
 	_, err = io.Copy(fd, result.Response.Body)
+	fd.Close()
 	if err != nil {
 		return err
 	}
@@ -165,11 +167,12 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
 		err = checkCRC(result.Response, "GetObjectToFile")
 		if err != nil {
+			os.Remove(tempFilePath)
 			return err
 		}
 	}
 
-	return nil
+	return os.Rename(tempFilePath, filePath)
 }
 
 //

@@ -1,5 +1,7 @@
 package oss
 
+import "os"
+
 // ACLType Bucket/Object的访问控制
 type ACLType string
 
@@ -74,9 +76,14 @@ const (
 // 其它常量
 const (
 	MaxPartSize = 5 * 1024 * 1024 * 1024 // 文件片最大值，5GB
-	MinPartSize = 100 * 1024             // 文件片最小值，100KB
+	MinPartSize = 100 * 1024             // 文件片最小值，100KBß
+
+	FilePermMode = os.FileMode(0664) // 新建文件默认权限
 
 	TempFilePrefix = "oss-go-temp-" // 临时文件前缀
+	TempFileSuffix = ".temp"        // 临时文件后缀
 
-	Version = "1.2.1" // Go sdk版本
+	CheckpointFileSuffix = ".cp" // Checkpoint文件后缀
+
+	Version = "1.2.2" // Go sdk版本
 )
