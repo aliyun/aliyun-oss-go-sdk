@@ -38,25 +38,34 @@ type (
 // error  操作无错误时为nil，非nil时表示操作出错。
 //
 func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption) (*Client, error) {
+	// configuration
 	config := getDefaultOssConfig()
 	config.Endpoint = endpoint
 	config.AccessKeyID = accessKeyID
 	config.AccessKeySecret = accessKeySecret
 
+	// url parse
 	url := &urlMaker{}
 	url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
-	conn := &Conn{config, url}
 
+	// http connect
+	conn := &Conn{config: config, url: url}
+
+	// oss client
 	client := &Client{
 		config,
 		conn,
 	}
 
+	// client options parse
 	for _, option := range options {
 		option(client)
 	}
 
-	return client, nil
+	// create http connect
+	err := conn.init(config, url)
+
+	return client, err
 }
 
 //
