@@ -1331,8 +1331,8 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	c.Assert(client.Conn.config.UserAgent, Equals, "go sdk user agent")
 }
 
-// _TestProxy
-func (s *OssClientSuite) _TestProxy(c *C) {
+// TestProxy
+func (s *OssClientSuite) TestProxy(c *C) {
 	bucketNameTest := bucketNamePrefix + "tp"
 	objectName := "体育/奥运/首金"
 	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。"
@@ -1355,6 +1355,10 @@ func (s *OssClientSuite) _TestProxy(c *C) {
 
 	// Get Object
 	_, err = bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+
+	// List Objects
+	_, err = bucket.ListObjects()
 	c.Assert(err, IsNil)
 
 	// Delete Object
