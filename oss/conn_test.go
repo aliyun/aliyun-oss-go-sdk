@@ -72,7 +72,7 @@ func (s *OssConnSuite) TestAuth(c *C) {
 	cfg := getDefaultOssConfig()
 	um := urlMaker{}
 	um.Init(endpoint, false, false)
-	conn := Conn{cfg, &um}
+	conn := Conn{cfg, &um, nil}
 	uri := um.getURL("bucket", "object", "")
 	req := &http.Request{
 		Method:     "PUT",
