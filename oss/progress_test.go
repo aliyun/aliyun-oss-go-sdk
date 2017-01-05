@@ -132,10 +132,9 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 	request := &PutObjectRequest{
 		ObjectKey: objectName,
 		Reader:    fd,
-		Listener:  &OssProgressListener{},
 	}
 
-	options := []Option{}
+	options := []Option{Progress(&OssProgressListener{})}
 	_, err = s.bucket.DoPutObject(request, options)
 	c.Assert(err, IsNil)
 
@@ -259,11 +258,8 @@ func (s *OssProgressSuite) TestGetObject(c *C) {
 	c.Assert(err, IsNil)
 
 	// DoGetObject
-	request := &GetObjectRequest{
-		objectName,
-		&OssProgressListener{},
-	}
-	options := []Option{}
+	request := &GetObjectRequest{objectName}
+	options := []Option{Progress(&OssProgressListener{})}
 	result, err := s.bucket.DoGetObject(request, options)
 	c.Assert(err, IsNil)
 	_, err = ioutil.ReadAll(result.Response.Body)

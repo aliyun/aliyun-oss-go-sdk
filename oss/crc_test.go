@@ -150,7 +150,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	body.Close()
 
 	// GetObjectWithCRC
-	getResult, err := bucket.DoGetObject(&GetObjectRequest{objectName, nil}, nil)
+	getResult, err := bucket.DoGetObject(&GetObjectRequest{objectName}, nil)
 	c.Assert(err, IsNil)
 	str, err := readBody(getResult.Response.Body)
 	c.Assert(err, IsNil)
@@ -247,7 +247,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	body.Close()
 
 	// GetObjectWithCRC
-	getResult, err := bucket.DoGetObject(&GetObjectRequest{objectName, nil}, nil)
+	getResult, err := bucket.DoGetObject(&GetObjectRequest{objectName}, nil)
 	c.Assert(err, IsNil)
 	str, err := readBody(getResult.Response.Body)
 	c.Assert(err, IsNil)

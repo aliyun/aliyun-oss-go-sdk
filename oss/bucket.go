@@ -94,11 +94,9 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 		options = addContentType(options, request.ObjectKey)
 	}
 
-	if request.Listener == nil {
-		request.Listener = getProgressListener(options)
-	}
+	listener := getProgressListener(options)
 
-	resp, err := bucket.do("PUT", request.ObjectKey, "", "", options, request.Reader, request.Listener)
+	resp, err := bucket.do("PUT", request.ObjectKey, "", "", options, request.Reader, listener)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +125,7 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadCloser, error) {
-	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey, nil}, options)
+	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +145,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	tempFilePath := filePath + TempFileSuffix
 
 	// 读取Object内容
-	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey, nil}, options)
+	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
 	if err != nil {
 		return err
 	}
@@ -209,11 +207,10 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 	}
 
 	// progress
-	if request.Listener == nil {
-		request.Listener = getProgressListener(options)
-	}
+	listener := getProgressListener(options)
+
 	contentLen, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderContentLength), 10, 64)
-	resp.Body = ioutil.NopCloser(TeeReader(resp.Body, crcCalc, contentLen, request.Listener, nil))
+	resp.Body = ioutil.NopCloser(TeeReader(resp.Body, crcCalc, contentLen, listener, nil))
 
 	return result, nil
 }
@@ -343,18 +340,16 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 	handleOptions(headers, opts)
 
 	var initCRC uint64
-	isCRCSet, initCRCStr, _ := isOptionSet(options, initCRC64)
+	isCRCSet, initCRCOpt, _ := isOptionSet(options, initCRC64)
 	if isCRCSet {
-		initCRC, _ = strconv.ParseUint(initCRCStr.(string), 10, 64)
+		initCRC = initCRCOpt.(uint64)
 	}
 
-	if request.Listener == nil {
-		request.Listener = getProgressListener(options)
-	}
+	listener := getProgressListener(options)
 
 	handleOptions(headers, opts)
 	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, request.ObjectKey, params, params, headers,
-		request.Reader, initCRC, request.Listener)
+		request.Reader, initCRC, listener)
 	if err != nil {
 		return nil, err
 	}
@@ -407,9 +402,8 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 	for _, key := range objectKeys {
 		dxml.Objects = append(dxml.Objects, DeleteObject{Key: key})
 	}
-	isQuietStr, _ := findOption(options, deleteObjectsQuiet, "FALSE")
-	isQuiet, _ := strconv.ParseBool(isQuietStr.(string))
-	dxml.Quiet = isQuiet
+	isQuiet, _ := findOption(options, deleteObjectsQuiet, false)
+	dxml.Quiet = isQuiet.(bool)
 	encode := "&encoding-type=url"
 
 	bs, err := xml.Marshal(dxml)

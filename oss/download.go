@@ -76,9 +76,14 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			break
 		}
 
+		// resolve options
 		r := Range(part.Start, part.End)
 		p := Progress(&defaultDownloadProgressListener{})
-		opts := append(arg.options, r, p)
+		opts := make([]Option, len(arg.options)+2)
+		// append orderly, can not be reversed!
+		opts = append(opts, arg.options...)
+		opts = append(opts, r, p)
+
 		rd, err := arg.bucket.GetObject(arg.key, opts...)
 		if err != nil {
 			failed <- err

@@ -214,7 +214,7 @@ func (s *OssOptionSuite) TestHandleOptions(c *C) {
 	headers = map[string]string{}
 	err = handleOptions(headers, options)
 	c.Assert(err, IsNil)
-	c.Assert(len(headers), Equals, 0)
+	c.Assert(len(headers), Equals, 1)
 }
 
 func (s *OssOptionSuite) TestHandleParams(c *C) {
@@ -230,7 +230,7 @@ func (s *OssOptionSuite) TestHandleParams(c *C) {
 
 	options = []Option{KeyMarker(""), nil}
 	out, err = handleParams(options)
-	c.Assert(out, Equals, "")
+	c.Assert(out, Equals, "key-marker=")
 	c.Assert(err, IsNil)
 }
 

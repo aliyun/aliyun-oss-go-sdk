@@ -110,14 +110,11 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) (*UploadPartResult, error) {
-	if request.Listener == nil {
-		request.Listener = getProgressListener(options)
-	}
-
+	listener := getProgressListener(options)
 	params := "partNumber=" + strconv.Itoa(request.PartNumber) + "&uploadId=" + request.InitResult.UploadID
 	opts := []Option{ContentLength(request.PartSize)}
 	resp, err := bucket.do("PUT", request.InitResult.Key, params, params, opts,
-		&io.LimitedReader{R: request.Reader, N: request.PartSize}, request.Listener)
+		&io.LimitedReader{R: request.Reader, N: request.PartSize}, listener)
 	if err != nil {
 		return &UploadPartResult{}, err
 	}

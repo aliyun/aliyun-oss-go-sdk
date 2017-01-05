@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -44,37 +43,28 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 
 // 获取Checkpoint配置
 func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
-	cpc := cpConfig{}
-	cpStr, err := findOption(options, checkpointConfig, "")
-	if err != nil {
-		return nil, err
+	cpc := &cpConfig{}
+	cpcOpt, err := findOption(options, checkpointConfig, nil)
+	if err != nil || cpcOpt == nil {
+		return cpc, err
 	}
 
-	if cpStr != "" {
-		if err = json.Unmarshal([]byte(cpStr.(string)), &cpc); err != nil {
-			return nil, err
-		}
-	}
-
+	cpc = cpcOpt.(*cpConfig)
 	if cpc.IsEnable && cpc.FilePath == "" {
 		cpc.FilePath = filePath + CheckpointFileSuffix
 	}
 
-	return &cpc, nil
+	return cpc, nil
 }
 
 // 获取并发数，默认并发数1
 func getRoutines(options []Option) int {
-	rStr, err := findOption(options, routineNum, "")
-	if err != nil || rStr == "" {
+	rtnOpt, err := findOption(options, routineNum, nil)
+	if err != nil || rtnOpt == nil {
 		return 1
 	}
 
-	rs, err := strconv.Atoi(rStr.(string))
-	if err != nil {
-		return 1
-	}
-
+	rs := rtnOpt.(int)
 	if rs < 1 {
 		rs = 1
 	} else if rs > 100 {

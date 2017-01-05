@@ -47,7 +47,7 @@ const (
 	bucketName = "go-sdk-test-bucket-xyza-for-object"
 	// object name for object ops test
 	objectNamePrefix = "go-sdk-test-object-xyza-"
-
+	// sts region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
 

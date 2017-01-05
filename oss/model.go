@@ -19,13 +19,11 @@ type Response struct {
 type PutObjectRequest struct {
 	ObjectKey string
 	Reader    io.Reader
-	Listener  ProgressListener
 }
 
 // GetObjectRequest The request of DoGetObject
 type GetObjectRequest struct {
 	ObjectKey string
-	Listener  ProgressListener
 }
 
 // GetObjectResult The result of DoGetObject
@@ -40,7 +38,6 @@ type AppendObjectRequest struct {
 	ObjectKey string
 	Reader    io.Reader
 	Position  int64
-	Listener  ProgressListener
 }
 
 // AppendObjectResult The result of DoAppendObject
@@ -55,7 +52,6 @@ type UploadPartRequest struct {
 	Reader     io.Reader
 	PartSize   int64
 	PartNumber int
-	Listener   ProgressListener
 }
 
 // UploadPartResult The result of DoUploadPart
