@@ -24,11 +24,12 @@ const (
 	routineNum         = "x-routine-num"
 	checkpointConfig   = "x-cp-config"
 	initCRC64          = "init-crc64"
+	progressListener   = "x-progress-listener"
 )
 
 type (
 	optionValue struct {
-		Value string
+		Value interface{}
 		Type  optionType
 	}
 
@@ -229,7 +230,12 @@ func InitCRC(initCRC uint64) Option {
 	return addArg(initCRC64, strconv.FormatUint(initCRC, 10))
 }
 
-func setHeader(key, value string) Option {
+// Progress set progress listener
+func Progress(listener ProgressListener) Option {
+	return addArg(progressListener, listener)
+}
+
+func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == "" {
 			return nil
@@ -239,7 +245,7 @@ func setHeader(key, value string) Option {
 	}
 }
 
-func addParam(key, value string) Option {
+func addParam(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == "" {
 			return nil
@@ -249,7 +255,7 @@ func addParam(key, value string) Option {
 	}
 }
 
-func addArg(key, value string) Option {
+func addArg(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == "" {
 			return nil
@@ -271,7 +277,7 @@ func handleOptions(headers map[string]string, options []Option) error {
 
 	for k, v := range params {
 		if v.Type == optionHTTP {
-			headers[k] = v.Value
+			headers[k] = v.Value.(string)
 		}
 	}
 	return nil
@@ -307,13 +313,13 @@ func handleParams(options []Option) (string, error) {
 			buf.WriteByte('&')
 		}
 		buf.WriteString(prefix)
-		buf.WriteString(url.QueryEscape(vs.Value))
+		buf.WriteString(url.QueryEscape(vs.Value.(string)))
 	}
 
 	return buf.String(), nil
 }
 
-func findOption(options []Option, param, defaultVal string) (string, error) {
+func findOption(options []Option, param string, defaultVal interface{}) (interface{}, error) {
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
@@ -329,7 +335,7 @@ func findOption(options []Option, param, defaultVal string) (string, error) {
 	return defaultVal, nil
 }
 
-func isOptionSet(options []Option, option string) (bool, string, error) {
+func isOptionSet(options []Option, option string) (bool, interface{}, error) {
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
@@ -342,5 +348,5 @@ func isOptionSet(options []Option, option string) (bool, string, error) {
 	if val, ok := params[option]; ok {
 		return true, val.Value, nil
 	}
-	return false, "", nil
+	return false, nil, nil
 }

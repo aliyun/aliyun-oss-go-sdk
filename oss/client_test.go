@@ -1,4 +1,4 @@
-﻿// client test
+// client test
 // use gocheck, install gocheck to execute "go get gopkg.in/check.v1",
 // see https://labix.org/gocheck
 
@@ -42,11 +42,11 @@ var (
 
 const (
 	// prefix of bucket name for bucket ops test
-	bucketNamePrefix = "go-sdk-test-bucket-xyz-"
+	bucketNamePrefix = "go-sdk-test-bucket-xyza-"
 	// bucket name for object ops test
-	bucketName = "go-sdk-test-bucket-xyz-for-object"
+	bucketName = "go-sdk-test-bucket-xyza-for-object"
 	// object name for object ops test
-	objectNamePrefix = "go-sdk-test-object-"
+	objectNamePrefix = "go-sdk-test-object-xyza-"
 
 	stsRegion = "cn-hangzhou"
 )

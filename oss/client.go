@@ -744,5 +744,5 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 func (client Client) do(method, bucketName, urlParams, subResource string,
 	headers map[string]string, data io.Reader) (*Response, error) {
 	return client.Conn.Do(method, bucketName, "", urlParams,
-		subResource, headers, data, 0)
+		subResource, headers, data, 0, nil)
 }

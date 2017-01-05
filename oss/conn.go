@@ -59,15 +59,15 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 }
 
 // Do 处理请求，返回响应结果。
-func (conn Conn) Do(method, bucketName, objectName, urlParams, subResource string,
-	headers map[string]string, data io.Reader, initCRC uint64) (*Response, error) {
+func (conn Conn) Do(method, bucketName, objectName, urlParams, subResource string, headers map[string]string,
+	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
 	resource := conn.url.getResource(bucketName, objectName, subResource)
-	return conn.doRequest(method, uri, resource, headers, data, initCRC)
+	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
-func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string,
-	headers map[string]string, data io.Reader, initCRC uint64) (*Response, error) {
+func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string, headers map[string]string,
+	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	method = strings.ToUpper(method)
 	if !conn.config.IsUseProxy {
 		uri.Opaque = uri.Path
@@ -82,7 +82,8 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		Host:       uri.Host,
 	}
 
-	fd, crc := conn.handleBody(req, data, initCRC)
+	tracker := &readerTracker{completedBytes: 0}
+	fd, crc := conn.handleBody(req, data, initCRC, listener, tracker)
 	if fd != nil {
 		defer func() {
 			fd.Close()
@@ -114,6 +115,9 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 
 	resp, err := conn.client.Do(req)
 	if err != nil {
+		// fail transfer
+		event := newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
+		publishProgress(listener, event)
 		return nil, err
 	}
 
@@ -121,7 +125,8 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 }
 
 // handle request body
-func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64) (*os.File, hash.Hash64) {
+func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
+	listener ProgressListener, tracker *readerTracker) (*os.File, hash.Hash64) {
 	var file *os.File
 	var crc hash.Hash64
 	reader := body
@@ -136,40 +141,25 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64) (
 		req.ContentLength = int64(v.Len())
 	case *os.File:
 		req.ContentLength = tryGetFileSize(v)
+	case *io.LimitedReader:
+		req.ContentLength = int64(v.N)
 	}
 	req.Header.Set(HTTPHeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
 
 	// md5
 	if body != nil && conn.config.IsEnableMD5 && req.Header.Get(HTTPHeaderContentMD5) == "" {
-		if req.ContentLength == 0 || req.ContentLength > conn.config.MD5Threshold {
-			// huge body, use temporary file
-			file, _ = ioutil.TempFile(os.TempDir(), TempFilePrefix)
-			if file != nil {
-				io.Copy(file, body)
-				file.Seek(0, os.SEEK_SET)
-				md5 := md5.New()
-				io.Copy(md5, file)
-				sum := md5.Sum(nil)
-				b64 := base64.StdEncoding.EncodeToString(sum[:])
-				req.Header.Set(HTTPHeaderContentMD5, b64)
-				file.Seek(0, os.SEEK_SET)
-				reader = file
-			}
-		} else {
-			// small body, use memory
-			buf, _ := ioutil.ReadAll(body)
-			sum := md5.Sum(buf)
-			b64 := base64.StdEncoding.EncodeToString(sum[:])
-			req.Header.Set(HTTPHeaderContentMD5, b64)
-			reader = bytes.NewReader(buf)
-		}
+		md5 := ""
+		reader, md5, file, _ = calcMD5(body, req.ContentLength, conn.config.MD5Threshold)
+		req.Header.Set(HTTPHeaderContentMD5, md5)
 	}
 
+	// crc
 	if reader != nil && conn.config.IsEnableCRC {
 		crc = NewCRC(crcTable(), initCRC)
-		reader = io.TeeReader(reader, crc)
+		reader = TeeReader(reader, crc, req.ContentLength, listener, tracker)
 	}
 
+	// http body
 	rc, ok := reader.(io.ReadCloser)
 	if !ok && reader != nil {
 		rc = ioutil.NopCloser(reader)
@@ -238,6 +228,30 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		ClientCRC:  cliCRC,
 		ServerCRC:  srvCRC,
 	}, nil
+}
+
+func calcMD5(body io.Reader, contentLen, md5Threshold int64) (reader io.Reader, b64 string, tempFile *os.File, err error) {
+	if contentLen == 0 || contentLen > md5Threshold {
+		// huge body, use temporary file
+		tempFile, err = ioutil.TempFile(os.TempDir(), TempFilePrefix)
+		if tempFile != nil {
+			io.Copy(tempFile, body)
+			tempFile.Seek(0, os.SEEK_SET)
+			md5 := md5.New()
+			io.Copy(md5, tempFile)
+			sum := md5.Sum(nil)
+			b64 = base64.StdEncoding.EncodeToString(sum[:])
+			tempFile.Seek(0, os.SEEK_SET)
+			reader = tempFile
+		}
+	} else {
+		// small body, use memory
+		buf, _ := ioutil.ReadAll(body)
+		sum := md5.Sum(buf)
+		b64 = base64.StdEncoding.EncodeToString(sum[:])
+		reader = bytes.NewReader(buf)
+	}
+	return
 }
 
 func readResponseBody(resp *http.Response) ([]byte, error) {

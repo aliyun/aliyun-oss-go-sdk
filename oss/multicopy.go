@@ -128,11 +128,21 @@ func getCopyParts(bucket *Bucket, objectKey string, partSize int64) ([]copyPart,
 	return parts, nil
 }
 
+// 获取源文件大小
+func getSrcObjectBytes(parts []copyPart) int64 {
+	var ob int64
+	for _, part := range parts {
+		ob += (part.End - part.Start + 1)
+	}
+	return ob
+}
+
 // 并发无断点续传的下载
 func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destObjectKey string,
 	partSize int64, options []Option, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
+	listener := getProgressListener(options)
 
 	// 分割文件
 	parts, err := getCopyParts(srcBucket, srcObjectKey, partSize)
@@ -151,6 +161,11 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	failed := make(chan error)
 	die := make(chan bool)
 
+	var completedBytes int64
+	totalBytes := getSrcObjectBytes(parts)
+	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
+	publishProgress(listener, event)
+
 	// 启动工作协程
 	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
 	for w := 1; w <= routines; w++ {
@@ -168,9 +183,14 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 		case part := <-results:
 			completed++
 			ups[part.PartNumber-1] = part
+			completedBytes += (parts[part.PartNumber-1].End - parts[part.PartNumber-1].Start + 1)
+			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes)
+			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
 			descBucket.AbortMultipartUpload(imur)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, totalBytes)
+			publishProgress(listener, event)
 			return err
 		}
 
@@ -178,6 +198,9 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 			break
 		}
 	}
+
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, totalBytes)
+	publishProgress(listener, event)
 
 	// 提交任务
 	_, err = descBucket.CompleteMultipartUpload(imur, ups)
@@ -292,6 +315,17 @@ func (cp copyCheckpoint) todoParts() []copyPart {
 	return dps
 }
 
+// 完成的字节数
+func (cp copyCheckpoint) getCompletedBytes() int64 {
+	var completedBytes int64
+	for i, part := range cp.Parts {
+		if cp.PartStat[i] {
+			completedBytes += (part.End - part.Start + 1)
+		}
+	}
+	return completedBytes
+}
+
 // 初始化下载任务
 func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBucket *Bucket, destObjectKey string,
 	partSize int64, options []Option) error {
@@ -354,6 +388,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	partSize int64, options []Option, cpFilePath string, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
+	listener := getProgressListener(options)
 
 	// LOAD CP数据
 	ccp := copyCheckpoint{}
@@ -383,6 +418,10 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	failed := make(chan error)
 	die := make(chan bool)
 
+	completedBytes := ccp.getCompletedBytes()
+	event := newProgressEvent(TransferStartedEvent, completedBytes, ccp.ObjStat.Size)
+	publishProgress(listener, event)
+
 	// 启动工作协程
 	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
 	for w := 1; w <= routines; w++ {
@@ -400,8 +439,13 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 			completed++
 			ccp.update(part)
 			ccp.dump(cpFilePath)
+			completedBytes += (parts[part.PartNumber-1].End - parts[part.PartNumber-1].Start + 1)
+			event = newProgressEvent(TransferDataEvent, completedBytes, ccp.ObjStat.Size)
+			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, ccp.ObjStat.Size)
+			publishProgress(listener, event)
 			return err
 		}
 
@@ -409,6 +453,9 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 			break
 		}
 	}
+
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, ccp.ObjStat.Size)
+	publishProgress(listener, event)
 
 	return ccp.complete(descBucket, ccp.CopyParts, cpFilePath)
 }
