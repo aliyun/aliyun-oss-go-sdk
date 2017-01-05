@@ -113,13 +113,21 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 
 	conn.signHeader(req, canonicalizedResource)
 
+	// transfer started
+	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
+	publishProgress(listener, event)
+
 	resp, err := conn.client.Do(req)
 	if err != nil {
-		// fail transfer
-		event := newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
+		// transfer failed
+		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
 		publishProgress(listener, event)
 		return nil, err
 	}
+
+	// transfer completed
+	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength)
+	publishProgress(listener, event)
 
 	return conn.handleResponse(resp, crc)
 }

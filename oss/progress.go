@@ -63,7 +63,7 @@ type teeReader struct {
 // the write must complete before the read completes.
 // Any error encountered while writing is reported as a read error.
 func TeeReader(reader io.Reader, writer io.Writer, totalBytes int64, listener ProgressListener, tracker *readerTracker) io.Reader {
-	t := &teeReader{
+	return &teeReader{
 		reader:        reader,
 		writer:        writer,
 		listener:      listener,
@@ -71,12 +71,6 @@ func TeeReader(reader io.Reader, writer io.Writer, totalBytes int64, listener Pr
 		totalBytes:    totalBytes,
 		tracker:       tracker,
 	}
-
-	// start transfer
-	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
-	publishProgress(listener, event)
-
-	return t
 }
 
 func (t *teeReader) Read(p []byte) (n int, err error) {
@@ -107,10 +101,5 @@ func (t *teeReader) Read(p []byte) (n int, err error) {
 		}
 	}
 
-	// read completed
-	if err == io.EOF {
-		event := newProgressEvent(TransferCompletedEvent, t.consumedBytes, t.totalBytes)
-		publishProgress(t.listener, event)
-	}
 	return
 }

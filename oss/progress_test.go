@@ -145,6 +145,24 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 	testLogger.Println("OssProgressSuite.TestPutObject")
 }
 
+func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
+	objectName := objectNamePrefix + "tpon.html"
+	localFile := "../sample/The Go Programming Language.html"
+
+	// invalid endpoint
+	client, err := New("http://oss-cn-taikang.aliyuncs.com", accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectFromFile(objectName, localFile, Progress(&OssProgressListener{}))
+	testLogger.Println(err)
+	c.Assert(err, NotNil)
+
+	testLogger.Println("OssProgressSuite.TestPutObjectNegative")
+}
+
 // TestAppendObject
 func (s *OssProgressSuite) TestAppendObject(c *C) {
 	objectName := objectNamePrefix + "tao"

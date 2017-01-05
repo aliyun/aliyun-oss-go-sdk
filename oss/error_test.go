@@ -4,8 +4,6 @@ import (
 	"math"
 	"net/http"
 
-	"fmt"
-
 	. "gopkg.in/check.v1"
 )
 
@@ -31,7 +29,6 @@ func (s *OssErrorSuite) TestCheckCRCHasCRCInResp(c *C) {
 
 	err := checkCRC(resp, "test")
 	c.Assert(err, IsNil)
-	fmt.Printf("completed\n")
 }
 
 func (s *OssErrorSuite) TestCheckCRCNotHasCRCInResp(c *C) {
