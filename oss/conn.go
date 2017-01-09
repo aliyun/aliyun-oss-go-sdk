@@ -39,7 +39,6 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
 		},
 		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
-		MaxIdleConnsPerHost:   2000,
 	}
 
 	// Proxy
