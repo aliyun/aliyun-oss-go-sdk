@@ -60,6 +60,14 @@ func defaultDownloadPartHook(part downloadPart) error {
 	return nil
 }
 
+// 默认ProgressListener，屏蔽GetObject的Options中ProgressListener
+type defaultDownloadProgressListener struct {
+}
+
+// ProgressChanged 静默处理
+func (listener *defaultDownloadProgressListener) ProgressChanged(event *ProgressEvent) {
+}
+
 // 工作协程
 func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, results chan<- downloadPart, failed chan<- error, die <-chan bool) {
 	for part := range jobs {
@@ -68,8 +76,14 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			break
 		}
 
-		opt := Range(part.Start, part.End)
-		opts := append(arg.options, opt)
+		// resolve options
+		r := Range(part.Start, part.End)
+		p := Progress(&defaultDownloadProgressListener{})
+		opts := make([]Option, len(arg.options)+2)
+		// append orderly, can not be reversed!
+		opts = append(opts, arg.options...)
+		opts = append(opts, r, p)
+
 		rd, err := arg.bucket.GetObject(arg.key, opts...)
 		if err != nil {
 			failed <- err
@@ -146,9 +160,19 @@ func getDownloadParts(bucket *Bucket, objectKey string, partSize int64) ([]downl
 	return parts, nil
 }
 
+// 文件大小
+func getObjectBytes(parts []downloadPart) int64 {
+	var ob int64
+	for _, part := range parts {
+		ob += (part.End - part.Start + 1)
+	}
+	return ob
+}
+
 // 并发无断点续传的下载
 func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, options []Option, routines int) error {
 	tempFilePath := filePath + TempFileSuffix
+	listener := getProgressListener(options)
 
 	// 如果文件不存在则创建，存在不清空，下载分片会重写文件内容
 	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
@@ -168,6 +192,11 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	failed := make(chan error)
 	die := make(chan bool)
 
+	var completedBytes int64
+	totalBytes := getObjectBytes(parts)
+	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
+	publishProgress(listener, event)
+
 	// 启动工作协程
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker}
 	for w := 1; w <= routines; w++ {
@@ -185,8 +214,13 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 		case part := <-results:
 			completed++
 			ps[part.Index] = part
+			completedBytes += (part.End - part.Start + 1)
+			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes)
+			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, totalBytes)
+			publishProgress(listener, event)
 			return err
 		}
 
@@ -194,6 +228,9 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 			break
 		}
 	}
+
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, totalBytes)
+	publishProgress(listener, event)
 
 	return os.Rename(tempFilePath, filePath)
 }
@@ -298,6 +335,17 @@ func (cp downloadCheckpoint) todoParts() []downloadPart {
 	return dps
 }
 
+// 完成的字节数
+func (cp downloadCheckpoint) getCompletedBytes() int64 {
+	var completedBytes int64
+	for i, part := range cp.Parts {
+		if cp.PartStat[i] {
+			completedBytes += (part.End - part.Start + 1)
+		}
+	}
+	return completedBytes
+}
+
 // 初始化下载任务
 func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string, partSize int64) error {
 	// cp
@@ -341,6 +389,7 @@ func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
 // 并发带断点的下载
 func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int) error {
 	tempFilePath := filePath + TempFileSuffix
+	listener := getProgressListener(options)
 
 	// LOAD CP数据
 	dcp := downloadCheckpoint{}
@@ -372,6 +421,10 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	failed := make(chan error)
 	die := make(chan bool)
 
+	completedBytes := dcp.getCompletedBytes()
+	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size)
+	publishProgress(listener, event)
+
 	// 启动工作协程
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker}
 	for w := 1; w <= routines; w++ {
@@ -389,8 +442,13 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 			completed++
 			dcp.PartStat[part.Index] = true
 			dcp.dump(cpFilePath)
+			completedBytes += (part.End - part.Start + 1)
+			event = newProgressEvent(TransferDataEvent, completedBytes, dcp.ObjStat.Size)
+			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, dcp.ObjStat.Size)
+			publishProgress(listener, event)
 			return err
 		}
 
@@ -398,6 +456,9 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 			break
 		}
 	}
+
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, dcp.ObjStat.Size)
+	publishProgress(listener, event)
 
 	return dcp.complete(cpFilePath, tempFilePath)
 }

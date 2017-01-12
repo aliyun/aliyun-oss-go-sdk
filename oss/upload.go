@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -44,37 +43,28 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 
 // 获取Checkpoint配置
 func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
-	cpc := cpConfig{}
-	cpStr, err := findOption(options, checkpointConfig, "")
-	if err != nil {
-		return nil, err
+	cpc := &cpConfig{}
+	cpcOpt, err := findOption(options, checkpointConfig, nil)
+	if err != nil || cpcOpt == nil {
+		return cpc, err
 	}
 
-	if cpStr != "" {
-		if err = json.Unmarshal([]byte(cpStr), &cpc); err != nil {
-			return nil, err
-		}
-	}
-
+	cpc = cpcOpt.(*cpConfig)
 	if cpc.IsEnable && cpc.FilePath == "" {
 		cpc.FilePath = filePath + CheckpointFileSuffix
 	}
 
-	return &cpc, nil
+	return cpc, nil
 }
 
 // 获取并发数，默认并发数1
 func getRoutines(options []Option) int {
-	rStr, err := findOption(options, routineNum, "")
-	if err != nil || rStr == "" {
+	rtnOpt, err := findOption(options, routineNum, nil)
+	if err != nil || rtnOpt == nil {
 		return 1
 	}
 
-	rs, err := strconv.Atoi(rStr)
-	if err != nil {
-		return 1
-	}
-
+	rs := rtnOpt.(int)
 	if rs < 1 {
 		rs = 1
 	} else if rs > 100 {
@@ -82,6 +72,15 @@ func getRoutines(options []Option) int {
 	}
 
 	return rs
+}
+
+// 获取进度回调
+func getProgressListener(options []Option) ProgressListener {
+	isSet, listener, _ := isOptionSet(options, progressListener)
+	if !isSet {
+		return nil
+	}
+	return listener.(ProgressListener)
 }
 
 // 测试使用
@@ -130,8 +129,18 @@ func scheduler(jobs chan FileChunk, chunks []FileChunk) {
 	close(jobs)
 }
 
+func getTotalBytes(chunks []FileChunk) int64 {
+	var tb int64
+	for _, chunk := range chunks {
+		tb += chunk.Size
+	}
+	return tb
+}
+
 // 并发上传，不带断点续传功能
 func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, options []Option, routines int) error {
+	listener := getProgressListener(options)
+
 	chunks, err := SplitFileByPartSize(filePath, partSize)
 	if err != nil {
 		return err
@@ -147,6 +156,11 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	results := make(chan UploadPart, len(chunks))
 	failed := make(chan error)
 	die := make(chan bool)
+
+	var completedBytes int64
+	totalBytes := getTotalBytes(chunks)
+	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
+	publishProgress(listener, event)
 
 	// 启动工作协程
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
@@ -165,8 +179,13 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 		case part := <-results:
 			completed++
 			parts[part.PartNumber-1] = part
+			completedBytes += chunks[part.PartNumber-1].Size
+			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes)
+			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, totalBytes)
+			publishProgress(listener, event)
 			bucket.AbortMultipartUpload(imur)
 			return err
 		}
@@ -175,6 +194,9 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 			break
 		}
 	}
+
+	event = newProgressEvent(TransferStartedEvent, completedBytes, totalBytes)
+	publishProgress(listener, event)
 
 	// 提交任务
 	_, err = bucket.CompleteMultipartUpload(imur, parts)
@@ -311,6 +333,17 @@ func (cp *uploadCheckpoint) allParts() []UploadPart {
 	return ps
 }
 
+// 完成的字节数
+func (cp *uploadCheckpoint) getCompletedBytes() int64 {
+	var completedBytes int64
+	for _, part := range cp.Parts {
+		if part.IsCompleted {
+			completedBytes += part.Chunk.Size
+		}
+	}
+	return completedBytes
+}
+
 // 计算文件文件MD5
 func calcFileMD5(filePath string) (string, error) {
 	return "", nil
@@ -378,6 +411,8 @@ func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePa
 
 // 并发带断点的上传
 func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int) error {
+	listener := getProgressListener(options)
+
 	// LOAD CP数据
 	ucp := uploadCheckpoint{}
 	err := ucp.load(cpFilePath)
@@ -405,6 +440,10 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	failed := make(chan error)
 	die := make(chan bool)
 
+	completedBytes := ucp.getCompletedBytes()
+	event := newProgressEvent(TransferStartedEvent, completedBytes, ucp.FileStat.Size)
+	publishProgress(listener, event)
+
 	// 启动工作协程
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
@@ -422,8 +461,13 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 			completed++
 			ucp.updatePart(part)
 			ucp.dump(cpFilePath)
+			completedBytes += ucp.Parts[part.PartNumber-1].Chunk.Size
+			event = newProgressEvent(TransferDataEvent, completedBytes, ucp.FileStat.Size)
+			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, ucp.FileStat.Size)
+			publishProgress(listener, event)
 			return err
 		}
 
@@ -431,6 +475,9 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 			break
 		}
 	}
+
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, ucp.FileStat.Size)
+	publishProgress(listener, event)
 
 	// 提交分片上传
 	err = complete(&ucp, &bucket, ucp.allParts(), cpFilePath)

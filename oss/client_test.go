@@ -1,4 +1,4 @@
-﻿// client test
+// client test
 // use gocheck, install gocheck to execute "go get gopkg.in/check.v1",
 // see https://labix.org/gocheck
 
@@ -46,8 +46,8 @@ const (
 	// bucket name for object ops test
 	bucketName = "go-sdk-test-bucket-xyz-for-object"
 	// object name for object ops test
-	objectNamePrefix = "go-sdk-test-object-"
-
+	objectNamePrefix = "go-sdk-test-object-xyz-"
+	// sts region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
 
