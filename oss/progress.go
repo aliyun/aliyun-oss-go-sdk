@@ -95,7 +95,7 @@ func (t *teeReader) Read(p []byte) (n int, err error) {
 			event := newProgressEvent(TransferDataEvent, t.consumedBytes, t.totalBytes)
 			publishProgress(t.listener, event)
 		}
-		// tracke
+		// track
 		if t.tracker != nil {
 			t.tracker.completedBytes = t.consumedBytes
 		}
