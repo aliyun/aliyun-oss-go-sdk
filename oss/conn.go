@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+    "sort"
 )
 
 // Conn oss conn
@@ -24,6 +25,9 @@ type Conn struct {
 	url    *urlMaker
 	client *http.Client
 }
+
+var SignKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog"}
+
 
 // init 初始化Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
@@ -58,11 +62,70 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 }
 
 // Do 处理请求，返回响应结果。
-func (conn Conn) Do(method, bucketName, objectName, urlParams, subResource string, headers map[string]string,
+func (conn Conn) Do(method, bucketName, objectName string, params map[string]interface{}, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
+    urlParams := conn.getURLParams(params)
+    subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
 	resource := conn.url.getResource(bucketName, objectName, subResource)
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
+}
+
+func (conn Conn) getURLParams(params map[string]interface{}) string {
+    // sort
+    keys := make([]string, 0, len(params))
+    for k, _ := range params {
+        keys = append(keys, k)
+    }
+    sort.Strings(keys)
+
+    // serialize
+    var buf bytes.Buffer
+    for _, k := range keys {
+        if buf.Len() > 0 {
+            buf.WriteByte('&')
+        }
+        buf.WriteString(url.QueryEscape(k))
+        if params[k] != nil {
+            buf.WriteString("=" + url.QueryEscape(params[k].(string)))
+        }
+    }
+
+    return buf.String()
+}
+
+func (conn Conn) getSubResource(params map[string]interface{}) string {
+    // sort
+    keys := make([]string, 0, len(params))
+    for k, _ := range params {
+        if conn.isParamSign(k) {
+            keys = append(keys, k)
+        }
+    }
+    sort.Strings(keys)
+
+    // serialize
+    var buf bytes.Buffer
+    for _, k := range keys {
+        if buf.Len() > 0 {
+            buf.WriteByte('&')
+        }
+        buf.WriteString(k)
+        if params[k] != nil {
+            buf.WriteString("=" + params[k].(string))
+        }
+    }
+
+    return buf.String()
+}
+
+func (conn Conn) isParamSign(paramKey string) bool {
+    for _, k := range SignKeyList {
+        if paramKey == k {
+            return true
+        }
+    }
+    return false
 }
 
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string, headers map[string]string,
@@ -207,6 +270,7 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 			}
 			err = srvErr
 		}
+
 		return &Response{
 			StatusCode: resp.StatusCode,
 			Headers:    resp.Header,
