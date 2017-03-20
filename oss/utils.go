@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -42,6 +44,104 @@ func getSysInfo() sysInfo {
 		machine = string(bytes.TrimSpace(out))
 	}
 	return sysInfo{name: name, release: release, machine: machine}
+}
+
+// unpackedRange
+type unpackedRange struct {
+	hasStart bool  // 是否指定了起点
+	hasEnd   bool  // 是否指定了终点
+	start    int64 // 起点
+	end      int64 // 终点
+}
+
+// invalid Range Error
+func invalidRangeError(r string) error {
+	return fmt.Errorf("InvalidRange %s", r)
+}
+
+// parseRange parse various styles of range such as bytes=M-N
+func parseRange(normalizedRange string) (*unpackedRange, error) {
+	var err error
+	hasStart := false
+	hasEnd := false
+	var start int64
+	var end int64
+
+	// bytes==M-N or ranges=M-N
+	nrSlice := strings.Split(normalizedRange, "=")
+	if len(nrSlice) != 2 || nrSlice[0] != "bytes" {
+		return nil, invalidRangeError(normalizedRange)
+	}
+
+	// bytes=M-N,X-Y
+	rSlice := strings.Split(nrSlice[1], ",")
+	rStr := rSlice[0]
+
+	if strings.HasSuffix(rStr, "-") { // M-
+		startStr := rStr[:len(rStr)-1]
+		start, err = strconv.ParseInt(startStr, 10, 64)
+		if err != nil {
+			return nil, invalidRangeError(normalizedRange)
+		}
+		hasStart = true
+	} else if strings.HasPrefix(rStr, "-") { // -N
+		len := rStr[1:]
+		end, err = strconv.ParseInt(len, 10, 64)
+		if err != nil {
+			return nil, invalidRangeError(normalizedRange)
+		}
+		if end == 0 { // -0
+			return nil, invalidRangeError(normalizedRange)
+		}
+		hasEnd = true
+	} else { // M-N
+		valSlice := strings.Split(rStr, "-")
+		if len(valSlice) != 2 {
+			return nil, invalidRangeError(normalizedRange)
+		}
+		start, err = strconv.ParseInt(valSlice[0], 10, 64)
+		if err != nil {
+			return nil, invalidRangeError(normalizedRange)
+		}
+		hasStart = true
+		end, err = strconv.ParseInt(valSlice[1], 10, 64)
+		if err != nil {
+			return nil, invalidRangeError(normalizedRange)
+		}
+		hasEnd = true
+	}
+
+	return &unpackedRange{hasStart, hasEnd, start, end}, nil
+}
+
+// adjustRange return adjusted range, adjust the range according to the length of the file
+func adjustRange(ur *unpackedRange, size int64) (start, end int64) {
+	if ur == nil {
+		return 0, size
+	}
+
+	if ur.hasStart && ur.hasEnd {
+		start = ur.start
+		end = ur.end
+		if ur.start < 0 || ur.end > size || ur.start > ur.end {
+			start = 0
+			end = size
+		}
+	} else if ur.hasStart {
+		start = ur.start
+		end = size
+		if ur.start < 0 {
+			start = 0
+		}
+	} else if ur.hasEnd {
+		start = size - ur.end
+		end = size
+		if ur.end < 0 || ur.end > size {
+			start = 0
+			end = size
+		}
+	}
+	return
 }
 
 // GetNowSec returns Unix time, the number of seconds elapsed since January 1, 1970 UTC.

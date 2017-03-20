@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"time"
@@ -352,4 +353,195 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 
 	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024*1024*100, Routines(2), Checkpoint(true, ""))
 	c.Assert(err, NotNil)
+}
+
+// TestDownloadWithRange 带范围的并发下载、断点下载测试
+func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
+	objectName := objectNamePrefix + "tdwr"
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	newFile := "down-new-file-tdwr.jpg"
+
+	// 上传文件
+	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
+	c.Assert(err, IsNil)
+
+	fileSize, err := getFileSize(fileName)
+	c.Assert(err, IsNil)
+
+	// 范围下载，从1024到4096
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Range(1024, 4096))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err := compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// 范围下载，从1024到4096
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), NormalizedRange("1024-4096"))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err = compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// 范围下载，从2048到结束
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), NormalizedRange("2048-"))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err = compareFilesWithRange(fileName, 2048, newFile, 0, fileSize-2048)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// 范围下载，最后4096个字节
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), NormalizedRange("-4096"))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err = compareFilesWithRange(fileName, fileSize-4096, newFile, 0, 4096)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+}
+
+// TestDownloadWithCheckoutAndRange 带范围的并发下载、断点下载测试
+func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
+	objectName := objectNamePrefix + "tdwcr"
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	newFile := "down-new-file-tdwcr.jpg"
+
+	// 上传文件
+	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
+	c.Assert(err, IsNil)
+
+	fileSize, err := getFileSize(fileName)
+	c.Assert(err, IsNil)
+
+	// 范围下载，从1024到4096
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, ""), Range(1024, 4096))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err := compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// 范围下载，从1024到4096
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("1024-4096"))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err = compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// 范围下载，从2048到结束
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), Checkpoint(true, ""), NormalizedRange("2048-"))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err = compareFilesWithRange(fileName, 2048, newFile, 0, fileSize-2048)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// 范围下载，最后4096个字节
+	os.Remove(newFile)
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("-4096"))
+	c.Assert(err, IsNil)
+
+	// check
+	eq, err = compareFilesWithRange(fileName, fileSize-4096, newFile, 0, 4096)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+}
+
+func getFileSize(fileName string) (int64, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		return 0, err
+	}
+
+	return stat.Size(), nil
+}
+
+// compare the content between fileL and fileR with specified range
+func compareFilesWithRange(fileL string, offsetL int64, fileR string, offsetR int64, size int64) (bool, error) {
+	finL, err := os.Open(fileL)
+	if err != nil {
+		return false, err
+	}
+	defer finL.Close()
+	finL.Seek(offsetL, os.SEEK_SET)
+
+	finR, err := os.Open(fileR)
+	if err != nil {
+		return false, err
+	}
+	defer finR.Close()
+	finR.Seek(offsetR, os.SEEK_SET)
+
+	statL, err := finL.Stat()
+	if err != nil {
+		return false, err
+	}
+
+	statR, err := finR.Stat()
+	if err != nil {
+		return false, err
+	}
+
+	if (offsetL+size > statL.Size()) || (offsetR+size > statR.Size()) {
+		return false, nil
+	}
+
+	part := statL.Size() - offsetL
+	if part > 16*1024 {
+		part = 16 * 1024
+	}
+
+	bufL := make([]byte, part)
+	bufR := make([]byte, part)
+	for readN := int64(0); readN < size; {
+		n, _ := finL.Read(bufL)
+		if 0 == n {
+			break
+		}
+
+		n, _ = finR.Read(bufR)
+		if 0 == n {
+			break
+		}
+
+		tailer := part
+		if tailer > size-readN {
+			tailer = size - readN
+		}
+		readN += tailer
+
+		if !bytes.Equal(bufL[0:tailer], bufR[0:tailer]) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
