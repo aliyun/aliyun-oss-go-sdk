@@ -122,7 +122,7 @@ func adjustRange(ur *unpackedRange, size int64) (start, end int64) {
 
 	if ur.hasStart && ur.hasEnd {
 		start = ur.start
-		end = ur.end
+		end = ur.end + 1
 		if ur.start < 0 || ur.end > size || ur.start > ur.end {
 			start = 0
 			end = size

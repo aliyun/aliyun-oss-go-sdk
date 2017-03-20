@@ -360,6 +360,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	objectName := objectNamePrefix + "tdwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-tdwr.jpg"
+	newFileGet := "down-new-file-tdwr-2.jpg"
 
 	// 上传文件
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -370,7 +371,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 
 	// 范围下载，从1024到4096
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Range(1024, 4096))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Range(1024, 4095))
 	c.Assert(err, IsNil)
 
 	// check
@@ -378,13 +379,31 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, Range(1024, 4095))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
 	// 范围下载，从1024到4096
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), NormalizedRange("1024-4096"))
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), NormalizedRange("1024-4095"))
 	c.Assert(err, IsNil)
 
 	// check
 	eq, err = compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, NormalizedRange("1024-4095"))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
@@ -398,6 +417,15 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, NormalizedRange("2048-"))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
 	// 范围下载，最后4096个字节
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), NormalizedRange("-4096"))
@@ -405,6 +433,15 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 
 	// check
 	eq, err = compareFilesWithRange(fileName, fileSize-4096, newFile, 0, 4096)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, NormalizedRange("-4096"))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
@@ -417,6 +454,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	objectName := objectNamePrefix + "tdwcr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-tdwcr.jpg"
+	newFileGet := "down-new-file-tdwcr-2.jpg"
 
 	// 上传文件
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -427,7 +465,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 
 	// 范围下载，从1024到4096
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, ""), Range(1024, 4096))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, ""), Range(1024, 4095))
 	c.Assert(err, IsNil)
 
 	// check
@@ -435,13 +473,31 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, Range(1024, 4095))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
 	// 范围下载，从1024到4096
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("1024-4096"))
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("1024-4095"))
 	c.Assert(err, IsNil)
 
 	// check
 	eq, err = compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, NormalizedRange("1024-4095"))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
@@ -455,6 +511,15 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, NormalizedRange("2048-"))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
 	// 范围下载，最后4096个字节
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("-4096"))
@@ -462,6 +527,15 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 
 	// check
 	eq, err = compareFilesWithRange(fileName, fileSize-4096, newFile, 0, 4096)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	err = s.bucket.GetObjectToFile(objectName, newFileGet, NormalizedRange("-4096"))
+	c.Assert(err, IsNil)
+
+	// compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
