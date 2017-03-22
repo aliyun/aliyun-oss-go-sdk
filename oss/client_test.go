@@ -40,7 +40,9 @@ var (
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
 
     // udf
-	udfEndpoint = os.Getenv("OSS_TEST_ENDPOINT")
+	udfEndpoint = os.Getenv("OSS_TEST_UDF_ENDPOINT")
+	udfAccessID  = os.Getenv("OSS_TEST_UDF_ACCESS_KEY_ID")
+	udfAccessKey = os.Getenv("OSS_TEST_UDF_ACCESS_KEY_SECRET")
 )
 
 const (

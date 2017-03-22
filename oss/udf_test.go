@@ -54,7 +54,7 @@ func randLowStr(n int) string {
 // Run once when the suite starts running
 func (s *OssUDFSuite) SetUpSuite(c *C) {
     testLogger.Println("test udf started")
-    client, err := New(udfEndpoint, accessID, accessKey)
+    client, err := New(udfEndpoint, udfAccessID, udfAccessKey)
     c.Assert(err, IsNil)
     s.client = client
 
@@ -80,7 +80,7 @@ func (s *OssUDFSuite) SetUpSuite(c *C) {
 func (s *OssUDFSuite) TearDownSuite(c *C) {
     // Delete all test udf 
     s.DeleteAllUDFs(c)
-    //s.DeleteObjects(c)
+    s.DeleteObjects(c)
 }
 
 // Run after each test or benchmark runs
@@ -866,8 +866,8 @@ func (s *OssUDFSuite) TestUDFImage(c *C) {
     c.Assert(len(guir.UDFImages), Equals, 0)
 
     // delete image again after image delete end
-    //err = s.udf.DeleteUDFImage(udfNameTest)
-    //c.Assert(err, NotNil)
+    err = s.udf.DeleteUDFImage(udfNameTest)
+    c.Assert(err, IsNil)
 
     // delete udf
     err = s.udf.DeleteUDF(udfNameTest)
