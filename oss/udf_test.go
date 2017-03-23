@@ -771,11 +771,11 @@ func (s *OssUDFSuite) TestUDFImage(c *C) {
     c.Assert(ldr.UDFs[1].UDFName, Equals, udfNameTest1)
 
     // create application error
-    udfAppConfig := UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig := UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
     c.Assert(err, NotNil)
 
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:3, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:3, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
     c.Assert(err, NotNil)
 
@@ -799,7 +799,7 @@ func (s *OssUDFSuite) TestUDFImage(c *C) {
     c.Assert(err, NotNil)
 
     // create application to build_failed one
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
     c.Assert(err, NotNil)
 
@@ -902,7 +902,7 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     c.Assert(err, NotNil)
 
     // create application to not exist udf
-    udfAppConfig := UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig := UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, NotNil)
 
@@ -930,7 +930,7 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     c.Assert(err, IsNil)
  
     // create application
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, NotNil)
 
@@ -1004,7 +1004,7 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     c.Assert(err, IsNil)
 
     // create application with building status
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, NotNil)
 
@@ -1044,20 +1044,20 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
 
     // Create Application
     // create application with error config 
-    udfAppConfig = UDFAppConfiguration{ImageVersion:3, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:3, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, NotNil)
 
-    udfAppConfig = UDFAppConfiguration{ImageVersion:0, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:0, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, NotNil)
 
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:11, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:11, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, NotNil)
 
     // create correct application 
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, IsNil)
 
@@ -1074,7 +1074,7 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     c.Assert(guair.Flavor.InstanceType, Equals, "ecs.n1.small")
 
     // create application for resize
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForResize, udfAppConfig)
     c.Assert(err, IsNil)
 
@@ -1324,7 +1324,7 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     c.Assert(guair2.InstanceNum, Equals, int64(2))
 
     // create application in app deleting 
-    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small", IoOptimized:"optimized"}}
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
     err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
     c.Assert(err, NotNil)
 

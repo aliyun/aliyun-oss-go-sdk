@@ -30,33 +30,6 @@ const (
 	MetaReplace MetadataDirectiveType = "REPLACE"
 )
 
-// UDF相关
-type UDFIoOptimizedType string
-
-const (
-    // UDFNone 非使最优
-    UDFNone UDFIoOptimizedType = "none"
-
-    // UDFIsOptimized 使最优
-    UDFIsOptimized UDFIoOptimizedType = "optimized"
-)
-
-type UDFDiskCategoryType string
-
-const (
-    // UDFCloud 普通云盘
-    UDFCloud UDFDiskCategoryType = "cloud"
-
-    // UDFCloudEfficiency 高效云盘
-    UDFCloudEfficiency UDFDiskCategoryType = "cloud_efficiency"
-
-    // UDFCloudSSD SSD云盘
-    UDFCloudSSD UDFDiskCategoryType = "cloud_ssd"
-
-    // UDFEphemeralSSD 本地SSD盘
-    UDFEphemeralSSD UDFDiskCategoryType = "ephemeral_ssd"
-)
-
 // Http头标签
 const (
 	HTTPHeaderAcceptEncoding     string = "Accept-Encoding"

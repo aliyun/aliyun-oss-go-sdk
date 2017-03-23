@@ -534,11 +534,6 @@ type UDFAppConfiguration struct {
 type UDFAppFlavor struct {
     XMLName             xml.Name            `xml:"Flavor"`
     InstanceType        string              `xml:"InstanceType"`
-    ZoneId              string              `xml:"ZoneId,omitempty"`
-    IoOptimized         UDFIoOptimizedType  `xml:"IoOptimized,omitempty"`
-    SystemDiskCategory  UDFDiskCategoryType `xml:"SystemDiskCategory,omitempty"`    // 系统盘的磁盘种类，为空时表示系统选择
-    DataDiskCategory    UDFDiskCategoryType `xml:"DataDiskCategory,omitempty"`      // 数据盘的磁盘种类，为空时表示系统选择
-    DataDiskSize        int64               `xml:"DataDiskSize,omitempty"`          // 数据盘的磁盘大小，以GB为单位
 }
 
 // GetUDFApplicationInfoResult GetUDFApplicationInfo请求返回的结果 
