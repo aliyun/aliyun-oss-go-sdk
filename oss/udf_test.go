@@ -288,29 +288,29 @@ func (s *OssUDFSuite) testLogNotExist(udfName string, t time.Time, c *C) {
     c.Assert(os.IsNotExist(err), Equals, true)
 
     // get log
-    _, err = s.udf.GetObjectApplicationLog(udfName)
+    _, err = s.udf.GetUDFApplicationLog(udfName)
     c.Assert(err, NotNil)
 
-    _, err = s.udf.GetObjectApplicationLog(udfName, UDFSince(time.Now()))
+    _, err = s.udf.GetUDFApplicationLog(udfName, UDFSince(time.Now()))
     c.Assert(err, NotNil)
 
-    _, err = s.udf.GetObjectApplicationLog(udfName, UDFTail(10))
+    _, err = s.udf.GetUDFApplicationLog(udfName, UDFTail(10))
     c.Assert(err, NotNil)
 
-    _, err = s.udf.GetObjectApplicationLog(udfName, UDFSince(time.Now()), UDFTail(10))
+    _, err = s.udf.GetUDFApplicationLog(udfName, UDFSince(time.Now()), UDFTail(10))
     c.Assert(err, NotNil)
 
     // get log to file
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath)
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath)
     c.Assert(err, NotNil)
 
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath, UDFSince(time.Now()))
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath, UDFSince(time.Now()))
     c.Assert(err, NotNil)
 
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath, UDFTail(10))
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath, UDFTail(10))
     c.Assert(err, NotNil)
 
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath, UDFSince(t), UDFTail(10))
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath, UDFSince(t), UDFTail(10))
     c.Assert(err, NotNil)
 
     _, err = os.Stat(udfLogPath)
@@ -322,56 +322,56 @@ func (s *OssUDFSuite) testLog(udfName string, t time.Time, c *C) {
     os.Remove(udfLogPath)
 
     // get log
-    body, err := s.udf.GetObjectApplicationLog(udfName)
+    body, err := s.udf.GetUDFApplicationLog(udfName)
     c.Assert(err, IsNil)
     str, err := s.readBody(body)
     c.Assert(err, IsNil)
     c.Assert(str != "", Equals, true)
 
     // get log to file
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath)
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath)
     c.Assert(err, IsNil)
     str = s.readFile(udfLogPath, c)
     c.Assert(str != "", Equals, true)
 
     // with since
-    body, err = s.udf.GetObjectApplicationLog(udfName, UDFSince(time.Now()))
+    body, err = s.udf.GetUDFApplicationLog(udfName, UDFSince(time.Now()))
     c.Assert(err, IsNil)
     str, err = s.readBody(body)
     c.Assert(err, IsNil)
  
     // with since
-    body, err = s.udf.GetObjectApplicationLog(udfName, UDFSince(t))
+    body, err = s.udf.GetUDFApplicationLog(udfName, UDFSince(t))
     c.Assert(err, IsNil)
     str, err = s.readBody(body)
     c.Assert(err, IsNil)
     c.Assert(str != "", Equals, true)
  
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath, UDFSince(t))
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath, UDFSince(t))
     c.Assert(err, IsNil)
     str = s.readFile(udfLogPath, c)
     c.Assert(str, Equals, str)
     c.Assert(str != "", Equals, true)
 
-    body, err = s.udf.GetObjectApplicationLog(udfName, UDFTail(10))
+    body, err = s.udf.GetUDFApplicationLog(udfName, UDFTail(10))
     c.Assert(err, IsNil)
     str, err = s.readBody(body)
     c.Assert(err, IsNil)
     c.Assert(str != "", Equals, true)
 
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath, UDFTail(10))
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath, UDFTail(10))
     c.Assert(err, IsNil)
     str = s.readFile(udfLogPath, c)
     c.Assert(str, Equals, str)
     c.Assert(str != "", Equals, true)
     
-    body, err = s.udf.GetObjectApplicationLog(udfName, UDFSince(t), UDFTail(10))
+    body, err = s.udf.GetUDFApplicationLog(udfName, UDFSince(t), UDFTail(10))
     c.Assert(err, IsNil)
     str, err = s.readBody(body)
     c.Assert(err, IsNil)
     c.Assert(str != "", Equals, true)
 
-    err = s.udf.GetObjectApplicationLogToFile(udfName, udfLogPath, UDFSince(t), UDFTail(10))
+    err = s.udf.GetUDFApplicationLogToFile(udfName, udfLogPath, UDFSince(t), UDFTail(10))
     c.Assert(err, IsNil)
     str = s.readFile(udfLogPath, c)
     c.Assert(str != "", Equals, true)

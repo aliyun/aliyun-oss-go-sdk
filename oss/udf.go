@@ -508,7 +508,7 @@ func (udf UDF) ResizeUDFApplication(udfName string, instanceNum int64) error {
 
 
 //
-// GetObjectApplicationLog 获取一个UDF应用的日志信息，日志为应用的标准输出和标准错误输出（stdout和stderr）。 
+// GetUDFApplicationLog 获取一个UDF应用的日志信息，日志为应用的标准输出和标准错误输出（stdout和stderr）。 
 //
 // udfName  需要获取日志的UDF名称。 
 // options  对象的属性限制项，可选值有since、tail。
@@ -516,8 +516,8 @@ func (udf UDF) ResizeUDFApplication(udfName string, instanceNum int64) error {
 // io.ReadCloser  reader，读取数据后需要close。error为nil时有效。
 // error  操作无错误为nil，非nil为错误信息。
 //
-func (udf UDF) GetObjectApplicationLog(udfName string, options ...Option) (io.ReadCloser, error) {
-    result, err := udf.DoGetObjectApplicationLog(udfName, options)
+func (udf UDF) GetUDFApplicationLog(udfName string, options ...Option) (io.ReadCloser, error) {
+    result, err := udf.DoGetUDFApplicationLog(udfName, options)
     if err != nil {
         return nil, err
     }
@@ -525,18 +525,18 @@ func (udf UDF) GetObjectApplicationLog(udfName string, options ...Option) (io.Re
 }
 
 //
-// GetObjectApplicationLogToFile 下载UDF应用的日志文件。
+// GetUDFApplicationLogToFile 下载UDF应用的日志文件。
 //
 // udfName  需要获取日志的UDF名称。
 // options  对象的属性限制项，可选值有since、tail。
 //
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
-func (udf UDF) GetObjectApplicationLogToFile(udfName, filePath string, options ...Option) error {
+func (udf UDF) GetUDFApplicationLogToFile(udfName, filePath string, options ...Option) error {
     tempFilePath := filePath + TempFileSuffix
 
     // 读取Object内容
-    result, err := udf.DoGetObjectApplicationLog(udfName, options)
+    result, err := udf.DoGetUDFApplicationLog(udfName, options)
     if err != nil {
         return err
     }
@@ -570,14 +570,14 @@ func (udf UDF) GetObjectApplicationLogToFile(udfName, filePath string, options .
 }
 
 //
-// DoGetObjectApplicationLog 下载UDF应用的日志文件。
+// DoGetUDFApplicationLog 下载UDF应用的日志文件。
 //
 // udfName  需要获取日志的UDF名称。
 // options  对象的属性限制项，可选值有since、tail。
 //
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
-func (udf UDF) DoGetObjectApplicationLog(udfName string, options []Option) (*GetObjectResult, error) {
+func (udf UDF) DoGetUDFApplicationLog(udfName string, options []Option) (*GetObjectResult, error) {
     params, err := getRawParams(options)
     if err != nil {
         return nil, err
