@@ -24,7 +24,7 @@ var _ = Suite(&OssUDFSuite{})
 
 var (
     udfNamePrefix = "go-sdk-test-udf-"  
-    udfBucketName = "go-sdk-test-bucket-udf"
+    udfBucketName = "go-sdk-test-bucket-udf" + randLowStr(3)
     udfLogPath = "go-sdk-test-udf-log" 
     letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
     imagePath = "test_resource/udf-go-pingpong.tar.gz" 
@@ -132,6 +132,8 @@ func (s *OssUDFSuite) DeleteObjects(c *C) {
 		err = s.bucket.DeleteObject(object.Key)
 		c.Assert(err, IsNil)
 	}
+    
+    err = s.bucket.Client.DeleteBucket(udfBucketName)
 }
 
 func (s *OssUDFSuite) WaitForImageStatusChange(udfName string, imageNum int, statusList []string, aheadSleepTime int64, c *C) GetUDFImageInfoResult {
