@@ -536,6 +536,27 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 	c.Assert(eq, Equals, true)
 	os.Remove(newFile)
 
+	err = s.bucket.GetObjectToFile(objectName, newFile, NormalizedRange("15-35"))
+	c.Assert(err, IsNil)
+	eq, err = compareFileData(newFile, val[15:36])
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	os.Remove(newFile)
+
+	err = s.bucket.GetObjectToFile(objectName, newFile, NormalizedRange("15-"))
+	c.Assert(err, IsNil)
+	eq, err = compareFileData(newFile, val[15:])
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	os.Remove(newFile)
+
+	err = s.bucket.GetObjectToFile(objectName, newFile, NormalizedRange("-10"))
+	c.Assert(err, IsNil)
+	eq, err = compareFileData(newFile, val[(len(val)-10):len(val)])
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	os.Remove(newFile)
+
 	// If-Modified-Since
 	err = s.bucket.GetObjectToFile(objectName, newFile, IfModifiedSince(futureDate))
 	c.Assert(err, NotNil)

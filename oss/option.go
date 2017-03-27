@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -84,6 +85,11 @@ func Meta(key, value string) Option {
 // Range is an option to set Range header, [start, end]
 func Range(start, end int64) Option {
 	return setHeader(HTTPHeaderRange, fmt.Sprintf("bytes=%d-%d", start, end))
+}
+
+// NormalizedRange is an option to set Range header, such as 1024-2048 or 1024- or -2048
+func NormalizedRange(nr string) Option {
+	return setHeader(HTTPHeaderRange, fmt.Sprintf("bytes=%s", strings.TrimSpace(nr)))
 }
 
 // AcceptEncoding is an option to set Accept-Encoding header
