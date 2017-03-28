@@ -319,9 +319,9 @@ func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosi
 	}
 
 	result, err := bucket.DoAppendObject(request, options)
-    if err != nil {
-        return appendPosition, err
-    }
+	if err != nil {
+		return appendPosition, err
+	}
 
 	return result.NextPosition, err
 }
