@@ -63,17 +63,14 @@ func (s *OssUDFSuite) SetUpSuite(c *C) {
     s.udf = udf 
     testLogger.Println("test udf started")
 
-    udfNameTest := udfNamePrefix + "ABC" 
-    udfConfig := UDFConfiguration{UDFName:udfNameTest} 
-    err = s.udf.CreateUDF(udfConfig)
-    c.Assert(err, NotNil)
-
 	s.client.CreateBucket(udfBucketName)
 	time.Sleep(5 * time.Second)
 
     bucket, err := s.client.Bucket(udfBucketName)
     c.Assert(err, IsNil)
     s.bucket = bucket
+
+    s.DeleteAllUDFs(c)
 }
 
 // Run before each test or benchmark starts running
@@ -101,10 +98,7 @@ func (s *OssUDFSuite) DeleteAllUDFs(c *C) {
         }
         err = s.udf.DeleteUDFApplication(udfName)  
         if err != nil {
-            fmt.Println("delete app fail", udfName, err)
-            guair, err := s.udf.GetUDFApplicationInfo(udfName)
-            c.Assert(err, IsNil)
-            fmt.Println("app status:", guair)
+            fmt.Println("delete app fail", udfName)
         } else {
             fmt.Println("delete app success", udfName)
         }
@@ -222,29 +216,6 @@ func (s *OssUDFSuite) WaitForImageDeleteEnd(udfName string, aheadSleepTime int64
             break
         }
         fmt.Println("waiting")
-        time.Sleep(20*sleepSecond)
-        num++
-    } 
-    c.Assert(num < 100, Equals, true)
-    fmt.Println("wait end")
-}
-
-func (s *OssUDFSuite) WaitForApplicationDeleteEnd(udfName string, aheadSleepTime int64, c *C) {
-    var err error
-    fmt.Println("waiting for application delete")
-    if aheadSleepTime > 0 {
-        time.Sleep(time.Duration(aheadSleepTime)*sleepSecond)
-    }
-
-    num := 0
-    for num < 100 {
-        _, err = s.udf.GetUDFApplicationInfo(udfName)
-        if err != nil {
-            if err.(ServiceError).Code == "NoSuchUdfApplication" {
-                break
-            }
-        }
-        fmt.Println("waiting application")
         time.Sleep(20*sleepSecond)
         num++
     } 
@@ -876,6 +847,237 @@ func (s *OssUDFSuite) TestUDFImage(c *C) {
     c.Assert(err, IsNil)
 }
 
+func (s *OssUDFSuite) TestUDFApplicationErr(c *C) {
+    udfNameTest := udfNamePrefix + randLowStr(5) 
+    tlog := time.Now()
+
+    // create application to not exist udf
+    udfAppConfig := UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
+    err := s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
+    c.Assert(err, NotNil)
+
+    // get application
+    _, err = s.udf.GetUDFApplicationInfo(udfNameTest)
+    c.Assert(err, NotNil)
+
+    // list application error
+    client, err := New(udfEndpoint, udfAccessID, "abc")
+    c.Assert(err, IsNil)
+
+    udf, err := client.UDF()
+    c.Assert(err, IsNil)
+
+    _, err = udf.ListUDFApplications()
+    c.Assert(err, NotNil)
+
+    // list application
+    luar, err := s.udf.ListUDFApplications()
+    c.Assert(err, IsNil)
+    s.checkAppNotInListAppsResult(udfNameTest, luar, c)
+
+    // delete application
+    err = s.udf.DeleteUDFApplication(udfNameTest)
+    c.Assert(err, NotNil)
+
+    // upgrade application  
+    err = s.udf.UpgradeUDFApplication(udfNameTest, int64(2))
+    c.Assert(err, NotNil)
+
+    // resize application
+    err = s.udf.ResizeUDFApplication(udfNameTest, int64(2))
+    c.Assert(err, NotNil)
+
+    // test log
+    s.testLogNotExist(udfNameTest, tlog, c)
+}
+
+func (s *OssUDFSuite) TestUDFApplication(c *C) {
+    // Simultaneous start two udf for different test, reduce test time
+    udfNameTest := udfNamePrefix + randLowStr(5) 
+    tlog := time.Now()
+
+    // create udf 
+    udfConfig := UDFConfiguration{UDFName:udfNameTest} 
+    err := s.udf.CreateUDF(udfConfig)
+    c.Assert(err, IsNil)
+
+    // get udf 
+    gur, err := s.udf.GetUDF(udfNameTest)
+    c.Assert(err, IsNil)
+    udfID := gur.UDFID
+ 
+    // create image
+    err = s.udf.UploadUDFImageFromFile(udfNameTest, imagePath, UDFImageDesc("镜像")) 
+    c.Assert(err, IsNil)
+
+    // create another image for upgrade 
+    err = s.udf.UploadUDFImageFromFile(udfNameTest, upgradeImagePath, UDFImageDesc("更新的镜像")) 
+    c.Assert(err, IsNil)
+
+    // get image info
+    guir, err := s.udf.GetUDFImageInfo(udfNameTest)
+    c.Assert(err, IsNil)
+    c.Assert(len(guir.UDFImages), Equals, 2)
+    c.Assert(guir.UDFImages[0].Version, Equals, int64(1))
+    c.Assert(guir.UDFImages[0].Status, Equals, "building")
+    c.Assert(guir.UDFImages[0].Description, Equals, "镜像")
+    c.Assert(guir.UDFImages[1].Version, Equals, int64(2))
+    c.Assert(guir.UDFImages[1].Status, Equals, "building")
+    c.Assert(guir.UDFImages[1].Description, Equals, "更新的镜像")
+
+    // Wait For Image Success 
+    guir = s.WaitForImageStatusChange(udfNameTest, 2, []string{"building"}, BuildImageSleepSecond, c)
+    c.Assert(guir.UDFImages[0].Status, Equals, "build_success")
+    c.Assert(guir.UDFImages[1].Status, Equals, "build_success")
+
+    // create application with error config 
+    udfAppConfig := UDFAppConfiguration{ImageVersion:3, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
+    err = s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
+    c.Assert(err, NotNil)
+
+    udfAppConfig = UDFAppConfiguration{ImageVersion:0, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
+    err = s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
+    c.Assert(err, NotNil)
+
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:11, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
+    err = s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
+    c.Assert(err, NotNil)
+
+    // create correct application 
+    udfAppConfig = UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
+    err = s.udf.CreateUDFApplication(udfNameTest, udfAppConfig)
+    c.Assert(err, IsNil)
+
+    // get application
+    guair, err := s.udf.GetUDFApplicationInfo(udfNameTest)
+    c.Assert(err, IsNil)
+    c.Assert(guair.UDFID, Equals, udfID)
+    //c.Assert(guair.UDFName, Equals, udfNameTest)
+    c.Assert(guair.Region != "", Equals, true)
+    c.Assert(guair.ImageVersion, Equals, int64(1))
+    c.Assert(guair.InstanceNum, Equals, int64(1))
+    c.Assert(guair.Status == "creating" || guair.Status == "starting", Equals, true)
+    c.Assert(guair.CreationDate.Unix() <= time.Now().Unix(), Equals, true)
+    c.Assert(guair.Flavor.InstanceType, Equals, "ecs.n1.small")
+
+    // list application
+    luar, err := s.udf.ListUDFApplications()
+    c.Assert(err, IsNil)
+    exist, guair1 := s.getAppFromListAppsResult(udfNameTest, luar)
+    c.Assert(exist, Equals, true)
+    c.Assert(guair1.UDFName, Equals, udfNameTest)
+    c.Assert(guair1.Status == "creating" || guair1.Status == "starting", Equals, true)
+    c.Assert(guair1.ImageVersion, Equals, int64(1))
+    c.Assert(guair1.InstanceNum, Equals, int64(1))
+    c.Assert(guair1.Region != "", Equals, true)
+    c.Assert(guair1.CreationDate.Unix() <= time.Now().Unix(), Equals, true)
+    c.Assert(guair1.Flavor.InstanceType, Equals, "ecs.n1.small")
+
+    // delete application of starting
+    err = s.udf.DeleteUDFApplication(udfNameTest)
+    c.Assert(err, NotNil)
+
+    // upgrade application to itself(image status build success) 
+    err = s.udf.UpgradeUDFApplication(udfNameTest, int64(1))
+    c.Assert(err, NotNil)
+
+    // resize application of starting
+    err = s.udf.ResizeUDFApplication(udfNameTest, int64(2))
+    c.Assert(err, NotNil)
+
+    // wait application to running status
+    guair = s.WaitForApplicationStatusChange(udfNameTest, []string{"starting", "creating"}, BuildAppSleepSecond, c)
+    c.Assert(guair.Status, Equals, "running")
+    c.Assert(guair.UDFID, Equals, udfID)
+    c.Assert(guair.ImageVersion, Equals, int64(1))
+    c.Assert(guair.InstanceNum, Equals, int64(1))
+
+    // list application
+    luar, err = s.udf.ListUDFApplications()
+    c.Assert(err, IsNil)
+    exist, guair1 = s.getAppFromListAppsResult(udfNameTest, luar)
+    c.Assert(exist, Equals, true)
+    c.Assert(guair1.UDFName, Equals, udfNameTest)
+    c.Assert(guair1.Status, Equals, "running")
+
+    // test log
+    // run application, put object
+    objectName := objectNamePrefix + "udf-log"
+    objectValue := "abc"
+    err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+    c.Assert(err, IsNil)
+    s.testLog(udfNameTest, tlog, c)
+
+    // upgrade application 
+    err = s.udf.UpgradeUDFApplication(udfNameTest, int64(2))
+    c.Assert(err, IsNil)
+
+    // wait for upgrade ok
+    guair = s.WaitForApplicationStatusChange(udfNameTest, []string{"upgrading"}, UpgradeAppSleepSecond, c) 
+    c.Assert(guair.Status, Equals, "running")
+    //c.Assert(guair.UDFName, Equals, udfNameTest)
+    c.Assert(guair.ImageVersion, Equals, int64(2))
+    c.Assert(guair.InstanceNum, Equals, int64(1))
+
+    // resize application
+    err = s.udf.ResizeUDFApplication(udfNameTest, int64(2))
+    c.Assert(err, IsNil)
+
+    // wait for resize ok
+    guair = s.WaitForApplicationStatusChange(udfNameTest, []string{"resizing"}, ResizeAppSleepSecond, c)
+    c.Assert(guair.Status, Equals, "running")
+    //c.Assert(guair.UDFName, Equals, udfNameTestForResize)
+    c.Assert(guair.ImageVersion, Equals, int64(2))
+    c.Assert(guair.InstanceNum, Equals, int64(2))
+
+    // delete application 
+    err = s.udf.DeleteUDFApplication(udfNameTest)
+    c.Assert(err, IsNil)
+
+    // get application 
+    guair, err = s.udf.GetUDFApplicationInfo(udfNameTest)
+    c.Assert(err, IsNil)
+    c.Assert(guair.UDFID, Equals, udfID)
+    //c.Assert(guair.UDFName, Equals, udfNameTest)
+    c.Assert(guair.ImageVersion, Equals, int64(2))
+    c.Assert(guair.InstanceNum, Equals, int64(2))
+    c.Assert(guair.Status, Equals, "deleting")
+
+    // list application
+    luar, err = s.udf.ListUDFApplications()
+    c.Assert(err, IsNil)
+    exist, guair1 = s.getAppFromListAppsResult(udfNameTest, luar)
+    c.Assert(exist, Equals, true)
+    c.Assert(guair1.UDFName, Equals, udfNameTest)
+    c.Assert(guair1.Status, Equals, "deleting")
+    c.Assert(guair1.ImageVersion, Equals, int64(2))
+    c.Assert(guair1.InstanceNum, Equals, int64(2))
+}
+
+/*
+func (s *OssUDFSuite) WaitForApplicationDeleteEnd(udfName string, aheadSleepTime int64, c *C) {
+    var err error
+    fmt.Println("waiting for application delete")
+    if aheadSleepTime > 0 {
+        time.Sleep(time.Duration(aheadSleepTime)*sleepSecond)
+    }
+
+    num := 0
+    for num < 100 {
+        _, err = s.udf.GetUDFApplicationInfo(udfName)
+        if err != nil {
+            if err.(ServiceError).Code == "NoSuchUdfApplication" {
+                break
+            }
+        }
+        fmt.Println("waiting application")
+        time.Sleep(20*sleepSecond)
+        num++
+    } 
+    c.Assert(num < 100, Equals, true)
+    fmt.Println("wait end")
+}
+
 func (s *OssUDFSuite) TestUDFApplication(c *C) {
     // Simultaneous start two udf for different test, reduce test time
     str := randLowStr(5)
@@ -885,36 +1087,6 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     tlog := time.Now()
 
     // 1.UDF Not Exist
-    // get application
-    _, err := s.udf.GetUDFApplicationInfo(udfNameTestForUpgrade)
-    c.Assert(err, NotNil)
-
-    // list application
-    luar, err := s.udf.ListUDFApplications()
-    c.Assert(err, IsNil)
-    s.checkAppNotInListAppsResult(udfNameTestForUpgrade, luar, c)
-    s.checkAppNotInListAppsResult(udfNameTestForResize, luar, c)
-
-    // delete application
-    err = s.udf.DeleteUDFApplication(udfNameTestForUpgrade)
-    c.Assert(err, NotNil)
-
-    // upgrade application  
-    err = s.udf.UpgradeUDFApplication(udfNameTestForUpgrade, int64(2))
-    c.Assert(err, NotNil)
-
-    // create application to not exist udf
-    udfAppConfig := UDFAppConfiguration{ImageVersion:1, InstanceNum:1, Flavor:UDFAppFlavor{InstanceType:"ecs.n1.small"}}
-    err = s.udf.CreateUDFApplication(udfNameTestForUpgrade, udfAppConfig)
-    c.Assert(err, NotNil)
-
-    // resize application
-    err = s.udf.ResizeUDFApplication(udfNameTestForResize, int64(2))
-    c.Assert(err, NotNil)
-
-    // test log
-    s.testLogNotExist(udfNameTestForUpgrade, tlog, c)
-
     // 2.UDF Exist, Image Not Exist
     udfConfig := UDFConfiguration{UDFName:udfNameTestForUpgrade} 
     err = s.udf.CreateUDF(udfConfig)
@@ -923,8 +1095,6 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     // get udf 
     gur, err := s.udf.GetUDF(udfNameTestForUpgrade)
     c.Assert(err, IsNil)
-    c.Assert(gur.UDFName, Equals, udfNameTestForUpgrade)
-    c.Assert(gur.UDFID != "", Equals, true)
     udfID := gur.UDFID
  
     udfConfig = UDFConfiguration{UDFName:udfNameTestForResize} 
@@ -1272,8 +1442,7 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
 
     // Wait For Resize OK
     if luar.UDFApplications[0].Status == "resizing" {
-        t := time.Now().Unix()
-        guair = s.WaitForApplicationStatusChange(udfNameTestForResize, []string{"resizing"}, t - tresize, c)
+        guair = s.WaitForApplicationStatusChange(udfNameTestForResize, []string{"resizing"}, ResizeAppSleepSecond - (time.Now().Unix() - tresize), c)
         c.Assert(guair.Status, Equals, "running")
         //c.Assert(guair.UDFName, Equals, udfNameTestForResize)
         c.Assert(guair.ImageVersion, Equals, int64(1))
@@ -1281,8 +1450,7 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     }
 
     // Wait For Upgrade OK
-    t := time.Now().Unix()
-    guair = s.WaitForApplicationStatusChange(udfNameTestForUpgrade, []string{"upgrading"}, t - tupgrade, c) 
+    guair = s.WaitForApplicationStatusChange(udfNameTestForUpgrade, []string{"upgrading"}, UpgradeAppSleepSecond - (time.Now().Unix() - tupgrade), c) 
     c.Assert(guair.Status, Equals, "running")
     //c.Assert(guair.UDFName, Equals, udfNameTestForUpgrade)
     c.Assert(guair.ImageVersion, Equals, int64(2))
@@ -1433,3 +1601,4 @@ func (s *OssUDFSuite) TestUDFApplication(c *C) {
     c.Assert(err, IsNil)
     c.Assert(len(ldr.UDFs), Equals, 0)
 }
+*/

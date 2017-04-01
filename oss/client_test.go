@@ -28,8 +28,8 @@ var (
 	endpoint  = os.Getenv("OSS_TEST_ENDPOINT")
 	accessID  = os.Getenv("OSS_TEST_ACCESS_KEY_ID")
 	accessKey = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
-
-	// proxy
+	
+    // proxy
 	proxyHost   = os.Getenv("OSS_TEST_PROXY_HOST")
 	proxyUser   = os.Getenv("OSS_TEST_PROXY_USER")
 	proxyPasswd = os.Getenv("OSS_TEST_PROXY_PASSWORD")
