@@ -1512,6 +1512,72 @@ func (s *OssBucketSuite) TestUploadBigFile(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssBucketSuite) TestSymlink(c *C) {
+	objectName := objectNamePrefix + "符号链接"
+	targetObjectName := objectNamePrefix + "符号链接目标文件"
+
+	err := s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.DeleteObject(targetObjectName)
+	c.Assert(err, IsNil)
+
+	target, err := s.bucket.GetSymlink(objectName)
+	c.Assert(err, NotNil)
+
+	// Put
+	err = s.bucket.PutSymlink(objectName, targetObjectName)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.PutObject(targetObjectName, strings.NewReader("target"))
+	c.Assert(err, IsNil)
+
+	err = s.bucket.PutSymlink(objectName, targetObjectName)
+	c.Assert(err, IsNil)
+
+	target, err = s.bucket.GetSymlink(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(target, Equals, targetObjectName)
+
+	body, err := s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, "target")
+
+	target, err = s.bucket.GetSymlink(targetObjectName)
+	c.Assert(err, NotNil)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader("src"))
+	c.Assert(err, IsNil)
+
+	body, err = s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, "src")
+
+	// put symlink again
+	err = s.bucket.PutSymlink(objectName, targetObjectName)
+	c.Assert(err, IsNil)
+
+	target, err = s.bucket.GetSymlink(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(target, Equals, targetObjectName)
+
+	body, err = s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, "target")
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.DeleteObject(targetObjectName)
+	c.Assert(err, IsNil)
+}
+
 // private
 func createFileAndWrite(fileName string, data []byte) error {
 	os.Remove(fileName)

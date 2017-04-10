@@ -597,6 +597,50 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 	return out, err
 }
 
+//
+// PutSymlink 创建符号链接。
+//
+// 符号链接的目标文件类型不能为符号链接。
+// 创建符号链接时: 不检查目标文件是否存在, 不检查目标文件类型是否合法, 不检查目标文件是否有权限访问。
+// 以上检查，都推迟到GetObject等需要访问目标文件的API。
+// 如果试图添加的文件已经存在，并且有访问权限。新添加的文件将覆盖原来的文件。
+// 如果在PutSymlink的时候，携带以x-oss-meta-为前缀的参数，则视为user meta。
+//
+// error 操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, options ...Option) error {
+	options = append(options, SymlinkTarget(url.QueryEscape(targetObjectKey)))
+	resp, err := bucket.do("PUT", symObjectKey, "symlink", "symlink", options, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+//
+// GetSymlink 获取符号链接的目标文件。
+// 如果符号链接不存在返回404。
+//
+// objectKey 获取目标文件的符号链接object。
+//
+// error 操作无错误为nil，非nil为错误信息。当error为nil时，返回的string为目标文件，否则该值无效。
+//
+func (bucket Bucket) GetSymlink(objectKey string) (string, error) {
+	resp, err := bucket.do("GET", objectKey, "symlink", "symlink", nil, nil, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	targetObjectKey := resp.Headers.Get(HTTPHeaderOSSSymlinkTarget)
+	targetObjectKey, err = url.QueryUnescape(targetObjectKey)
+	if err != nil {
+		return "", err
+	}
+	return targetObjectKey, err
+}
+
 // Private
 func (bucket Bucket) do(method, objectName, urlParams, subResource string, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {

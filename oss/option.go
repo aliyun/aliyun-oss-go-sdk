@@ -164,6 +164,11 @@ func ObjectACL(acl ACLType) Option {
 	return setHeader(HTTPHeaderOssObjectACL, string(acl))
 }
 
+// SymlinkTarget is an option to set X-Oss-Symlink-Target
+func SymlinkTarget(targetObjectKey string) Option {
+	return setHeader(HTTPHeaderOSSSymlinkTarget, targetObjectKey)
+}
+
 // Origin is an option to set Origin header
 func Origin(value string) Option {
 	return setHeader(HTTPHeaderOrigin, value)
