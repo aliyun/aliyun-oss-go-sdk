@@ -96,7 +96,8 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 
 	listener := getProgressListener(options)
 
-	resp, err := bucket.do("PUT", request.ObjectKey, "", "", options, request.Reader, listener)
+	params := map[string]interface{}{}
+	resp, err := bucket.do("PUT", request.ObjectKey, params, options, request.Reader, listener)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +189,8 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*GetObjectResult, error) {
-	resp, err := bucket.do("GET", request.ObjectKey, "", "", options, nil, nil)
+	params := map[string]interface{}{}
+	resp, err := bucket.do("GET", request.ObjectKey, params, options, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +233,8 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
 	options = append(options, CopySource(bucket.BucketName, url.QueryEscape(srcObjectKey)))
-	resp, err := bucket.do("PUT", destObjectKey, "", "", options, nil, nil)
+	params := map[string]interface{}{}
+	resp, err := bucket.do("PUT", destObjectKey, params, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -284,7 +287,8 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 	if err != nil {
 		return out, err
 	}
-	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, "", "", headers, nil, 0, nil)
+    params := map[string]interface{}{}
+	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, params, headers, nil, 0, nil)
 	if err != nil {
 		return out, err
 	}
@@ -333,7 +337,9 @@ func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosi
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Option) (*AppendObjectResult, error) {
-	params := "append&position=" + strconv.FormatInt(request.Position, 10)
+    params := map[string]interface{}{}
+    params["append"] = nil
+    params["position"] = strconv.FormatInt(request.Position, 10)
 	headers := make(map[string]string)
 
 	opts := addContentType(options, request.ObjectKey)
@@ -348,7 +354,7 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 	listener := getProgressListener(options)
 
 	handleOptions(headers, opts)
-	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, request.ObjectKey, params, params, headers,
+	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, request.ObjectKey, params, headers,
 		request.Reader, initCRC, listener)
 	if err != nil {
 		return nil, err
@@ -379,7 +385,8 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) DeleteObject(objectKey string) error {
-	resp, err := bucket.do("DELETE", objectKey, "", "", nil, nil, nil)
+	params := map[string]interface{}{}
+	resp, err := bucket.do("DELETE", objectKey, params, nil, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -404,7 +411,6 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 	}
 	isQuiet, _ := findOption(options, deleteObjectsQuiet, false)
 	dxml.Quiet = isQuiet.(bool)
-	encode := "&encoding-type=url"
 
 	bs, err := xml.Marshal(dxml)
 	if err != nil {
@@ -418,7 +424,12 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 	sum := md5.Sum(bs)
 	b64 := base64.StdEncoding.EncodeToString(sum[:])
 	options = append(options, ContentMD5(b64))
-	resp, err := bucket.do("POST", "", "delete"+encode, "delete", options, buffer, nil)
+
+	params := map[string]interface{}{}
+	params["delete"] = nil
+	params["encoding-type"] = "url"
+
+	resp, err := bucket.do("POST", "", params, options, buffer, nil)
 	if err != nil {
 		return out, err
 	}
@@ -474,12 +485,12 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 	var out ListObjectsResult
 
 	options = append(options, EncodingType("url"))
-	params, err := handleParams(options)
+	params, err := getRawParams(options)
 	if err != nil {
 		return out, err
 	}
 
-	resp, err := bucket.do("GET", "", params, "", nil, nil, nil)
+	resp, err := bucket.do("GET", "", params, nil, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -520,7 +531,8 @@ func (bucket Bucket) SetObjectMeta(objectKey string, options ...Option) error {
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) (http.Header, error) {
-	resp, err := bucket.do("HEAD", objectKey, "", "", options, nil, nil)
+	params := map[string]interface{}{}
+	resp, err := bucket.do("HEAD", objectKey, params, options, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -541,7 +553,10 @@ func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) 
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
-	resp, err := bucket.do("GET", objectKey, "?objectMeta", "", nil, nil, nil)
+	params := map[string]interface{}{}
+	params["objectMeta"] = nil
+	//resp, err := bucket.do("GET", objectKey, "?objectMeta", "", nil, nil, nil)
+	resp, err := bucket.do("GET", objectKey, params, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +584,9 @@ func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 //
 func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 	options := []Option{ObjectACL(objectACL)}
-	resp, err := bucket.do("PUT", objectKey, "acl", "acl", options, nil, nil)
+	params := map[string]interface{}{}
+	params["acl"] = nil
+	resp, err := bucket.do("PUT", objectKey, params, options, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -587,7 +604,9 @@ func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 //
 func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) {
 	var out GetObjectACLResult
-	resp, err := bucket.do("GET", objectKey, "acl", "acl", nil, nil, nil)
+	params := map[string]interface{}{}
+	params["acl"] = nil
+	resp, err := bucket.do("GET", objectKey, params, nil, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -642,7 +661,7 @@ func (bucket Bucket) GetSymlink(objectKey string) (string, error) {
 }
 
 // Private
-func (bucket Bucket) do(method, objectName, urlParams, subResource string, options []Option,
+func (bucket Bucket) do(method, objectName string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
 	headers := make(map[string]string)
 	err := handleOptions(headers, options)
@@ -650,7 +669,7 @@ func (bucket Bucket) do(method, objectName, urlParams, subResource string, optio
 		return nil, err
 	}
 	return bucket.Client.Conn.Do(method, bucket.BucketName, objectName,
-		urlParams, subResource, headers, data, 0, listener)
+		params, headers, data, 0, listener)
 }
 
 func (bucket Bucket) getConfig() *Config {

@@ -245,6 +245,25 @@ func Progress(listener ProgressListener) Option {
 	return addArg(progressListener, listener)
 }
 
+// UDF相关
+// UDFID is an option to set udf Id in ListUDFs
+func UDFID(value string) Option {
+    return addParam("udfId", value)
+}
+
+// UDFImageDesc is an option to set udf Id in ListUDFs
+func UDFImageDesc(value string) Option {
+    return addParam("udfImageDesc", value)
+}
+
+func UDFSince(t time.Time) Option {
+    return addParam("since", strconv.FormatInt(t.Unix(), 10))
+}
+
+func UDFTail(t int64) Option {
+    return addParam("tail", strconv.FormatInt(t, 10))
+}
+
 func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == nil {
@@ -327,6 +346,29 @@ func handleParams(options []Option) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func getRawParams(options []Option) (map[string]interface{}, error) {
+	// option
+	params := map[string]optionValue{}
+	for _, option := range options {
+		if option != nil {
+			if err := option(params); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+    paramsm := map[string]interface{}{}
+	// serialize
+    for k, v := range params {
+		if v.Type == optionParam {
+            vs := params[k]
+            paramsm[k] = vs.Value.(string)
+        }
+	}
+
+	return paramsm, nil
 }
 
 func findOption(options []Option, param string, defaultVal interface{}) (interface{}, error) {
