@@ -609,7 +609,7 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, options ...Option) error {
-	options = append(options, SymlinkTarget(url.QueryEscape(targetObjectKey)))
+	options = append(options, symlinkTarget(url.QueryEscape(targetObjectKey)))
 	resp, err := bucket.do("PUT", symObjectKey, "symlink", "symlink", options, nil, nil)
 	if err != nil {
 		return err
@@ -626,19 +626,20 @@ func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, opt
 //
 // error 操作无错误为nil，非nil为错误信息。当error为nil时，返回的string为目标文件，否则该值无效。
 //
-func (bucket Bucket) GetSymlink(objectKey string) (string, error) {
+func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 	resp, err := bucket.do("GET", objectKey, "symlink", "symlink", nil, nil, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	targetObjectKey := resp.Headers.Get(HTTPHeaderOSSSymlinkTarget)
 	targetObjectKey, err = url.QueryUnescape(targetObjectKey)
 	if err != nil {
-		return "", err
+		return resp.Headers, err
 	}
-	return targetObjectKey, err
+	resp.Headers.Set(HTTPHeaderOSSSymlinkTarget, targetObjectKey)
+	return resp.Headers, err
 }
 
 // Private

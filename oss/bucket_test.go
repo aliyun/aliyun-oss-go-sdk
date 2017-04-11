@@ -1522,7 +1522,7 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	err = s.bucket.DeleteObject(targetObjectName)
 	c.Assert(err, IsNil)
 
-	target, err := s.bucket.GetSymlink(objectName)
+	meta, err := s.bucket.GetSymlink(objectName)
 	c.Assert(err, NotNil)
 
 	// Put
@@ -1535,9 +1535,9 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	err = s.bucket.PutSymlink(objectName, targetObjectName)
 	c.Assert(err, IsNil)
 
-	target, err = s.bucket.GetSymlink(objectName)
+	meta, err = s.bucket.GetSymlink(objectName)
 	c.Assert(err, IsNil)
-	c.Assert(target, Equals, targetObjectName)
+	c.Assert(meta.Get(HTTPHeaderOSSSymlinkTarget), Equals, targetObjectName)
 
 	body, err := s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
@@ -1545,7 +1545,7 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, "target")
 
-	target, err = s.bucket.GetSymlink(targetObjectName)
+	meta, err = s.bucket.GetSymlink(targetObjectName)
 	c.Assert(err, NotNil)
 
 	err = s.bucket.PutObject(objectName, strings.NewReader("src"))
@@ -1557,19 +1557,31 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, "src")
 
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.DeleteObject(targetObjectName)
+	c.Assert(err, IsNil)
+
 	// put symlink again
+	objectName = objectNamePrefix + "symlink"
+	targetObjectName = objectNamePrefix + "symlink-target"
+
 	err = s.bucket.PutSymlink(objectName, targetObjectName)
 	c.Assert(err, IsNil)
 
-	target, err = s.bucket.GetSymlink(objectName)
+	err = s.bucket.PutObject(targetObjectName, strings.NewReader("target1"))
 	c.Assert(err, IsNil)
-	c.Assert(target, Equals, targetObjectName)
+
+	meta, err = s.bucket.GetSymlink(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get(HTTPHeaderOSSSymlinkTarget), Equals, targetObjectName)
 
 	body, err = s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 	str, err = readBody(body)
 	c.Assert(err, IsNil)
-	c.Assert(str, Equals, "target")
+	c.Assert(str, Equals, "target1")
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
