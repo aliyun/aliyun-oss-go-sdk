@@ -24,6 +24,7 @@ type BucketProperties struct {
 	Name         string    `xml:"Name"`         // Bucket名称
 	Location     string    `xml:"Location"`     // Bucket所在的数据中心
 	CreationDate time.Time `xml:"CreationDate"` // Bucket创建时间
+	StorageClass string    `xml:"StorageClass"` // Bucket的存储方式
 }
 
 // GetBucketACLResult GetBucketACL请求返回的结果
@@ -204,6 +205,7 @@ type BucketInfo struct {
 	IntranetEndpoint string    `xml:"IntranetEndpoint"`        // Bucket访问的内网域名
 	ACL              string    `xml:"AccessControlList>Grant"` // Bucket权限
 	Owner            Owner     `xml:"Owner"`                   // Bucket拥有者信息
+	StorageClass     string    `xml:"StorageClass"`            // Bucket存储类型
 }
 
 // ListObjectsResult ListObjects请求返回结果
@@ -228,7 +230,7 @@ type ObjectProperties struct {
 	ETag         string    `xml:"ETag"`         // 标示Object的内容
 	Owner        Owner     `xml:"Owner"`        // 保存Object拥有者信息的容器
 	LastModified time.Time `xml:"LastModified"` // Object最后修改时间
-	StorageClass string    `xml:"StorageClass"` // Object的存储类型，目前只能是Standard
+	StorageClass string    `xml:"StorageClass"` // Object的存储类型
 }
 
 // Owner Bucket/Object的owner
@@ -439,4 +441,10 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 		}
 	}
 	return nil
+}
+
+// CreateBucketConfiguration 规则的过期属性
+type CreateBucketConfiguration struct {
+	XMLName      xml.Name         `xml:"CreateBucketConfiguration"`
+	StorageClass StorageClassType `xml:"StorageClass,omitempty"`
 }

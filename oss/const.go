@@ -30,6 +30,20 @@ const (
 	MetaReplace MetadataDirectiveType = "REPLACE"
 )
 
+// StorageClassType Bucket的存储类型
+type StorageClassType string
+
+const (
+	// StorageStandard 标准存储模式
+	StorageStandard StorageClassType = "Standard"
+
+	// StorageIA IA存储模式
+	StorageIA StorageClassType = "IA"
+
+	// StorageArchive Archive存储模式
+	StorageArchive StorageClassType = "Archive"
+)
+
 // Http头标签
 const (
 	HTTPHeaderAcceptEncoding     string = "Accept-Encoding"

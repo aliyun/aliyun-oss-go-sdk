@@ -21,8 +21,9 @@ import (
 )
 
 type OssBucketSuite struct {
-	client *Client
-	bucket *Bucket
+	client        *Client
+	bucket        *Bucket
+	archiveBucket *Bucket
 }
 
 var _ = Suite(&OssBucketSuite{})
@@ -39,34 +40,45 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
+
+	cbConfig := CreateBucketConfiguration{StorageClass: StorageArchive}
+	err = s.client.DoCreateBucket(archiveBucketName, cbConfig)
+	c.Assert(err, IsNil)
+
 	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 	s.bucket = bucket
 
+	archiveBucket, err := s.client.Bucket(archiveBucketName)
+	c.Assert(err, IsNil)
+	s.archiveBucket = archiveBucket
+
 	testLogger.Println("test bucket started")
 }
 
 // Run before each test or benchmark starts running
 func (s *OssBucketSuite) TearDownSuite(c *C) {
-	// Delete Multipart
-	lmu, err := s.bucket.ListMultipartUploads()
-	c.Assert(err, IsNil)
-
-	for _, upload := range lmu.Uploads {
-		imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
-		err = s.bucket.AbortMultipartUpload(imur)
+	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
+		// Delete Multipart
+		lmu, err := bucket.ListMultipartUploads()
 		c.Assert(err, IsNil)
-	}
 
-	// Delete Objects
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
+		for _, upload := range lmu.Uploads {
+			imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
+			err = bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
 
-	for _, object := range lor.Objects {
-		err = s.bucket.DeleteObject(object.Key)
+		// Delete Objects
+		lor, err := bucket.ListObjects()
 		c.Assert(err, IsNil)
+
+		for _, object := range lor.Objects {
+			err = bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
 	}
 
 	testLogger.Println("test bucket completed")
@@ -1588,6 +1600,49 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 
 	err = s.bucket.DeleteObject(targetObjectName)
 	c.Assert(err, IsNil)
+}
+
+// TestRestoreObject
+func (s *OssBucketSuite) TestRestoreObject(c *C) {
+	objectName := objectNamePrefix + "restore"
+
+	// List Object
+	lor, err := s.archiveBucket.ListObjects()
+	c.Assert(err, IsNil)
+	left := len(lor.Objects)
+
+	// Put three object
+	err = s.archiveBucket.PutObject(objectName, strings.NewReader(""))
+	c.Assert(err, IsNil)
+
+	// List
+	lor, err = s.archiveBucket.ListObjects()
+	c.Assert(err, IsNil)
+	c.Assert(len(lor.Objects), Equals, left+1)
+	for _, object := range lor.Objects {
+		c.Assert(object.StorageClass, Equals, string(StorageArchive))
+	}
+
+	// Head Object
+	meta, err := s.archiveBucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	_, ok := meta["X-Oss-Restore"]
+	c.Assert(ok, Equals, false)
+	c.Assert(meta.Get("X-Oss-Storage-Class"), Equals, "Archive")
+
+	// Error Restore
+	err = s.archiveBucket.RestoreObject("notexistobject")
+	c.Assert(err, NotNil)
+
+	// Restore Object
+	err = s.archiveBucket.RestoreObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Head Object
+	meta, err = s.archiveBucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("X-Oss-Restore"), Equals, "ongoing-request=\"true\"")
+	c.Assert(meta.Get("X-Oss-Storage-Class"), Equals, "Archive")
 }
 
 // private

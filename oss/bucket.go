@@ -606,6 +606,9 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 // 如果试图添加的文件已经存在，并且有访问权限。新添加的文件将覆盖原来的文件。
 // 如果在PutSymlink的时候，携带以x-oss-meta-为前缀的参数，则视为user meta。
 //
+// symObjectKey 要创建的符号链接文件。
+// targetObjectKey 目标文件。
+//
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, options ...Option) error {
@@ -640,6 +643,27 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 	}
 	resp.Headers.Set(HTTPHeaderOSSSymlinkTarget, targetObjectKey)
 	return resp.Headers, err
+}
+
+//
+// RestoreObject 恢复处于冷冻状态的归档类型Object进入读就绪状态。
+//
+// 如果是针对该Object第一次调用restore接口，则返回成功。
+// 如果已经成功调用过restore接口，且restore没有完全完成，再次调用时返回409，错误码：RestoreAlreadyInProgress。
+// 如果已经成功调用过restore接口，且restore已经完成，再次调用时返回成功，且会将object的可下载时间延长一天，最多延长7天。
+// 如果object不存在，则返回404。
+//
+// objectKey 需要恢复状态的object名称。
+//
+// error 操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) RestoreObject(objectKey string) error {
+	resp, err := bucket.do("POST", objectKey, "restore", "restore", nil, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
 }
 
 // Private

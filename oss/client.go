@@ -107,6 +107,38 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 }
 
 //
+// DoCreateBucket 创建Bucket。
+//
+// bucketName bucket名称，在整个OSS中具有全局唯一性，且不能修改。bucket名称的只能包括小写字母，数字和短横线-，
+// 必须以小写字母或者数字开头，长度必须在3-255字节之间。
+// options  创建bucket的选项。您可以使用选项ACL，指定bucket的访问权限。Bucket有以下三种访问权限，私有读写（ACLPrivate）、
+// 公共读私有写（ACLPublicRead），公共读公共写(ACLPublicReadWrite)，默认访问权限是私有读写。
+//
+// error 操作无错误时返回nil，非nil为错误信息。
+//
+func (client Client) DoCreateBucket(bucketName string, cbConfig CreateBucketConfiguration, options ...Option) error {
+	bs, err := xml.Marshal(cbConfig)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := make(map[string]string)
+	handleOptions(headers, options)
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("PUT", bucketName, "", "", headers, buffer)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+//
 // ListBuckets 获取当前用户下的bucket。
 //
 // options 指定ListBuckets的筛选行为，Prefix、Marker、MaxKeys三个选项。Prefix限定前缀。
