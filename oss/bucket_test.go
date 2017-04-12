@@ -1537,7 +1537,7 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	meta, err := s.bucket.GetSymlink(objectName)
 	c.Assert(err, NotNil)
 
-	// Put
+	// Put symlink
 	err = s.bucket.PutSymlink(objectName, targetObjectName)
 	c.Assert(err, IsNil)
 
@@ -1550,6 +1550,13 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	meta, err = s.bucket.GetSymlink(objectName)
 	c.Assert(err, IsNil)
 	c.Assert(meta.Get(HTTPHeaderOSSSymlinkTarget), Equals, targetObjectName)
+
+	// List object
+	lor, err := s.bucket.ListObjects()
+	c.Assert(err, IsNil)
+	exist, v := s.getObject(lor.Objects, objectName)
+	c.Assert(exist, Equals, true)
+	c.Assert(v.Type, Equals, "Symlink")
 
 	body, err := s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
@@ -1621,6 +1628,7 @@ func (s *OssBucketSuite) TestRestoreObject(c *C) {
 	c.Assert(len(lor.Objects), Equals, left+1)
 	for _, object := range lor.Objects {
 		c.Assert(object.StorageClass, Equals, string(StorageArchive))
+		c.Assert(object.Type, Equals, "Normal")
 	}
 
 	// Head Object
@@ -1841,4 +1849,13 @@ func readBody(body io.ReadCloser) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+func (s *OssBucketSuite) getObject(objects []ObjectProperties, object string) (bool, ObjectProperties) {
+	for _, v := range objects {
+		if v.Key == object {
+			return true, v
+		}
+	}
+	return false, ObjectProperties{}
 }
