@@ -651,7 +651,6 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 // 如果是针对该Object第一次调用restore接口，则返回成功。
 // 如果已经成功调用过restore接口，且restore没有完全完成，再次调用时返回409，错误码：RestoreAlreadyInProgress。
 // 如果已经成功调用过restore接口，且restore已经完成，再次调用时返回成功，且会将object的可下载时间延长一天，最多延长7天。
-// 如果object不存在，则返回404。
 //
 // objectKey 需要恢复状态的object名称。
 //
