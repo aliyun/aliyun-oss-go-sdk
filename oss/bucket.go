@@ -440,15 +440,19 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
-	listRes, err := bucket.ListObjects(Prefix(objectKey), MaxKeys(1))
-	if err != nil {
-		return false, err
-	}
-
-	if len(listRes.Objects) == 1 && listRes.Objects[0].Key == objectKey {
+	_, err := bucket.GetObjectMeta(objectKey)
+	if err == nil {
 		return true, nil
 	}
-	return false, nil
+
+	switch err.(type) {
+	case ServiceError:
+		if err.(ServiceError).StatusCode == 404 && err.(ServiceError).Code == "NoSuchKey" {
+			return false, nil
+		}
+	}
+
+	return false, err
 }
 
 //
