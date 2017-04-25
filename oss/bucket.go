@@ -640,12 +640,12 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 	}
 	defer resp.Body.Close()
 
-	targetObjectKey := resp.Headers.Get(HTTPHeaderOSSSymlinkTarget)
+	targetObjectKey := resp.Headers.Get(HTTPHeaderOssSymlinkTarget)
 	targetObjectKey, err = url.QueryUnescape(targetObjectKey)
 	if err != nil {
 		return resp.Headers, err
 	}
-	resp.Headers.Set(HTTPHeaderOSSSymlinkTarget, targetObjectKey)
+	resp.Headers.Set(HTTPHeaderOssSymlinkTarget, targetObjectKey)
 	return resp.Headers, err
 }
 

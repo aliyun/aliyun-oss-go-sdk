@@ -41,8 +41,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 
 	s.client.CreateBucket(bucketName)
 
-	cbConfig := CreateBucketConfiguration{StorageClass: StorageArchive}
-	err = s.client.DoCreateBucket(archiveBucketName, cbConfig)
+	err = s.client.CreateBucket(archiveBucketName, StorageClass(StorageArchive))
 	c.Assert(err, IsNil)
 
 	time.Sleep(5 * time.Second)
@@ -1549,7 +1548,7 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 
 	meta, err = s.bucket.GetSymlink(objectName)
 	c.Assert(err, IsNil)
-	c.Assert(meta.Get(HTTPHeaderOSSSymlinkTarget), Equals, targetObjectName)
+	c.Assert(meta.Get(HTTPHeaderOssSymlinkTarget), Equals, targetObjectName)
 
 	// List object
 	lor, err := s.bucket.ListObjects()
@@ -1594,7 +1593,7 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 
 	meta, err = s.bucket.GetSymlink(objectName)
 	c.Assert(err, IsNil)
-	c.Assert(meta.Get(HTTPHeaderOSSSymlinkTarget), Equals, targetObjectName)
+	c.Assert(meta.Get(HTTPHeaderOssSymlinkTarget), Equals, targetObjectName)
 
 	body, err = s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)

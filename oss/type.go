@@ -443,8 +443,8 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 	return nil
 }
 
-// CreateBucketConfiguration 规则的过期属性
-type CreateBucketConfiguration struct {
+// createBucketConfiguration 规则的过期属性
+type createBucketConfiguration struct {
 	XMLName      xml.Name         `xml:"CreateBucketConfiguration"`
 	StorageClass StorageClassType `xml:"StorageClass,omitempty"`
 }
