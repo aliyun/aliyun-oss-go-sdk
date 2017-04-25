@@ -97,8 +97,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	headers := make(map[string]string)
 	handleOptions(headers, options)
 
-	var resp *Response
-	var err error
+	buffer := new(bytes.Buffer)
 
 	isOptSet, val, _ := isOptionSet(options, storageClass)
 	if isOptSet {
@@ -107,17 +106,13 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 		if err != nil {
 			return err
 		}
-		buffer := new(bytes.Buffer)
 		buffer.Write(bs)
 
 		contentType := http.DetectContentType(buffer.Bytes())
 		headers[HTTPHeaderContentType] = contentType
-
-		resp, err = client.do("PUT", bucketName, "", "", headers, buffer)
-	} else {
-		resp, err = client.do("PUT", bucketName, "", "", headers, nil)
 	}
 
+	resp, err := client.do("PUT", bucketName, "", "", headers, buffer)
 	if err != nil {
 		return err
 	}
