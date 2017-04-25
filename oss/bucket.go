@@ -440,15 +440,19 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
-	listRes, err := bucket.ListObjects(Prefix(objectKey), MaxKeys(1))
-	if err != nil {
-		return false, err
-	}
-
-	if len(listRes.Objects) == 1 && listRes.Objects[0].Key == objectKey {
+	_, err := bucket.GetObjectMeta(objectKey)
+	if err == nil {
 		return true, nil
 	}
-	return false, nil
+
+	switch err.(type) {
+	case ServiceError:
+		if err.(ServiceError).StatusCode == 404 && err.(ServiceError).Code == "NoSuchKey" {
+			return false, nil
+		}
+	}
+
+	return false, err
 }
 
 //
@@ -636,12 +640,12 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 	}
 	defer resp.Body.Close()
 
-	targetObjectKey := resp.Headers.Get(HTTPHeaderOSSSymlinkTarget)
+	targetObjectKey := resp.Headers.Get(HTTPHeaderOssSymlinkTarget)
 	targetObjectKey, err = url.QueryUnescape(targetObjectKey)
 	if err != nil {
 		return resp.Headers, err
 	}
-	resp.Headers.Set(HTTPHeaderOSSSymlinkTarget, targetObjectKey)
+	resp.Headers.Set(HTTPHeaderOssSymlinkTarget, targetObjectKey)
 	return resp.Headers, err
 }
 
@@ -651,7 +655,6 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 // 如果是针对该Object第一次调用restore接口，则返回成功。
 // 如果已经成功调用过restore接口，且restore没有完全完成，再次调用时返回409，错误码：RestoreAlreadyInProgress。
 // 如果已经成功调用过restore接口，且restore已经完成，再次调用时返回成功，且会将object的可下载时间延长一天，最多延长7天。
-// 如果object不存在，则返回404。
 //
 // objectKey 需要恢复状态的object名称。
 //

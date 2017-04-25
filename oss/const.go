@@ -85,7 +85,7 @@ const (
 	HTTPHeaderOssNextAppendPosition          = "X-Oss-Next-Append-Position"
 	HTTPHeaderOssRequestID                   = "X-Oss-Request-Id"
 	HTTPHeaderOssCRC64                       = "X-Oss-Hash-Crc64ecma"
-	HTTPHeaderOSSSymlinkTarget               = "X-Oss-Symlink-Target"
+	HTTPHeaderOssSymlinkTarget               = "X-Oss-Symlink-Target"
 )
 
 // 其它常量

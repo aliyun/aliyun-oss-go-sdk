@@ -6,6 +6,7 @@ package oss
 
 import (
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -56,7 +57,21 @@ var (
 	logPath        = "go_sdk_test_" + time.Now().Format("20060102_150405") + ".log"
 	testLogFile, _ = os.OpenFile(logPath, os.O_RDWR|os.O_CREATE, 0664)
 	testLogger     = log.New(testLogFile, "", log.Ldate|log.Ltime|log.Lshortfile)
+	letters        = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
+
+func randStr(n int) string {
+	b := make([]rune, n)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := range b {
+		b[i] = letters[r.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func randLowStr(n int) string {
+	return strings.ToLower(randStr(n))
+}
 
 // Run once when the suite starts running
 func (s *OssClientSuite) SetUpSuite(c *C) {
@@ -191,8 +206,8 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 
 	// create bucket with config and test get bucket info
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
-		cbConfig := CreateBucketConfiguration{StorageClass: storage}
-		err = client.DoCreateBucket(bucketNameTest, cbConfig, ACL(ACLPublicRead))
+		bucketNameTest := bucketNamePrefix + randLowStr(5)
+		err = client.CreateBucket(bucketNameTest, StorageClass(storage), ACL(ACLPublicRead))
 		c.Assert(err, IsNil)
 
 		res, err := client.GetBucketInfo(bucketNameTest)
@@ -207,14 +222,13 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	}
 
 	// error put bucket with config
-	cbConfig := CreateBucketConfiguration{StorageClass: StorageArchive}
-	err = client.DoCreateBucket("ERRORBUCKETNAME", cbConfig)
+	err = client.CreateBucket("ERRORBUCKETNAME", StorageClass(StorageArchive))
 	c.Assert(err, NotNil)
 
 	// create bucket with config and test list bucket
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
-		cbConfig := CreateBucketConfiguration{StorageClass: storage}
-		err = client.DoCreateBucket(bucketNameTest, cbConfig)
+		bucketNameTest := bucketNamePrefix + randLowStr(5)
+		err = client.CreateBucket(bucketNameTest, StorageClass(storage))
 		c.Assert(err, IsNil)
 
 		res, err := client.ListBuckets()

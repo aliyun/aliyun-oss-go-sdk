@@ -25,6 +25,7 @@ const (
 	checkpointConfig   = "x-cp-config"
 	initCRC64          = "init-crc64"
 	progressListener   = "x-progress-listener"
+	storageClass       = "storage-class"
 )
 
 type (
@@ -166,7 +167,7 @@ func ObjectACL(acl ACLType) Option {
 
 // symlinkTarget is an option to set X-Oss-Symlink-Target
 func symlinkTarget(targetObjectKey string) Option {
-	return setHeader(HTTPHeaderOSSSymlinkTarget, targetObjectKey)
+	return setHeader(HTTPHeaderOssSymlinkTarget, targetObjectKey)
 }
 
 // Origin is an option to set Origin header
@@ -217,6 +218,11 @@ func UploadIDMarker(value string) Option {
 // DeleteObjectsQuiet DeleteObjects详细(verbose)模式或简单(quiet)模式，默认详细模式。
 func DeleteObjectsQuiet(isQuiet bool) Option {
 	return addArg(deleteObjectsQuiet, isQuiet)
+}
+
+// StorageClass bucket的存储方式
+func StorageClass(value StorageClassType) Option {
+	return addArg(storageClass, value)
 }
 
 // 断点续传配置，包括是否启用、cp文件
