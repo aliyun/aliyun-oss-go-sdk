@@ -652,9 +652,11 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 //
 // RestoreObject 恢复处于冷冻状态的归档类型Object进入读就绪状态。
 //
-// 如果是针对该Object第一次调用restore接口，则返回成功。
-// 如果已经成功调用过restore接口，且restore没有完全完成，再次调用时返回409，错误码：RestoreAlreadyInProgress。
-// 如果已经成功调用过restore接口，且restore已经完成，再次调用时返回成功，且会将object的可下载时间延长一天，最多延长7天。
+// 一个Archive类型的object初始时处于冷冻状态。
+//
+// 针对处于冷冻状态的object调用restore命令，返回成功。object处于解冻中，服务端执行解冻，在此期间再次调用restore命令，同样成功，且不会延长object可读状态持续时间。
+// 待服务端执行完成解冻任务后，object就进入了解冻状态，此时用户可以读取object。
+// 解冻状态默认持续1天，对于解冻状态的object调用restore命令，会将object的解冻状态延长一天，最多可以延长到7天，之后object又回到初始时的冷冻状态。
 //
 // objectKey 需要恢复状态的object名称。
 //
