@@ -1557,13 +1557,6 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	c.Assert(exist, Equals, true)
 	c.Assert(v.Type, Equals, "Symlink")
 
-	// List object
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
-	exist, v := s.getObject(lor.Objects, objectName)
-	c.Assert(exist, Equals, true)
-	c.Assert(v.Type, Equals, "Symlink")
-
 	body, err := s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
