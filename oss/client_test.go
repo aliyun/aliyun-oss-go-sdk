@@ -6,6 +6,7 @@ package oss
 
 import (
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -28,8 +29,8 @@ var (
 	endpoint  = os.Getenv("OSS_TEST_ENDPOINT")
 	accessID  = os.Getenv("OSS_TEST_ACCESS_KEY_ID")
 	accessKey = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
-	
-    // proxy
+
+	// proxy
 	proxyHost   = os.Getenv("OSS_TEST_PROXY_HOST")
 	proxyUser   = os.Getenv("OSS_TEST_PROXY_USER")
 	proxyPasswd = os.Getenv("OSS_TEST_PROXY_PASSWORD")
@@ -39,8 +40,8 @@ var (
 	stsaccessKey = os.Getenv("OSS_TEST_STS_KEY")
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
 
-    // udf
-	udfEndpoint = os.Getenv("OSS_TEST_UDF_ENDPOINT")
+	// udf
+	udfEndpoint  = os.Getenv("OSS_TEST_UDF_ENDPOINT")
 	udfAccessID  = os.Getenv("OSS_TEST_UDF_ACCESS_KEY_ID")
 	udfAccessKey = os.Getenv("OSS_TEST_UDF_ACCESS_KEY_SECRET")
 )
@@ -60,7 +61,29 @@ var (
 	logPath        = "go_sdk_test_" + time.Now().Format("20060102_150405") + ".log"
 	testLogFile, _ = os.OpenFile(logPath, os.O_RDWR|os.O_CREATE, 0664)
 	testLogger     = log.New(testLogFile, "", log.Ldate|log.Ltime|log.Lshortfile)
+	letters        = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
+
+func randStr(n int) string {
+	b := make([]rune, n)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := range b {
+		b[i] = letters[r.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func createFile(fileName, content string, c *C) {
+	fout, err := os.Create(fileName)
+	defer fout.Close()
+	c.Assert(err, IsNil)
+	_, err = fout.WriteString(content)
+	c.Assert(err, IsNil)
+}
+
+func randLowStr(n int) string {
+	return strings.ToLower(randStr(n))
+}
 
 // Run once when the suite starts running
 func (s *OssClientSuite) SetUpSuite(c *C) {
@@ -1353,6 +1376,33 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	c.Assert(err, IsNil)
 
 	bucket, err := client.Bucket(bucketNameTest)
+
+	// Sign url
+	signURLConfig := SignURLConfiguration{Expires: 60, Method: HTTPPut}
+	str, err := bucket.SignURL(objectName, signURLConfig)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// Put object with url
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// sign url for get object
+	signURLConfig = SignURLConfiguration{Expires: 60}
+	str, err = bucket.SignURL(objectName, signURLConfig)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// Get object with url
+	body, err := bucket.GetObjectWithURL(str)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
 
 	// Put object
 	err = bucket.PutObject(objectName, strings.NewReader(objectValue))

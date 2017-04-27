@@ -1,21 +1,21 @@
 package oss
 
 import (
-    "io"
-    "io/ioutil"
-    "os"
-    "bytes"
-    "net/http"
-    "net/url"
-    "hash"
-    "hash/crc64"
-    "encoding/xml"
-    "strconv"
+	"bytes"
+	"encoding/xml"
+	"hash"
+	"hash/crc64"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"strconv"
 )
 
 // UDF implements the operations of udf.
 type UDF struct {
-    Client     Client
+	Client Client
 }
 
 //
@@ -30,25 +30,24 @@ func (client Client) UDF() (*UDF, error) {
 }
 
 // Private
-func (udf UDF) doHeader(method string, params map[string]interface{}, 
-    headers map[string]string, data io.Reader) (*Response, error) {
-    return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, nil)
+func (udf UDF) doHeader(method string, params map[string]interface{},
+	headers map[string]string, data io.Reader) (*Response, error) {
+	return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, nil)
 }
 
 func (udf UDF) doOption(method string, params map[string]interface{}, options []Option,
-    data io.Reader, listener ProgressListener) (*Response, error) {
-    headers := make(map[string]string)
-    err := handleOptions(headers, options)
-    if err != nil {
-        return nil, err
-    }
-    return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, listener)
+	data io.Reader, listener ProgressListener) (*Response, error) {
+	headers := make(map[string]string)
+	err := handleOptions(headers, options)
+	if err != nil {
+		return nil, err
+	}
+	return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, listener)
 }
 
 func (udf UDF) getConfig() *Config {
-    return udf.Client.Config
+	return udf.Client.Config
 }
-
 
 //
 // CreateUDF 新建UDF。
@@ -59,27 +58,27 @@ func (udf UDF) getConfig() *Config {
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) CreateUDF(udfConfig UDFConfiguration) error {
-    udfConfig.UDFDescription = url.QueryEscape(udfConfig.UDFDescription)
-    bs, err := xml.Marshal(udfConfig)
-    if err != nil {
-        return err
-    }
-    buffer := new(bytes.Buffer)
-    buffer.Write(bs)
+	udfConfig.UDFDescription = url.QueryEscape(udfConfig.UDFDescription)
+	bs, err := xml.Marshal(udfConfig)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
 
-    contentType := http.DetectContentType(buffer.Bytes())
-    headers := map[string]string{}
-    headers[HTTPHeaderContentType] = contentType
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["udf"] = nil
-    resp, err := udf.doHeader("POST", params, headers, buffer)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusCreated})
-} 
+	params := map[string]interface{}{}
+	params["udf"] = nil
+	resp, err := udf.doHeader("POST", params, headers, buffer)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusCreated})
+}
 
 //
 // GetUDF 获得一个UDF的相关信息。包括该UDF的ID、描述信息、权限、Owner、创建时间等。
@@ -90,23 +89,23 @@ func (udf UDF) CreateUDF(udfConfig UDFConfiguration) error {
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) GetUDF(udfName string) (GetUDFResult, error) {
-    var out GetUDFResult
-    params := map[string]interface{}{}
-    params["udf"] = nil
-    params["udfName"] = udfName 
-    resp, err := udf.doHeader("GET", params, nil, nil)
-    if err != nil {
-        return out, err
-    }
-    defer resp.Body.Close()
+	var out GetUDFResult
+	params := map[string]interface{}{}
+	params["udf"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doHeader("GET", params, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
 
-    err = xmlUnmarshal(resp.Body, &out)
-    if err != nil {
-        return out, err
-    }
+	err = xmlUnmarshal(resp.Body, &out)
+	if err != nil {
+		return out, err
+	}
 
-    err = decodeGetUDFResult(&out)
-    return out, err
+	err = decodeGetUDFResult(&out)
+	return out, err
 }
 
 //
@@ -120,27 +119,27 @@ func (udf UDF) GetUDF(udfName string) (GetUDFResult, error) {
 // error 操作无错误时返回nil，非nil为错误信息。
 //
 func (udf UDF) ListUDFs(options ...Option) (ListUDFsResult, error) {
-    var out ListUDFsResult 
+	var out ListUDFsResult
 
-    params, err := getRawParams(options)
-    if err != nil {
-        return out, err
-    }
+	params, err := getRawParams(options)
+	if err != nil {
+		return out, err
+	}
 
-    params["udf"] = nil
-    resp, err := udf.doHeader("GET", params, nil, nil)
-    if err != nil {
-        return out, err
-    }
-    defer resp.Body.Close()
+	params["udf"] = nil
+	resp, err := udf.doHeader("GET", params, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
 
-    err = xmlUnmarshal(resp.Body, &out)
-    if err != nil {
-        return out, err
-    }
+	err = xmlUnmarshal(resp.Body, &out)
+	if err != nil {
+		return out, err
+	}
 
-    err = decodeListUDFsResult(&out)
-    return out, err
+	err = decodeListUDFsResult(&out)
+	return out, err
 }
 
 //
@@ -151,17 +150,16 @@ func (udf UDF) ListUDFs(options ...Option) (ListUDFsResult, error) {
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) DeleteUDF(udfName string) error {
-    params := map[string]interface{}{}
-    params["udf"] = nil
-    params["udfName"] = udfName 
-    resp, err := udf.doHeader("DELETE", params, nil, nil)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	params := map[string]interface{}{}
+	params["udf"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doHeader("DELETE", params, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
-
 
 //
 // UploadUDFImage 上传UDF镜像。OSS会根据用户上传的包构建一个镜像。
@@ -175,7 +173,7 @@ func (udf UDF) DeleteUDF(udfName string) error {
 // 传镜像时OSS返回400 Bad Request，错误码为：BadUDFImageStatus。
 // 上传的镜像允许的最大大小为5GB，如果超过该大小OSS返回400 Bad Request错误，错误码：InvalidArgument。
 //
-// udfName  上传镜像时指定的UDF名称。 
+// udfName  上传镜像时指定的UDF名称。
 // reader   io.Reader 需要上传的镜像的reader。
 // options  上传镜像时可以指定对象的属性，可用选项有udfImageDesc，表示UDF镜像的描述信息（
 // UploadUDFImage接口自动对描述信息进行url编码，描述信息字符内容长度最大为128字节，允许的字符为除去ASCII）。
@@ -184,43 +182,43 @@ func (udf UDF) DeleteUDF(udfName string) error {
 // error 操作成功error为nil，非nil为错误信息。
 //
 func (udf UDF) UploadUDFImage(udfName string, reader io.Reader, options ...Option) error {
-    opts := addContentType(options)
-    resp, err := udf.DoUploadUDFImage(udfName, reader, opts)
-    defer resp.Body.Close()
-    return err
+	opts := addContentType(options)
+	resp, err := udf.DoUploadUDFImage(udfName, reader, opts)
+	defer resp.Body.Close()
+	return err
 }
 
 //
 // UploadUDFImageFromFile 上传UDF镜像。
 //
-// udfName        上传镜像时指定的UDF名称。 
+// udfName        上传镜像时指定的UDF名称。
 // filePath       需要上传的镜像包文件。
 // options        上传镜像时可以指定对象的属性，可用选项有udfImageDesc，详见UploadUDFImage的options。
 //
 // error 操作成功error为nil，非nil为错误信息。
 //
 func (udf UDF) UploadUDFImageFromFile(udfName string, filePath string, options ...Option) error {
-    fd, err := os.Open(filePath)
-    if err != nil {
-        return err
-    }
-    defer fd.Close()
+	fd, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
 
-    opts := addContentType(options, filePath, "")
+	opts := addContentType(options, filePath, "")
 
-    resp, err := udf.DoUploadUDFImage(udfName, fd, opts)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
+	resp, err := udf.DoUploadUDFImage(udfName, fd, opts)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-    return err
+	return err
 }
 
 //
 // DoUploadUDFImage 上传镜像。
 //
-// udfName  上传镜像时指定的UDF名称。 
+// udfName  上传镜像时指定的UDF名称。
 // reader   io.Reader 需要上传的镜像的reader。
 // options  上传镜像时可以指定对象的属性，可用选项有udfImageDesc，表示UDF镜像的描述信息
 //
@@ -228,35 +226,35 @@ func (udf UDF) UploadUDFImageFromFile(udfName string, filePath string, options .
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) DoUploadUDFImage(udfName string, reader io.Reader, options []Option) (*Response, error) {
-    isOptSet, _, _ := isOptionSet(options, HTTPHeaderContentType)
-    if !isOptSet {
-        options = addContentType(options, "")
-    }
+	isOptSet, _, _ := isOptionSet(options, HTTPHeaderContentType)
+	if !isOptSet {
+		options = addContentType(options, "")
+	}
 
-    listener := getProgressListener(options)
+	listener := getProgressListener(options)
 
-    params, err := getRawParams(options)
-    if err != nil {
-        return nil, err
-    }
+	params, err := getRawParams(options)
+	if err != nil {
+		return nil, err
+	}
 
-    params["udfImage"] = nil 
-    params["udfName"] = udfName
-    resp, err := udf.doOption("POST", params, options, reader, listener)
-    if err != nil {
-        return nil, err
-    }
+	params["udfImage"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doOption("POST", params, options, reader, listener)
+	if err != nil {
+		return nil, err
+	}
 
-    if udf.getConfig().IsEnableCRC {
-        err = checkCRC(resp, "DoUploadUDFImage")
-        if err != nil {
-            return resp, err
-        }
-    }
+	if udf.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "DoUploadUDFImage")
+		if err != nil {
+			return resp, err
+		}
+	}
 
-    err = checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	err = checkRespCode(resp.StatusCode, []int{http.StatusOK})
 
-    return resp, err
+	return resp, err
 }
 
 //
@@ -268,23 +266,23 @@ func (udf UDF) DoUploadUDFImage(udfName string, reader io.Reader, options []Opti
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) GetUDFImageInfo(udfName string) (GetUDFImageInfoResult, error) {
-    var out GetUDFImageInfoResult 
-    params := map[string]interface{}{}
-    params["udfImage"] = nil
-    params["udfName"] = udfName 
-    resp, err := udf.doHeader("GET", params, nil, nil)
-    if err != nil {
-        return out, err
-    }
-    defer resp.Body.Close()
+	var out GetUDFImageInfoResult
+	params := map[string]interface{}{}
+	params["udfImage"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doHeader("GET", params, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
 
-    err = xmlUnmarshal(resp.Body, &out)
-    if err != nil {
-        return out, err
-    }
+	err = xmlUnmarshal(resp.Body, &out)
+	if err != nil {
+		return out, err
+	}
 
-    err = decodeGetUDFImageInfoResult(&out)
-    return out, err
+	err = decodeGetUDFImageInfoResult(&out)
+	return out, err
 }
 
 //
@@ -296,23 +294,22 @@ func (udf UDF) GetUDFImageInfo(udfName string) (GetUDFImageInfoResult, error) {
 //
 // 删除UDF镜像前，该UDF所有版本的镜像必须处于build_success或者build_failed状态，如果还有building
 // 状态的镜像，或者处于deleting状态的镜像（重复删除），调用删除镜像接口会失败，OSS返回400，错误码：BadUdfImageStatus。
-// 
-// udfName 需要删除镜像的UDF名称 
+//
+// udfName 需要删除镜像的UDF名称
 //
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) DeleteUDFImage(udfName string) error {
-    params := map[string]interface{}{}
-    params["udfImage"] = nil
-    params["udfName"] = udfName 
-    resp, err := udf.doHeader("DELETE", params, nil, nil)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return checkRespCode(resp.StatusCode, []int{http.StatusAccepted, http.StatusNoContent})
+	params := map[string]interface{}{}
+	params["udfImage"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doHeader("DELETE", params, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusAccepted, http.StatusNoContent})
 }
-
 
 //
 // CreateUDFApplication 新建UDF应用。
@@ -325,81 +322,81 @@ func (udf UDF) DeleteUDFImage(udfName string) error {
 // 创建UDF应用时，指定的镜像版本必须已上传并处于build_success状态。
 // 创建UDF应用时，指定的实例个数不能超过该UDF的实例上限
 //
-// udfName  需要创建应用的UDF名称。 
+// udfName  需要创建应用的UDF名称。
 // UDFAppConfiguration  创建UDF应用的配置。
 //
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) CreateUDFApplication(udfName string, udfAppConfig UDFAppConfiguration) error {
-    bs, err := xml.Marshal(udfAppConfig)
-    if err != nil {
-        return err
-    }
-    buffer := new(bytes.Buffer)
-    buffer.Write(bs)
+	bs, err := xml.Marshal(udfAppConfig)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
 
-    contentType := http.DetectContentType(buffer.Bytes())
-    headers := map[string]string{}
-    headers[HTTPHeaderContentType] = contentType
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["udfApplication"] = nil
-    params["udfName"] = udfName 
-    params["comp"] = "create" 
-    resp, err := udf.doHeader("POST", params, headers, buffer)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusCreated})
-} 
+	params := map[string]interface{}{}
+	params["udfApplication"] = nil
+	params["udfName"] = udfName
+	params["comp"] = "create"
+	resp, err := udf.doHeader("POST", params, headers, buffer)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusCreated})
+}
 
 //
 // GetUDFApplicationInfo 获得一个UDF应用的相关信息。包括该UDF的应用的UDF ID、
 // 所处数据中心、镜像版本、实例个数、应用状态、应用资源、创建时间等。
 //
-// udfName  需要查询的UDF应用的名称。 
+// udfName  需要查询的UDF应用的名称。
 // GetUDFApplicationInfoResult 操作成功的返回值，error为nil时该返回值有效。
 //
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) GetUDFApplicationInfo(udfName string) (GetUDFApplicationInfoResult, error) {
-    var out GetUDFApplicationInfoResult 
+	var out GetUDFApplicationInfoResult
 
-    params := map[string]interface{}{}
-    params["udfApplication"] = nil
-    params["udfName"] = udfName
-    resp, err := udf.doHeader("GET", params, nil, nil)
-    if err != nil {
-        return out, err
-    }
-    defer resp.Body.Close()
+	params := map[string]interface{}{}
+	params["udfApplication"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doHeader("GET", params, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
 
-    err = xmlUnmarshal(resp.Body, &out)
-    return out, err
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
 }
 
 //
 // ListUDFApplications 获取某个数据中心中用户所有的UDF应用信息。
-// 包括该各个UDF的应用的UDF ID、镜像版本、实例个数、应用状态、应用资源、创建时间等。 
+// 包括该各个UDF的应用的UDF ID、镜像版本、实例个数、应用状态、应用资源、创建时间等。
 //
 // ListUDFApplicationsResult 操作成功后的返回值，error为nil时该返回值有效。
 //
 // error 操作无错误时返回nil，非nil为错误信息。
 //
 func (udf UDF) ListUDFApplications() (ListUDFApplicationsResult, error) {
-    var out ListUDFApplicationsResult 
+	var out ListUDFApplicationsResult
 
-    params := map[string]interface{}{}
-    params["udfApplication"] = nil
-    resp, err := udf.doHeader("GET", params, nil, nil)
-    if err != nil {
-        return out, err
-    }
-    defer resp.Body.Close()
+	params := map[string]interface{}{}
+	params["udfApplication"] = nil
+	resp, err := udf.doHeader("GET", params, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
 
-    err = xmlUnmarshal(resp.Body, &out)
-    return out, err
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
 }
 
 //
@@ -411,61 +408,61 @@ func (udf UDF) ListUDFApplications() (ListUDFApplicationsResult, error) {
 //
 // 删除的UDF应用为调用该接口时使用的Endpoint对应的数据中心中的应用。
 // 只有处于running或者failed或者bad_image状态下的UDF应用才能删除，否则OSS返回409，InvalidUdfAppOriginalStatus。
-// 
-// udfName 需要删除的应用的UDF名称 
+//
+// udfName 需要删除的应用的UDF名称
 //
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) DeleteUDFApplication(udfName string) error {
-    params := map[string]interface{}{}
-    params["udfApplication"] = nil
-    params["udfName"] = udfName 
-    resp, err := udf.doHeader("DELETE", params, nil, nil)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return checkRespCode(resp.StatusCode, []int{http.StatusAccepted, http.StatusNoContent})
+	params := map[string]interface{}{}
+	params["udfApplication"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doHeader("DELETE", params, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusAccepted, http.StatusNoContent})
 }
 
 //
-// UpgradeUDFApplication 更新UDF应用的镜像到指定的版本。 
+// UpgradeUDFApplication 更新UDF应用的镜像到指定的版本。
 //
 // 由于升级UDF应用需要消耗较多时间，所以该OSS接口为一个异步接口。用户在调用该接口成功后，
 // 相应UDF应用处于upgrading状态，OSS后台任务会完成UDF应用的升级。升级成功后，应用状态会变成running。
 // 升级UDF应用时，指定的镜像版本必须已上传并处于build_success状态。
 // 只有处于running或者bad_image状态下的UDF应用才能升级，否则OSS返回409，InvalidUdfAppOriginalStatus。
 //
-// udfName  需要升级应用的UDF名称。 
-// imageVersion   使用的UDF镜像版本。 
+// udfName  需要升级应用的UDF名称。
+// imageVersion   使用的UDF镜像版本。
 //
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) UpgradeUDFApplication(udfName string, imageVersion int64) error {
-    uxml := UpgradeUDFApplicationXML{} 
-    uxml.ImageVersion = imageVersion
-    bs, err := xml.Marshal(uxml)
-    if err != nil {
-        return err
-    }
-    buffer := new(bytes.Buffer)
-    buffer.Write(bs)
+	uxml := UpgradeUDFApplicationXML{}
+	uxml.ImageVersion = imageVersion
+	bs, err := xml.Marshal(uxml)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
 
-    contentType := http.DetectContentType(buffer.Bytes())
-    headers := map[string]string{}
-    headers[HTTPHeaderContentType] = contentType
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["udfApplication"] = nil
-    params["udfName"] = udfName 
-    params["comp"] = "upgrade" 
-    resp, err := udf.doHeader("POST", params, headers, buffer)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
-} 
+	params := map[string]interface{}{}
+	params["udfApplication"] = nil
+	params["udfName"] = udfName
+	params["comp"] = "upgrade"
+	resp, err := udf.doHeader("POST", params, headers, buffer)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
+}
 
 //
 // ResizeUDFApplication 扩容UDF应用。目前还不支持应用缩容。
@@ -475,53 +472,52 @@ func (udf UDF) UpgradeUDFApplication(udfName string, imageVersion int64) error {
 // 只有处于running状态下的UDF应用才能扩容，否则OSS返回409，InvalidUdfAppOriginalStatus。
 // 扩容UDF应用时，指定的实例个数不能超过该UDF的实例上限
 //
-// udfName  需要扩容的UDF应用名称。 
-// instanceNum  应用扩容后的实例个数。 
+// udfName  需要扩容的UDF应用名称。
+// instanceNum  应用扩容后的实例个数。
 //
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) ResizeUDFApplication(udfName string, instanceNum int64) error {
-    rxml := ResizeUDFApplicationXML{} 
-    rxml.InstanceNum = instanceNum 
-    bs, err := xml.Marshal(rxml)
-    if err != nil {
-        return err
-    }
-    buffer := new(bytes.Buffer)
-    buffer.Write(bs)
+	rxml := ResizeUDFApplicationXML{}
+	rxml.InstanceNum = instanceNum
+	bs, err := xml.Marshal(rxml)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
 
-    contentType := http.DetectContentType(buffer.Bytes())
-    headers := map[string]string{}
-    headers[HTTPHeaderContentType] = contentType
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["udfApplication"] = nil
-    params["udfName"] = udfName 
-    params["comp"] = "resize" 
-    resp, err := udf.doHeader("POST", params, headers, buffer)
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
-    return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
-} 
-
+	params := map[string]interface{}{}
+	params["udfApplication"] = nil
+	params["udfName"] = udfName
+	params["comp"] = "resize"
+	resp, err := udf.doHeader("POST", params, headers, buffer)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
+}
 
 //
-// GetUDFApplicationLog 获取一个UDF应用的日志信息，日志为应用的标准输出和标准错误输出（stdout和stderr）。 
+// GetUDFApplicationLog 获取一个UDF应用的日志信息，日志为应用的标准输出和标准错误输出（stdout和stderr）。
 //
-// udfName  需要获取日志的UDF名称。 
+// udfName  需要获取日志的UDF名称。
 // options  对象的属性限制项，可选值有since、tail。
 //
 // io.ReadCloser  reader，读取数据后需要close。error为nil时有效。
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (udf UDF) GetUDFApplicationLog(udfName string, options ...Option) (io.ReadCloser, error) {
-    result, err := udf.DoGetUDFApplicationLog(udfName, options)
-    if err != nil {
-        return nil, err
-    }
-    return result.Response.Body, nil
+	result, err := udf.DoGetUDFApplicationLog(udfName, options)
+	if err != nil {
+		return nil, err
+	}
+	return result.Response.Body, nil
 }
 
 //
@@ -533,40 +529,40 @@ func (udf UDF) GetUDFApplicationLog(udfName string, options ...Option) (io.ReadC
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
 func (udf UDF) GetUDFApplicationLogToFile(udfName, filePath string, options ...Option) error {
-    tempFilePath := filePath + TempFileSuffix
+	tempFilePath := filePath + TempFileSuffix
 
-    // 读取Object内容
-    result, err := udf.DoGetUDFApplicationLog(udfName, options)
-    if err != nil {
-        return err
-    }
-    defer result.Response.Body.Close()
+	// 读取Object内容
+	result, err := udf.DoGetUDFApplicationLog(udfName, options)
+	if err != nil {
+		return err
+	}
+	defer result.Response.Body.Close()
 
-    // 如果文件不存在则创建，存在则清空
-    fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
-    if err != nil {
-        return err
-    }
+	// 如果文件不存在则创建，存在则清空
+	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
+	if err != nil {
+		return err
+	}
 
-    // 存储数据到文件
-    _, err = io.Copy(fd, result.Response.Body)
-    fd.Close()
-    if err != nil {
-        return err
-    }
+	// 存储数据到文件
+	_, err = io.Copy(fd, result.Response.Body)
+	fd.Close()
+	if err != nil {
+		return err
+	}
 
-    // 比较CRC值
-    hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
-    if udf.getConfig().IsEnableCRC && !hasRange {
-        result.Response.ClientCRC = result.ClientCRC.Sum64()
-        err = checkCRC(result.Response, "GetObjectToFile")
-        if err != nil {
-            os.Remove(tempFilePath)
-            return err
-        }
-    }
+	// 比较CRC值
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if udf.getConfig().IsEnableCRC && !hasRange {
+		result.Response.ClientCRC = result.ClientCRC.Sum64()
+		err = checkCRC(result.Response, "GetObjectToFile")
+		if err != nil {
+			os.Remove(tempFilePath)
+			return err
+		}
+	}
 
-    return os.Rename(tempFilePath, filePath)
+	return os.Rename(tempFilePath, filePath)
 }
 
 //
@@ -578,36 +574,36 @@ func (udf UDF) GetUDFApplicationLogToFile(udfName, filePath string, options ...O
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
 func (udf UDF) DoGetUDFApplicationLog(udfName string, options []Option) (*GetObjectResult, error) {
-    params, err := getRawParams(options)
-    if err != nil {
-        return nil, err
-    }
+	params, err := getRawParams(options)
+	if err != nil {
+		return nil, err
+	}
 
-    params["udfApplicationLog"] = nil 
-    params["udfName"] = udfName
-    resp, err := udf.doOption("GET", params, options, nil, nil)
-    if err != nil {
-        return nil, err
-    }
+	params["udfApplicationLog"] = nil
+	params["udfName"] = udfName
+	resp, err := udf.doOption("GET", params, options, nil, nil)
+	if err != nil {
+		return nil, err
+	}
 
-    result := &GetObjectResult{
-        Response: resp,
-    }
+	result := &GetObjectResult{
+		Response: resp,
+	}
 
-    // crc
-    var crcCalc hash.Hash64
-    hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
-    if udf.getConfig().IsEnableCRC && !hasRange {
-        crcCalc = crc64.New(crcTable())
-        result.ServerCRC = resp.ServerCRC
-        result.ClientCRC = crcCalc
-    }
+	// crc
+	var crcCalc hash.Hash64
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if udf.getConfig().IsEnableCRC && !hasRange {
+		crcCalc = crc64.New(crcTable())
+		result.ServerCRC = resp.ServerCRC
+		result.ClientCRC = crcCalc
+	}
 
-    // progress
-    listener := getProgressListener(options)
+	// progress
+	listener := getProgressListener(options)
 
-    contentLen, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderContentLength), 10, 64)
-    resp.Body = ioutil.NopCloser(TeeReader(resp.Body, crcCalc, contentLen, listener, nil))
+	contentLen, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderContentLength), 10, 64)
+	resp.Body = ioutil.NopCloser(TeeReader(resp.Body, crcCalc, contentLen, listener, nil))
 
-    return result, nil
+	return result, nil
 }

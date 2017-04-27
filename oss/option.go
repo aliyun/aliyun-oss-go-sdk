@@ -234,23 +234,58 @@ func Progress(listener ProgressListener) Option {
 	return addArg(progressListener, listener)
 }
 
+// ResponseContentType is an option to set response-content-type param
+func ResponseContentType(value string) Option {
+	return addParam("response-content-type", value)
+}
+
+// ResponseContentLanguage is an option to set response-content-language param
+func ResponseContentLanguage(value string) Option {
+	return addParam("response-content-language", value)
+}
+
+// ResponseExpires is an option to set response-expires param
+func ResponseExpires(value string) Option {
+	return addParam("response-expires", value)
+}
+
+// ResponseCacheControl is an option to set response-cache-control param
+func ResponseCacheControl(value string) Option {
+	return addParam("response-cache-control", value)
+}
+
+// ResponseContentDisposition is an option to set response-content-disposition param
+func ResponseContentDisposition(value string) Option {
+	return addParam("response-content-disposition", value)
+}
+
+// ResponseContentEncoding is an option to set response-content-encoding param
+func ResponseContentEncoding(value string) Option {
+	return addParam("response-content-encoding", value)
+}
+
+// Process is an option to set X-Oss-Process param
+func Process(value string) Option {
+	return addParam("X-Oss-Process", value)
+}
+
 // UDF相关
 // UDFID is an option to set udf Id in ListUDFs
 func UDFID(value string) Option {
-    return addParam("udfId", value)
+	return addParam("udfId", value)
 }
 
 // UDFImageDesc is an option to set udf Id in ListUDFs
 func UDFImageDesc(value string) Option {
-    return addParam("udfImageDesc", value)
+	return addParam("udfImageDesc", value)
 }
 
 func UDFSince(t time.Time) Option {
-    return addParam("since", strconv.FormatInt(t.Unix(), 10))
+	return addParam("since", strconv.FormatInt(t.Unix(), 10))
 }
 
 func UDFTail(t int64) Option {
-    return addParam("tail", strconv.FormatInt(t, 10))
+	return addParam("tail", strconv.FormatInt(t, 10))
 }
 
 func setHeader(key string, value interface{}) Option {
@@ -348,13 +383,13 @@ func getRawParams(options []Option) (map[string]interface{}, error) {
 		}
 	}
 
-    paramsm := map[string]interface{}{}
+	paramsm := map[string]interface{}{}
 	// serialize
-    for k, v := range params {
+	for k, v := range params {
 		if v.Type == optionParam {
-            vs := params[k]
-            paramsm[k] = vs.Value.(string)
-        }
+			vs := params[k]
+			paramsm[k] = vs.Value.(string)
+		}
 	}
 
 	return paramsm, nil

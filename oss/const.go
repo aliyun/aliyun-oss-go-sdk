@@ -30,6 +30,16 @@ const (
 	MetaReplace MetadataDirectiveType = "REPLACE"
 )
 
+type HTTPMethod string
+
+const (
+	HTTPGet    HTTPMethod = "GET"
+	HTTPPut    HTTPMethod = "PUT"
+	HTTPHead   HTTPMethod = "HEAD"
+	HTTPPost   HTTPMethod = "POST"
+	HTTPDelete HTTPMethod = "DELETE"
+)
+
 // Http头标签
 const (
 	HTTPHeaderAcceptEncoding     string = "Accept-Encoding"
@@ -71,6 +81,14 @@ const (
 	HTTPHeaderOssNextAppendPosition          = "X-Oss-Next-Append-Position"
 	HTTPHeaderOssRequestID                   = "X-Oss-Request-Id"
 	HTTPHeaderOssCRC64                       = "X-Oss-Hash-Crc64ecma"
+)
+
+// Http Param
+const (
+	HTTPParamExpires       = "Expires"
+	HTTPParamAccessKeyId   = "OSSAccessKeyId"
+	HTTPParamSignature     = "Signature"
+	HTTPParamSecurityToken = "security-token"
 )
 
 // 其它常量

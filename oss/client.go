@@ -97,7 +97,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	headers := make(map[string]string)
 	handleOptions(headers, options)
 
-    params := map[string]interface{}{}
+	params := map[string]interface{}{}
 	resp, err := client.do("PUT", bucketName, params, headers, nil)
 	if err != nil {
 		return err
@@ -120,10 +120,10 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 	var out ListBucketsResult
 
-    params, err := getRawParams(options)
-    if err != nil {
-        return out, err
-    }
+	params, err := getRawParams(options)
+	if err != nil {
+		return out, err
+	}
 
 	resp, err := client.do("GET", "", params, nil, nil)
 	if err != nil {
@@ -163,7 +163,7 @@ func (client Client) IsBucketExist(bucketName string) (bool, error) {
 // error 操作无错误时返回nil，非nil为错误信息。
 //
 func (client Client) DeleteBucket(bucketName string) error {
-    params := map[string]interface{}{}
+	params := map[string]interface{}{}
 	resp, err := client.do("DELETE", bucketName, params, nil, nil)
 	if err != nil {
 		return err
@@ -185,8 +185,8 @@ func (client Client) DeleteBucket(bucketName string) error {
 // error  操作无错误时返回nil，非nil为错误信息。
 //
 func (client Client) GetBucketLocation(bucketName string) (string, error) {
-    params := map[string]interface{}{}
-    params["location"] = nil 
+	params := map[string]interface{}{}
+	params["location"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return "", err
@@ -209,7 +209,7 @@ func (client Client) GetBucketLocation(bucketName string) (string, error) {
 //
 func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 	headers := map[string]string{HTTPHeaderOssACL: string(bucketACL)}
-    params := map[string]interface{}{}
+	params := map[string]interface{}{}
 	resp, err := client.do("PUT", bucketName, params, headers, nil)
 	if err != nil {
 		return err
@@ -228,8 +228,8 @@ func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 //
 func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error) {
 	var out GetBucketACLResult
-    params := map[string]interface{}{}
-    params["acl"] = nil
+	params := map[string]interface{}{}
+	params["acl"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err
@@ -267,8 +267,8 @@ func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule
 	headers := map[string]string{}
 	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["lifecycle"] = nil
+	params := map[string]interface{}{}
+	params["lifecycle"] = nil
 	resp, err := client.do("PUT", bucketName, params, headers, buffer)
 	if err != nil {
 		return err
@@ -286,8 +286,8 @@ func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (client Client) DeleteBucketLifecycle(bucketName string) error {
-    params := map[string]interface{}{}
-    params["lifecycle"] = nil
+	params := map[string]interface{}{}
+	params["lifecycle"] = nil
 	resp, err := client.do("DELETE", bucketName, params, nil, nil)
 	if err != nil {
 		return err
@@ -306,8 +306,8 @@ func (client Client) DeleteBucketLifecycle(bucketName string) error {
 //
 func (client Client) GetBucketLifecycle(bucketName string) (GetBucketLifecycleResult, error) {
 	var out GetBucketLifecycleResult
-    params := map[string]interface{}{}
-    params["lifecycle"] = nil
+	params := map[string]interface{}{}
+	params["lifecycle"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err
@@ -356,8 +356,8 @@ func (client Client) SetBucketReferer(bucketName string, referers []string, allo
 	headers := map[string]string{}
 	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["referer"] = nil
+	params := map[string]interface{}{}
+	params["referer"] = nil
 	resp, err := client.do("PUT", bucketName, params, headers, buffer)
 	if err != nil {
 		return err
@@ -376,8 +376,8 @@ func (client Client) SetBucketReferer(bucketName string, referers []string, allo
 //
 func (client Client) GetBucketReferer(bucketName string) (GetBucketRefererResult, error) {
 	var out GetBucketRefererResult
-    params := map[string]interface{}{}
-    params["referer"] = nil
+	params := map[string]interface{}{}
+	params["referer"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err
@@ -426,8 +426,8 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 	headers := map[string]string{}
 	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["logging"] = nil
+	params := map[string]interface{}{}
+	params["logging"] = nil
 	resp, err := client.do("PUT", bucketName, params, headers, buffer)
 	if err != nil {
 		return err
@@ -444,8 +444,8 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (client Client) DeleteBucketLogging(bucketName string) error {
-    params := map[string]interface{}{}
-    params["logging"] = nil
+	params := map[string]interface{}{}
+	params["logging"] = nil
 	resp, err := client.do("DELETE", bucketName, params, nil, nil)
 	if err != nil {
 		return err
@@ -464,8 +464,8 @@ func (client Client) DeleteBucketLogging(bucketName string) error {
 //
 func (client Client) GetBucketLogging(bucketName string) (GetBucketLoggingResult, error) {
 	var out GetBucketLoggingResult
-    params := map[string]interface{}{}
-    params["logging"] = nil
+	params := map[string]interface{}{}
+	params["logging"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err
@@ -504,8 +504,8 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 	headers := make(map[string]string)
 	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["website"] = nil
+	params := map[string]interface{}{}
+	params["website"] = nil
 	resp, err := client.do("PUT", bucketName, params, headers, buffer)
 	if err != nil {
 		return err
@@ -522,8 +522,8 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (client Client) DeleteBucketWebsite(bucketName string) error {
-    params := map[string]interface{}{}
-    params["website"] = nil
+	params := map[string]interface{}{}
+	params["website"] = nil
 	resp, err := client.do("DELETE", bucketName, params, nil, nil)
 	if err != nil {
 		return err
@@ -542,8 +542,8 @@ func (client Client) DeleteBucketWebsite(bucketName string) error {
 //
 func (client Client) GetBucketWebsite(bucketName string) (GetBucketWebsiteResult, error) {
 	var out GetBucketWebsiteResult
-    params := map[string]interface{}{}
-    params["website"] = nil
+	params := map[string]interface{}{}
+	params["website"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err
@@ -587,8 +587,8 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) erro
 	headers := map[string]string{}
 	headers[HTTPHeaderContentType] = contentType
 
-    params := map[string]interface{}{}
-    params["cors"] = nil
+	params := map[string]interface{}{}
+	params["cors"] = nil
 	resp, err := client.do("PUT", bucketName, params, headers, buffer)
 	if err != nil {
 		return err
@@ -605,8 +605,8 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) erro
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (client Client) DeleteBucketCORS(bucketName string) error {
-    params := map[string]interface{}{}
-    params["cors"] = nil
+	params := map[string]interface{}{}
+	params["cors"] = nil
 	resp, err := client.do("DELETE", bucketName, params, nil, nil)
 	if err != nil {
 		return err
@@ -626,8 +626,8 @@ func (client Client) DeleteBucketCORS(bucketName string) error {
 //
 func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, error) {
 	var out GetBucketCORSResult
-    params := map[string]interface{}{}
-    params["cors"] = nil
+	params := map[string]interface{}{}
+	params["cors"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err
@@ -648,8 +648,8 @@ func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, erro
 //
 func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, error) {
 	var out GetBucketInfoResult
-    params := map[string]interface{}{}
-    params["bucketInfo"] = nil
+	params := map[string]interface{}{}
+	params["bucketInfo"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err
@@ -779,7 +779,7 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
-    headers map[string]string, data io.Reader) (*Response, error) {
-    return client.Conn.Do(method, bucketName, "", params,
-        headers, data, 0, nil)
+	headers map[string]string, data io.Reader) (*Response, error) {
+	return client.Conn.Do(method, bucketName, "", params,
+		headers, data, 0, nil)
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/xml"
+	"fmt"
 	"hash"
 	"hash/crc64"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 )
 
 // Bucket implements the operations of object.
@@ -287,7 +289,7 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 	if err != nil {
 		return out, err
 	}
-    params := map[string]interface{}{}
+	params := map[string]interface{}{}
 	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, params, headers, nil, 0, nil)
 	if err != nil {
 		return out, err
@@ -337,9 +339,9 @@ func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosi
 // error  操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Option) (*AppendObjectResult, error) {
-    params := map[string]interface{}{}
-    params["append"] = nil
-    params["position"] = strconv.FormatInt(request.Position, 10)
+	params := map[string]interface{}{}
+	params["append"] = nil
+	params["position"] = strconv.FormatInt(request.Position, 10)
 	headers := make(map[string]string)
 
 	opts := addContentType(options, request.ObjectKey)
@@ -616,6 +618,220 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 	return out, err
 }
 
+//
+// SignURL 获取对象的ACL权限。
+//
+// objectKey 获取URL的object。
+// signURLConfig 获取URL的配置。
+//
+// 返回URL字符串，error为nil时有效。
+// error 操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) SignURL(objectKey string, signURLConfig SignURLConfiguration, options ...Option) (string, error) {
+	if signURLConfig.Expires < 0 {
+		return "", fmt.Errorf("invalid expires: %d, expires must bigger than 0", signURLConfig.Expires)
+	}
+	expiration := time.Now().Unix() + signURLConfig.Expires
+
+	params, err := getRawParams(options)
+	if err != nil {
+		return "", err
+	}
+
+	headers := make(map[string]string)
+	err = handleOptions(headers, options)
+	if err != nil {
+		return "", err
+	}
+
+	method := signURLConfig.Method
+	if method == "" {
+		method = HTTPGet
+	}
+
+	return bucket.Client.Conn.signURL(method, bucket.BucketName, objectKey, expiration, params, headers), nil
+}
+
+//
+// PutObjectWithURL 新建Object，如果Object已存在，覆盖原有Object。
+//
+// signedURL  签名的URL。
+// reader     io.Reader读取object的数据。
+// options    上传对象时可以指定对象的属性，可用选项有CacheControl、ContentDisposition、ContentEncoding、
+// Expires、ServerSideEncryption、ObjectACL、Meta，具体含义请参看
+// https://help.aliyun.com/document_detail/oss/api-reference/object/PutObject.html
+//
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) PutObjectWithURL(signedURL string, reader io.Reader, options ...Option) error {
+	resp, err := bucket.DoPutObjectWithURL(signedURL, reader, options)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return err
+}
+
+//
+// PutObjectFromFileWithURL 新建Object，内容从本地文件中读取。
+//
+// signedURL  签名的URL。
+// filePath  本地文件，上传对象的值为该文件内容。
+// options   上传对象时可以指定对象的属性。详见PutObject的options。
+//
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) PutObjectFromFileWithURL(signedURL, filePath string, options ...Option) error {
+	fd, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	resp, err := bucket.DoPutObjectWithURL(signedURL, fd, options)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return err
+}
+
+//
+// DoPutObjectWithURL 上传文件。
+//
+// signedURL  签名的URL。
+// reader     io.Reader读取object的数据。
+// options  上传选项。
+//
+// Response 上传请求返回值。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, options []Option) (*Response, error) {
+	listener := getProgressListener(options)
+
+	params := map[string]interface{}{}
+	resp, err := bucket.doURL("PUT", signedURL, params, options, reader, listener)
+	if err != nil {
+		return nil, err
+	}
+
+	if bucket.getConfig().IsEnableCRC {
+		err = checkCRC(resp, "DoPutObject")
+		if err != nil {
+			return resp, err
+		}
+	}
+
+	err = checkRespCode(resp.StatusCode, []int{http.StatusOK})
+
+	return resp, err
+}
+
+//
+// GetObjectWithURL 下载文件。
+//
+// signedURL  签名的URL。
+// options   对象的属性限制项，可选值有Range、IfModifiedSince、IfUnmodifiedSince、IfMatch、
+// IfNoneMatch、AcceptEncoding，详细请参考
+// https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
+//
+// io.ReadCloser  reader，读取数据后需要close。error为nil时有效。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.ReadCloser, error) {
+	result, err := bucket.DoGetObjectWithURL(signedURL, options)
+	if err != nil {
+		return nil, err
+	}
+	return result.Response.Body, nil
+}
+
+//
+// GetObjectToFile 下载文件。
+//
+// signedURL  签名的URL。
+// filePath   下载对象的内容写到该本地文件。
+// options    对象的属性限制项。详见GetObject的options。
+//
+// error  操作无错误时返回error为nil，非nil为错误说明。
+//
+func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options ...Option) error {
+	tempFilePath := filePath + TempFileSuffix
+
+	// 读取Object内容
+	result, err := bucket.DoGetObjectWithURL(signedURL, options)
+	if err != nil {
+		return err
+	}
+	defer result.Response.Body.Close()
+
+	// 如果文件不存在则创建，存在则清空
+	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
+	if err != nil {
+		return err
+	}
+
+	// 存储数据到文件
+	_, err = io.Copy(fd, result.Response.Body)
+	fd.Close()
+	if err != nil {
+		return err
+	}
+
+	// 比较CRC值
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		result.Response.ClientCRC = result.ClientCRC.Sum64()
+		err = checkCRC(result.Response, "GetObjectToFile")
+		if err != nil {
+			os.Remove(tempFilePath)
+			return err
+		}
+	}
+
+	return os.Rename(tempFilePath, filePath)
+}
+
+//
+// DoGetObjectWithURL 下载文件
+//
+// signedURL  签名的URL。
+// options    对象的属性限制项。详见GetObject的options。
+//
+// GetObjectResult 下载请求返回值。
+// error  操作无错误为nil，非nil为错误信息。
+//
+func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*GetObjectResult, error) {
+	params := map[string]interface{}{}
+	resp, err := bucket.doURL("GET", signedURL, params, options, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &GetObjectResult{
+		Response: resp,
+	}
+
+	// crc
+	var crcCalc hash.Hash64
+	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
+	if bucket.getConfig().IsEnableCRC && !hasRange {
+		crcCalc = crc64.New(crcTable())
+		result.ServerCRC = resp.ServerCRC
+		result.ClientCRC = crcCalc
+	}
+
+	// progress
+	listener := getProgressListener(options)
+
+	contentLen, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderContentLength), 10, 64)
+	resp.Body = ioutil.NopCloser(TeeReader(resp.Body, crcCalc, contentLen, listener, nil))
+
+	return result, nil
+}
+
 // Private
 func (bucket Bucket) do(method, objectName string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
@@ -626,6 +842,16 @@ func (bucket Bucket) do(method, objectName string, params map[string]interface{}
 	}
 	return bucket.Client.Conn.Do(method, bucket.BucketName, objectName,
 		params, headers, data, 0, listener)
+}
+
+func (bucket Bucket) doURL(method HTTPMethod, signedURL string, params map[string]interface{}, options []Option,
+	data io.Reader, listener ProgressListener) (*Response, error) {
+	headers := make(map[string]string)
+	err := handleOptions(headers, options)
+	if err != nil {
+		return nil, err
+	}
+	return bucket.Client.Conn.DoURL(method, signedURL, headers, data, 0, listener)
 }
 
 func (bucket Bucket) getConfig() *Config {
