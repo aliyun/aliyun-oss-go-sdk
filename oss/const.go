@@ -44,6 +44,43 @@ const (
 	StorageArchive StorageClassType = "Archive"
 )
 
+// UDF相关
+type UDFIoOptimizedType string
+
+const (
+    // UDFNone 非使最优
+    UDFNone UDFIoOptimizedType = "none"
+
+    // UDFIsOptimized 使最优
+    UDFIsOptimized UDFIoOptimizedType = "optimized"
+)
+
+type UDFDiskCategoryType string
+
+const (
+    // UDFCloud 普通云盘
+    UDFCloud UDFDiskCategoryType = "cloud"
+
+    // UDFCloudEfficiency 高效云盘
+    UDFCloudEfficiency UDFDiskCategoryType = "cloud_efficiency"
+
+    // UDFCloudSSD SSD云盘
+    UDFCloudSSD UDFDiskCategoryType = "cloud_ssd"
+
+    // UDFEphemeralSSD 本地SSD盘
+    UDFEphemeralSSD UDFDiskCategoryType = "ephemeral_ssd"
+)
+
+type HTTPMethod string
+
+const (
+	HTTPGet    HTTPMethod = "GET"
+	HTTPPut    HTTPMethod = "PUT"
+	HTTPHead   HTTPMethod = "HEAD"
+	HTTPPost   HTTPMethod = "POST"
+	HTTPDelete HTTPMethod = "DELETE"
+)
+
 // Http头标签
 const (
 	HTTPHeaderAcceptEncoding     string = "Accept-Encoding"
@@ -86,6 +123,14 @@ const (
 	HTTPHeaderOssRequestID                   = "X-Oss-Request-Id"
 	HTTPHeaderOssCRC64                       = "X-Oss-Hash-Crc64ecma"
 	HTTPHeaderOssSymlinkTarget               = "X-Oss-Symlink-Target"
+)
+
+// Http Param
+const (
+	HTTPParamExpires       = "Expires"
+	HTTPParamAccessKeyId   = "OSSAccessKeyId"
+	HTTPParamSignature     = "Signature"
+	HTTPParamSecurityToken = "security-token"
 )
 
 // 其它常量

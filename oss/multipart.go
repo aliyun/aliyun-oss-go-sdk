@@ -24,7 +24,9 @@ import (
 func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option) (InitiateMultipartUploadResult, error) {
 	var imur InitiateMultipartUploadResult
 	opts := addContentType(options, objectKey)
-	resp, err := bucket.do("POST", objectKey, "uploads", "uploads", opts, nil, nil)
+	params := map[string]interface{}{}
+	params["uploads"] = nil
+	resp, err := bucket.do("POST", objectKey, params, opts, nil, nil)
 	if err != nil {
 		return imur, err
 	}
@@ -111,9 +113,11 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 //
 func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) (*UploadPartResult, error) {
 	listener := getProgressListener(options)
-	params := "partNumber=" + strconv.Itoa(request.PartNumber) + "&uploadId=" + request.InitResult.UploadID
 	opts := []Option{ContentLength(request.PartSize)}
-	resp, err := bucket.do("PUT", request.InitResult.Key, params, params, opts,
+	params := map[string]interface{}{}
+	params["partNumber"] = strconv.Itoa(request.PartNumber)
+	params["uploadId"] = request.InitResult.UploadID
+	resp, err := bucket.do("PUT", request.InitResult.Key, params, opts,
 		&io.LimitedReader{R: request.Reader, N: request.PartSize}, listener)
 	if err != nil {
 		return &UploadPartResult{}, err
@@ -159,8 +163,10 @@ func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucke
 	opts := []Option{CopySource(srcBucketName, srcObjectKey),
 		CopySourceRange(startPosition, partSize)}
 	opts = append(opts, options...)
-	params := "partNumber=" + strconv.Itoa(partNumber) + "&uploadId=" + imur.UploadID
-	resp, err := bucket.do("PUT", imur.Key, params, params, opts, nil, nil)
+	params := map[string]interface{}{}
+	params["partNumber"] = strconv.Itoa(partNumber)
+	params["uploadId"] = imur.UploadID
+	resp, err := bucket.do("PUT", imur.Key, params, opts, nil, nil)
 	if err != nil {
 		return part, err
 	}
@@ -199,8 +205,9 @@ func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 	buffer := new(bytes.Buffer)
 	buffer.Write(bs)
 
-	params := "uploadId=" + imur.UploadID
-	resp, err := bucket.do("POST", imur.Key, params, params, nil, buffer, nil)
+	params := map[string]interface{}{}
+	params["uploadId"] = imur.UploadID
+	resp, err := bucket.do("POST", imur.Key, params, nil, buffer, nil)
 	if err != nil {
 		return out, err
 	}
@@ -218,8 +225,9 @@ func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 // error  操作成功error为nil，非nil为错误信息。
 //
 func (bucket Bucket) AbortMultipartUpload(imur InitiateMultipartUploadResult) error {
-	params := "uploadId=" + imur.UploadID
-	resp, err := bucket.do("DELETE", imur.Key, params, params, nil, nil, nil)
+	params := map[string]interface{}{}
+	params["uploadId"] = imur.UploadID
+	resp, err := bucket.do("DELETE", imur.Key, params, nil, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -237,8 +245,9 @@ func (bucket Bucket) AbortMultipartUpload(imur InitiateMultipartUploadResult) er
 //
 func (bucket Bucket) ListUploadedParts(imur InitiateMultipartUploadResult) (ListUploadedPartsResult, error) {
 	var out ListUploadedPartsResult
-	params := "uploadId=" + imur.UploadID
-	resp, err := bucket.do("GET", imur.Key, params, params, nil, nil, nil)
+	params := map[string]interface{}{}
+	params["uploadId"] = imur.UploadID
+	resp, err := bucket.do("GET", imur.Key, params, nil, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -261,12 +270,13 @@ func (bucket Bucket) ListMultipartUploads(options ...Option) (ListMultipartUploa
 	var out ListMultipartUploadResult
 
 	options = append(options, EncodingType("url"))
-	params, err := handleParams(options)
+	params, err := getRawParams(options)
 	if err != nil {
 		return out, err
 	}
+	params["uploads"] = nil
 
-	resp, err := bucket.do("GET", "", "uploads&"+params, "uploads", nil, nil, nil)
+	resp, err := bucket.do("GET", "", params, nil, nil, nil)
 	if err != nil {
 		return out, err
 	}
