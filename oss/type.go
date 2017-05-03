@@ -447,7 +447,7 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 type createBucketConfiguration struct {
 	XMLName      xml.Name         `xml:"CreateBucketConfiguration"`
 	StorageClass StorageClassType `xml:"StorageClass,omitempty"`
-)
+}
 
 // UDFConfiguration 创建UDF配置
 type UDFConfiguration struct {
