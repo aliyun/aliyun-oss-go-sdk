@@ -1,5 +1,17 @@
 # ChangeLog - Aliyun OSS SDK for Go
 
+## 版本号：1.4.0 日期：2017-05-23
+### 变更内容
+ - 增加：支持符号链接symlink
+ - 增加：支持RestoreObject
+ - 增加：CreateBucket支持StorageClass
+ - 增加：支持范围读NormalizedRange
+ - 修复：IsObjectExist使用GetObjectMeta实现
+
+## 版本号：1.3.0 日期：2017-01-13
+### 变更内容
+ - 增加：上传下载支持进度条功能
+
 ## 版本号：1.2.3 日期：2016-12-28
 ### 变更内容
  - 修复：每次请求使用一个http.Client修改为共用http.Client
