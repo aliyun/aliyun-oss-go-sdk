@@ -1445,11 +1445,10 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	bucket, err := client.Bucket(bucketNameTest)
 
 	// Sign url
-	signURLConfig := SignURLConfiguration{Expires: 60, Method: HTTPPut}
-	str, err := bucket.SignURL(objectName, signURLConfig)
+	str, err := bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Put object with url
@@ -1457,11 +1456,10 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	c.Assert(err, IsNil)
 
 	// sign url for get object
-	signURLConfig = SignURLConfiguration{Expires: 60}
-	str, err = bucket.SignURL(objectName, signURLConfig)
+	str, err = bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Get object with url

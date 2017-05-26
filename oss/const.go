@@ -37,10 +37,10 @@ const (
 	// StorageStandard 标准存储模式
 	StorageStandard StorageClassType = "Standard"
 
-	// StorageIA IA存储模式
+	// StorageIA 低频存储模式
 	StorageIA StorageClassType = "IA"
 
-	// StorageArchive Archive存储模式
+	// StorageArchive 归档存储模式
 	StorageArchive StorageClassType = "Archive"
 )
 
@@ -48,36 +48,45 @@ const (
 type UDFIoOptimizedType string
 
 const (
-    // UDFNone 非使最优
-    UDFNone UDFIoOptimizedType = "none"
+	// UDFNone 非使最优
+	UDFNone UDFIoOptimizedType = "none"
 
-    // UDFIsOptimized 使最优
-    UDFIsOptimized UDFIoOptimizedType = "optimized"
+	// UDFIsOptimized 使最优
+	UDFIsOptimized UDFIoOptimizedType = "optimized"
 )
 
 type UDFDiskCategoryType string
 
 const (
-    // UDFCloud 普通云盘
-    UDFCloud UDFDiskCategoryType = "cloud"
+	// UDFCloud 普通云盘
+	UDFCloud UDFDiskCategoryType = "cloud"
 
-    // UDFCloudEfficiency 高效云盘
-    UDFCloudEfficiency UDFDiskCategoryType = "cloud_efficiency"
+	// UDFCloudEfficiency 高效云盘
+	UDFCloudEfficiency UDFDiskCategoryType = "cloud_efficiency"
 
-    // UDFCloudSSD SSD云盘
-    UDFCloudSSD UDFDiskCategoryType = "cloud_ssd"
+	// UDFCloudSSD SSD云盘
+	UDFCloudSSD UDFDiskCategoryType = "cloud_ssd"
 
-    // UDFEphemeralSSD 本地SSD盘
-    UDFEphemeralSSD UDFDiskCategoryType = "ephemeral_ssd"
+	// UDFEphemeralSSD 本地SSD盘
+	UDFEphemeralSSD UDFDiskCategoryType = "ephemeral_ssd"
 )
 
 type HTTPMethod string
 
 const (
-	HTTPGet    HTTPMethod = "GET"
-	HTTPPut    HTTPMethod = "PUT"
-	HTTPHead   HTTPMethod = "HEAD"
-	HTTPPost   HTTPMethod = "POST"
+	// HTTPGet HTTP请求方法 GET
+	HTTPGet HTTPMethod = "GET"
+
+	// HTTPPut HTTP请求方法 PUT
+	HTTPPut HTTPMethod = "PUT"
+
+	// HTTPHead HTTP请求方法 HEAD
+	HTTPHead HTTPMethod = "HEAD"
+
+	// HTTPPost HTTP请求方法 POST
+	HTTPPost HTTPMethod = "POST"
+
+	// HTTPDelete HTTP请求方法 DELETE
 	HTTPDelete HTTPMethod = "DELETE"
 )
 
@@ -128,7 +137,7 @@ const (
 // Http Param
 const (
 	HTTPParamExpires       = "Expires"
-	HTTPParamAccessKeyId   = "OSSAccessKeyId"
+	HTTPParamAccessKeyID   = "OSSAccessKeyId"
 	HTTPParamSignature     = "Signature"
 	HTTPParamSecurityToken = "security-token"
 )

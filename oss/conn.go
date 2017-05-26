@@ -26,7 +26,7 @@ type Conn struct {
 	client *http.Client
 }
 
-var SignKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore"}
+var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore"}
 
 // init 初始化Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
@@ -70,6 +70,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
+// DoURL 根据已签名的URL处理请求，返回响应结果。
 func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	// get uri form signedURL
@@ -138,7 +139,7 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 func (conn Conn) getURLParams(params map[string]interface{}) string {
 	// sort
 	keys := make([]string, 0, len(params))
-	for k, _ := range params {
+	for k := range params {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -161,7 +162,7 @@ func (conn Conn) getURLParams(params map[string]interface{}) string {
 func (conn Conn) getSubResource(params map[string]interface{}) string {
 	// sort
 	keys := make([]string, 0, len(params))
-	for k, _ := range params {
+	for k := range params {
 		if conn.isParamSign(k) {
 			keys = append(keys, k)
 		}
@@ -184,7 +185,7 @@ func (conn Conn) getSubResource(params map[string]interface{}) string {
 }
 
 func (conn Conn) isParamSign(paramKey string) bool {
-	for _, k := range SignKeyList {
+	for _, k := range signKeyList {
 		if paramKey == k {
 			return true
 		}
@@ -287,7 +288,7 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	signedStr := conn.getSignedStr(req, canonicalizedResource)
 
 	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
-	params[HTTPParamAccessKeyId] = conn.config.AccessKeyID
+	params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
 	params[HTTPParamSignature] = signedStr
 	if conn.config.SecurityToken != "" {
 		params[HTTPParamSecurityToken] = conn.config.SecurityToken

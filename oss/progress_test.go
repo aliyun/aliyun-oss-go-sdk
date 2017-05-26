@@ -153,11 +153,10 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	createFile(filePath, content, c)
 
 	// sign url for put
-	signURLConfig := SignURLConfiguration{Expires: 60, Method: HTTPPut}
-	str, err := s.bucket.SignURL(objectName, signURLConfig, Progress(&OssProgressListener{}))
+	str, err := s.bucket.SignURL(objectName, HTTPPut, 60, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// put object with url
@@ -182,11 +181,10 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	c.Assert(err, IsNil)
 
 	// sign url for get
-	signURLConfig = SignURLConfiguration{Expires: 60}
-	str, err = s.bucket.SignURL(objectName, signURLConfig, Progress(&OssProgressListener{}))
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// get object with url
@@ -197,8 +195,7 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	c.Assert(str, Equals, content)
 
 	// get object to file with url
-	signURLConfig = SignURLConfiguration{Expires: 5}
-	str, err = s.bucket.SignURL(objectName, signURLConfig, Progress(&OssProgressListener{}))
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 10, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 
 	newFile := randStr(10)

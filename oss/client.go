@@ -89,7 +89,7 @@ func (client Client) Bucket(bucketName string) (*Bucket, error) {
 // bucketName bucket名称，在整个OSS中具有全局唯一性，且不能修改。bucket名称的只能包括小写字母，数字和短横线-，
 // 必须以小写字母或者数字开头，长度必须在3-255字节之间。
 // options  创建bucket的选项。您可以使用选项ACL，指定bucket的访问权限。Bucket有以下三种访问权限，私有读写（ACLPrivate）、
-// 公共读私有写（ACLPublicRead），公共读公共写(ACLPublicReadWrite)，默认访问权限是私有读写。可以使用StorageClass选项设置bucket的存储方式。
+// 公共读私有写（ACLPublicRead），公共读公共写(ACLPublicReadWrite)，默认访问权限是私有读写。可以使用StorageClass选项设置bucket的存储方式，目前支持：标准存储模式（StorageStandard）、 低频存储模式（StorageIA）、 归档存储模式（StorageArchive）。
 //
 // error 操作无错误时返回nil，非nil为错误信息。
 //
@@ -112,7 +112,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 		headers[HTTPHeaderContentType] = contentType
 	}
 
-    params := map[string]interface{}{}
+	params := map[string]interface{}{}
 	resp, err := client.do("PUT", bucketName, params, headers, buffer)
 	if err != nil {
 		return err
