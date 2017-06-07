@@ -32,6 +32,7 @@ type Config struct {
 	IsEnableMD5     bool        // 上传数据时是否启用MD5校验
 	MD5Threshold    int64       // 内存中计算MD5的上线大小，大于该值启用临时文件，单位Byte
 	IsEnableCRC     bool        // 上传数据时是否启用CRC64校验
+	BusinessInfo    string      // 调用oss的第三方服务标识
 }
 
 // 获取默认配置

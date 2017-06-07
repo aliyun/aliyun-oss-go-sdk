@@ -100,6 +100,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	req.Header.Set(HTTPHeaderDate, date)
 	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
+	req.Header.Set(HTTPHeaderOssBusinessInfo, conn.config.BusinessInfo)
 	if conn.config.SecurityToken != "" {
 		req.Header.Set(HTTPHeaderOssSecurityToken, conn.config.SecurityToken)
 	}
