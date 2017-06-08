@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/aliyun/aliyun-oss-go-sdk.svg?branch=master)](https://travis-ci.org/aliyun/aliyun-oss-go-sdk)
 [![Coverage Status](https://coveralls.io/repos/github/aliyun/aliyun-oss-go-sdk/badge.svg?branch=master)](https://coveralls.io/github/aliyun/aliyun-oss-go-sdk?branch=master)
 
-## [README of English][readme.md]
+## [README of English](https://github.com/aliyun/aliyun-oss-go-sdk/blob/master/README.md)
 
 ## 关于
 > - 此Go SDK基于[阿里云对象存储服务](http://www.aliyun.com/product/oss/)官方API构建。
