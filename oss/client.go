@@ -725,6 +725,16 @@ func UserAgent(userAgent string) ClientOption {
 }
 
 //
+// BusinessInfo 指定BusinessInfo，默认如下aliyun-sdk-go/1.2.0 (BusinessInfo)。
+//
+// businessInfo 调用oss的第三方服务标识。
+//
+func BusinessInfo(businessInfo string) ClientOption {
+	return func(client *Client) {
+		client.Config.BusinessInfo = businessInfo
+	}
+}
+//
 // Proxy 设置代理服务器，默认不使用代理。
 //
 // proxyHost 代理服务器地址，格式是host或host:port
