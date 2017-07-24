@@ -448,3 +448,131 @@ type createBucketConfiguration struct {
 	XMLName      xml.Name         `xml:"CreateBucketConfiguration"`
 	StorageClass StorageClassType `xml:"StorageClass,omitempty"`
 }
+
+// UDFConfiguration 创建UDF配置
+type UDFConfiguration struct {
+	XMLName        xml.Name `xml:"CreateUDFConfiguration"`
+	UDFName        string   `xml:"Name"` // UDF名称，OSS全局唯一
+	UDFID          string   `xml:"ID,omitempty"`
+	UDFDescription string   `xml:"Description,omitempty"`
+}
+
+// GetUDFResult GetUDF请求返回的结果
+type GetUDFResult struct {
+	XMLName        xml.Name  `xml:"UDFInfo"`
+	UDFName        string    `xml:"Name"`
+	OwnerID        string    `xml:"Owner"` //UDF拥有者的用户ID
+	UDFID          string    `xml:"ID"`
+	UDFDescription string    `xml:"Description,omitempty"`
+	ACL            string    `xml:"ACL"` //UDF权限
+	CreationDate   time.Time `xml:"CreationDate"`
+}
+
+func decodeGetUDFResult(result *GetUDFResult) error {
+	var err error
+	result.UDFDescription, err = url.QueryUnescape(result.UDFDescription)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ListUDFsResult ListUDFs请求返回的结果
+type ListUDFsResult struct {
+	XMLName xml.Name       `xml:"ListUDFResult"`
+	UDFs    []GetUDFResult `xml:"UDFInfo"`
+}
+
+func decodeListUDFsResult(result *ListUDFsResult) error {
+	var err error
+	for i := 0; i < len(result.UDFs); i++ {
+		err = decodeGetUDFResult(&result.UDFs[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetUDFImageInfoResult GetUDFImageInfo请求返回的结果
+type GetUDFImageInfoResult struct {
+	XMLName   xml.Name       `xml:"UDFImageInfo"`
+	UDFImages []UDFImageInfo `xml:"Item"`
+}
+
+// UDFImageInfo UDFImage信息
+type UDFImageInfo struct {
+	XMLName         xml.Name  `xml:"Item"`
+	Version         int64     `xml:"Version"`         // UDF镜像版本
+	Status          string    `xml:"Status"`          // UDF镜像的状态，包括building，build_success，build_failed，deleting
+	CanonicalRegion string    `xml:"CanonicalRegion"` // UDF镜像所属的数据中心
+	Description     string    `xml:"Description"`     // UDF镜像的描述信息
+	CreationDate    time.Time `xml:"CreationDate"`    // UDF镜像上传时间
+}
+
+func decodeGetUDFImageInfoResult(result *GetUDFImageInfoResult) error {
+	var err error
+	for i := 0; i < len(result.UDFImages); i++ {
+		err = decodeUDFImageInfo(&result.UDFImages[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func decodeUDFImageInfo(result *UDFImageInfo) error {
+	var err error
+	result.Description, err = url.QueryUnescape(result.Description)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UDFAppConfiguration 创建UDF应用的配置
+type UDFAppConfiguration struct {
+	XMLName      xml.Name     `xml:"CreateUDFApplicationConfiguration"`
+	ImageVersion int64        `xml:"ImageVersion"`
+	InstanceNum  int64        `xml:"InstanceNum"`
+	Flavor       UDFAppFlavor `xml:"Flavor"`
+}
+
+// UDFAppFlavor UDFApp描述信息
+type UDFAppFlavor struct {
+	XMLName      xml.Name `xml:"Flavor"`
+	InstanceType string   `xml:"InstanceType"`
+}
+
+// GetUDFApplicationInfoResult GetUDFApplicationInfo请求返回的结果
+type GetUDFApplicationInfoResult struct {
+	XMLName            xml.Name     `xml:"UDFApplicationInfo"`
+	UDFID              string       `xml:"ID"`
+	UDFName            string       `xml:"Name"`
+	Region             string       `xml:"Region"`
+	ImageVersion       int64        `xml:"ImageVersion"`
+	InstanceNum        int64        `xml:"InstanceNum"`
+	Status             string       `xml:"Status"`
+	TargetImageVersion int64        `xml:"TargetImageVersion,omitempty"`
+	TargetInstanceNum  int64        `xml:"TargetInstanceNum,omitempty"`
+	CreationDate       time.Time    `xml:"CreationDate"`
+	Flavor             UDFAppFlavor `xml:"Flavor"`
+}
+
+// ListUDFApplicationsResult ListUDFApplications请求返回的结果
+type ListUDFApplicationsResult struct {
+	XMLName         xml.Name                      `xml:"ListUDFApplicationResult"`
+	UDFApplications []GetUDFApplicationInfoResult `xml:"UDFApplicationInfo"`
+}
+
+// UpgradeUDFApplicationXML 更新UDF应用的配置
+type UpgradeUDFApplicationXML struct {
+	XMLName      xml.Name `xml:"UpgradeUDFApplicationConfiguration"`
+	ImageVersion int64    `xml:"ImageVersion"`
+}
+
+// ResizeUDFApplicationXML UDF应用扩容的配置
+type ResizeUDFApplicationXML struct {
+	XMLName     xml.Name `xml:"ResizeUDFApplicationConfiguration"`
+	InstanceNum int64    `xml:"InstanceNum"`
+}

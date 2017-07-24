@@ -145,6 +145,75 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 	testLogger.Println("OssProgressSuite.TestPutObject")
 }
 
+// Test SignURL
+func (s *OssProgressSuite) TestSignURL(c *C) {
+	objectName := objectNamePrefix + randStr(5)
+	filePath := randLowStr(10)
+	content := randStr(20)
+	createFile(filePath, content, c)
+
+	// sign url for put
+	str, err := s.bucket.SignURL(objectName, HTTPPut, 60, Progress(&OssProgressListener{}))
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// put object with url
+	fd, err := os.Open(filePath)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	err = s.bucket.PutObjectWithURL(str, fd, Progress(&OssProgressListener{}))
+	c.Assert(err, IsNil)
+
+	// put object from file with url
+	err = s.bucket.PutObjectFromFileWithURL(str, filePath, Progress(&OssProgressListener{}))
+	c.Assert(err, IsNil)
+
+	// DoPutObject
+	fd, err = os.Open(filePath)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	options := []Option{Progress(&OssProgressListener{})}
+	_, err = s.bucket.DoPutObjectWithURL(str, fd, options)
+	c.Assert(err, IsNil)
+
+	// sign url for get
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60, Progress(&OssProgressListener{}))
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// get object with url
+	body, err := s.bucket.GetObjectWithURL(str, Progress(&OssProgressListener{}))
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, content)
+
+	// get object to file with url
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 10, Progress(&OssProgressListener{}))
+	c.Assert(err, IsNil)
+
+	newFile := randStr(10)
+	err = s.bucket.GetObjectToFileWithURL(str, newFile, Progress(&OssProgressListener{}))
+	c.Assert(err, IsNil)
+	eq, err := compareFiles(filePath, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(filePath)
+	os.Remove(newFile)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	testLogger.Println("OssProgressSuite.TestSignURL")
+}
+
 func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
 	objectName := objectNamePrefix + "tpon.html"
 	localFile := "../sample/The Go Programming Language.html"

@@ -39,6 +39,11 @@ var (
 	stsaccessID  = os.Getenv("OSS_TEST_STS_ID")
 	stsaccessKey = os.Getenv("OSS_TEST_STS_KEY")
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
+
+	// udf
+	udfEndpoint  = os.Getenv("OSS_TEST_UDF_ENDPOINT")
+	udfAccessID  = os.Getenv("OSS_TEST_UDF_ACCESS_KEY_ID")
+	udfAccessKey = os.Getenv("OSS_TEST_UDF_ACCESS_KEY_SECRET")
 )
 
 const (
@@ -67,6 +72,14 @@ func randStr(n int) string {
 		b[i] = letters[r.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+func createFile(fileName, content string, c *C) {
+	fout, err := os.Create(fileName)
+	defer fout.Close()
+	c.Assert(err, IsNil)
+	_, err = fout.WriteString(content)
+	c.Assert(err, IsNil)
 }
 
 func randLowStr(n int) string {
@@ -1430,6 +1443,31 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	c.Assert(err, IsNil)
 
 	bucket, err := client.Bucket(bucketNameTest)
+
+	// Sign url
+	str, err := bucket.SignURL(objectName, HTTPPut, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// Put object with url
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// sign url for get object
+	str, err = bucket.SignURL(objectName, HTTPGet, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// Get object with url
+	body, err := bucket.GetObjectWithURL(str)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
 
 	// Put object
 	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
