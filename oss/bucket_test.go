@@ -209,11 +209,10 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	os.Remove(notExistfilePath)
 
 	// sign url for put
-	signURLConfig := SignURLConfiguration{Expires: 60, Method: HTTPPut}
-	str, err := s.bucket.SignURL(objectName, signURLConfig)
+	str, err := s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// error put object with url
@@ -240,11 +239,10 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "")
 
 	// sign url for get object
-	signURLConfig = SignURLConfiguration{Expires: 60}
-	str, err = s.bucket.SignURL(objectName, signURLConfig)
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// get object with url
@@ -259,12 +257,12 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 		ObjectACL(ACLPublicRead),
 		Meta("myprop", "mypropval"),
 		ContentType("image/tiff"),
+		ResponseContentEncoding("deflate"),
 	}
-	signURLConfig = SignURLConfiguration{Expires: 60, Method: HTTPPut}
-	str, err = s.bucket.SignURL(objectName, signURLConfig, options...)
+	str, err = s.bucket.SignURL(objectName, HTTPPut, 60, options...)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyId+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// put object with url from file
@@ -296,8 +294,7 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(acl.ACL, Equals, string(ACLPublicRead))
 
 	// sign url for get object
-	signURLConfig = SignURLConfiguration{Expires: 60}
-	str, err = s.bucket.SignURL(objectName, signURLConfig)
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 
 	// get object to file with url
@@ -328,9 +325,9 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 		ObjectACL(ACLPublicRead),
 		Meta("myprop", "mypropval"),
 		ContentType("image/tiff"),
+		ResponseContentEncoding("deflate"),
 	}
-	signURLConfig = SignURLConfiguration{Expires: 60, Method: HTTPGet}
-	str, err = s.bucket.SignURL(objectName, signURLConfig, options...)
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60, options...)
 	c.Assert(err, IsNil)
 
 	// get object to file with url and options
@@ -358,8 +355,7 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	os.Remove(newFile)
 
 	// sign url error
-	signURLConfig = SignURLConfiguration{Expires: -1, Method: HTTPGet}
-	str, err = s.bucket.SignURL(objectName, signURLConfig)
+	str, err = s.bucket.SignURL(objectName, HTTPGet, -1)
 	c.Assert(err, NotNil)
 
 	err = s.bucket.DeleteObject(objectName)

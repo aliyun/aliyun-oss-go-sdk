@@ -25,8 +25,10 @@ var (
 	udfNamePrefix                = "go-sdk-test-udf-"
 	udfBucketName                = "go-sdk-test-bucket-udf" + randLowStr(3)
 	udfLogPath                   = "go-sdk-test-udf-log"
-	imagePath                    = "test_resource/udf-go-pingpong.tar.gz"
-	upgradeImagePath             = "test_resource/udf-go-pingpong-upgrade.tar.gz"
+	imageURLPath                 = "http://gosspublic.alicdn.com/udf/test-resource/udf-go-pingpong.tar.gz"
+	upgradeImageURLPath          = "http://gosspublic.alicdn.com/udf/test-resource/udf-go-pingpong-upgrade.tar.gz"
+	imagePath                    = ""
+	upgradeImagePath             = ""
 	sleepSecond                  = time.Second
 	BuildImageSleepSecond  int64 = 40
 	BuildAppSleepSecond    int64 = 300
@@ -56,6 +58,20 @@ func (s *OssUDFSuite) SetUpSuite(c *C) {
 	s.bucket = bucket
 
 	s.DeleteAllUDFs(c)
+
+	// get udf image
+	err = s.bucket.GetObjectToFile(imageURLPath, imagePath)
+	c.Assert(err, IsNil)
+
+	_, err = os.Stat(imagePath)
+	c.Assert(err, IsNil)
+
+	// get udf upgrade image
+	err = s.bucket.GetObjectToFile(upgradeImageURLPath, upgradeImagePath)
+	c.Assert(err, IsNil)
+
+	_, err = os.Stat(upgradeImagePath)
+	c.Assert(err, IsNil)
 }
 
 // Run before each test or benchmark starts running
@@ -63,6 +79,8 @@ func (s *OssUDFSuite) TearDownSuite(c *C) {
 	// Delete all test udf
 	s.DeleteAllUDFs(c)
 	s.DeleteObjects(c)
+	os.Remove(imagePath)
+	os.Remove(upgradeImagePath)
 }
 
 // Run after each test or benchmark runs

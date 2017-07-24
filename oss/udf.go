@@ -29,30 +29,10 @@ func (client Client) UDF() (*UDF, error) {
 	}, nil
 }
 
-// Private
-func (udf UDF) doHeader(method string, params map[string]interface{},
-	headers map[string]string, data io.Reader) (*Response, error) {
-	return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, nil)
-}
-
-func (udf UDF) doOption(method string, params map[string]interface{}, options []Option,
-	data io.Reader, listener ProgressListener) (*Response, error) {
-	headers := make(map[string]string)
-	err := handleOptions(headers, options)
-	if err != nil {
-		return nil, err
-	}
-	return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, listener)
-}
-
-func (udf UDF) getConfig() *Config {
-	return udf.Client.Config
-}
-
 //
 // CreateUDF 新建UDF。
 //
-// UDF名称OSS全局唯一，如果UDF已被其他用户占用，覆盖原有Object。
+// UDF名称OSS全局唯一，如果UDF已被其他用户占用，报UdfAlreadyExist错误。
 // 若指定UDF ID，则表示将该UDF绑定到一个已存在的UDF上，即别名。
 //
 // error  操作无错误为nil，非nil为错误信息。
@@ -164,7 +144,7 @@ func (udf UDF) DeleteUDF(udfName string) error {
 //
 // UploadUDFImage 上传UDF镜像。OSS会根据用户上传的包构建一个镜像。
 //
-// 用户上传的包必须为zip格式或者tar.gz格式，并包含如下文件：
+// 用户上传的包必须为tar.gz格式，并包含如下文件：
 //      udf.yaml（udf镜像构建脚本），application（用户自己开发的应用程序）。
 // 由于构建镜像需要消耗较多时间，所以该接口对用户来说为一个异步接口。用户在调用该接口成功后，
 // 镜像会处于building状态，OSS会在后台进行构建操作。
@@ -175,7 +155,7 @@ func (udf UDF) DeleteUDF(udfName string) error {
 //
 // udfName  上传镜像时指定的UDF名称。
 // reader   io.Reader 需要上传的镜像的reader。
-// options  上传镜像时可以指定对象的属性，可用选项有udfImageDesc，表示UDF镜像的描述信息（
+// options  上传镜像时可以指定对象的属性，可用选项有UDFImageDesc，表示UDF镜像的描述信息（
 // UploadUDFImage接口自动对描述信息进行url编码，描述信息字符内容长度最大为128字节，允许的字符为除去ASCII）。
 // 码中十进制值小于32或等于127之外的所有UTF-8字符。
 //
@@ -193,7 +173,7 @@ func (udf UDF) UploadUDFImage(udfName string, reader io.Reader, options ...Optio
 //
 // udfName        上传镜像时指定的UDF名称。
 // filePath       需要上传的镜像包文件。
-// options        上传镜像时可以指定对象的属性，可用选项有udfImageDesc，详见UploadUDFImage的options。
+// options        上传镜像时可以指定对象的属性，可用选项有UDFImageDesc，详见UploadUDFImage的options。
 //
 // error 操作成功error为nil，非nil为错误信息。
 //
@@ -220,7 +200,7 @@ func (udf UDF) UploadUDFImageFromFile(udfName string, filePath string, options .
 //
 // udfName  上传镜像时指定的UDF名称。
 // reader   io.Reader 需要上传的镜像的reader。
-// options  上传镜像时可以指定对象的属性，可用选项有udfImageDesc，表示UDF镜像的描述信息
+// options  上传镜像时可以指定对象的属性，可用选项有UDFImageDesc，表示UDF镜像的描述信息
 //
 // Response 上传请求返回值。
 // error  操作无错误为nil，非nil为错误信息。
@@ -507,7 +487,7 @@ func (udf UDF) ResizeUDFApplication(udfName string, instanceNum int64) error {
 // GetUDFApplicationLog 获取一个UDF应用的日志信息，日志为应用的标准输出和标准错误输出（stdout和stderr）。
 //
 // udfName  需要获取日志的UDF名称。
-// options  对象的属性限制项，可选值有since、tail。
+// options  对象的属性限制项，可选值UDFSince、UDFTail。
 //
 // io.ReadCloser  reader，读取数据后需要close。error为nil时有效。
 // error  操作无错误为nil，非nil为错误信息。
@@ -524,7 +504,7 @@ func (udf UDF) GetUDFApplicationLog(udfName string, options ...Option) (io.ReadC
 // GetUDFApplicationLogToFile 下载UDF应用的日志文件。
 //
 // udfName  需要获取日志的UDF名称。
-// options  对象的属性限制项，可选值有since、tail。
+// options  对象的属性限制项，可选值UDFSince、UDFTail。
 //
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
@@ -555,7 +535,7 @@ func (udf UDF) GetUDFApplicationLogToFile(udfName, filePath string, options ...O
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if udf.getConfig().IsEnableCRC && !hasRange {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
-		err = checkCRC(result.Response, "GetObjectToFile")
+		err = checkCRC(result.Response, "GetUDFApplicationLogToFile")
 		if err != nil {
 			os.Remove(tempFilePath)
 			return err
@@ -569,7 +549,7 @@ func (udf UDF) GetUDFApplicationLogToFile(udfName, filePath string, options ...O
 // DoGetUDFApplicationLog 下载UDF应用的日志文件。
 //
 // udfName  需要获取日志的UDF名称。
-// options  对象的属性限制项，可选值有since、tail。
+// options  对象的属性限制项，可选值UDFSince、UDFTail。
 //
 // error  操作无错误时返回error为nil，非nil为错误说明。
 //
@@ -606,4 +586,24 @@ func (udf UDF) DoGetUDFApplicationLog(udfName string, options []Option) (*GetObj
 	resp.Body = ioutil.NopCloser(TeeReader(resp.Body, crcCalc, contentLen, listener, nil))
 
 	return result, nil
+}
+
+// Private
+func (udf UDF) doHeader(method string, params map[string]interface{},
+	headers map[string]string, data io.Reader) (*Response, error) {
+	return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, nil)
+}
+
+func (udf UDF) doOption(method string, params map[string]interface{}, options []Option,
+	data io.Reader, listener ProgressListener) (*Response, error) {
+	headers := make(map[string]string)
+	err := handleOptions(headers, options)
+	if err != nil {
+		return nil, err
+	}
+	return udf.Client.Conn.Do(method, "", "", params, headers, data, 0, listener)
+}
+
+func (udf UDF) getConfig() *Config {
+	return udf.Client.Config
 }

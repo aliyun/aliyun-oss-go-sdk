@@ -329,7 +329,7 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024*1024*100, Routines(2))
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)

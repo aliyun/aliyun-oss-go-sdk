@@ -576,8 +576,3 @@ type ResizeUDFApplicationXML struct {
 	XMLName     xml.Name `xml:"ResizeUDFApplicationConfiguration"`
 	InstanceNum int64    `xml:"InstanceNum"`
 }
-
-type SignURLConfiguration struct {
-	Expires int64 //过期时间间隔
-	Method  HTTPMethod
-}

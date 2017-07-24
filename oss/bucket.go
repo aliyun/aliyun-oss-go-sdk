@@ -5,7 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/xml"
-    "fmt"
+	"fmt"
 	"hash"
 	"hash/crc64"
 	"io"
@@ -14,7 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-    "time"
+	"time"
 )
 
 // Bucket implements the operations of object.
@@ -638,8 +638,8 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 //
 func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, options ...Option) error {
 	options = append(options, symlinkTarget(url.QueryEscape(targetObjectKey)))
-    params := map[string]interface{}{}
-    params["symlink"] = nil
+	params := map[string]interface{}{}
+	params["symlink"] = nil
 	resp, err := bucket.do("PUT", symObjectKey, params, options, nil, nil)
 	if err != nil {
 		return err
@@ -657,8 +657,8 @@ func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, opt
 // error 操作无错误为nil，非nil为错误信息。当error为nil时，返回的string为目标文件，否则该值无效。
 //
 func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
-    params := map[string]interface{}{}
-    params["symlink"] = nil
+	params := map[string]interface{}{}
+	params["symlink"] = nil
 	resp, err := bucket.do("GET", objectKey, params, nil, nil, nil)
 	if err != nil {
 		return nil, err
@@ -688,8 +688,8 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 // error 操作无错误为nil，非nil为错误信息。
 //
 func (bucket Bucket) RestoreObject(objectKey string) error {
-    params := map[string]interface{}{}
-    params["restore"] = nil
+	params := map[string]interface{}{}
+	params["restore"] = nil
 	resp, err := bucket.do("POST", objectKey, params, nil, nil, nil)
 	if err != nil {
 		return err
@@ -699,7 +699,7 @@ func (bucket Bucket) RestoreObject(objectKey string) error {
 }
 
 //
-// SignURL 获取对象的ACL权限。
+// SignURL 获取签名URL。
 //
 // objectKey 获取URL的object。
 // signURLConfig 获取URL的配置。
@@ -707,11 +707,11 @@ func (bucket Bucket) RestoreObject(objectKey string) error {
 // 返回URL字符串，error为nil时有效。
 // error 操作无错误为nil，非nil为错误信息。
 //
-func (bucket Bucket) SignURL(objectKey string, signURLConfig SignURLConfiguration, options ...Option) (string, error) {
-	if signURLConfig.Expires < 0 {
-		return "", fmt.Errorf("invalid expires: %d, expires must bigger than 0", signURLConfig.Expires)
+func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec int64, options ...Option) (string, error) {
+	if expiredInSec < 0 {
+		return "", fmt.Errorf("invalid expires: %d, expires must bigger than 0", expiredInSec)
 	}
-	expiration := time.Now().Unix() + signURLConfig.Expires
+	expiration := time.Now().Unix() + expiredInSec
 
 	params, err := getRawParams(options)
 	if err != nil {
@@ -724,16 +724,12 @@ func (bucket Bucket) SignURL(objectKey string, signURLConfig SignURLConfiguratio
 		return "", err
 	}
 
-	method := signURLConfig.Method
-	if method == "" {
-		method = HTTPGet
-	}
-
 	return bucket.Client.Conn.signURL(method, bucket.BucketName, objectKey, expiration, params, headers), nil
 }
 
 //
 // PutObjectWithURL 新建Object，如果Object已存在，覆盖原有Object。
+// PutObjectWithURL 不会根据key生成minetype。
 //
 // signedURL  签名的URL。
 // reader     io.Reader读取object的数据。
@@ -755,9 +751,10 @@ func (bucket Bucket) PutObjectWithURL(signedURL string, reader io.Reader, option
 
 //
 // PutObjectFromFileWithURL 新建Object，内容从本地文件中读取。
+// PutObjectFromFileWithURL 不会根据key、filePath生成minetype。
 //
 // signedURL  签名的URL。
-// filePath  本地文件，上传对象的值为该文件内容。
+// filePath  本地文件，如 dir/file.txt，上传对象的值为该文件内容。
 // options   上传对象时可以指定对象的属性。详见PutObject的options。
 //
 // error  操作无错误为nil，非nil为错误信息。
@@ -798,7 +795,7 @@ func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, opti
 	}
 
 	if bucket.getConfig().IsEnableCRC {
-		err = checkCRC(resp, "DoPutObject")
+		err = checkCRC(resp, "DoPutObjectWithURL")
 		if err != nil {
 			return resp, err
 		}
@@ -864,7 +861,7 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if bucket.getConfig().IsEnableCRC && !hasRange {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
-		err = checkCRC(result.Response, "GetObjectToFile")
+		err = checkCRC(result.Response, "GetObjectToFileWithURL")
 		if err != nil {
 			os.Remove(tempFilePath)
 			return err

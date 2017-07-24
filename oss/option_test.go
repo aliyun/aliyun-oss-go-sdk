@@ -218,20 +218,28 @@ func (s *OssOptionSuite) TestHandleOptions(c *C) {
 }
 
 func (s *OssOptionSuite) TestHandleParams(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
 	options := []Option{}
 
 	for _, testcase := range paramTestCases {
 		options = append(options, testcase.option)
 	}
 
-	out, err := handleParams(options)
+	params, err := getRawParams(options)
 	c.Assert(err, IsNil)
+
+	out := client.Conn.getURLParams(params)
 	c.Assert(len(out), Equals, 120)
 
 	options = []Option{KeyMarker(""), nil}
-	out, err = handleParams(options)
-	c.Assert(out, Equals, "key-marker=")
+
+	params, err = getRawParams(options)
 	c.Assert(err, IsNil)
+
+	out = client.Conn.getURLParams(params)
+	c.Assert(out, Equals, "key-marker=")
 }
 
 func (s *OssOptionSuite) TestFindOption(c *C) {

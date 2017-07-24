@@ -1,11 +1,8 @@
 package oss
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
-	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -297,10 +294,12 @@ func UDFImageDesc(value string) Option {
 	return addParam("udfImageDesc", value)
 }
 
+// UDFSince is an option to set since param when get udf app log
 func UDFSince(t time.Time) Option {
 	return addParam("since", strconv.FormatInt(t.Unix(), 10))
 }
 
+// UDFSince is an option to set tail param when get udf app log
 func UDFTail(t int64) Option {
 	return addParam("tail", strconv.FormatInt(t, 10))
 }
@@ -351,42 +350,6 @@ func handleOptions(headers map[string]string, options []Option) error {
 		}
 	}
 	return nil
-}
-
-func handleParams(options []Option) (string, error) {
-	// option
-	params := map[string]optionValue{}
-	for _, option := range options {
-		if option != nil {
-			if err := option(params); err != nil {
-				return "", err
-			}
-		}
-	}
-
-	// sort
-	var buf bytes.Buffer
-	keys := make([]string, 0, len(params))
-	for k, v := range params {
-		if v.Type == optionParam {
-			keys = append(keys, k)
-		}
-	}
-	sort.Strings(keys)
-
-	// serialize
-	for _, k := range keys {
-		vs := params[k]
-		prefix := url.QueryEscape(k) + "="
-
-		if buf.Len() > 0 {
-			buf.WriteByte('&')
-		}
-		buf.WriteString(prefix)
-		buf.WriteString(url.QueryEscape(vs.Value.(string)))
-	}
-
-	return buf.String(), nil
 }
 
 func getRawParams(options []Option) (map[string]interface{}, error) {
