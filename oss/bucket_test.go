@@ -1514,7 +1514,7 @@ func (s *OssBucketSuite) TestAppendObjectNegative(c *C) {
 	nextPos, err := s.bucket.AppendObject(objectName, strings.NewReader("ObjectValue"), nextPos)
 	c.Assert(err, IsNil)
 
-	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader("ObjectValue"), nextPos)
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader("ObjectValue"), 0)
 	c.Assert(err, NotNil)
 
 	err = s.bucket.DeleteObject(objectName)
