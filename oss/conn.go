@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -24,6 +25,8 @@ type Conn struct {
 	url    *urlMaker
 	client *http.Client
 }
+
+var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore"}
 
 // init 初始化Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
@@ -58,11 +61,136 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 }
 
 // Do 处理请求，返回响应结果。
-func (conn Conn) Do(method, bucketName, objectName, urlParams, subResource string, headers map[string]string,
+func (conn Conn) Do(method, bucketName, objectName string, params map[string]interface{}, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
+	urlParams := conn.getURLParams(params)
+	subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
 	resource := conn.url.getResource(bucketName, objectName, subResource)
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
+}
+
+// DoURL 根据已签名的URL处理请求，返回响应结果。
+func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
+	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
+	// get uri form signedURL
+	uri, err := url.ParseRequestURI(signedURL)
+	if err != nil {
+		return nil, err
+	}
+
+	m := strings.ToUpper(string(method))
+	if !conn.config.IsUseProxy {
+		uri.Opaque = uri.Path
+	}
+	req := &http.Request{
+		Method:     m,
+		URL:        uri,
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header:     make(http.Header),
+		Host:       uri.Host,
+	}
+
+	tracker := &readerTracker{completedBytes: 0}
+	fd, crc := conn.handleBody(req, data, initCRC, listener, tracker)
+	if fd != nil {
+		defer func() {
+			fd.Close()
+			os.Remove(fd.Name())
+		}()
+	}
+
+	if conn.config.IsAuthProxy {
+		auth := conn.config.ProxyUser + ":" + conn.config.ProxyPassword
+		basic := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+		req.Header.Set("Proxy-Authorization", basic)
+	}
+
+	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
+	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
+
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
+
+	// transfer started
+	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
+	publishProgress(listener, event)
+
+	resp, err := conn.client.Do(req)
+	if err != nil {
+		// transfer failed
+		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
+		publishProgress(listener, event)
+		return nil, err
+	}
+
+	// transfer completed
+	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength)
+	publishProgress(listener, event)
+
+	return conn.handleResponse(resp, crc)
+}
+
+func (conn Conn) getURLParams(params map[string]interface{}) string {
+	// sort
+	keys := make([]string, 0, len(params))
+	for k := range params {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// serialize
+	var buf bytes.Buffer
+	for _, k := range keys {
+		if buf.Len() > 0 {
+			buf.WriteByte('&')
+		}
+		buf.WriteString(url.QueryEscape(k))
+		if params[k] != nil {
+			buf.WriteString("=" + url.QueryEscape(params[k].(string)))
+		}
+	}
+
+	return buf.String()
+}
+
+func (conn Conn) getSubResource(params map[string]interface{}) string {
+	// sort
+	keys := make([]string, 0, len(params))
+	for k := range params {
+		if conn.isParamSign(k) {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+
+	// serialize
+	var buf bytes.Buffer
+	for _, k := range keys {
+		if buf.Len() > 0 {
+			buf.WriteByte('&')
+		}
+		buf.WriteString(k)
+		if params[k] != nil {
+			buf.WriteString("=" + params[k].(string))
+		}
+	}
+
+	return buf.String()
+}
+
+func (conn Conn) isParamSign(paramKey string) bool {
+	for _, k := range signKeyList {
+		if paramKey == k {
+			return true
+		}
+	}
+	return false
 }
 
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string, headers map[string]string,
@@ -129,6 +257,45 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	publishProgress(listener, event)
 
 	return conn.handleResponse(resp, crc)
+}
+
+func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) string {
+	subResource := conn.getSubResource(params)
+	canonicalizedResource := conn.url.getResource(bucketName, objectName, subResource)
+
+	m := strings.ToUpper(string(method))
+	req := &http.Request{
+		Method: m,
+		Header: make(http.Header),
+	}
+
+	if conn.config.IsAuthProxy {
+		auth := conn.config.ProxyUser + ":" + conn.config.ProxyPassword
+		basic := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+		req.Header.Set("Proxy-Authorization", basic)
+	}
+
+	req.Header.Set(HTTPHeaderDate, strconv.FormatInt(expiration, 10))
+	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
+	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
+
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
+
+	signedStr := conn.getSignedStr(req, canonicalizedResource)
+
+	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
+	params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
+	params[HTTPParamSignature] = signedStr
+	if conn.config.SecurityToken != "" {
+		params[HTTPParamSecurityToken] = conn.config.SecurityToken
+	}
+
+	urlParams := conn.getURLParams(params)
+	return conn.url.getURL(bucketName, objectName, urlParams).String()
 }
 
 // handle request body
@@ -207,6 +374,7 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 			}
 			err = srvErr
 		}
+
 		return &Response{
 			StatusCode: resp.StatusCode,
 			Headers:    resp.Header,

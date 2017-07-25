@@ -20,6 +20,14 @@ type headerSorter struct {
 
 // 生成签名方法（直接设置请求的Header）。
 func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
+	// Get the final Authorization' string
+	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
+
+	// Give the parameter "Authorization" value
+	req.Header.Set(HTTPHeaderAuthorization, authorizationStr)
+}
+
+func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) string {
 	// Find out the "x-oss-"'s address in this request'header
 	temp := make(map[string]string)
 
@@ -40,6 +48,7 @@ func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 	}
 
 	// Give other parameters values
+	// when sign url, date is expires
 	date := req.Header.Get(HTTPHeaderDate)
 	contentType := req.Header.Get(HTTPHeaderContentType)
 	contentMd5 := req.Header.Get(HTTPHeaderContentMD5)
@@ -49,11 +58,7 @@ func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 	io.WriteString(h, signStr)
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
-	// Get the final Authorization' string
-	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + signedStr
-
-	// Give the parameter "Authorization" value
-	req.Header.Set(HTTPHeaderAuthorization, authorizationStr)
+	return signedStr
 }
 
 // Additional function for function SignHeader.
