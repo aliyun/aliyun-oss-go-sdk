@@ -37,11 +37,31 @@ const (
 	// StorageStandard 标准存储模式
 	StorageStandard StorageClassType = "Standard"
 
-	// StorageIA IA存储模式
+	// StorageIA 低频存储模式
 	StorageIA StorageClassType = "IA"
 
-	// StorageArchive Archive存储模式
+	// StorageArchive 归档存储模式
 	StorageArchive StorageClassType = "Archive"
+)
+
+// HTTPMethod HTTP请求方法
+type HTTPMethod string
+
+const (
+	// HTTPGet HTTP请求方法 GET
+	HTTPGet HTTPMethod = "GET"
+
+	// HTTPPut HTTP请求方法 PUT
+	HTTPPut HTTPMethod = "PUT"
+
+	// HTTPHead HTTP请求方法 HEAD
+	HTTPHead HTTPMethod = "HEAD"
+
+	// HTTPPost HTTP请求方法 POST
+	HTTPPost HTTPMethod = "POST"
+
+	// HTTPDelete HTTP请求方法 DELETE
+	HTTPDelete HTTPMethod = "DELETE"
 )
 
 // Http头标签
@@ -88,6 +108,14 @@ const (
 	HTTPHeaderOssSymlinkTarget               = "X-Oss-Symlink-Target"
 )
 
+// Http Param
+const (
+	HTTPParamExpires       = "Expires"
+	HTTPParamAccessKeyID   = "OSSAccessKeyId"
+	HTTPParamSignature     = "Signature"
+	HTTPParamSecurityToken = "security-token"
+)
+
 // 其它常量
 const (
 	MaxPartSize = 5 * 1024 * 1024 * 1024 // 文件片最大值，5GB
@@ -100,5 +128,5 @@ const (
 
 	CheckpointFileSuffix = ".cp" // Checkpoint文件后缀
 
-	Version = "1.4.0" // Go sdk版本
+	Version = "1.5.0" // Go sdk版本
 )

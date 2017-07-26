@@ -1,11 +1,8 @@
 package oss
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
-	"net/url"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -251,6 +248,40 @@ func Progress(listener ProgressListener) Option {
 	return addArg(progressListener, listener)
 }
 
+// ResponseContentType is an option to set response-content-type param
+func ResponseContentType(value string) Option {
+	return addParam("response-content-type", value)
+}
+
+// ResponseContentLanguage is an option to set response-content-language param
+func ResponseContentLanguage(value string) Option {
+	return addParam("response-content-language", value)
+}
+
+// ResponseExpires is an option to set response-expires param
+func ResponseExpires(value string) Option {
+	return addParam("response-expires", value)
+}
+
+// ResponseCacheControl is an option to set response-cache-control param
+func ResponseCacheControl(value string) Option {
+	return addParam("response-cache-control", value)
+}
+
+// ResponseContentDisposition is an option to set response-content-disposition param
+func ResponseContentDisposition(value string) Option {
+	return addParam("response-content-disposition", value)
+}
+
+// ResponseContentEncoding is an option to set response-content-encoding param
+func ResponseContentEncoding(value string) Option {
+	return addParam("response-content-encoding", value)
+}
+
+// Process is an option to set X-Oss-Process param
+func Process(value string) Option {
+	return addParam("X-Oss-Process", value)
+}
 func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == nil {
@@ -299,40 +330,27 @@ func handleOptions(headers map[string]string, options []Option) error {
 	return nil
 }
 
-func handleParams(options []Option) (string, error) {
+func getRawParams(options []Option) (map[string]interface{}, error) {
 	// option
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
 			if err := option(params); err != nil {
-				return "", err
+				return nil, err
 			}
 		}
 	}
 
-	// sort
-	var buf bytes.Buffer
-	keys := make([]string, 0, len(params))
+	paramsm := map[string]interface{}{}
+	// serialize
 	for k, v := range params {
 		if v.Type == optionParam {
-			keys = append(keys, k)
+			vs := params[k]
+			paramsm[k] = vs.Value.(string)
 		}
 	}
-	sort.Strings(keys)
 
-	// serialize
-	for _, k := range keys {
-		vs := params[k]
-		prefix := url.QueryEscape(k) + "="
-
-		if buf.Len() > 0 {
-			buf.WriteByte('&')
-		}
-		buf.WriteString(prefix)
-		buf.WriteString(url.QueryEscape(vs.Value.(string)))
-	}
-
-	return buf.String(), nil
+	return paramsm, nil
 }
 
 func findOption(options []Option, param string, defaultVal interface{}) (interface{}, error) {

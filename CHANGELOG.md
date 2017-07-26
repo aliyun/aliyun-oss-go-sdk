@@ -1,5 +1,12 @@
 # ChangeLog - Aliyun OSS SDK for Go
 
+## 版本号：1.5.0 日期：2017-07-25
+### 变更内容
+ - 增加：支持生成URL签名
+ - 增加：GetObject支持ResponseContentType等选项
+ - 修复：DownloadFile去除分片小于5GB的限制
+ - 修复：AppendObject在appendPosition不正确时发生panic
+
 ## 版本号：1.4.0 日期：2017-05-23
 ### 变更内容
  - 增加：支持符号链接symlink

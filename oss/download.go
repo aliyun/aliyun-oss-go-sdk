@@ -22,8 +22,8 @@ import (
 // error 操作成功error为nil，非nil为错误信息。
 //
 func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, options ...Option) error {
-	if partSize < 1 || partSize > MaxPartSize {
-		return errors.New("oss: part size invalid range (1, 5GB]")
+	if partSize < 1 {
+		return errors.New("oss: part size smaller than 1.")
 	}
 
 	cpConf, err := getCpConfig(options, filePath)
