@@ -15,16 +15,16 @@
 ## Version
 > - Current version: 1.5.0. 
 
-## Run environment
+## Running Environment
 > - Go 1.4 or above is recommended. 
 
-## Install OSS Go SDK
+## Installing
 ### Install the SDK through GitHub
 > - Run the 'go get github.com/aliyun/aliyun-oss-go-sdk/oss' command to get the remote code package.
 > - Use 'import "github.com/aliyun/aliyun-oss-go-sdk/oss"' in your code to introduce OSS Go SDK package.
 
-## Quick use
-#### Get the bucket list (List Bucket)
+## Getting Started
+### List Bucket
 ```go
     client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
     if err != nil {
@@ -41,7 +41,7 @@
     }
 ```
 
-#### Create a bucket (Create Bucket)
+### Create Bucket
 ```go
     client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
     if err != nil {
@@ -54,7 +54,7 @@
     }
 ```
     
-#### Delete a bucket (Delete Bucket)
+### Delete Bucket
 ```go
     client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
     if err != nil {
@@ -67,7 +67,7 @@
     }
 ```
 
-#### Upload a file (Put Object)
+### Put Object
 ```go
     client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
     if err != nil {
@@ -85,7 +85,7 @@
     }
 ```
 
-#### Download an object (Get Object)
+### Get Object
 ```go
     client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
     if err != nil {
@@ -103,7 +103,7 @@
     }
 ```
 
-#### Get the object list (List Objects)
+### List Objects
 ```go
     client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
     if err != nil {
@@ -125,7 +125,7 @@
     }
 ```
     
-#### Delete an object (Delete Object)
+### Delete Object
 ```go
     client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
     if err != nil {
@@ -143,18 +143,17 @@
     }
 ```
 
-#### Others
+##  Complete Example
 More example projects can be found at 'src\github.com\aliyun\aliyun-oss-go-sdk\sample' under the installation path of the OSS Go SDK (the first path of the GOPATH variable). The directory contains example projects. 
 Or you can refer to the example objects in the sample directory under 'https://github.com/aliyun/aliyun-oss-go-sdk'.
 
-## Notes
-### Run a sample project
+### Running Example
 > - Copy the example file. Go to the installation path of OSS Go SDK (the first path of the GOPATH variable), enter the code directory of the OSS Go SDK, namely 'src\github.com\aliyun\aliyun-oss-go-sdk',
 and copy the sample directory and sample.go to the src directory of your test project.
 > - Modify the  endpoint, AccessKeyId, AccessKeySecret and BucketName configuration settings in sample/config.go.
 > - Run 'go run src/sample.go' under your project directory.
 
-## Contact us
+## Contacting us
 > - [Alibaba Cloud OSS official website](http://oss.aliyun.com).
 > - [Alibaba Cloud OSS official forum](http://bbs.aliyun.com).
 > - [Alibaba Cloud OSS official documentation center](http://www.aliyun.com/product/oss#Docs).
