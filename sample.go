@@ -27,6 +27,9 @@ func main() {
 	sample.GetObjectSample()
 
 	sample.CnameSample()
+	sample.SignURLSample()
+
+	sample.ArchiveSample()
 
 	fmt.Println("All samples completed")
 }
