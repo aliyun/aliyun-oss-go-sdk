@@ -402,34 +402,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
 
-	// key with escaped chars
-	objectName = "<>[]()`?.,!@#$%^&'/*-_=+~:;"
-
-	// sign url for put
-	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
-	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
-
-	// put object with url
-	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
-	c.Assert(err, IsNil)
-
-	// sign url for get object
-	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
-	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
-
-	// get object with url
-	body, err = s.bucket.GetObjectWithURL(str)
-	c.Assert(err, IsNil)
-	str, err = readBody(body)
-	c.Assert(err, IsNil)
-	c.Assert(str, Equals, objectValue)
-
 	// key with Chinese chars
 	objectName = "风吹柳花满店香，吴姬压酒劝客尝。金陵子弟来相送，欲行不行各尽觞。请君试问东流水，别意与之谁短长。"
 
