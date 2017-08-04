@@ -295,7 +295,7 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	}
 
 	urlParams := conn.getURLParams(params)
-	return conn.url.getURL(bucketName, objectName, urlParams).String()
+	return conn.url.getSignURL(bucketName, objectName, urlParams)
 }
 
 // handle request body
@@ -555,6 +555,24 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 
 // Build URL
 func (um urlMaker) getURL(bucket, object, params string) *url.URL {
+	host, path := um.buildURL(bucket, object)
+	uri := &url.URL{
+		Scheme:   um.Scheme,
+		Host:     host,
+		Path:     path,
+		RawQuery: params,
+	}
+	return uri
+}
+
+// Build Sign URL
+func (um urlMaker) getSignURL(bucket, object, params string) string {
+	host, path := um.buildURL(bucket, object)
+	return fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
+}
+
+// Build URL
+func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	var host = ""
 	var path = ""
 
@@ -583,14 +601,7 @@ func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 		}
 	}
 
-	uri := &url.URL{
-		Scheme:   um.Scheme,
-		Host:     host,
-		Path:     path,
-		RawQuery: params,
-	}
-
-	return uri
+	return host, path
 }
 
 // Canonicalized Resource

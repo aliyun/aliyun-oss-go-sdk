@@ -371,6 +371,69 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(err, NotNil)
 }
 
+func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
+	// key with '/'
+	objectName := "zyimg/86/e8/653b5dc97bb0022051a84c632bc4"
+	objectValue := "弃我去者，昨日之日不可留；乱我心者，今日之日多烦忧。长风万里送秋雁，对此可以酣高楼。蓬莱文章建安骨，中间小谢又清发。" +
+		"俱怀逸兴壮思飞，欲上青天揽明月。抽刀断水水更流，举杯销愁愁更愁。人生在世不称意，明朝散发弄扁舟。"
+
+	// sign url for put
+	str, err := s.bucket.SignURL(objectName, HTTPPut, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// put object with url
+	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// sign url for get object
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// get object with url
+	body, err := s.bucket.GetObjectWithURL(str)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+
+	// key with Chinese chars
+	objectName = "风吹柳花满店香，吴姬压酒劝客尝。金陵子弟来相送，欲行不行各尽觞。请君试问东流水，别意与之谁短长。"
+
+	// sign url for put
+	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// put object with url
+	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// sign url for get object
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// get object with url
+	body, err = s.bucket.GetObjectWithURL(str)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+}
+
 // TestPutObjectType
 func (s *OssBucketSuite) TestPutObjectType(c *C) {
 	objectName := objectNamePrefix + "tptt"
