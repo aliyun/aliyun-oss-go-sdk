@@ -13,7 +13,7 @@
 > - With this SDK, you can upload, download and manage data on any app anytime and anywhere conveniently. 
 
 ## Version
-> - Current version: 1.5.0. 
+> - Current version: 1.5.1. 
 
 ## Running Environment
 > - Go 1.4 or above is recommended. 
