@@ -116,20 +116,22 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			failed <- err
 			break
 		}
-		defer fd.Close()
 
 		_, err = fd.Seek(part.Start-part.Offset, os.SEEK_SET)
 		if err != nil {
+			fd.Close()
 			failed <- err
 			break
 		}
 
 		_, err = io.Copy(fd, rd)
 		if err != nil {
+			fd.Close()
 			failed <- err
 			break
 		}
 
+		fd.Close()
 		results <- part
 	}
 }
