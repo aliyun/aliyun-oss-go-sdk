@@ -4,7 +4,8 @@ package main
 
 import (
 	"fmt"
-	"sample"
+    
+	"github.com/aliyun/aliyun-oss-go-sdk/sample"
 )
 
 func main() {
