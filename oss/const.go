@@ -128,5 +128,5 @@ const (
 
 	CheckpointFileSuffix = ".cp" // Checkpoint文件后缀
 
-	Version = "1.5.1" // Go sdk版本
+	Version = "1.5.2" // Go sdk版本
 )
