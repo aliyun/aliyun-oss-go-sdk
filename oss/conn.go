@@ -550,7 +550,12 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 // Build URL
 func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	host, path := um.buildURL(bucket, object)
-	addr := fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
+	addr := ""
+	if params == "" {
+		addr = fmt.Sprintf("%s://%s%s", um.Scheme, host, path)
+	} else {
+		addr = fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
+	}
 	uri, _ := url.ParseRequestURI(addr)
 	return uri
 }
