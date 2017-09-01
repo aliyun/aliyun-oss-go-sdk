@@ -16,7 +16,7 @@
 > - Current version: 1.6.0. 
 
 ## Running Environment
-> - Go 1.5 or above is recommended. 
+> - Go 1.5 or above. 
 
 ## Installing
 ### Install the SDK through GitHub
