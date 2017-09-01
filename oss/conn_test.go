@@ -60,6 +60,8 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.Type, Equals, urlTypeIP)
 	c.Assert(um.Scheme, Equals, "http")
 	c.Assert(um.NetLoc, Equals, "127.0.0.1")
+	c.Assert(um.getURL("bucket", "object", "params").String(), Equals, "http://127.0.0.1/bucket/object?params")
+	c.Assert(um.getURL("", "object", "params").String(), Equals, "http://127.0.0.1/?params")
 
 	um.Init("https://127.0.0.1:8080", false, false)
 	c.Assert(um.Type, Equals, urlTypeIP)

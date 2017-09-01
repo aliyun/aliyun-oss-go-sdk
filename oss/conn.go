@@ -80,9 +80,6 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	}
 
 	m := strings.ToUpper(string(method))
-	if !conn.config.IsUseProxy {
-		uri.Opaque = uri.Path
-	}
 	req := &http.Request{
 		Method:     m,
 		URL:        uri,
@@ -196,9 +193,6 @@ func (conn Conn) isParamSign(paramKey string) bool {
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	method = strings.ToUpper(method)
-	if !conn.config.IsUseProxy {
-		uri.Opaque = uri.Path
-	}
 	req := &http.Request{
 		Method:     method,
 		URL:        uri,
@@ -556,12 +550,13 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 // Build URL
 func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	host, path := um.buildURL(bucket, object)
-	uri := &url.URL{
-		Scheme:   um.Scheme,
-		Host:     host,
-		Path:     path,
-		RawQuery: params,
+	addr := ""
+	if params == "" {
+		addr = fmt.Sprintf("%s://%s%s", um.Scheme, host, path)
+	} else {
+		addr = fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
 	}
+	uri, _ := url.ParseRequestURI(addr)
 	return uri
 }
 
@@ -576,9 +571,8 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	var host = ""
 	var path = ""
 
-	if !um.IsProxy {
-		object = url.QueryEscape(object)
-	}
+	object = url.QueryEscape(object)
+	object = strings.Replace(object, "+", "%20", -1)
 
 	if um.Type == urlTypeCname {
 		host = um.NetLoc
