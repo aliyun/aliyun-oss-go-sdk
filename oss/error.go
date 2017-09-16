@@ -10,12 +10,12 @@ import (
 // ServiceError contains fields of the error response from Oss Service REST API.
 type ServiceError struct {
 	XMLName    xml.Name `xml:"Error"`
-	Code       string   `xml:"Code"`      // OSS返回给用户的错误码
-	Message    string   `xml:"Message"`   // OSS给出的详细错误信息
-	RequestID  string   `xml:"RequestId"` // 用于唯一标识该次请求的UUID
-	HostID     string   `xml:"HostId"`    // 用于标识访问的OSS集群
-	RawMessage string   // OSS返回的原始消息内容
-	StatusCode int      // HTTP状态码
+	Code       string   `xml:"Code"`      // the error code returned from OSS to the caller
+	Message    string   `xml:"Message"`   // the detail error message from OSS
+	RequestID  string   `xml:"RequestId"` // the request Id
+	HostID     string   `xml:"HostId"`    // the OSS server cluster's Id
+	RawMessage string   // the raw messages from OSS
+	StatusCode int      // HTTP status code
 }
 
 // Implement interface error
@@ -27,8 +27,8 @@ func (e ServiceError) Error() string {
 // UnexpectedStatusCodeError is returned when a storage service responds with neither an error
 // nor with an HTTP status code indicating success.
 type UnexpectedStatusCodeError struct {
-	allowed []int // 预期OSS返回HTTP状态码
-	got     int   // OSS实际返回HTTP状态码
+	allowed []int // The expected HTTP stats code returned from OSS
+	got     int   // The actual HTTP status code from OSS
 }
 
 // Implement interface error
@@ -62,10 +62,10 @@ func checkRespCode(respCode int, allowed []int) error {
 
 // CRCCheckError is returned when crc check is inconsistent between client and server
 type CRCCheckError struct {
-	clientCRC uint64 // 客户端计算的CRC64值
-	serverCRC uint64 // 服务端计算的CRC64值
-	operation string // 上传操作，如PutObject/AppendObject/UploadPart等
-	requestID string // 本次操作的RequestID
+	clientCRC uint64 // Calculated CRC64 in client
+	serverCRC uint64 // Calculated CRC64 in server
+	operation string // upload operations such as PUTOBJECT|APPENDOBJECT|UPLOADPARTS, etc
+	requestID string // the request id of this operation
 }
 
 // Implement interface error

@@ -28,7 +28,7 @@ type Conn struct {
 
 var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore"}
 
-// init 初始化Conn
+// init initialize Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 	httpTimeOut := conn.config.HTTPTimeout
 
@@ -60,7 +60,7 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 	return nil
 }
 
-// Do 处理请求，返回响应结果。
+// Do sends request and returns the response
 func (conn Conn) Do(method, bucketName, objectName string, params map[string]interface{}, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	urlParams := conn.getURLParams(params)
@@ -70,7 +70,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
-// DoURL 根据已签名的URL处理请求，返回响应结果。
+// DoURL sends the request with presigned url.
 func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	// get uri form signedURL

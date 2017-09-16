@@ -1052,7 +1052,7 @@ func (s *OssBucketSuite) TestListObjectsEncodingType(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// 特殊字符
+	// Special characters
 	objectName = "go go ` ~ ! @ # $ % ^ & * () - _ + =[] {} \\ | < > , . ? / 0"
 	err = s.bucket.PutObject(objectName, strings.NewReader("明月几时有，把酒问青天"))
 	c.Assert(err, IsNil)
@@ -1235,7 +1235,7 @@ func (s *OssBucketSuite) TestDeleteObjects(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(res.DeletedObjects), Equals, 0)
 
-	// 特殊字符
+	// special characters
 	key := "A ' < > \" & ~ ` ! @ # $ % ^ & * ( ) [] {} - _ + = / | \\ ? . , : ; A"
 	err = s.bucket.PutObject(key, strings.NewReader("value"))
 	c.Assert(err, IsNil)
@@ -2190,18 +2190,18 @@ func isFileExist(filename string) (bool, error) {
 	}
 }
 
-// STS Server的GET请求返回的数据
+// The response data of the get request from STS Server
 type getSTSResult struct {
-	Status        int    `json:"status"`        // 返回状态码， 200表示获取成功，非200表示失败
+	Status        int    `json:"status"`        // http status, 200 is ok, non-200 means failure
 	AccessID      string `json:"accessId"`      //STS AccessId
 	AccessKey     string `json:"accessKey"`     // STS AccessKey
 	Expiration    string `json:"expiration"`    // STS Token
-	SecurityToken string `json:"securityToken"` // Token失效的时间， GMT时间
-	Bucket        string `json:"bucket"`        // 可以使用的bucket
-	Endpoint      string `json:"bucket"`        // 要访问的endpoint
+	SecurityToken string `json:"securityToken"` // Token's expiration time in GMT
+	Bucket        string `json:"bucket"`        // the available bucket
+	Endpoint      string `json:"endpoint"`      // the endpoint
 }
 
-// 从STS Server获取STS信息。返回值中当error为nil时，GetSTSResult有效。
+// Gets the STS response. It's valid only when the error is nil.
 func getSTSToken(STSServer string) (getSTSResult, error) {
 	result := getSTSResult{}
 	resp, err := http.Get(STSServer)
