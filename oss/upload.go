@@ -11,14 +11,14 @@ import (
 )
 
 //
-// UploadFile 分片上传文件
+// UploadFile multipart file upload
 //
-// objectKey  object名称。
-// filePath   本地文件。需要上传的文件。
-// partSize   本次上传文件片的大小，字节数。比如100 * 1024为每片100KB。
-// options    上传Object时可以指定Object的属性。详见InitiateMultipartUpload。
+// objectKey  object name
+// filePath   local file path to upload
+// partSize   the part size in byte
+// options    the options for uploading object.
 //
-// error 操作成功为nil，非nil为错误信息。
+// error it will be nil if the operation succeeds; otherwise it's the error object.
 //
 func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < MinPartSize || partSize > MaxPartSize {
@@ -39,9 +39,9 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 	return bucket.uploadFile(objectKey, filePath, partSize, options, routines)
 }
 
-// ----- 并发无断点的上传  -----
+// ----- concurrent upload without checkpoint  -----
 
-// 获取Checkpoint配置
+// gets Checkpoint configuration
 func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
 	cpc := &cpConfig{}
 	cpcOpt, err := findOption(options, checkpointConfig, nil)
@@ -57,7 +57,7 @@ func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
 	return cpc, nil
 }
 
-// 获取并发数，默认并发数1
+// gets the thread count. by default it's 1.
 func getRoutines(options []Option) int {
 	rtnOpt, err := findOption(options, routineNum, nil)
 	if err != nil || rtnOpt == nil {
@@ -74,7 +74,7 @@ func getRoutines(options []Option) int {
 	return rs
 }
 
-// 获取进度回调
+// gets the progress callback
 func getProgressListener(options []Option) ProgressListener {
 	isSet, listener, _ := isOptionSet(options, progressListener)
 	if !isSet {
@@ -83,7 +83,7 @@ func getProgressListener(options []Option) ProgressListener {
 	return listener.(ProgressListener)
 }
 
-// 测试使用
+// test purpose hook
 type uploadPartHook func(id int, chunk FileChunk) error
 
 var uploadPartHooker uploadPartHook = defaultUploadPart
@@ -92,7 +92,7 @@ func defaultUploadPart(id int, chunk FileChunk) error {
 	return nil
 }
 
-// 工作协程参数
+// worker argument structure
 type workerArg struct {
 	bucket   *Bucket
 	filePath string
@@ -100,7 +100,7 @@ type workerArg struct {
 	hook     uploadPartHook
 }
 
-// 工作协程
+// worker thread function
 func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadPart, failed chan<- error, die <-chan bool) {
 	for chunk := range jobs {
 		if err := arg.hook(id, chunk); err != nil {
@@ -121,7 +121,7 @@ func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadP
 	}
 }
 
-// 调度协程
+// scheduler function
 func scheduler(jobs chan FileChunk, chunks []FileChunk) {
 	for _, chunk := range chunks {
 		jobs <- chunk
@@ -137,7 +137,7 @@ func getTotalBytes(chunks []FileChunk) int64 {
 	return tb
 }
 
-// 并发上传，不带断点续传功能
+// concurrent upload, without checkpoint
 func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, options []Option, routines int) error {
 	listener := getProgressListener(options)
 
@@ -146,7 +146,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 		return err
 	}
 
-	// 初始化上传任务
+	// initialize the multipart upload
 	imur, err := bucket.InitiateMultipartUpload(objectKey, options...)
 	if err != nil {
 		return err
@@ -162,16 +162,16 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
 	publishProgress(listener, event)
 
-	// 启动工作协程
+	// starts the worker thread
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go worker(w, arg, jobs, results, failed, die)
 	}
 
-	// 并发上传分片
+	// schedule the jobs
 	go scheduler(jobs, chunks)
 
-	// 等待分配分片上传完成
+	// waiting for the upload finished
 	completed := 0
 	parts := make([]UploadPart, len(chunks))
 	for completed < len(chunks) {
@@ -198,7 +198,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	event = newProgressEvent(TransferStartedEvent, completedBytes, totalBytes)
 	publishProgress(listener, event)
 
-	// 提交任务
+	// complete the multpart upload
 	_, err = bucket.CompleteMultipartUpload(imur, parts)
 	if err != nil {
 		bucket.AbortMultipartUpload(imur)
@@ -207,34 +207,34 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	return nil
 }
 
-// ----- 并发带断点的上传  -----
+// ----- concurrent upload with checkpoint  -----
 const uploadCpMagic = "FE8BB4EA-B593-4FAC-AD7A-2459A36E2E62"
 
 type uploadCheckpoint struct {
 	Magic     string   // magic
-	MD5       string   // cp内容的MD5
-	FilePath  string   // 本地文件
-	FileStat  cpStat   // 文件状态
+	MD5       string   // checkpoint file content's MD5
+	FilePath  string   // local file path
+	FileStat  cpStat   // file state
 	ObjectKey string   // key
 	UploadID  string   // upload id
-	Parts     []cpPart // 本地文件的全部分片
+	Parts     []cpPart // all parts of the local file
 }
 
 type cpStat struct {
-	Size         int64     // 文件大小
-	LastModified time.Time // 本地文件最后修改时间
-	MD5          string    // 本地文件MD5
+	Size         int64     // file size
+	LastModified time.Time // file's last modified time
+	MD5          string    // local file's MD5
 }
 
 type cpPart struct {
-	Chunk       FileChunk  // 分片
-	Part        UploadPart // 上传完成的分片
-	IsCompleted bool       // upload是否完成
+	Chunk       FileChunk  // file chunk
+	Part        UploadPart // uploaded part
+	IsCompleted bool       // upload complete flag
 }
 
-// CP数据是否有效，CP有效且文件没有更新时有效
+// check if the uploaded data is valid---it's valid when the file is not updated and the checkpoint data is valid.
 func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
-	// 比较CP的Magic及MD5
+	// compares the CP's magic number and MD5.
 	cpb := cp
 	cpb.MD5 = ""
 	js, _ := json.Marshal(cpb)
@@ -245,7 +245,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 		return false, nil
 	}
 
-	// 确认本地文件是否更新
+	// makes sure if the local file is updated.
 	fd, err := os.Open(filePath)
 	if err != nil {
 		return false, err
@@ -262,7 +262,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 		return false, err
 	}
 
-	// 比较文件大小/文件最后更新时间/文件MD5
+	// compares the file size, file's last modified time and file's MD5
 	if cp.FileStat.Size != st.Size() ||
 		cp.FileStat.LastModified != st.ModTime() ||
 		cp.FileStat.MD5 != md {
@@ -272,7 +272,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 	return true, nil
 }
 
-// 从文件中load
+// load from the file
 func (cp *uploadCheckpoint) load(filePath string) error {
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -283,11 +283,11 @@ func (cp *uploadCheckpoint) load(filePath string) error {
 	return err
 }
 
-// dump到文件
+// dump to the local file
 func (cp *uploadCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
-	// 计算MD5
+	// calculates MD5
 	bcp.MD5 = ""
 	js, err := json.Marshal(bcp)
 	if err != nil {
@@ -297,7 +297,7 @@ func (cp *uploadCheckpoint) dump(filePath string) error {
 	b64 := base64.StdEncoding.EncodeToString(sum[:])
 	bcp.MD5 = b64
 
-	// 序列化
+	// serialization
 	js, err = json.Marshal(bcp)
 	if err != nil {
 		return err
@@ -307,13 +307,13 @@ func (cp *uploadCheckpoint) dump(filePath string) error {
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
-// 更新分片状态
+// updates the part status
 func (cp *uploadCheckpoint) updatePart(part UploadPart) {
 	cp.Parts[part.PartNumber-1].Part = part
 	cp.Parts[part.PartNumber-1].IsCompleted = true
 }
 
-// 未完成的分片
+// unfinished parts
 func (cp *uploadCheckpoint) todoParts() []FileChunk {
 	fcs := []FileChunk{}
 	for _, part := range cp.Parts {
@@ -324,7 +324,7 @@ func (cp *uploadCheckpoint) todoParts() []FileChunk {
 	return fcs
 }
 
-// 所有的分片
+// all parts
 func (cp *uploadCheckpoint) allParts() []UploadPart {
 	ps := []UploadPart{}
 	for _, part := range cp.Parts {
@@ -333,7 +333,7 @@ func (cp *uploadCheckpoint) allParts() []UploadPart {
 	return ps
 }
 
-// 完成的字节数
+// completed bytes count
 func (cp *uploadCheckpoint) getCompletedBytes() int64 {
 	var completedBytes int64
 	for _, part := range cp.Parts {
@@ -344,12 +344,12 @@ func (cp *uploadCheckpoint) getCompletedBytes() int64 {
 	return completedBytes
 }
 
-// 计算文件文件MD5
+// calculates the MD5 for the specified local file
 func calcFileMD5(filePath string) (string, error) {
 	return "", nil
 }
 
-// 初始化分片上传
+// initialize the multipart upload
 func prepare(cp *uploadCheckpoint, objectKey, filePath string, partSize int64, bucket *Bucket, options []Option) error {
 	// cp
 	cp.Magic = uploadCpMagic
@@ -397,7 +397,7 @@ func prepare(cp *uploadCheckpoint, objectKey, filePath string, partSize int64, b
 	return nil
 }
 
-// 提交分片上传，删除CP文件
+// completes the multipart upload and deletes the local CP files
 func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePath string) error {
 	imur := InitiateMultipartUploadResult{Bucket: bucket.BucketName,
 		Key: cp.ObjectKey, UploadID: cp.UploadID}
@@ -409,18 +409,18 @@ func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePa
 	return err
 }
 
-// 并发带断点的上传
+// concurrent upload with checkpoint
 func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int) error {
 	listener := getProgressListener(options)
 
-	// LOAD CP数据
+	// LOAD CP data
 	ucp := uploadCheckpoint{}
 	err := ucp.load(cpFilePath)
 	if err != nil {
 		os.Remove(cpFilePath)
 	}
 
-	// LOAD出错或数据无效重新初始化上传
+	// LOAD error or the cp data is invalid.
 	valid, err := ucp.isValid(filePath)
 	if err != nil || !valid {
 		if err = prepare(&ucp, objectKey, filePath, partSize, &bucket, options); err != nil {
@@ -444,16 +444,16 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	event := newProgressEvent(TransferStartedEvent, completedBytes, ucp.FileStat.Size)
 	publishProgress(listener, event)
 
-	// 启动工作协程
+	// starts the workers
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go worker(w, arg, jobs, results, failed, die)
 	}
 
-	// 并发上传分片
+	// schedule jobs
 	go scheduler(jobs, chunks)
 
-	// 等待分配分片上传完成
+	// waiting for the job finished
 	completed := 0
 	for completed < len(chunks) {
 		select {
@@ -479,7 +479,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	event = newProgressEvent(TransferCompletedEvent, completedBytes, ucp.FileStat.Size)
 	publishProgress(listener, event)
 
-	// 提交分片上传
+	// complete the multipart upload
 	err = complete(&ucp, &bucket, ucp.allParts(), cpFilePath)
 	return err
 }

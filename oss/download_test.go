@@ -72,17 +72,17 @@ func (s *OssDownloadSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithoutRecovery 多线程无断点恢复的下载
+// TestUploadRoutineWithoutRecovery multipart download without checkpoint
 func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	objectName := objectNamePrefix + "tdrwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file.jpg"
 
-	// 上传文件
+	// upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	// 使用默认值下载
+	// download the file
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -91,7 +91,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 使用2个协程下载，小于总分片数5
+	// Use two threads to download the file and total parts count is 5
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(2))
 	c.Assert(err, IsNil)
@@ -101,7 +101,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 使用5个协程下载，等于总分片数5
+	// Use 5 threads to download the file and the total parts count is 5.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
@@ -111,7 +111,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 使用10个协程下载，大于总分片数5
+	// Use 10 threads to download the file and the total parts count is 5.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(10))
 	c.Assert(err, IsNil)
@@ -125,7 +125,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// ErrorHooker DownloadPart请求Hook
+// ErrorHooker DownloadPart request Hook
 func DownErrorHooker(part downloadPart) error {
 	if part.Index == 4 {
 		time.Sleep(time.Second)
@@ -134,17 +134,17 @@ func DownErrorHooker(part downloadPart) error {
 	return nil
 }
 
-// TestDownloadRoutineWithRecovery 多线程有断点恢复的下载
+// TestDownloadRoutineWithRecovery multiupart download with checkpoint
 func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	objectName := objectNamePrefix + "tdrtr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-2.jpg"
 
-	// 上传文件
+	// upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	// 下载，CP使用默认值
+	// download a file with checkpoint
 	downloadPartHooker = DownErrorHooker
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
@@ -175,7 +175,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 下载，指定CP
+	// Download with checkpoint
 	os.Remove(newFile)
 	downloadPartHooker = DownErrorHooker
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, objectName+".cp"))
@@ -207,7 +207,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 一次完成下载，中间没有错误
+	// Download with checkpoint. No error is expected.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
@@ -219,7 +219,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 一次完成下载，中间没有错误
+	// Download with checkpoint. No error is expected.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
@@ -235,13 +235,13 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDownloadOption 选项
+// TestDownloadOption options
 func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 	objectName := objectNamePrefix + "tdmo"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-3.jpg"
 
-	// 上传文件
+	// upload the file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -275,17 +275,17 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestDownloadObjectChange 上传过程中文件修改了
+// TestDownloadObjectChange the file is updated during the upload
 func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 	objectName := objectNamePrefix + "tdloc"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-4.jpg"
 
-	// 上传文件
+	// upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	// 下载，CP使用默认值
+	// download with default checkpoint
 	downloadPartHooker = DownErrorHooker
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
@@ -309,22 +309,22 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-3.jpg"
 
-	// 上传文件
+	// upload file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	// worker线程错误
+	// worker thread error
 	downloadPartHooker = DownErrorHooker
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	downloadPartHooker = defaultDownloadPartHook
 
-	// 本地文件不存在
+	// local file does not exist
 	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 
-	// 指定的分片大小无效
+	// the invalid part size
 	err = s.bucket.DownloadFile(objectName, newFile, 0, Routines(2))
 	c.Assert(err, NotNil)
 
@@ -334,14 +334,14 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 本地文件不存在
+	// local file does not exist
 	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
 	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Routines(2), Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
-	// 指定的分片大小无效
+	// invalid part size
 	err = s.bucket.DownloadFile(objectName, newFile, -1, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
@@ -355,21 +355,21 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestDownloadWithRange 带范围的并发下载、断点下载测试
+// TestDownloadWithRange concurrent download with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	objectName := objectNamePrefix + "tdwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-tdwr.jpg"
 	newFileGet := "down-new-file-tdwr-2.jpg"
 
-	// 上传文件
+	// upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
 	fileSize, err := getFileSize(fileName)
 	c.Assert(err, IsNil)
 
-	// 范围下载，从1024到4096
+	// download with range，from 1024 to 4096
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Range(1024, 4095))
 	c.Assert(err, IsNil)
@@ -388,7 +388,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 范围下载，从1024到4096
+	// Download with range, from 1024 to 4096
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), NormalizedRange("1024-4095"))
 	c.Assert(err, IsNil)
@@ -407,7 +407,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 范围下载，从2048到结束
+	// Download with range, from 2048 to the end
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), NormalizedRange("2048-"))
 	c.Assert(err, IsNil)
@@ -426,7 +426,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 范围下载，最后4096个字节
+	// Download with range, the last 4096
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), NormalizedRange("-4096"))
 	c.Assert(err, IsNil)
@@ -449,21 +449,21 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDownloadWithCheckoutAndRange 带范围的并发下载、断点下载测试
+// TestDownloadWithCheckoutAndRange Concurrent download with checkpoint
 func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	objectName := objectNamePrefix + "tdwcr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-tdwcr.jpg"
 	newFileGet := "down-new-file-tdwcr-2.jpg"
 
-	// 上传文件
+	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
 	fileSize, err := getFileSize(fileName)
 	c.Assert(err, IsNil)
 
-	// 范围下载，从1024到4096
+	// Download with range, from 1024 to 4096
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, ""), Range(1024, 4095))
 	c.Assert(err, IsNil)
@@ -482,7 +482,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 范围下载，从1024到4096
+	// Download with range, from 1024 to 4096
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("1024-4095"))
 	c.Assert(err, IsNil)
@@ -501,7 +501,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 范围下载，从2048到结束
+	// Download with range, from 2048 to the end
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), Checkpoint(true, ""), NormalizedRange("2048-"))
 	c.Assert(err, IsNil)
@@ -520,7 +520,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 范围下载，最后4096个字节
+	// Download with range, the last 4096 bytes
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("-4096"))
 	c.Assert(err, IsNil)

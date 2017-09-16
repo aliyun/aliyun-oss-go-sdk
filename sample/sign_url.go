@@ -10,7 +10,7 @@ import (
 
 // SignURLSample sign url sample
 func SignURLSample() {
-	// 创建Bucket
+	// creates Bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -64,7 +64,7 @@ func SignURLSample() {
 		HandleError(err)
 	}
 
-	// 删除object和bucket
+	// deletes the object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

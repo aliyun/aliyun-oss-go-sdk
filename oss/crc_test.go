@@ -73,7 +73,7 @@ func (s *OssCrcSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCRCGolden 测试OSS实现的CRC64
+// TestCRCGolden test OSS's CRC64
 func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	type crcTest struct {
 		out uint64
@@ -126,7 +126,7 @@ func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	}
 }
 
-// TestEnableCRCAndMD5 开启MD5和CRC校验
+// TestEnableCRCAndMD5 Enable MD5 and CRC
 func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -223,7 +223,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDisableCRCAndMD5 关闭MD5和CRC校验
+// TestDisableCRCAndMD5 disable MD5 and CRC
 func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"

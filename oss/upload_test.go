@@ -69,13 +69,13 @@ func (s *OssUploadSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithoutRecovery 多线程无断点恢复的上传
+// TestUploadRoutineWithoutRecovery test multithreaded upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	objectName := objectNamePrefix + "turwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file.jpg"
 
-	// 不指定Routines，默认单线程
+	// Routines is not specified, by default single thread
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -90,7 +90,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 指定线程数1
+	// specifies thread count as 1
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(1))
 	c.Assert(err, IsNil)
 
@@ -105,7 +105,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 指定线程数3，小于分片数5
+	// specifies thread count as 3, which is smaller than parts count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -120,7 +120,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 指定线程数5，等于分片数
+	// specifies thread count as 5, which is same as the part count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
 
@@ -135,7 +135,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 指定线程数10，大于分片数5
+	// specifies thread count as 10, which is bigger than the part count 5.
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10))
 	c.Assert(err, IsNil)
 
@@ -150,7 +150,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 线程值无效自动变成1
+	// invalid thread count, it will use 1 automatically.
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(0))
 	os.Remove(newFile)
 	err = s.bucket.GetObjectToFile(objectName, newFile)
@@ -163,7 +163,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 线程值无效自动变成1
+	// invalid thread count, it will use 1 automatically
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(-1))
 	os.Remove(newFile)
 	err = s.bucket.GetObjectToFile(objectName, newFile)
@@ -195,7 +195,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// ErrorHooker UploadPart请求Hook
+// ErrorHooker UploadPart Hook---it will fail the 5th part's upload.
 func ErrorHooker(id int, chunk FileChunk) error {
 	if chunk.Number == 5 {
 		time.Sleep(time.Second)
@@ -204,23 +204,23 @@ func ErrorHooker(id int, chunk FileChunk) error {
 	return nil
 }
 
-// TestUploadRoutineWithoutRecovery 多线程无断点恢复的上传
+// TestUploadRoutineWithoutRecovery multithreaded upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + "turwrn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	uploadPartHooker = ErrorHooker
-	// worker线程错误
+	// worker thread error
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
 
-	// 本地文件不存在
+	// local file does not exist
 	err = s.bucket.UploadFile(objectName, "NotExist", 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 
-	// 指定的分片大小无效
+	// the part size is invalid
 	err = s.bucket.UploadFile(objectName, fileName, 1024, Routines(2))
 	c.Assert(err, NotNil)
 
@@ -228,14 +228,14 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestUploadRoutineWithRecovery 多线程且有断点恢复的上传
+// TestUploadRoutineWithRecovery multithreaded upload with checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	objectName := objectNamePrefix + "turtr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file-2.jpg"
 
-	// Routines默认值，CP开启默认路径是fileName+.cp
-	// 第一次上传，上传4片
+	// use default Routines and default CP file path (fileName+.cp)
+	// first upload for 4 parts
 	uploadPartHooker = ErrorHooker
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
@@ -258,7 +258,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(len(ucp.todoParts()), Equals, 1)
 	c.Assert(len(ucp.allParts()), Equals, 5)
 
-	// 第二次上传，完成剩余的一片
+	// second upload, finish the remaining part
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -276,7 +276,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(fileName + ".cp")
 	c.Assert(err, NotNil)
 
-	// Routines指定，CP指定
+	// specifies Routines and CP
 	uploadPartHooker = ErrorHooker
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2), Checkpoint(true, objectName+".cp"))
 	c.Assert(err, NotNil)
@@ -316,7 +316,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(objectName + ".cp")
 	c.Assert(err, NotNil)
 
-	// 一次完成上传，中间没有错误
+	// uploads all 5 parts without error
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -331,7 +331,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 用多协程下载，中间没有错误
+	// upload all 5 parts with 10 threads without error
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -365,19 +365,19 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithoutRecovery 多线程无断点恢复的上传
+// TestUploadRoutineWithoutRecovery multithreaded upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + "turrn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
-	// 本地文件不存在
+	// the local file does not exist
 	err := s.bucket.UploadFile(objectName, "NotExist", 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
 	err = s.bucket.UploadFile(objectName, "NotExist", 100*1024, Routines(2), Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
-	// 指定的分片大小无效
+	// specified part size is invalid
 	err = s.bucket.UploadFile(objectName, fileName, 1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
@@ -391,7 +391,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestUploadLocalFileChange 上传过程中文件修改了
+// TestUploadLocalFileChange the file is updated while being uploaded
 func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	objectName := objectNamePrefix + "tulfc"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -402,7 +402,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	err := copyFile(fileName, localFile)
 	c.Assert(err, IsNil)
 
-	// 第一次上传，上传4片
+	// first upload for 4 parts
 	uploadPartHooker = ErrorHooker
 	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
@@ -413,7 +413,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	err = copyFile(fileName, localFile)
 	c.Assert(err, IsNil)
 
-	// 文件修改，第二次上传全部分片重新上传
+	// updating the file. The second upload will re-upload all 5 parts
 	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
