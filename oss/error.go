@@ -74,6 +74,13 @@ func (e CRCCheckError) Error() string {
 		e.operation, e.clientCRC, e.serverCRC, e.requestID)
 }
 
+func checkDownloadCRC(clientCRC, serverCRC uint64) error {
+	if clientCRC == serverCRC {
+		return nil
+	}
+	return CRCCheckError{clientCRC, serverCRC, "DownloadFile", ""}
+}
+
 func checkCRC(resp *Response, operation string) error {
 	if resp.Headers.Get(HTTPHeaderOssCRC64) == "" || resp.ClientCRC == resp.ServerCRC {
 		return nil

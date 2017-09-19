@@ -126,6 +126,39 @@ func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	}
 }
 
+// testCRC64Combine test crc64 on vector[0..pos] which should have CRC-64 crc.
+// Also test CRC64Combine on vector[] split in two.
+func testCRC64Combine(c *C, str string, pos int, crc uint64) {
+	tabECMA := crc64.MakeTable(crc64.ECMA)
+
+	// test crc64
+	hash := crc64.New(tabECMA)
+	io.WriteString(hash, str)
+	crc1 := hash.Sum64()
+	c.Assert(crc1, Equals, crc)
+
+	// test crc64 combine
+	hash = crc64.New(tabECMA)
+	io.WriteString(hash, str[0:pos])
+	crc1 = hash.Sum64()
+
+	hash = crc64.New(tabECMA)
+	io.WriteString(hash, str[pos:len(str)])
+	crc2 := hash.Sum64()
+
+	crc1 = CRC64Combine(crc1, crc2, uint64(len(str)-pos))
+	c.Assert(crc1, Equals, crc)
+}
+
+// TestCRCGolden 测试CRC64Combine
+func (s *OssCrcSuite) TestCRCCombine(c *C) {
+	str := "123456789"
+	testCRC64Combine(c, str, (len(str)+1)>>1, 0x995DC9BBDF1939FA)
+
+	str = "This is a test of the emergency broadcast system."
+	testCRC64Combine(c, str, (len(str)+1)>>1, 0x27DB187FC15BBC72)
+}
+
 // TestEnableCRCAndMD5 开启MD5和CRC校验
 func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"

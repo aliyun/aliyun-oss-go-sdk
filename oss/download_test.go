@@ -543,6 +543,30 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestCombineCRCInParts 测试DownloadParts的CRC Combine
+func (s *OssDownloadSuite) TestCombineCRCInDownloadParts(c *C) {
+	crc := combineCRCInParts(nil)
+	c.Assert(crc == 0, Equals, true)
+
+	crc = combineCRCInParts(make([]downloadPart, 0))
+	c.Assert(crc == 0, Equals, true)
+
+	parts := make([]downloadPart, 1)
+	parts[0].CRC64 = 10278880121275185425
+	crc = combineCRCInParts(parts)
+	c.Assert(crc == 10278880121275185425, Equals, true)
+
+	parts = make([]downloadPart, 2)
+	parts[0].CRC64 = 6748440630437108969
+	parts[0].Start = 0
+	parts[0].End = 4
+	parts[1].CRC64 = 10278880121275185425
+	parts[1].Start = 5
+	parts[1].End = 8
+	crc = combineCRCInParts(parts)
+	c.Assert(crc == 11051210869376104954, Equals, true)
+}
+
 func getFileSize(fileName string) (int64, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
