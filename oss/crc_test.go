@@ -6,6 +6,7 @@ import (
 	"hash/crc64"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -157,6 +158,50 @@ func (s *OssCrcSuite) TestCRCCombine(c *C) {
 
 	str = "This is a test of the emergency broadcast system."
 	testCRC64Combine(c, str, (len(str)+1)>>1, 0x27DB187FC15BBC72)
+}
+
+// TestCRCGolden 测试CRC64Combine
+func (s *OssCrcSuite) TestCRCRepeatedCombine(c *C) {
+	tab := crc64.MakeTable(crc64.ECMA)
+	str := "Even if I could be Shakespeare, I think I should still choose to be Faraday. - A. Huxley"
+
+	for i := 0; i <= len(str); i++ {
+		hash := crc64.New(tab)
+		io.WriteString(hash, string(str[0:i]))
+		prev := hash.Sum64()
+
+		hash = crc64.New(tab)
+		io.WriteString(hash, string(str[i:len(str)]))
+		post := hash.Sum64()
+
+		crc := CRC64Combine(prev, post, uint64(len(str)-i))
+		testLogger.Println("TestCRCRepeatedCombine:", prev, post, crc, i, len(str))
+		c.Assert(crc == 0x7AD25FAFA1710407, Equals, true)
+	}
+}
+
+// TestCRCGolden 测试CRC64Combine
+func (s *OssCrcSuite) TestCRCRandomCombine(c *C) {
+	tab := crc64.MakeTable(crc64.ECMA)
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+
+	body, err := ioutil.ReadFile(fileName)
+	c.Assert(err, IsNil)
+
+	for i := 0; i < 10; i++ {
+		fileParts, err := SplitFileByPartNum(fileName, 1+rand.Intn(9999))
+		c.Assert(err, IsNil)
+
+		var crc uint64
+		for _, part := range fileParts {
+			calc := NewCRC(tab, 0)
+			calc.Write(body[part.Offset : part.Offset+part.Size])
+			crc = CRC64Combine(crc, calc.Sum64(), (uint64)(part.Size))
+		}
+
+		testLogger.Println("TestCRCRandomCombine:", crc, i, fileParts)
+		c.Assert(crc == 0x2B612D24FFF64222, Equals, true)
+	}
 }
 
 // TestEnableCRCAndMD5 开启MD5和CRC校验
