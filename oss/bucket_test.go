@@ -4,7 +4,6 @@ package oss
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/baiyubin/aliyun-sts-go-sdk/sts"
 
 	. "gopkg.in/check.v1"
 )
@@ -1771,23 +1772,20 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.getConfig().IsEnableMD5, Equals, false)
 }
 
-// TestSTSTonek
-func (s *OssBucketSuite) _TestSTSTonek(c *C) {
+func (s *OssBucketSuite) TestSTSToken(c *C) {
 	objectName := objectNamePrefix + "tst"
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
-	stsServer := ""
-	stsEndpoint := ""
-	stsBucketName := ""
 
-	stsRes, err := getSTSToken(stsServer)
-	c.Assert(err, IsNil)
-	testLogger.Println("sts:", stsRes)
+	stsClient := sts.NewClient(stsaccessID, stsaccessKey, stsARN, "oss_test_sess")
 
-	client, err := New(stsEndpoint, stsRes.AccessID, stsRes.AccessKey,
-		SecurityToken(stsRes.SecurityToken))
+	resp, err := stsClient.AssumeRole(1800)
 	c.Assert(err, IsNil)
 
-	bucket, err := client.Bucket(stsBucketName)
+	client, err := New(endpoint, resp.Credentials.AccessKeyId, resp.Credentials.AccessKeySecret,
+		SecurityToken(resp.Credentials.SecurityToken))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 
 	// Put
@@ -1864,12 +1862,6 @@ func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	err = client.DeleteBucket(bucketName)
-	c.Assert(err, NotNil)
-
-	_, err = getSTSToken("")
-	c.Assert(err, NotNil)
-
-	_, err = getSTSToken("http://me.php")
 	c.Assert(err, NotNil)
 }
 
@@ -2188,43 +2180,6 @@ func isFileExist(filename string) (bool, error) {
 	} else {
 		return true, nil
 	}
-}
-
-// STS Server的GET请求返回的数据
-type getSTSResult struct {
-	Status        int    `json:"status"`        // 返回状态码， 200表示获取成功，非200表示失败
-	AccessID      string `json:"accessId"`      //STS AccessId
-	AccessKey     string `json:"accessKey"`     // STS AccessKey
-	Expiration    string `json:"expiration"`    // STS Token
-	SecurityToken string `json:"securityToken"` // Token失效的时间， GMT时间
-	Bucket        string `json:"bucket"`        // 可以使用的bucket
-	Endpoint      string `json:"bucket"`        // 要访问的endpoint
-}
-
-// 从STS Server获取STS信息。返回值中当error为nil时，GetSTSResult有效。
-func getSTSToken(STSServer string) (getSTSResult, error) {
-	result := getSTSResult{}
-	resp, err := http.Get(STSServer)
-	if err != nil {
-		return result, err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return result, err
-	}
-
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return result, err
-	}
-
-	if result.Status != 200 {
-		return result, errors.New("Server Return Status:" + strconv.Itoa(result.Status))
-	}
-
-	return result, nil
 }
 
 func readBody(body io.ReadCloser) (string, error) {

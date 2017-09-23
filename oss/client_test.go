@@ -43,12 +43,12 @@ var (
 
 const (
 	// prefix of bucket name for bucket ops test
-	bucketNamePrefix = "go-sdk-test-bucket-xyz-"
+	bucketNamePrefix = "go-sdk-test-bucket-xyzu-"
 	// bucket name for object ops test
-	bucketName        = "go-sdk-test-bucket-xyz-for-object"
-	archiveBucketName = "go-sdk-test-bucket-xyz-for-archive"
+	bucketName        = "go-sdk-test-bucket-xyzu-for-object"
+	archiveBucketName = "go-sdk-test-bucket-xyzu-for-archive"
 	// object name for object ops test
-	objectNamePrefix = "go-sdk-test-object-xyz-"
+	objectNamePrefix = "go-sdk-test-object-xyzu-"
 	// sts region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
