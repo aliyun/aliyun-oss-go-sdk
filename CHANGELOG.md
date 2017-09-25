@@ -1,6 +1,6 @@
 # ChangeLog - Aliyun OSS SDK for Go
 
-## 版本号：1.7.0 日期：2017-09-22
+## 版本号：1.7.0 日期：2017-09-25
 ### 变更内容
  - 增加：DownloadFile支持CRC校验
  - 增加：STS测试用例
