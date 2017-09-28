@@ -15,7 +15,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Hook up gocheck into the "go test" runner.
+// Test hooks up gocheck into the "go test" runner.
 func Test(t *testing.T) {
 	TestingT(t)
 }
@@ -81,7 +81,7 @@ func randLowStr(n int) string {
 	return strings.ToLower(randStr(n))
 }
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssClientSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -96,7 +96,7 @@ func (s *OssClientSuite) SetUpSuite(c *C) {
 	testLogger.Println("test client started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssClientSuite) TearDownSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -140,11 +140,11 @@ func (s *OssClientSuite) deleteBucket(client *Client, bucketName string, c *C) {
 	c.Assert(err, IsNil)
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssClientSuite) SetUpTest(c *C) {
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssClientSuite) TearDownTest(c *C) {
 }
 
@@ -175,7 +175,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	// Create with ACLPublicRead
+	// CreateBucket creates with ACLPublicRead
 	err = client.CreateBucket(bucketNameTest, ACL(ACLPublicRead))
 	c.Assert(err, IsNil)
 	time.Sleep(5 * time.Second)

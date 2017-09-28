@@ -18,7 +18,7 @@ type ServiceError struct {
 	StatusCode int      // HTTP status code
 }
 
-// Implement interface error
+// Error implements interface error
 func (e ServiceError) Error() string {
 	return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=%s, RequestId=%s",
 		e.StatusCode, e.Code, e.Message, e.RequestID)
@@ -31,7 +31,7 @@ type UnexpectedStatusCodeError struct {
 	got     int   // The actual HTTP status code from OSS
 }
 
-// Implement interface error
+// Error implements interface error
 func (e UnexpectedStatusCodeError) Error() string {
 	s := func(i int) string { return fmt.Sprintf("%d %s", i, http.StatusText(i)) }
 
@@ -68,7 +68,7 @@ type CRCCheckError struct {
 	requestID string // the request id of this operation
 }
 
-// Implement interface error
+// Error implements interface error
 func (e CRCCheckError) Error() string {
 	return fmt.Sprintf("oss: the crc of %s is inconsistent, client %d but server %d; request id is %s",
 		e.operation, e.clientCRC, e.serverCRC, e.requestID)

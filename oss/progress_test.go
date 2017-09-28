@@ -20,7 +20,7 @@ type OssProgressSuite struct {
 
 var _ = Suite(&OssProgressSuite{})
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssProgressSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -36,7 +36,7 @@ func (s *OssProgressSuite) SetUpSuite(c *C) {
 	testLogger.Println("test progress started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssProgressSuite) TearDownSuite(c *C) {
 	// Delete Multipart
 	lmu, err := s.bucket.ListMultipartUploads()
@@ -60,7 +60,7 @@ func (s *OssProgressSuite) TearDownSuite(c *C) {
 	testLogger.Println("test progress completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssProgressSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
@@ -72,7 +72,7 @@ func (s *OssProgressSuite) SetUpTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssProgressSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
@@ -84,11 +84,11 @@ func (s *OssProgressSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// OssProgressListener progress listener
+// OssProgressListener is the progress listener
 type OssProgressListener struct {
 }
 
-// ProgressChanged handle progress event
+// ProgressChanged handles progress event
 func (listener *OssProgressListener) ProgressChanged(event *ProgressEvent) {
 	switch event.EventType {
 	case TransferStartedEvent:
@@ -145,7 +145,7 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 	testLogger.Println("OssProgressSuite.TestPutObject")
 }
 
-// Test SignURL
+// TestSignURL
 func (s *OssProgressSuite) TestSignURL(c *C) {
 	objectName := objectNamePrefix + randStr(5)
 	filePath := randLowStr(10)

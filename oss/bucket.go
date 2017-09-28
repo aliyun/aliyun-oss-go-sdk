@@ -23,8 +23,7 @@ type Bucket struct {
 	BucketName string
 }
 
-//
-// PutObject Creates a new object and it will overwrite the original one if it exists already.
+// PutObject creates a new object and it will overwrite the original one if it exists already.
 //
 // objectKey  The object key in UTF-8 encoding. The length must be between 1 to 1023 and cannot start with "/" or "\".
 // reader     io.Reader instance for reading the data for uploading
@@ -50,8 +49,7 @@ func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Op
 	return err
 }
 
-//
-// PutObjectFromFile Creates a new object from the local file.
+// PutObjectFromFile creates a new object from the local file.
 //
 // objectKey object key
 // filePath  The local file path to upload.
@@ -81,8 +79,7 @@ func (bucket Bucket) PutObjectFromFile(objectKey, filePath string, options ...Op
 	return err
 }
 
-//
-// DoPutObject Does the actual upload work
+// DoPutObject does the actual upload work
 //
 // request  The request instance for uploading an object
 // options  The options for uploading an object.
@@ -116,8 +113,7 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 	return resp, err
 }
 
-//
-// GetObject Download the object.
+// GetObject downloads the object.
 //
 // objectKey The object key.
 // options   The options for downloading the object. The valid values are: Range, IfModifiedSince, IfUnmodifiedSince, IfMatch,
@@ -135,8 +131,7 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 	return result.Response.Body, nil
 }
 
-//
-// GetObjectToFile Download the data to a local file
+// GetObjectToFile downloads the data to a local file
 //
 // objectKey  The object key to download
 // filePath   The local file to store the object data
@@ -181,8 +176,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	return os.Rename(tempFilePath, filePath)
 }
 
-//
-// DoGetObject the actual API that gets the object. It's the internal function called by other public APIs
+// DoGetObject is the actual API that gets the object. It's the internal function called by other public APIs
 //
 // request The request to download the object.
 // options    The options for downloading the file. Checks out the parameter options in method GetObject.
@@ -219,8 +213,7 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 	return result, nil
 }
 
-//
-// CopyObject Copy the object inside the bucket.
+// CopyObject copies the object inside the bucket.
 //
 // srcObjectKey  The source object to copy
 // destObjectKey The target object to copy
@@ -246,8 +239,7 @@ func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...O
 	return out, err
 }
 
-//
-// CopyObjectTo Copy the object to another bucket
+// CopyObjectTo copies the object to another bucket
 //
 // srcObjectKey   Source object key. The source bucket is Bucket.BucketName.
 // destBucketName  Target Bucket name.
@@ -261,7 +253,7 @@ func (bucket Bucket) CopyObjectTo(destBucketName, destObjectKey, srcObjectKey st
 }
 
 //
-// CopyObjectFrom Copy the object to another bucket
+// CopyObjectFrom copies the object to another bucket
 //
 // srcBucketName  Source bucket name
 // srcObjectKey   Source object name
@@ -300,8 +292,7 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 	return out, err
 }
 
-//
-// AppendObject Upload the data in the way of appending an existing or new object.
+// AppendObject uploads the data in the way of appending an existing or new object.
 //
 // AppendObject the parameter appendPosition specifies which postion (in the target object) to append. For the first append (to a non-existing file)
 // ，the appendPosition should be 0. The appendPosition in the subsequent calls will be the current object length.
@@ -332,8 +323,7 @@ func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosi
 	return result.NextPosition, err
 }
 
-//
-// DoAppendObject The actual API that does the object append.
+// DoAppendObject is the actual API that does the object append.
 //
 // request The request object for appending object.
 // options The options for appending object.
@@ -382,8 +372,7 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 	return result, nil
 }
 
-//
-// DeleteObject Deletes the object.
+// DeleteObject deletes the object.
 //
 // objectKey The object key to delete.
 //
@@ -399,8 +388,7 @@ func (bucket Bucket) DeleteObject(objectKey string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-//
-// DeleteObjects Delete multiple objects.
+// DeleteObjects deletes multiple objects.
 //
 // objectKeys The object keys to delete.
 // options The options for deleting objects.
@@ -449,8 +437,7 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 	return out, err
 }
 
-//
-// IsObjectExist Checks if the object exists.
+// IsObjectExist checks if the object exists.
 //
 // bool  flag of object's existence (true:exists;false:non-exist) when error is nil.
 //
@@ -472,8 +459,7 @@ func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
 	return false, err
 }
 
-//
-// ListObjects Lists the objects under the current bucket.
+// ListObjects lists the objects under the current bucket.
 //
 // options  It contains all the filters for listing object.
 //          It could specify a prefix filter on object keys,  the max keys count to return and the object key marker and the delimiter for grouping object names.
@@ -517,8 +503,7 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 	return out, err
 }
 
-//
-// SetObjectMeta Sets the metadata of the Object.
+// SetObjectMeta sets the metadata of the Object.
 //
 // objectKey object
 // options Options for setting the metadata. The valid options are CacheControl, ContentDisposition, ContentEncoding, Expires,
@@ -532,8 +517,7 @@ func (bucket Bucket) SetObjectMeta(objectKey string, options ...Option) error {
 	return err
 }
 
-//
-// GetObjectDetailedMeta Gets the object's detailed metadata
+// GetObjectDetailedMeta gets the object's detailed metadata
 //
 // objectKey object key.
 // objectPropertyConstraints The contraints of the object. Only when the object meet the requirements this method will return the metadata. Otherwise returns error. Valid options are IfModifiedSince, IfUnmodifiedSince,
@@ -553,8 +537,7 @@ func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) 
 	return resp.Headers, nil
 }
 
-//
-// GetObjectMeta Gets object metadata.
+// GetObjectMeta gets object metadata.
 //
 // GetObjectMeta is more lightweight than GetObjectDetailedMeta as it only returns basic metadata including ETag
 // size, LastModified. The size information is in the HTTP header Content-Length.
@@ -577,7 +560,6 @@ func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 	return resp.Headers, nil
 }
 
-//
 // SetObjectACL updates the object's ACL.
 //
 // Only the bucket's owner could update object's ACL and its priority is higher than bucket's ACL.
@@ -606,8 +588,7 @@ func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// GetObjectACL Gets object's ACL
+// GetObjectACL gets object's ACL
 //
 // objectKey the object to get ACL from.
 //
@@ -628,8 +609,7 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 	return out, err
 }
 
-//
-// PutSymlink Creates a symlink (to point to an existing object)
+// PutSymlink creates a symlink (to point to an existing object)
 //
 // Symlink cannot point to another symlink.
 // When creating a symlink, it does not check the existence of the target file, and does not check if the target file is symlink.
@@ -654,8 +634,7 @@ func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, opt
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// GetSymlink Gets the symlink object with the specified key.
+// GetSymlink gets the symlink object with the specified key.
 // If the symlink object does not exist, returns 404.
 //
 // objectKey The symlink object's key.
@@ -681,8 +660,7 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 	return resp.Headers, err
 }
 
-//
-// RestoreObject Restore the object from the archive storage.
+// RestoreObject restores the object from the archive storage.
 //
 // An archive object is in cold status by default and it cannot be accessed.
 // When restore is called on the cold object, it will become available for access after some time.
@@ -705,8 +683,7 @@ func (bucket Bucket) RestoreObject(objectKey string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
 }
 
-//
-// SignURL Sign the url. Users could access the object directly with this url without getting the AK.
+// SignURL signs the url. Users could access the object directly with this url without getting the AK.
 //
 // objectKey the target object to sign.
 // signURLConfig The config for the signed url
@@ -734,8 +711,7 @@ func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec i
 	return bucket.Client.Conn.signURL(method, bucket.BucketName, objectKey, expiration, params, headers), nil
 }
 
-//
-// PutObjectWithURL Upload an object with the url. If the object exists, it will be overwritten.
+// PutObjectWithURL uploads an object with the url. If the object exists, it will be overwritten.
 // PutObjectWithURL It will not generate minetype according to the key name.
 //
 // signedURL  Signed url
@@ -756,8 +732,7 @@ func (bucket Bucket) PutObjectWithURL(signedURL string, reader io.Reader, option
 	return err
 }
 
-//
-// PutObjectFromFileWithURL Upload an object from a local file with the signed url.
+// PutObjectFromFileWithURL uploads an object from a local file with the signed url.
 // PutObjectFromFileWithURL It does not generate mimetype according to object key's name or the local file name.
 //
 // signedURL  signed URL.
@@ -782,8 +757,7 @@ func (bucket Bucket) PutObjectFromFileWithURL(signedURL, filePath string, option
 	return err
 }
 
-//
-// DoPutObjectWithURL The actual API that does the upload with URL work(internal for SDK)
+// DoPutObjectWithURL is the actual API that does the upload with URL work(internal for SDK)
 //
 // signedURL  signed URL.
 // reader     io.Reader the read instance for getting the data to upload.
@@ -813,8 +787,7 @@ func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, opti
 	return resp, err
 }
 
-//
-// GetObjectWithURL Downloading the object and return the reader instance,  with the signed url.
+// GetObjectWithURL downloads the object and returns the reader instance,  with the signed url.
 //
 // signedURL  Signed url.
 // options   Options for downloading the object. Valid options are IfModifiedSince, IfUnmodifiedSince, IfMatch,
@@ -832,8 +805,7 @@ func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.R
 	return result.Response.Body, nil
 }
 
-//
-// GetObjectToFile Download the object into a local file with the signed url.
+// GetObjectToFileWithURL downloads the object into a local file with the signed url.
 //
 // signedURL  signed url
 // filePath   The local file path to download to.
@@ -878,8 +850,7 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 	return os.Rename(tempFilePath, filePath)
 }
 
-//
-// DoGetObjectWithURL The actual API that downloads the file with the signed url.
+// DoGetObjectWithURL is the actual API that downloads the file with the signed url.
 //
 // signedURL  Signed URL.
 // options    The options for getting object. Check out parameter options in GetObject for the reference.

@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// Get User Agent
+// userAgent gets User Agent
 // It has the SDK version information, OS information and GO version
 var userAgent = func() string {
 	sys := getSysInfo()
@@ -28,7 +28,7 @@ type sysInfo struct {
 	machine string // CPU type amd64/x86_64
 }
 
-// Get　system info
+// getSysInfo gets system info
 // gets the OS information and CPU type
 func getSysInfo() sysInfo {
 	name := runtime.GOOS
@@ -54,7 +54,7 @@ type unpackedRange struct {
 	end      int64 // end point
 }
 
-// invalid Range Error
+// invalidRangeError returns invalid Range Error
 func invalidRangeError(r string) error {
 	return fmt.Errorf("InvalidRange %s", r)
 }
@@ -114,7 +114,7 @@ func parseRange(normalizedRange string) (*unpackedRange, error) {
 	return &unpackedRange{hasStart, hasEnd, start, end}, nil
 }
 
-// adjustRange return adjusted range, adjust the range according to the length of the file
+// adjustRange returns adjusted range, adjust the range according to the length of the file
 func adjustRange(ur *unpackedRange, size int64) (start, end int64) {
 	if ur == nil {
 		return 0, size
@@ -164,14 +164,14 @@ func GetNowGMT() string {
 	return time.Now().UTC().Format(http.TimeFormat)
 }
 
-// FileChunk file chunk definition
+// FileChunk is the file chunk definition
 type FileChunk struct {
 	Number int   // chunk number
 	Offset int64 // chunk offset
 	Size   int64 // chunk size.
 }
 
-// SplitFileByPartNum Split big file to part by the num of part
+// SplitFileByPartNum splits big file to part by the num of part
 // Split the file with specified parts count. returns the split result when error is nil.
 func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 	if chunkNum <= 0 || chunkNum > 10000 {
@@ -210,7 +210,7 @@ func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 	return chunks, nil
 }
 
-// SplitFileByPartSize Split big file to part by the size of part
+// SplitFileByPartSize splits big file to part by the size of part
 // Splits the file by the part size. Returns the FileChunk when error is nil.
 func SplitFileByPartSize(fileName string, chunkSize int64) ([]FileChunk, error) {
 	if chunkSize <= 0 {

@@ -20,7 +20,7 @@ type OssCrcSuite struct {
 
 var _ = Suite(&OssCrcSuite{})
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssCrcSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -36,7 +36,7 @@ func (s *OssCrcSuite) SetUpSuite(c *C) {
 	testLogger.Println("test crc started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssCrcSuite) TearDownSuite(c *C) {
 	// Delete Part
 	lmur, err := s.bucket.ListMultipartUploads()
@@ -61,19 +61,19 @@ func (s *OssCrcSuite) TearDownSuite(c *C) {
 	testLogger.Println("test crc completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssCrcSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssCrcSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// TestCRCGolden test OSS's CRC64
+// TestCRCGolden tests OSS's CRC64
 func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	type crcTest struct {
 		out uint64
@@ -126,7 +126,7 @@ func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	}
 }
 
-// TestEnableCRCAndMD5 Enable MD5 and CRC
+// TestEnableCRCAndMD5 enables MD5 and CRC
 func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -223,7 +223,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDisableCRCAndMD5 disable MD5 and CRC
+// TestDisableCRCAndMD5 disables MD5 and CRC
 func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -319,7 +319,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSpecifyContentMD5 指定MD5
+// TestSpecifyContentMD5 specifies MD5
 func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -384,7 +384,7 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCopyObjectToOrFromNegative
+// TestAppendObjectNegative
 func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
 	objectName := objectNamePrefix + "taoncrc"
 	objectValue := "空山不见人，但闻人语响。返影入深林，复照青苔上。"

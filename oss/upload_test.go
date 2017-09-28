@@ -16,7 +16,7 @@ type OssUploadSuite struct {
 
 var _ = Suite(&OssUploadSuite{})
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssUploadSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -32,7 +32,7 @@ func (s *OssUploadSuite) SetUpSuite(c *C) {
 	testLogger.Println("test upload started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssUploadSuite) TearDownSuite(c *C) {
 	// Delete Part
 	lmur, err := s.bucket.ListMultipartUploads()
@@ -57,19 +57,19 @@ func (s *OssUploadSuite) TearDownSuite(c *C) {
 	testLogger.Println("test upload completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssUploadSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssUploadSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithoutRecovery test multithreaded upload without checkpoint
+// TestUploadRoutineWithoutRecovery tests multithreaded upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	objectName := objectNamePrefix + "turwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -195,7 +195,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// ErrorHooker UploadPart Hook---it will fail the 5th part's upload.
+// ErrorHooker is a UploadPart Hook---it will fail the 5th part's upload.
 func ErrorHooker(id int, chunk FileChunk) error {
 	if chunk.Number == 5 {
 		time.Sleep(time.Second)
@@ -204,7 +204,7 @@ func ErrorHooker(id int, chunk FileChunk) error {
 	return nil
 }
 
-// TestUploadRoutineWithoutRecovery multithreaded upload without checkpoint
+// TestUploadRoutineWithoutRecoveryNegative is multithreaded upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + "turwrn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -228,7 +228,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestUploadRoutineWithRecovery multithreaded upload with checkpoint
+// TestUploadRoutineWithRecovery is multithreaded upload with checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	objectName := objectNamePrefix + "turtr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -365,7 +365,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithoutRecovery multithreaded upload without checkpoint
+// TestUploadRoutineWithRecoveryNegative is multithreaded upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + "turrn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -391,7 +391,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestUploadLocalFileChange the file is updated while being uploaded
+// TestUploadLocalFileChange tests the file is updated while being uploaded
 func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	objectName := objectNamePrefix + "tulfc"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"

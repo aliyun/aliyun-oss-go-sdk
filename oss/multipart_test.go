@@ -19,7 +19,7 @@ type OssBucketMultipartSuite struct {
 
 var _ = Suite(&OssBucketMultipartSuite{})
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -55,7 +55,7 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 	testLogger.Println("test multipart started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssBucketMultipartSuite) TearDownSuite(c *C) {
 	// Delete Part
 	lmur, err := s.bucket.ListMultipartUploads()
@@ -80,13 +80,13 @@ func (s *OssBucketMultipartSuite) TearDownSuite(c *C) {
 	testLogger.Println("test multipart completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssBucketMultipartSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssBucketMultipartSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
@@ -146,7 +146,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUpload(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestMultipartUpload
+// TestMultipartUploadFromFile
 func (s *OssBucketMultipartSuite) TestMultipartUploadFromFile(c *C) {
 	objectName := objectNamePrefix + "tmuff"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
@@ -492,7 +492,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestMultipartUpload
+// TestMultipartUploadFromFileType
 func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileType(c *C) {
 	objectName := objectNamePrefix + "tmuffwm" + ".jpg"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"

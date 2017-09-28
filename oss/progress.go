@@ -2,7 +2,7 @@ package oss
 
 import "io"
 
-// ProgressEventType transfer progress event type
+// ProgressEventType defines transfer progress event type
 type ProgressEventType int
 
 const (
@@ -16,14 +16,14 @@ const (
 	TransferFailedEvent
 )
 
-// ProgressEvent progress event
+// ProgressEvent defines progress event
 type ProgressEvent struct {
 	ConsumedBytes int64
 	TotalBytes    int64
 	EventType     ProgressEventType
 }
 
-// ProgressListener listen progress change
+// ProgressListener listens progress change
 type ProgressListener interface {
 	ProgressChanged(event *ProgressEvent)
 }

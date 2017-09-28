@@ -11,8 +11,7 @@ import (
 	"strconv"
 )
 
-//
-// DownloadFile Download files with multipart download
+// DownloadFile downloads files with multipart download
 //
 // objectKey  object key。
 // filePath   local file to download from objectKey in OSS
@@ -23,7 +22,7 @@ import (
 //
 func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < 1 {
-		return errors.New("oss: part size smaller than 1.")
+		return errors.New("oss: part size smaller than 1 ")
 	}
 
 	cpConf, err := getCpConfig(options, filePath)
@@ -45,7 +44,7 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 	return bucket.downloadFile(objectKey, filePath, partSize, options, routines, uRange)
 }
 
-// gets the download range from the options.
+// getRangeConfig gets the download range from the options.
 func getRangeConfig(options []Option) (*unpackedRange, error) {
 	rangeOpt, err := findOption(options, HTTPHeaderRange, nil)
 	if err != nil || rangeOpt == nil {
@@ -56,7 +55,7 @@ func getRangeConfig(options []Option) (*unpackedRange, error) {
 
 // ----- concurrent download without checkpoint  -----
 
-// download worker's parameters
+// downloadWorkerArg is download worker's parameters
 type downloadWorkerArg struct {
 	bucket   *Bucket
 	key      string
@@ -65,7 +64,7 @@ type downloadWorkerArg struct {
 	hook     downloadPartHook
 }
 
-// Hook for test
+// downloadPartHook is hook for test
 type downloadPartHook func(part downloadPart) error
 
 var downloadPartHooker downloadPartHook = defaultDownloadPartHook
@@ -74,7 +73,7 @@ func defaultDownloadPartHook(part downloadPart) error {
 	return nil
 }
 
-// default ProgressListener
+// defaultDownloadProgressListener defines default ProgressListener
 type defaultDownloadProgressListener struct {
 }
 
@@ -82,7 +81,7 @@ type defaultDownloadProgressListener struct {
 func (listener *defaultDownloadProgressListener) ProgressChanged(event *ProgressEvent) {
 }
 
-// download worker
+// downloadWorker
 func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, results chan<- downloadPart, failed chan<- error, die <-chan bool) {
 	for part := range jobs {
 		if err := arg.hook(part); err != nil {
@@ -136,7 +135,7 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 	}
 }
 
-// download scheduler
+// downloadScheduler
 func downloadScheduler(jobs chan downloadPart, parts []downloadPart) {
 	for _, part := range parts {
 		jobs <- part
@@ -144,7 +143,7 @@ func downloadScheduler(jobs chan downloadPart, parts []downloadPart) {
 	close(jobs)
 }
 
-// download part
+// downloadPart defines download part
 type downloadPart struct {
 	Index  int   // part number, starting from 0
 	Start  int64 // start index
@@ -152,7 +151,7 @@ type downloadPart struct {
 	Offset int64 // offset
 }
 
-// get download parts
+// getDownloadParts gets download parts
 func getDownloadParts(bucket *Bucket, objectKey string, partSize int64, uRange *unpackedRange) ([]downloadPart, error) {
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
@@ -179,7 +178,7 @@ func getDownloadParts(bucket *Bucket, objectKey string, partSize int64, uRange *
 	return parts, nil
 }
 
-// get object bytes length
+// getObjectBytes gets object bytes length
 func getObjectBytes(parts []downloadPart) int64 {
 	var ob int64
 	for _, part := range parts {
@@ -188,7 +187,7 @@ func getObjectBytes(parts []downloadPart) int64 {
 	return ob
 }
 
-// download file concurrently without checkpoint.
+// downloadFile downloads file concurrently without checkpoint.
 func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, options []Option, routines int, uRange *unpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)
@@ -276,7 +275,7 @@ type objectStat struct {
 	Etag         string // etag
 }
 
-// flag of CP data is valid. return true when the data is valid and the checkpoint is valid and the object is not updated.
+// isValid flags of CP data is valid. It returns true when the data is valid and the checkpoint is valid and the object is not updated.
 func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *unpackedRange) (bool, error) {
 	// Compare the CP's Magic and the MD5
 	cpb := cp
@@ -329,7 +328,7 @@ func (cp *downloadCheckpoint) load(filePath string) error {
 	return err
 }
 
-// dump to file
+// dump funciton dumps to file
 func (cp *downloadCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
@@ -353,7 +352,7 @@ func (cp *downloadCheckpoint) dump(filePath string) error {
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
-// gets unfinished parts
+// todoParts gets unfinished parts
 func (cp downloadCheckpoint) todoParts() []downloadPart {
 	dps := []downloadPart{}
 	for i, ps := range cp.PartStat {
@@ -364,7 +363,7 @@ func (cp downloadCheckpoint) todoParts() []downloadPart {
 	return dps
 }
 
-// gets completed size
+// getCompletedBytes gets completed size
 func (cp downloadCheckpoint) getCompletedBytes() int64 {
 	var completedBytes int64
 	for i, part := range cp.Parts {
@@ -375,7 +374,7 @@ func (cp downloadCheckpoint) getCompletedBytes() int64 {
 	return completedBytes
 }
 
-// Initiate download tasks
+// prepare initiates download tasks
 func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string, partSize int64, uRange *unpackedRange) error {
 	// cp
 	cp.Magic = downloadCpMagic
@@ -415,7 +414,7 @@ func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
 	return os.Rename(downFilepath, cp.FilePath)
 }
 
-// download files with CP
+// downloadFileWithCp downloads files with CP
 func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int, uRange *unpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)

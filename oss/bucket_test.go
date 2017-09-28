@@ -33,7 +33,7 @@ var (
 	futureDate = time.Date(2049, time.January, 10, 23, 0, 0, 0, time.UTC)
 )
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssBucketSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -57,7 +57,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	testLogger.Println("test bucket started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssBucketSuite) TearDownSuite(c *C) {
 	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
 		// Delete Multipart
@@ -83,13 +83,13 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 	testLogger.Println("test bucket completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssBucketSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssBucketSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)

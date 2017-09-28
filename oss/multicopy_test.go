@@ -15,7 +15,7 @@ type OssCopySuite struct {
 
 var _ = Suite(&OssCopySuite{})
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssCopySuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -31,7 +31,7 @@ func (s *OssCopySuite) SetUpSuite(c *C) {
 	testLogger.Println("test copy started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssCopySuite) TearDownSuite(c *C) {
 	// Delete Part
 	lmur, err := s.bucket.ListMultipartUploads()
@@ -56,19 +56,19 @@ func (s *OssCopySuite) TearDownSuite(c *C) {
 	testLogger.Println("test copy completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssCopySuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssCopySuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// TestCopyRoutineWithoutRecovery Multiple threaded copy without checkpoint
+// TestCopyRoutineWithoutRecovery is multiple threaded copy without checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwr"
 	destObjectName := srcObjectName + "-copy"
@@ -192,7 +192,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// CopyErrorHooker CopyPart request hook
+// CopyErrorHooker is a copypart request hook
 func CopyErrorHooker(part copyPart) error {
 	if part.Number == 5 {
 		time.Sleep(time.Second)
@@ -201,7 +201,7 @@ func CopyErrorHooker(part copyPart) error {
 	return nil
 }
 
-// TestCopyRoutineWithoutRecoveryNegative multiple threads copy without checkpoint
+// TestCopyRoutineWithoutRecoveryNegative is a multiple threads copy without checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwrn"
 	destObjectName := srcObjectName + "-copy"
@@ -238,7 +238,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCopyRoutineWithRecovery multiple threaded copy with checkpoint
+// TestCopyRoutineWithRecovery is a multiple threaded copy with checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	srcObjectName := objectNamePrefix + "tcrtr"
 	destObjectName := srcObjectName + "-copy"
@@ -392,7 +392,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCopyRoutineWithRecoveryNegative multiple threaded copy without checkpoint
+// TestCopyRoutineWithRecoveryNegative is a multiple threaded copy without checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwrn"
 	destObjectName := srcObjectName + "-copy"
@@ -414,7 +414,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestCopyFileCrossBucket cross bucket's direct copy.
+// TestCopyFileCrossBucket is a cross bucket's direct copy.
 func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	destBucketName := bucketName + "-cfcb-desc"
 	srcObjectName := objectNamePrefix + "tcrtr"

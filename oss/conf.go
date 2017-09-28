@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// HTTPTimeout http timeout
+// HTTPTimeout defines http timeout
 type HTTPTimeout struct {
 	ConnectTimeout   time.Duration
 	ReadWriteTimeout time.Duration
@@ -12,7 +12,7 @@ type HTTPTimeout struct {
 	LongTimeout      time.Duration
 }
 
-// Config oss configure
+// Config defines oss configure
 type Config struct {
 	Endpoint        string      // oss endpoint
 	AccessKeyID     string      // accessId
@@ -34,7 +34,7 @@ type Config struct {
 	IsEnableCRC     bool        // flag of enabling CRC for upload.
 }
 
-// Gets the default config.
+// getDefaultOssConfig gets the default config.
 func getDefaultOssConfig() *Config {
 	config := Config{}
 

@@ -11,8 +11,7 @@ import (
 	"strconv"
 )
 
-//
-// CopyFile multipart copy object
+// CopyFile is multipart copy object
 //
 // srcBucketName  Source bucket name
 // srcObjectKey   Source object name
@@ -46,7 +45,7 @@ func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string,
 
 // ----- Concurrently copy without checkpoint ---------
 
-// copy worker arguments
+// copyWorkerArg defines the copy worker arguments
 type copyWorkerArg struct {
 	bucket        *Bucket
 	imur          InitiateMultipartUploadResult
@@ -56,7 +55,7 @@ type copyWorkerArg struct {
 	hook          copyPartHook
 }
 
-// Hook for testing purpose
+// copyPartHook is the hook for testing purpose
 type copyPartHook func(part copyPart) error
 
 var copyPartHooker copyPartHook = defaultCopyPartHook
@@ -65,7 +64,7 @@ func defaultCopyPartHook(part copyPart) error {
 	return nil
 }
 
-// copy worker
+// copyWorker copies worker
 func copyWorker(id int, arg copyWorkerArg, jobs <-chan copyPart, results chan<- UploadPart, failed chan<- error, die <-chan bool) {
 	for chunk := range jobs {
 		if err := arg.hook(chunk); err != nil {
@@ -88,7 +87,7 @@ func copyWorker(id int, arg copyWorkerArg, jobs <-chan copyPart, results chan<- 
 	}
 }
 
-// copy scheduler
+// copyScheduler
 func copyScheduler(jobs chan copyPart, parts []copyPart) {
 	for _, part := range parts {
 		jobs <- part
@@ -103,7 +102,7 @@ type copyPart struct {
 	End    int64 // the end index in the source file
 }
 
-// calculates copy parts
+// getCopyParts calculates copy parts
 func getCopyParts(bucket *Bucket, objectKey string, partSize int64) ([]copyPart, error) {
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
@@ -128,7 +127,7 @@ func getCopyParts(bucket *Bucket, objectKey string, partSize int64) ([]copyPart,
 	return parts, nil
 }
 
-// gets the source file size
+// getSrcObjectBytes gets the source file size
 func getSrcObjectBytes(parts []copyPart) int64 {
 	var ob int64
 	for _, part := range parts {
@@ -137,7 +136,7 @@ func getSrcObjectBytes(parts []copyPart) int64 {
 	return ob
 }
 
-// concurrently copy without checkpoint
+// copyFile is a concurrently copy without checkpoint
 func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destObjectKey string,
 	partSize int64, options []Option, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)
@@ -229,7 +228,7 @@ type copyCheckpoint struct {
 	PartStat       []bool       // the part status
 }
 
-// Checks if the data is valid which means CP is valid and object is not updated.
+// isValid checks if the data is valid which means CP is valid and object is not updated.
 func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error) {
 	// compare CP's magic number and the MD5.
 	cpb := cp
@@ -263,7 +262,7 @@ func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error)
 	return true, nil
 }
 
-// load from the checkpoint file
+// load loads from the checkpoint file
 func (cp *copyCheckpoint) load(filePath string) error {
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -274,13 +273,13 @@ func (cp *copyCheckpoint) load(filePath string) error {
 	return err
 }
 
-// update the parts status
+// update updates the parts status
 func (cp *copyCheckpoint) update(part UploadPart) {
 	cp.CopyParts[part.PartNumber-1] = part
 	cp.PartStat[part.PartNumber-1] = true
 }
 
-// dump the cp to the file
+// dump dumps the cp to the file
 func (cp *copyCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
@@ -304,7 +303,7 @@ func (cp *copyCheckpoint) dump(filePath string) error {
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
-// unfinished parts
+// todoParts returns unfinished parts
 func (cp copyCheckpoint) todoParts() []copyPart {
 	dps := []copyPart{}
 	for i, ps := range cp.PartStat {
@@ -315,7 +314,7 @@ func (cp copyCheckpoint) todoParts() []copyPart {
 	return dps
 }
 
-// finished bytes count
+// getCompletedBytes returns finished bytes count
 func (cp copyCheckpoint) getCompletedBytes() int64 {
 	var completedBytes int64
 	for i, part := range cp.Parts {
@@ -326,7 +325,7 @@ func (cp copyCheckpoint) getCompletedBytes() int64 {
 	return completedBytes
 }
 
-// initialize the multipart upload
+// prepare initializes the multipart upload
 func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBucket *Bucket, destObjectKey string,
 	partSize int64, options []Option) error {
 	// cp
@@ -383,7 +382,7 @@ func (cp *copyCheckpoint) complete(bucket *Bucket, parts []UploadPart, cpFilePat
 	return err
 }
 
-// concurrently copy with checkpoint
+// copyFileWithCp is concurrently copy with checkpoint
 func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName, destObjectKey string,
 	partSize int64, options []Option, cpFilePath string, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)

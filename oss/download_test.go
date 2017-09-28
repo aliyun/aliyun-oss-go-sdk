@@ -16,7 +16,7 @@ type OssDownloadSuite struct {
 
 var _ = Suite(&OssDownloadSuite{})
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssDownloadSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -32,7 +32,7 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 	testLogger.Println("test download started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssDownloadSuite) TearDownSuite(c *C) {
 	// Delete Part
 	lmur, err := s.bucket.ListMultipartUploads()
@@ -57,13 +57,13 @@ func (s *OssDownloadSuite) TearDownSuite(c *C) {
 	testLogger.Println("test download completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssDownloadSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssDownloadSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
@@ -72,7 +72,7 @@ func (s *OssDownloadSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithoutRecovery multipart download without checkpoint
+// TestDownloadRoutineWithoutRecovery multipart download without checkpoint
 func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	objectName := objectNamePrefix + "tdrwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -125,7 +125,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// ErrorHooker DownloadPart request Hook
+// DownErrorHooker downloads part request Hook
 func DownErrorHooker(part downloadPart) error {
 	if part.Index == 4 {
 		time.Sleep(time.Second)
@@ -558,7 +558,7 @@ func getFileSize(fileName string) (int64, error) {
 	return stat.Size(), nil
 }
 
-// compare the content between fileL and fileR with specified range
+// compareFilesWithRange compares the content between fileL and fileR with specified range
 func compareFilesWithRange(fileL string, offsetL int64, fileR string, offsetR int64, size int64) (bool, error) {
 	finL, err := os.Open(fileL)
 	if err != nil {

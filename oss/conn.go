@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Conn oss conn
+// Conn defines oss conn
 type Conn struct {
 	config *Config
 	url    *urlMaker
@@ -28,7 +28,7 @@ type Conn struct {
 
 var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore"}
 
-// init initialize Conn
+// init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 	httpTimeOut := conn.config.HTTPTimeout
 
@@ -292,7 +292,7 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	return conn.url.getSignURL(bucketName, objectName, urlParams)
 }
 
-// handle request body
+// handleBody handles request body
 func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 	listener ProgressListener, tracker *readerTracker) (*os.File, hash.Hash64) {
 	var file *os.File
@@ -342,7 +342,7 @@ func tryGetFileSize(f *os.File) int64 {
 	return fInfo.Size()
 }
 
-// handle response
+// handleResponse handles response
 func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response, error) {
 	var cliCRC uint64
 	var srvCRC uint64
@@ -451,7 +451,7 @@ func xmlUnmarshal(body io.Reader, v interface{}) error {
 	return xml.Unmarshal(data, v)
 }
 
-// Handle http timeout
+// timeoutConn handles http timeout
 type timeoutConn struct {
 	conn        net.Conn
 	timeout     time.Duration
@@ -519,7 +519,7 @@ type urlMaker struct {
 	IsProxy bool   // proxy
 }
 
-// Parse endpoint
+// Init parses endpoint
 func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 	if strings.HasPrefix(endpoint, "http://") {
 		um.Scheme = "http"
@@ -547,7 +547,7 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 	um.IsProxy = isProxy
 }
 
-// Build URL
+// getURL builds URL
 func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	host, path := um.buildURL(bucket, object)
 	addr := ""
@@ -560,13 +560,13 @@ func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	return uri
 }
 
-// Build Sign URL
+// getSignURL builds Sign URL
 func (um urlMaker) getSignURL(bucket, object, params string) string {
 	host, path := um.buildURL(bucket, object)
 	return fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
 }
 
-// Build URL
+// buildURL builds URL
 func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	var host = ""
 	var path = ""
@@ -598,7 +598,7 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	return host, path
 }
 
-// Canonicalized Resource
+// getResource canonicalizes Resource 
 func (um urlMaker) getResource(bucketName, objectName, subResource string) string {
 	if subResource != "" {
 		subResource = "?" + subResource

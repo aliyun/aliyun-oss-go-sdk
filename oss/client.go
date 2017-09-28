@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-//
 // Client Sdk's entry point. It's for bucket related options such as create/delete/set bucket (such as set/get acl/lifecycle/referer/logging/website).
 // Object related operations are done by Bucket class.
 // Users use oss.New to create Client instance.
@@ -27,7 +26,6 @@ type (
 	ClientOption func(*Client)
 )
 
-//
 // New creates a new client.
 //
 // endpoint        The OSS datacenter endpoint such as http://oss-cn-hangzhou.aliyuncs.com.
@@ -68,8 +66,7 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	return client, err
 }
 
-//
-// Bucket Gets the bucket instance.
+// Bucket gets the bucket instance.
 //
 // bucketName bucket name.
 // Bucket     the bucket object, when error is nil.
@@ -83,8 +80,7 @@ func (client Client) Bucket(bucketName string) (*Bucket, error) {
 	}, nil
 }
 
-//
-// CreateBucket Creates a bucket。
+// CreateBucket creates a bucket。
 //
 // bucketName bucket name, it's globably unique and immutable. The bucket name can only consists of lowercase letters, numbers and dash ('-').
 // It must start with lowercase letter or number and the length can only be between 3 to 255.
@@ -122,8 +118,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// ListBuckets Lists buckets of the current account under the given endpoint, with optional filters.
+// ListBuckets lists buckets of the current account under the given endpoint, with optional filters.
 //
 // options Specifies the filters such as Prefix, Marker and MaxKeys. Prefix is the bucket name's prefix filter.
 // And marker makes sure the returned buckets' name are greater than it in lexicographic order.
@@ -151,8 +146,7 @@ func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 	return out, err
 }
 
-//
-// IsBucketExist Checks if the bucket exists
+// IsBucketExist checks if the bucket exists
 //
 // bucketName the bucket name
 //
@@ -171,8 +165,7 @@ func (client Client) IsBucketExist(bucketName string) (bool, error) {
 	return false, nil
 }
 
-//
-// DeleteBucket Deletes the bucket. Only empty bucket can be deleted (no object and parts).
+// DeleteBucket deletes the bucket. Only empty bucket can be deleted (no object and parts).
 //
 // bucketName bucket name
 //
@@ -189,8 +182,7 @@ func (client Client) DeleteBucket(bucketName string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-//
-// GetBucketLocation Gets the bucket location.
+// GetBucketLocation gets the bucket location.
 //
 // Checks out the following link for more information:
 // https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/endpoint.html
@@ -214,8 +206,7 @@ func (client Client) GetBucketLocation(bucketName string) (string, error) {
 	return LocationConstraint, err
 }
 
-//
-// SetBucketACL Sets bucket's ACL
+// SetBucketACL sets bucket's ACL
 //
 // bucketName bucket name
 // bucketAcl  bucket ACL: ACLPrivate, ACLPublicRead and ACLPublicReadWrite.
@@ -233,8 +224,7 @@ func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// GetBucketACL Gets the bucket ACL.
+// GetBucketACL gets the bucket ACL.
 //
 // bucketName bucket name
 //
@@ -255,8 +245,7 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 	return out, err
 }
 
-//
-// SetBucketLifecycle Sets the bucket's lifecycle.
+// SetBucketLifecycle sets the bucket's lifecycle.
 //
 // For more information, checks out following link:
 // https://help.aliyun.com/document_detail/oss/user_guide/manage_object/object_lifecycle.html
@@ -290,8 +279,7 @@ func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// DeleteBucketLifecycle Deletes the bucket's lifecycle.
+// DeleteBucketLifecycle deletes the bucket's lifecycle.
 //
 //
 // bucketName bucket name
@@ -309,8 +297,7 @@ func (client Client) DeleteBucketLifecycle(bucketName string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-//
-// GetBucketLifecycle Gets the bucket's lifecycle settings.
+// GetBucketLifecycle gets the bucket's lifecycle settings.
 //
 // bucketName bucket name
 //
@@ -331,8 +318,7 @@ func (client Client) GetBucketLifecycle(bucketName string) (GetBucketLifecycleRe
 	return out, err
 }
 
-//
-// SetBucketReferer Sets the bucket's referer whitelist and the flag if allowing empty referrer.
+// SetBucketReferer sets the bucket's referer whitelist and the flag if allowing empty referrer.
 //
 // To avoid stealing link on OSS data, OSS supports the HTTP referrer header. A whitelist referrer could be set either by API or web console, as well as
 // the allowing empty referrer flag. Note that this applies to requests from webbrowser only.
@@ -379,8 +365,7 @@ func (client Client) SetBucketReferer(bucketName string, referers []string, allo
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// GetBucketReferer Gets the bucket's referrer list.
+// GetBucketReferer gets the bucket's referrer list.
 //
 // bucketName bucket name
 //
@@ -401,8 +386,7 @@ func (client Client) GetBucketReferer(bucketName string) (GetBucketRefererResult
 	return out, err
 }
 
-//
-// SetBucketLogging Sets the bucket logging settings.
+// SetBucketLogging sets the bucket logging settings.
 //
 // OSS could automatically store the access log. Only the bucket owner could enable the logging.
 // Once enabled, OSS would save all the access log into hourly log files in a specified bucket.
@@ -449,8 +433,7 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// DeleteBucketLogging Deletes the logging config--disables the logging on the bucket
+// DeleteBucketLogging deletes the logging config--disables the logging on the bucket
 //
 // bucketName The bucket name to disable the logging
 //
@@ -467,8 +450,7 @@ func (client Client) DeleteBucketLogging(bucketName string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-//
-// GetBucketLogging Gets the bucket's logging settings
+// GetBucketLogging gets the bucket's logging settings
 //
 // bucketName  The bucket name
 // GetBucketLoggingResponse  The result object upon successful request. It's only valid when error is nil.
@@ -489,8 +471,7 @@ func (client Client) GetBucketLogging(bucketName string) (GetBucketLoggingResult
 	return out, err
 }
 
-//
-// SetBucketWebsite Sets the bucket's static website's index and error page.
+// SetBucketWebsite sets the bucket's static website's index and error page.
 //
 // OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
 // For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
@@ -527,7 +508,6 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
 // DeleteBucketWebsite deletes the bucket's static web site settings.
 //
 // bucketName  the bucket name
@@ -545,8 +525,7 @@ func (client Client) DeleteBucketWebsite(bucketName string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-//
-// GetBucketWebsite Gets the bucket's default page (index page) and the error page.
+// GetBucketWebsite gets the bucket's default page (index page) and the error page.
 //
 // bucketName bucket name
 //
@@ -567,8 +546,7 @@ func (client Client) GetBucketWebsite(bucketName string) (GetBucketWebsiteResult
 	return out, err
 }
 
-//
-// SetBucketCORS Sets the bucket's CORS rules
+// SetBucketCORS sets the bucket's CORS rules
 //
 // For more information, please check out https://help.aliyun.com/document_detail/oss/user_guide/security_management/cors.html
 //
@@ -610,8 +588,7 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) erro
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-//
-// DeleteBucketCORS Deletes the bucket's static website settings.
+// DeleteBucketCORS deletes the bucket's static website settings.
 //
 // bucketName The bucket name
 //
@@ -628,9 +605,7 @@ func (client Client) DeleteBucketCORS(bucketName string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-//
-// GetBucketCORS Gets the bucket's CORS settings.
-//
+// GetBucketCORS gets the bucket's CORS settings.
 //
 // bucketName  bucket name
 // GetBucketCORSResult  The result object upon successful request. It's only valid when error is nil.
@@ -651,8 +626,7 @@ func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, erro
 	return out, err
 }
 
-//
-// GetBucketInfo Get the bucket information.
+// GetBucketInfo gets the bucket information.
 //
 // bucketName  bucket name
 // GetBucketInfoResult  The result object upon successful request. It's only valid when error is nil.
@@ -673,8 +647,7 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 	return out, err
 }
 
-//
-// UseCname Sets the flag of using CName. By default it's false.
+// UseCname sets the flag of using CName. By default it's false.
 //
 // isUseCname true: the endpoint has the CName，false:the endpoint does not have cname. Default is false.
 //
@@ -685,8 +658,7 @@ func UseCname(isUseCname bool) ClientOption {
 	}
 }
 
-//
-// Timeout Sets the http timeout in seconds.
+// Timeout sets the http timeout in seconds.
 //
 // connectTimeoutSec HTTP timeout in seconds. Default is 10 seconds. 0 means infinite (not recommended)
 // readWriteTimeout  HTTP read or write's timeout in seconds. Default is 20 seconds. 0 means infinite.
@@ -704,8 +676,7 @@ func Timeout(connectTimeoutSec, readWriteTimeout int64) ClientOption {
 	}
 }
 
-//
-// SecurityToken Sets the temporary user's SecurityToken。
+// SecurityToken sets the temporary user's SecurityToken.
 //
 // token STS token
 //
@@ -715,8 +686,7 @@ func SecurityToken(token string) ClientOption {
 	}
 }
 
-//
-// EnableMD5 Enable MD5 validation
+// EnableMD5 enables MD5 validation
 //
 // isEnableMD5 true: enable MD5 validation;false: disable MD5 validation.
 //
@@ -726,8 +696,7 @@ func EnableMD5(isEnableMD5 bool) ClientOption {
 	}
 }
 
-//
-// MD5ThresholdCalcInMemory Sets the memory usage threshold for computing the MD5, default is 16MB.
+// MD5ThresholdCalcInMemory sets the memory usage threshold for computing the MD5, default is 16MB.
 //
 // threshold the memory threshold in bytes. When the uploaded content is more than 16MB, the temp file is used for computing the MD5.
 //
@@ -737,8 +706,7 @@ func MD5ThresholdCalcInMemory(threshold int64) ClientOption {
 	}
 }
 
-//
-// EnableCRC Enable the CRC checksum. Default is true.
+// EnableCRC enables the CRC checksum. Default is true.
 //
 // isEnableCRC true: enable CRC checksum; false: disable the CRC checksum
 //
@@ -748,8 +716,7 @@ func EnableCRC(isEnableCRC bool) ClientOption {
 	}
 }
 
-//
-// UserAgent Specifies UserAgent. The default is aliyun-sdk-go/1.2.0 (windows/-/amd64;go1.5.2).
+// UserAgent specifies UserAgent. The default is aliyun-sdk-go/1.2.0 (windows/-/amd64;go1.5.2).
 //
 // userAgent user agent string
 //
@@ -759,8 +726,7 @@ func UserAgent(userAgent string) ClientOption {
 	}
 }
 
-//
-// Proxy Sets the proxy (optional). The default is not using proxy.
+// Proxy sets the proxy (optional). The default is not using proxy.
 //
 // proxyHost proxy host in the format "host:port". For example, proxy.com:80.
 //
@@ -772,8 +738,7 @@ func Proxy(proxyHost string) ClientOption {
 	}
 }
 
-//
-// AuthProxy Sets the proxy information with user name and password.
+// AuthProxy sets the proxy information with user name and password.
 //
 // proxyHost proxy host in the format "host:port". For example, proxy.com:80.
 // proxyUser proxy user name

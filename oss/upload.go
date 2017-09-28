@@ -10,8 +10,7 @@ import (
 	"time"
 )
 
-//
-// UploadFile multipart file upload
+// UploadFile is multipart file upload
 //
 // objectKey  object name
 // filePath   local file path to upload
@@ -41,7 +40,7 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 
 // ----- concurrent upload without checkpoint  -----
 
-// gets Checkpoint configuration
+// getCpConfig gets Checkpoint configuration
 func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
 	cpc := &cpConfig{}
 	cpcOpt, err := findOption(options, checkpointConfig, nil)
@@ -57,7 +56,7 @@ func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
 	return cpc, nil
 }
 
-// gets the thread count. by default it's 1.
+// getRoutines gets the thread count. by default it's 1.
 func getRoutines(options []Option) int {
 	rtnOpt, err := findOption(options, routineNum, nil)
 	if err != nil || rtnOpt == nil {
@@ -74,7 +73,7 @@ func getRoutines(options []Option) int {
 	return rs
 }
 
-// gets the progress callback
+// getProgressListener gets the progress callback
 func getProgressListener(options []Option) ProgressListener {
 	isSet, listener, _ := isOptionSet(options, progressListener)
 	if !isSet {
@@ -83,7 +82,7 @@ func getProgressListener(options []Option) ProgressListener {
 	return listener.(ProgressListener)
 }
 
-// test purpose hook
+// uploadPartHook is for testing usage
 type uploadPartHook func(id int, chunk FileChunk) error
 
 var uploadPartHooker uploadPartHook = defaultUploadPart
@@ -92,7 +91,7 @@ func defaultUploadPart(id int, chunk FileChunk) error {
 	return nil
 }
 
-// worker argument structure
+// workerArg defines worker argument structure
 type workerArg struct {
 	bucket   *Bucket
 	filePath string
@@ -100,7 +99,7 @@ type workerArg struct {
 	hook     uploadPartHook
 }
 
-// worker thread function
+// worker is the worker thread function
 func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadPart, failed chan<- error, die <-chan bool) {
 	for chunk := range jobs {
 		if err := arg.hook(id, chunk); err != nil {
@@ -137,7 +136,7 @@ func getTotalBytes(chunks []FileChunk) int64 {
 	return tb
 }
 
-// concurrent upload, without checkpoint
+// uploadFile is a concurrent upload, without checkpoint
 func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, options []Option, routines int) error {
 	listener := getProgressListener(options)
 
@@ -232,7 +231,7 @@ type cpPart struct {
 	IsCompleted bool       // upload complete flag
 }
 
-// check if the uploaded data is valid---it's valid when the file is not updated and the checkpoint data is valid.
+// isValid checks if the uploaded data is valid---it's valid when the file is not updated and the checkpoint data is valid.
 func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 	// compares the CP's magic number and MD5.
 	cpb := cp
@@ -272,7 +271,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 	return true, nil
 }
 
-// load from the file
+// load loads from the file
 func (cp *uploadCheckpoint) load(filePath string) error {
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -283,7 +282,7 @@ func (cp *uploadCheckpoint) load(filePath string) error {
 	return err
 }
 
-// dump to the local file
+// dump dumps to the local file
 func (cp *uploadCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
@@ -307,13 +306,13 @@ func (cp *uploadCheckpoint) dump(filePath string) error {
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
-// updates the part status
+// updatePart updates the part status
 func (cp *uploadCheckpoint) updatePart(part UploadPart) {
 	cp.Parts[part.PartNumber-1].Part = part
 	cp.Parts[part.PartNumber-1].IsCompleted = true
 }
 
-// unfinished parts
+// todoParts returns unfinished parts
 func (cp *uploadCheckpoint) todoParts() []FileChunk {
 	fcs := []FileChunk{}
 	for _, part := range cp.Parts {
@@ -324,7 +323,7 @@ func (cp *uploadCheckpoint) todoParts() []FileChunk {
 	return fcs
 }
 
-// all parts
+// allParts returns all parts
 func (cp *uploadCheckpoint) allParts() []UploadPart {
 	ps := []UploadPart{}
 	for _, part := range cp.Parts {
@@ -333,7 +332,7 @@ func (cp *uploadCheckpoint) allParts() []UploadPart {
 	return ps
 }
 
-// completed bytes count
+// getCompletedBytes returns completed bytes count
 func (cp *uploadCheckpoint) getCompletedBytes() int64 {
 	var completedBytes int64
 	for _, part := range cp.Parts {
@@ -344,12 +343,12 @@ func (cp *uploadCheckpoint) getCompletedBytes() int64 {
 	return completedBytes
 }
 
-// calculates the MD5 for the specified local file
+// calcFileMD5 calculates the MD5 for the specified local file
 func calcFileMD5(filePath string) (string, error) {
 	return "", nil
 }
 
-// initialize the multipart upload
+// prepare initializes the multipart upload
 func prepare(cp *uploadCheckpoint, objectKey, filePath string, partSize int64, bucket *Bucket, options []Option) error {
 	// cp
 	cp.Magic = uploadCpMagic
@@ -397,7 +396,7 @@ func prepare(cp *uploadCheckpoint, objectKey, filePath string, partSize int64, b
 	return nil
 }
 
-// completes the multipart upload and deletes the local CP files
+// complete completes the multipart upload and deletes the local CP files
 func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePath string) error {
 	imur := InitiateMultipartUploadResult{Bucket: bucket.BucketName,
 		Key: cp.ObjectKey, UploadID: cp.UploadID}
@@ -409,7 +408,7 @@ func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePa
 	return err
 }
 
-// concurrent upload with checkpoint
+// uploadFileWithCp handles concurrent upload with checkpoint
 func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int) error {
 	listener := getProgressListener(options)
 

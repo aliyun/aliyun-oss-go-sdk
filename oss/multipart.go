@@ -10,8 +10,7 @@ import (
 	"strconv"
 )
 
-//
-// InitiateMultipartUpload initialize multipart upload
+// InitiateMultipartUpload initializes multipart upload
 //
 // objectKey  Object name
 // options    The object constricts for upload. The valid options are CacheControl,ContentDisposition,ContentEncoding, Expires,
@@ -36,8 +35,7 @@ func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option
 	return imur, err
 }
 
-//
-// UploadPart Upload parts
+// UploadPart uploads parts
 //
 // After initializing a Multipart Upload, the upload Id and object key could be used for uploading the parts.
 // Each part has its part number (ranges from 1 to 10,000). And for each upload Id, the part number identifies the position of the part in the whole file.
@@ -66,8 +64,7 @@ func (bucket Bucket) UploadPart(imur InitiateMultipartUploadResult, reader io.Re
 	return result.Part, err
 }
 
-//
-// UploadPartFromFile Uploads part from the file.
+// UploadPartFromFile uploads part from the file.
 //
 // imur          The return value of a successful InitiateMultipartUpload.
 // filePath       The local file path to upload.
@@ -100,8 +97,7 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 	return result.Part, err
 }
 
-//
-// DoUploadPart The method does the actual part upload.
+// DoUploadPart does the actual part upload.
 //
 // request part upload request
 //
@@ -136,8 +132,7 @@ func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) 
 	return &UploadPartResult{part}, nil
 }
 
-//
-// UploadPartCopy upload part copy
+// UploadPartCopy uploads part copy
 //
 // imur           The return value of InitiateMultipartUpload
 // copySrc        Source Object name
@@ -178,8 +173,7 @@ func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucke
 	return part, nil
 }
 
-//
-// CompleteMultipartUpload Completes the multipart upload.
+// CompleteMultipartUpload completes the multipart upload.
 //
 // imur   The return value of InitiateMultipartUpload.
 // parts  The array of return value of UploadPart/UploadPartFromFile/UploadPartCopy.
@@ -213,8 +207,7 @@ func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 	return out, err
 }
 
-//
-// AbortMultipartUpload Abort the multipart upload.
+// AbortMultipartUpload aborts the multipart upload.
 //
 // imur  The return value of InitiateMultipartUpload.
 //
@@ -231,8 +224,7 @@ func (bucket Bucket) AbortMultipartUpload(imur InitiateMultipartUploadResult) er
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-//
-// ListUploadedParts Lists the uploaded parts.
+// ListUploadedParts lists the uploaded parts.
 //
 // imur  The return value of InitiateMultipartUpload.
 //
@@ -253,8 +245,7 @@ func (bucket Bucket) ListUploadedParts(imur InitiateMultipartUploadResult) (List
 	return out, err
 }
 
-//
-// ListMultipartUploads Lists all ongoing multipart upload tasks
+// ListMultipartUploads lists all ongoing multipart upload tasks
 //
 // options  ListObject's filter. Prefix specifies the returned object's prefix; KeyMarker specifies the returned object's start point in lexicographic order;
 //          MaxKeys specifies the max entries to return; Delimiter is the character for grouping object keys.

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// ListBucketsResult The result object from ListBuckets request
+// ListBucketsResult defines the result object from ListBuckets request
 type ListBucketsResult struct {
 	XMLName     xml.Name           `xml:"ListAllMyBucketsResult"`
 	Prefix      string             `xml:"Prefix"`         // the prefix in this query
@@ -18,7 +18,7 @@ type ListBucketsResult struct {
 	Buckets     []BucketProperties `xml:"Buckets>Bucket"` // Bucket list
 }
 
-// BucketProperties Bucket properties
+// BucketProperties defines bucket properties
 type BucketProperties struct {
 	XMLName      xml.Name  `xml:"Bucket"`
 	Name         string    `xml:"Name"`         // Bucket name
@@ -27,20 +27,20 @@ type BucketProperties struct {
 	StorageClass string    `xml:"StorageClass"` // Bucket storage class
 }
 
-// GetBucketACLResult GetBucketACL request's result
+// GetBucketACLResult defines GetBucketACL request's result
 type GetBucketACLResult struct {
 	XMLName xml.Name `xml:"AccessControlPolicy"`
 	ACL     string   `xml:"AccessControlList>Grant"` // Bucket ACL
 	Owner   Owner    `xml:"Owner"`                   // Bucket owner
 }
 
-// LifecycleConfiguration Bucket Lifecycle configuration
+// LifecycleConfiguration is the Bucket Lifecycle configuration
 type LifecycleConfiguration struct {
 	XMLName xml.Name        `xml:"LifecycleConfiguration"`
 	Rules   []LifecycleRule `xml:"Rule"`
 }
 
-// LifecycleRule Lifecycle rules
+// LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
 	XMLName    xml.Name            `xml:"Rule"`
 	ID         string              `xml:"ID"`         // Rule Id
@@ -49,7 +49,7 @@ type LifecycleRule struct {
 	Expiration LifecycleExpiration `xml:"Expiration"` // the expiration property
 }
 
-// LifecycleExpiration the rule's expiration property
+// LifecycleExpiration defines the rule's expiration property
 type LifecycleExpiration struct {
 	XMLName xml.Name  `xml:"Expiration"`
 	Days    int       `xml:"Days,omitempty"` // Relative expiration time: The expiration time in days after the last modified time
@@ -94,7 +94,7 @@ func convLifecycleRule(rules []LifecycleRule) []lifecycleRule {
 	return rs
 }
 
-// BuildLifecycleRuleByDays Builds a lifecycle rule with specified expiration days
+// BuildLifecycleRuleByDays builds a lifecycle rule with specified expiration days
 func BuildLifecycleRuleByDays(id, prefix string, status bool, days int) LifecycleRule {
 	var statusStr = "Enabled"
 	if !status {
@@ -104,7 +104,7 @@ func BuildLifecycleRuleByDays(id, prefix string, status bool, days int) Lifecycl
 		Expiration: LifecycleExpiration{Days: days}}
 }
 
-// BuildLifecycleRuleByDate Builds a lifecycle rule with specified expiration time.
+// BuildLifecycleRuleByDate builds a lifecycle rule with specified expiration time.
 func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day int) LifecycleRule {
 	var statusStr = "Enabled"
 	if !status {
@@ -115,20 +115,20 @@ func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day i
 		Expiration: LifecycleExpiration{Date: date}}
 }
 
-// GetBucketLifecycleResult GetBucketLifecycle's result object
+// GetBucketLifecycleResult defines GetBucketLifecycle's result object
 type GetBucketLifecycleResult LifecycleConfiguration
 
-// RefererXML Referer config
+// RefererXML defines Referer config
 type RefererXML struct {
 	XMLName           xml.Name `xml:"RefererConfiguration"`
 	AllowEmptyReferer bool     `xml:"AllowEmptyReferer"`   // Allow empty referrer
 	RefererList       []string `xml:"RefererList>Referer"` // referer whitelist
 }
 
-// GetBucketRefererResult result object for GetBucketReferer request
+// GetBucketRefererResult defines result object for GetBucketReferer request
 type GetBucketRefererResult RefererXML
 
-// LoggingXML Logging config
+// LoggingXML defines Logging config
 type LoggingXML struct {
 	XMLName        xml.Name       `xml:"BucketLoggingStatus"`
 	LoggingEnabled LoggingEnabled `xml:"LoggingEnabled"` // The logging  config information
@@ -138,45 +138,45 @@ type loggingXMLEmpty struct {
 	XMLName xml.Name `xml:"BucketLoggingStatus"`
 }
 
-// LoggingEnabled the logging config information
+// LoggingEnabled defines the logging config information
 type LoggingEnabled struct {
 	XMLName      xml.Name `xml:"LoggingEnabled"`
 	TargetBucket string   `xml:"TargetBucket"` // The bucket name for storing the log files
 	TargetPrefix string   `xml:"TargetPrefix"` // The log file prefix
 }
 
-// GetBucketLoggingResult The result from GetBucketLogging request
+// GetBucketLoggingResult defines the result from GetBucketLogging request
 type GetBucketLoggingResult LoggingXML
 
-// WebsiteXML Website configuration
+// WebsiteXML defines Website configuration
 type WebsiteXML struct {
 	XMLName       xml.Name      `xml:"WebsiteConfiguration"`
 	IndexDocument IndexDocument `xml:"IndexDocument"` // the index page
 	ErrorDocument ErrorDocument `xml:"ErrorDocument"` // the error page
 }
 
-// IndexDocument The index page info
+// IndexDocument defines the index page info
 type IndexDocument struct {
 	XMLName xml.Name `xml:"IndexDocument"`
 	Suffix  string   `xml:"Suffix"` // the file name for the index page
 }
 
-// ErrorDocument the 404 error page info
+// ErrorDocument defines the 404 error page info
 type ErrorDocument struct {
 	XMLName xml.Name `xml:"ErrorDocument"`
 	Key     string   `xml:"Key"` // 404 error file name
 }
 
-// GetBucketWebsiteResult The result from GetBucketWebsite request.
+// GetBucketWebsiteResult defines the result from GetBucketWebsite request.
 type GetBucketWebsiteResult WebsiteXML
 
-// CORSXML CORS configuration
+// CORSXML defines CORS configuration
 type CORSXML struct {
 	XMLName   xml.Name   `xml:"CORSConfiguration"`
 	CORSRules []CORSRule `xml:"CORSRule"` // CORS rules
 }
 
-// CORSRule CORS rules
+// CORSRule defines CORS rules
 type CORSRule struct {
 	XMLName       xml.Name `xml:"CORSRule"`
 	AllowedOrigin []string `xml:"AllowedOrigin"` // allowed origins. By default it's wildcard '*'
@@ -186,16 +186,16 @@ type CORSRule struct {
 	MaxAgeSeconds int      `xml:"MaxAgeSeconds"` // max cache ages in seconds
 }
 
-// GetBucketCORSResult The result from GetBucketCORS request
+// GetBucketCORSResult defines the result from GetBucketCORS request
 type GetBucketCORSResult CORSXML
 
-// GetBucketInfoResult The result from GetBucketInfo request.
+// GetBucketInfoResult defines the result from GetBucketInfo request.
 type GetBucketInfoResult struct {
 	XMLName    xml.Name   `xml:"BucketInfo"`
 	BucketInfo BucketInfo `xml:"Bucket"`
 }
 
-// BucketInfo Bucket information
+// BucketInfo defines Bucket information
 type BucketInfo struct {
 	XMLName          xml.Name  `xml:"Bucket"`
 	Name             string    `xml:"Name"`                    // Bucket name
@@ -208,7 +208,7 @@ type BucketInfo struct {
 	StorageClass     string    `xml:"StorageClass"`            // Bucket storage class
 }
 
-// ListObjectsResult the result from ListObjects request
+// ListObjectsResult defines the result from ListObjects request
 type ListObjectsResult struct {
 	XMLName        xml.Name           `xml:"ListBucketResult"`
 	Prefix         string             `xml:"Prefix"`                // The object prefix
@@ -221,7 +221,7 @@ type ListObjectsResult struct {
 	CommonPrefixes []string           `xml:"CommonPrefixes>Prefix"` // you can think of commonprefixes as "folders" whose names end with the delimiter
 }
 
-// ObjectProperties Objecct properties
+// ObjectProperties defines Objecct properties
 type ObjectProperties struct {
 	XMLName      xml.Name  `xml:"Contents"`
 	Key          string    `xml:"Key"`          // Object Key
@@ -233,21 +233,21 @@ type ObjectProperties struct {
 	StorageClass string    `xml:"StorageClass"` // Object storage class (Standard, IA, Archive)
 }
 
-// Owner Bucket/Object's owner
+// Owner defines Bucket/Object's owner
 type Owner struct {
 	XMLName     xml.Name `xml:"Owner"`
 	ID          string   `xml:"ID"`          // owner Id
 	DisplayName string   `xml:"DisplayName"` // Owner's display name
 }
 
-// CopyObjectResult result object of CopyObject
+// CopyObjectResult defines result object of CopyObject
 type CopyObjectResult struct {
 	XMLName      xml.Name  `xml:"CopyObjectResult"`
 	LastModified time.Time `xml:"LastModified"` // new Object's last modified time.
 	ETag         string    `xml:"ETag"`         // new Object's ETag
 }
 
-// GetObjectACLResult result of GetObjectACL request
+// GetObjectACLResult defines result of GetObjectACL request
 type GetObjectACLResult GetBucketACLResult
 
 type deleteXML struct {
@@ -256,19 +256,19 @@ type deleteXML struct {
 	Quiet   bool           `xml:"Quiet"`  // flag of quiet mode.
 }
 
-// DeleteObject the struct for deleting object
+// DeleteObject defines the struct for deleting object
 type DeleteObject struct {
 	XMLName xml.Name `xml:"Object"`
 	Key     string   `xml:"Key"` // Object name
 }
 
-// DeleteObjectsResult result of DeleteObjects request
+// DeleteObjectsResult defines result of DeleteObjects request
 type DeleteObjectsResult struct {
 	XMLName        xml.Name `xml:"DeleteResult"`
 	DeletedObjects []string `xml:"Deleted>Key"` // deleted object list
 }
 
-// InitiateMultipartUploadResult result of InitiateMultipartUpload request
+// InitiateMultipartUploadResult defines result of InitiateMultipartUpload request
 type InitiateMultipartUploadResult struct {
 	XMLName  xml.Name `xml:"InitiateMultipartUploadResult"`
 	Bucket   string   `xml:"Bucket"`   // Bucket name
@@ -276,7 +276,7 @@ type InitiateMultipartUploadResult struct {
 	UploadID string   `xml:"UploadId"` // generated UploadId
 }
 
-// UploadPart the upload/copy part
+// UploadPart defines the upload/copy part
 type UploadPart struct {
 	XMLName    xml.Name `xml:"Part"`
 	PartNumber int      `xml:"PartNumber"` // Part number
@@ -297,7 +297,7 @@ func (slice uploadParts) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-// UploadPartCopyResult result object of multipart copy request.
+// UploadPartCopyResult defines result object of multipart copy request.
 type UploadPartCopyResult struct {
 	XMLName      xml.Name  `xml:"CopyPartResult"`
 	LastModified time.Time `xml:"LastModified"` // last modified time
@@ -309,7 +309,7 @@ type completeMultipartUploadXML struct {
 	Part    []UploadPart `xml:"Part"`
 }
 
-// CompleteMultipartUploadResult result object of CompleteMultipartUploadRequest
+// CompleteMultipartUploadResult defines result object of CompleteMultipartUploadRequest
 type CompleteMultipartUploadResult struct {
 	XMLName  xml.Name `xml:"CompleteMultipartUploadResult"`
 	Location string   `xml:"Location"` // Object URL
@@ -318,7 +318,7 @@ type CompleteMultipartUploadResult struct {
 	Key      string   `xml:"Key"`      // Object name
 }
 
-// ListUploadedPartsResult result object of ListUploadedParts
+// ListUploadedPartsResult defines result object of ListUploadedParts
 type ListUploadedPartsResult struct {
 	XMLName              xml.Name       `xml:"ListPartsResult"`
 	Bucket               string         `xml:"Bucket"`               // Bucket name
@@ -330,7 +330,7 @@ type ListUploadedPartsResult struct {
 	UploadedParts        []UploadedPart `xml:"Part"`                 // uploaded parts
 }
 
-// UploadedPart uploaded part
+// UploadedPart defines uploaded part
 type UploadedPart struct {
 	XMLName      xml.Name  `xml:"Part"`
 	PartNumber   int       `xml:"PartNumber"`   // Part number
@@ -339,7 +339,7 @@ type UploadedPart struct {
 	Size         int       `xml:"Size"`         // Part size
 }
 
-// ListMultipartUploadResult result object of ListMultipartUpload
+// ListMultipartUploadResult defines result object of ListMultipartUpload
 type ListMultipartUploadResult struct {
 	XMLName            xml.Name            `xml:"ListMultipartUploadsResult"`
 	Bucket             string              `xml:"Bucket"`                // Bucket name
@@ -363,7 +363,7 @@ type UncompletedUpload struct {
 	Initiated time.Time `xml:"Initiated"` // initialization time in the format such as 2012-02-23T04:18:23.000Z
 }
 
-// decode deleting objects result in URL encoding
+// decodeDeleteObjectsResult decodes deleting objects result in URL encoding
 func decodeDeleteObjectsResult(result *DeleteObjectsResult) error {
 	var err error
 	for i := 0; i < len(result.DeletedObjects); i++ {
@@ -375,7 +375,7 @@ func decodeDeleteObjectsResult(result *DeleteObjectsResult) error {
 	return nil
 }
 
-// decode list objects result in URL encoding
+// decodeListObjectsResult decodes list objects result in URL encoding
 func decodeListObjectsResult(result *ListObjectsResult) error {
 	var err error
 	result.Prefix, err = url.QueryUnescape(result.Prefix)
@@ -409,7 +409,7 @@ func decodeListObjectsResult(result *ListObjectsResult) error {
 	return nil
 }
 
-// decode list multipart upload result in URL encoding
+// decodeListMultipartUploadResult decodes list multipart upload result in URL encoding
 func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 	var err error
 	result.Prefix, err = url.QueryUnescape(result.Prefix)
@@ -443,7 +443,7 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 	return nil
 }
 
-// createBucketConfiguration the configuration for creating a bucket.
+// createBucketConfiguration defines the configuration for creating a bucket.
 type createBucketConfiguration struct {
 	XMLName      xml.Name         `xml:"CreateBucketConfiguration"`
 	StorageClass StorageClassType `xml:"StorageClass,omitempty"`

@@ -6,13 +6,13 @@ import "os"
 type ACLType string
 
 const (
-	// ACLPrivate
+	// ACLPrivate definition
 	ACLPrivate ACLType = "private"
 
-	// ACLPublicRead
+	// ACLPublicRead definition
 	ACLPublicRead ACLType = "public-read"
 
-	// ACLPublicReadWrite
+	// ACLPublicReadWrite definition
 	ACLPublicReadWrite ACLType = "public-read-write"
 
 	// ACLDefault Object. It's only applicable for object

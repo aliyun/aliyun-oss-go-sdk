@@ -8,7 +8,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// SignURLSample sign url sample
+// SignURLSample signs url sample
 func SignURLSample() {
 	// creates Bucket
 	bucket, err := GetTestBucket(bucketName)
