@@ -70,15 +70,3 @@ func (s *OssErrorSuite) TestCheckCRCCNegative(c *C) {
 	c.Assert(err, NotNil)
 	testLogger.Println("error:", err)
 }
-
-func (s *OssErrorSuite) TestCheckDownloadCRC(c *C) {
-	err := checkDownloadCRC(0xFBF9D9603A6FA020, 0xFBF9D9603A6FA020)
-	c.Assert(err, IsNil)
-
-	err = checkDownloadCRC(0, 0)
-	c.Assert(err, IsNil)
-
-	err = checkDownloadCRC(0xDB6EFFF26AA94946, 0)
-	c.Assert(err, NotNil)
-	testLogger.Println("error:", err)
-}

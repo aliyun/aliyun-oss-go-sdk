@@ -8,7 +8,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CnameSample 展示了Cname的用法
+// CnameSample demos the Cname usage
 func CnameSample() {
 	// NewClient
 	client, err := oss.New(endpoint4Cname, accessID4Cname, accessKey4Cname,
@@ -29,14 +29,14 @@ func CnameSample() {
 		HandleError(err)
 	}
 
-	// 查看Bucket ACL
+	// lookup Bucket ACL
 	gbar, err := client.GetBucketACL(bucketName4Cname)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket ACL:", gbar.ACL)
 
-	// ListBuckets， cname用户不能使用该操作
+	// ListBuckets， the list operation could not be done by cname's endpoint
 	_, err = client.ListBuckets()
 	if err == nil {
 		HandleError(err)

@@ -4,6 +4,7 @@ package oss
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -15,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/baiyubin/aliyun-sts-go-sdk/sts"
 
 	. "gopkg.in/check.v1"
 )
@@ -1053,7 +1052,7 @@ func (s *OssBucketSuite) TestListObjectsEncodingType(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// 特殊字符
+	// Special characters
 	objectName = "go go ` ~ ! @ # $ % ^ & * () - _ + =[] {} \\ | < > , . ? / 0"
 	err = s.bucket.PutObject(objectName, strings.NewReader("明月几时有，把酒问青天"))
 	c.Assert(err, IsNil)
@@ -1236,7 +1235,7 @@ func (s *OssBucketSuite) TestDeleteObjects(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(res.DeletedObjects), Equals, 0)
 
-	// 特殊字符
+	// special characters
 	key := "A ' < > \" & ~ ` ! @ # $ % ^ & * ( ) [] {} - _ + = / | \\ ? . , : ; A"
 	err = s.bucket.PutObject(key, strings.NewReader("value"))
 	c.Assert(err, IsNil)
@@ -1772,20 +1771,23 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.getConfig().IsEnableMD5, Equals, false)
 }
 
-func (s *OssBucketSuite) TestSTSToken(c *C) {
+// TestSTSTonek
+func (s *OssBucketSuite) _TestSTSTonek(c *C) {
 	objectName := objectNamePrefix + "tst"
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
+	stsServer := ""
+	stsEndpoint := ""
+	stsBucketName := ""
 
-	stsClient := sts.NewClient(stsaccessID, stsaccessKey, stsARN, "oss_test_sess")
+	stsRes, err := getSTSToken(stsServer)
+	c.Assert(err, IsNil)
+	testLogger.Println("sts:", stsRes)
 
-	resp, err := stsClient.AssumeRole(1800)
+	client, err := New(stsEndpoint, stsRes.AccessID, stsRes.AccessKey,
+		SecurityToken(stsRes.SecurityToken))
 	c.Assert(err, IsNil)
 
-	client, err := New(endpoint, resp.Credentials.AccessKeyId, resp.Credentials.AccessKeySecret,
-		SecurityToken(resp.Credentials.SecurityToken))
-	c.Assert(err, IsNil)
-
-	bucket, err := client.Bucket(bucketName)
+	bucket, err := client.Bucket(stsBucketName)
 	c.Assert(err, IsNil)
 
 	// Put
@@ -1862,6 +1864,12 @@ func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	err = client.DeleteBucket(bucketName)
+	c.Assert(err, NotNil)
+
+	_, err = getSTSToken("")
+	c.Assert(err, NotNil)
+
+	_, err = getSTSToken("http://me.php")
 	c.Assert(err, NotNil)
 }
 
@@ -2180,6 +2188,43 @@ func isFileExist(filename string) (bool, error) {
 	} else {
 		return true, nil
 	}
+}
+
+// The response data of the get request from STS Server
+type getSTSResult struct {
+	Status        int    `json:"status"`        // http status, 200 is ok, non-200 means failure
+	AccessID      string `json:"accessId"`      //STS AccessId
+	AccessKey     string `json:"accessKey"`     // STS AccessKey
+	Expiration    string `json:"expiration"`    // STS Token
+	SecurityToken string `json:"securityToken"` // Token's expiration time in GMT
+	Bucket        string `json:"bucket"`        // the available bucket
+	Endpoint      string `json:"endpoint"`      // the endpoint
+}
+
+// Gets the STS response. It's valid only when the error is nil.
+func getSTSToken(STSServer string) (getSTSResult, error) {
+	result := getSTSResult{}
+	resp, err := http.Get(STSServer)
+	if err != nil {
+		return result, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return result, err
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return result, err
+	}
+
+	if result.Status != 200 {
+		return result, errors.New("Server Return Status:" + strconv.Itoa(result.Status))
+	}
+
+	return result, nil
 }
 
 func readBody(body io.ReadCloser) (string, error) {

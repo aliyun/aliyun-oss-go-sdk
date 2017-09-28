@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketCORSSample 展示了如何设置/读取/清除存储空间的跨域访问(Bucket CORS)
+// BucketCORSSample demos how to get or set the bucket CORS.
 func BucketCORSSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)
@@ -14,7 +14,7 @@ func BucketCORSSample() {
 		HandleError(err)
 	}
 
-	// 使用默认参数创建bucket
+	// creates the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -36,32 +36,32 @@ func BucketCORSSample() {
 		MaxAgeSeconds: 100,
 	}
 
-	// 场景1：设置Bucket的CORS规则
+	// case 1：sets the bucket CORS rules
 	err = client.SetBucketCORS(bucketName, []oss.CORSRule{rule1})
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景2：设置Bucket的CORS规则，如果该Bucket上已经设置了CORS规则，则会覆盖。
+	// case 3：sets the bucket CORS rules. if CORS rules exist, they will be overwritten.
 	err = client.SetBucketCORS(bucketName, []oss.CORSRule{rule1, rule2})
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 获取Bucket上设置的CORS
+	// gets the bucket's CORS
 	gbl, err := client.GetBucketCORS(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket CORS:", gbl.CORSRules)
 
-	// 删除Bucket上的CORS设置
+	// deletes Bucket's CORS
 	err = client.DeleteBucketCORS(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 删除bucket
+	// deletes bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

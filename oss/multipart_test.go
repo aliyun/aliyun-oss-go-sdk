@@ -726,7 +726,7 @@ func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "newfiletuff.jpg"
 
-	// 有余数
+	// upload with 100K part size
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -741,7 +741,7 @@ func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 整除
+	// upload with part size equals to 1/4 of the file size
 	err = s.bucket.UploadFile(objectName, fileName, 482048/4)
 	c.Assert(err, IsNil)
 
@@ -756,7 +756,7 @@ func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 等于文件大小
+	// upload with part size equals to the file size
 	err = s.bucket.UploadFile(objectName, fileName, 482048)
 	c.Assert(err, IsNil)
 
@@ -771,7 +771,7 @@ func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// 大于文件大小
+	// upload with part size is bigger than the file size
 	err = s.bucket.UploadFile(objectName, fileName, 482049)
 	c.Assert(err, IsNil)
 
@@ -818,19 +818,19 @@ func (s *OssBucketMultipartSuite) TestUploadFileNegative(c *C) {
 	objectName := objectNamePrefix + "tufn"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
-	// 小于最小文件片
+	// smaller than the required minimal part size (100KB)
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024-1)
 	c.Assert(err, NotNil)
 
-	// 大于最大文件片
+	// bigger than the max part size (5G)
 	err = s.bucket.UploadFile(objectName, fileName, 1024*1024*1024*5+1)
 	c.Assert(err, NotNil)
 
-	// 文件不存在
+	// file does not exist
 	err = s.bucket.UploadFile(objectName, "/root/123abc9874", 1024*1024*1024)
 	c.Assert(err, NotNil)
 
-	// Key无效
+	// empty Key
 	err = s.bucket.UploadFile("", fileName, 100*1024)
 	c.Assert(err, NotNil)
 }
@@ -844,7 +844,7 @@ func (s *OssBucketMultipartSuite) TestDownloadFile(c *C) {
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
 	c.Assert(err, IsNil)
 
-	// 有余数
+	// download file with part size of 100K
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -856,7 +856,7 @@ func (s *OssBucketMultipartSuite) TestDownloadFile(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 整除
+	// download the file with part size equals to 1/4 of the file size
 	err = s.bucket.DownloadFile(objectName, newFile, 482048/4)
 	c.Assert(err, IsNil)
 
@@ -868,7 +868,7 @@ func (s *OssBucketMultipartSuite) TestDownloadFile(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 等于文件大小
+	// download the file with part size same as the file size
 	err = s.bucket.DownloadFile(objectName, newFile, 482048)
 	c.Assert(err, IsNil)
 
@@ -880,7 +880,7 @@ func (s *OssBucketMultipartSuite) TestDownloadFile(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// 大于文件大小
+	// download the file with part size bigger than the file size
 	err = s.bucket.DownloadFile(objectName, newFile, 482049)
 	c.Assert(err, IsNil)
 
@@ -922,19 +922,19 @@ func (s *OssBucketMultipartSuite) TestDownloadFileNegative(c *C) {
 	objectName := objectNamePrefix + "tufn"
 	newFile := "newfiletudff.jpg"
 
-	// 小于最小文件片
+	// smaller than the required minimal part size (100KB)
 	err := s.bucket.DownloadFile(objectName, newFile, 100*1024-1)
 	c.Assert(err, NotNil)
 
-	// 大于最大文件片
+	// bigger than the required max part size (5G)
 	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024*1024+1)
 	c.Assert(err, NotNil)
 
-	// 文件不存在
+	// file does not exist
 	err = s.bucket.DownloadFile(objectName, "/OSS/TEMP/ZIBI/QUQU/BALA", 1024*1024*1024+1)
 	c.Assert(err, NotNil)
 
-	// Key不存在
+	// Key does not exist
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024)
 	c.Assert(err, NotNil)
 }

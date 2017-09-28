@@ -12,13 +12,13 @@ import (
 	"strings"
 )
 
-// 用于signHeader的字典排序存放容器。
+// the key-value structure for storing the sorted data in signHeader
 type headerSorter struct {
 	Keys []string
 	Vals []string
 }
 
-// 生成签名方法（直接设置请求的Header）。
+// sign the header and set it as the authorization header.
 func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 	// Get the final Authorization' string
 	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)

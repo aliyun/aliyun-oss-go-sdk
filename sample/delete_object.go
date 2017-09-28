@@ -7,9 +7,9 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// DeleteObjectSample 展示了删除单个文件、批量删除文件的方法
+// DeleteObjectSample demos how to delete single file or multiple files
 func DeleteObjectSample() {
-	// 创建Bucket
+	// creates a Bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -17,7 +17,7 @@ func DeleteObjectSample() {
 
 	var val = "抽刀断水水更流，举杯销愁愁更愁。 人生在世不称意，明朝散发弄扁舟。"
 
-	// 场景1：删除Object
+	// case 1：deletes a Object
 	err = bucket.PutObject(objectKey, strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -28,7 +28,7 @@ func DeleteObjectSample() {
 		HandleError(err)
 	}
 
-	// 场景2：删除多个Object
+	// case 2：deletes multiple Objects
 	err = bucket.PutObject(objectKey+"1", strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -51,7 +51,7 @@ func DeleteObjectSample() {
 	}
 	fmt.Println("Objects:", getObjectsFormResponse(lsRes))
 
-	// 场景3：删除多个Object，详细模式时返回的结果中会包含成功删除的Object，默认该模式
+	// case 3：deletes multiple objects and it will return deleted objects in detail mode which is by default.
 	err = bucket.PutObject(objectKey+"1", strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -75,7 +75,7 @@ func DeleteObjectSample() {
 	}
 	fmt.Println("Objects:", getObjectsFormResponse(lsRes))
 
-	// 场景4：删除多个Object，简单模式返回的消息体中只包含删除出错的Object结果
+	// case 4：deletes multiple objects and returns undeleted objects in quiet mode
 	err = bucket.PutObject(objectKey+"1", strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -98,7 +98,7 @@ func DeleteObjectSample() {
 	}
 	fmt.Println("Objects:", getObjectsFormResponse(lsRes))
 
-	// 删除object和bucket
+	// deletes object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

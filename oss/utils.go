@@ -15,7 +15,7 @@ import (
 )
 
 // Get User Agent
-// Go sdk相关信息，包括sdk版本，操作系统类型，GO版本
+// It has the SDK version information, OS information and GO version
 var userAgent = func() string {
 	sys := getSysInfo()
 	return fmt.Sprintf("aliyun-sdk-go/%s (%s/%s/%s;%s)", Version, sys.name,
@@ -23,13 +23,13 @@ var userAgent = func() string {
 }()
 
 type sysInfo struct {
-	name    string // 操作系统名称windows/Linux
-	release string // 操作系统版本 2.6.32-220.23.2.ali1089.el5.x86_64等
-	machine string // 机器类型amd64/x86_64
+	name    string // OS name such as windows/Linux
+	release string // OS version 2.6.32-220.23.2.ali1089.el5.x86_64 etc
+	machine string // CPU type amd64/x86_64
 }
 
 // Get　system info
-// 获取操作系统信息、机器类型
+// gets the OS information and CPU type
 func getSysInfo() sysInfo {
 	name := runtime.GOOS
 	release := "-"
@@ -48,10 +48,10 @@ func getSysInfo() sysInfo {
 
 // unpackedRange
 type unpackedRange struct {
-	hasStart bool  // 是否指定了起点
-	hasEnd   bool  // 是否指定了终点
-	start    int64 // 起点
-	end      int64 // 终点
+	hasStart bool  // flag indicates if the start point is specified
+	hasEnd   bool  // flag indicates if the end point is specified
+	start    int64 // start point
+	end      int64 // end point
 }
 
 // invalid Range Error
@@ -145,7 +145,7 @@ func adjustRange(ur *unpackedRange, size int64) (start, end int64) {
 }
 
 // GetNowSec returns Unix time, the number of seconds elapsed since January 1, 1970 UTC.
-// 获取当前时间，从UTC开始的秒数。
+// gets the current time in Unix time, in seconds.
 func GetNowSec() int64 {
 	return time.Now().Unix()
 }
@@ -154,25 +154,25 @@ func GetNowSec() int64 {
 // since January 1, 1970 UTC. The result is undefined if the Unix time
 // in nanoseconds cannot be represented by an int64. Note that this
 // means the result of calling UnixNano on the zero Time is undefined.
-// 获取当前时间，从UTC开始的纳秒。
+// gets the current time in Unix time, in nanoseconds.
 func GetNowNanoSec() int64 {
 	return time.Now().UnixNano()
 }
 
-// GetNowGMT 获取当前时间，格式形如"Mon, 02 Jan 2006 15:04:05 GMT"，HTTP中使用的时间格式
+// GetNowGMT gets the current time in GMT format.
 func GetNowGMT() string {
 	return time.Now().UTC().Format(http.TimeFormat)
 }
 
-// FileChunk 文件片定义
+// FileChunk file chunk definition
 type FileChunk struct {
-	Number int   // 块序号
-	Offset int64 // 块在文件中的偏移量
-	Size   int64 // 块大小
+	Number int   // chunk number
+	Offset int64 // chunk offset
+	Size   int64 // chunk size.
 }
 
 // SplitFileByPartNum Split big file to part by the num of part
-// 按指定的块数分割文件。返回值FileChunk为分割结果，error为nil时有效。
+// Split the file with specified parts count. returns the split result when error is nil.
 func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 	if chunkNum <= 0 || chunkNum > 10000 {
 		return nil, errors.New("chunkNum invalid")
@@ -211,7 +211,7 @@ func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 }
 
 // SplitFileByPartSize Split big file to part by the size of part
-// 按块大小分割文件。返回值FileChunk为分割结果，error为nil时有效。
+// Splits the file by the part size. Returns the FileChunk when error is nil.
 func SplitFileByPartSize(fileName string, chunkSize int64) ([]FileChunk, error) {
 	if chunkSize <= 0 {
 		return nil, errors.New("chunkSize invalid")
@@ -251,7 +251,7 @@ func SplitFileByPartSize(fileName string, chunkSize int64) ([]FileChunk, error) 
 	return chunks, nil
 }
 
-// GetPartEnd 计算结束位置
+// GetPartEnd calculates the end position
 func GetPartEnd(begin int64, total int64, per int64) int64 {
 	if begin+per > total {
 		return total - 1
