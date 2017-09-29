@@ -171,8 +171,8 @@ type FileChunk struct {
 	Size   int64 // chunk size.
 }
 
-// SplitFileByPartNum splits big file to part by the num of part
-// Split the file with specified parts count. returns the split result when error is nil.
+// SplitFileByPartNum splits big file to parts by the num of parts.
+// Split the file with specified parts count, returns the split result when error is nil.
 func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 	if chunkNum <= 0 || chunkNum > 10000 {
 		return nil, errors.New("chunkNum invalid")
@@ -210,7 +210,7 @@ func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 	return chunks, nil
 }
 
-// SplitFileByPartSize splits big file to part by the size of part
+// SplitFileByPartSize splits big file to parts by the size of parts.
 // Splits the file by the part size. Returns the FileChunk when error is nil.
 func SplitFileByPartSize(fileName string, chunkSize int64) ([]FileChunk, error) {
 	if chunkSize <= 0 {

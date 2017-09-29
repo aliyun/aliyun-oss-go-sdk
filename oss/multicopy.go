@@ -15,11 +15,11 @@ import (
 //
 // srcBucketName  Source bucket name
 // srcObjectKey   Source object name
-// destObjectKey   Target object name in the form of bucketname.objectkey
-// partSize   part size in byte.
+// destObjectKey  Target object name in the form of bucketname.objectkey
+// partSize   The part size in byte.
 // options    Object's contraints. Check out function InitiateMultipartUpload。
 //
-// error Error is nill if the operation succeeds, otherwise it's the error object.
+// error      It's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string, partSize int64, options ...Option) error {
 	destBucketName := bucket.BucketName

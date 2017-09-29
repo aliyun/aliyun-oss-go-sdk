@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketACLSample demos hwo to get and set the bucket ACL
+// BucketACLSample demos how to get and set the bucket ACL
 func BucketACLSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)
@@ -20,7 +20,7 @@ func BucketACLSample() {
 		HandleError(err)
 	}
 
-	// sets Bucket ACL. valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
+	// sets Bucket ACL. The valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
 	err = client.SetBucketACL(bucketName, oss.ACLPublicRead)
 	if err != nil {
 		HandleError(err)

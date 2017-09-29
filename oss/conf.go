@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// HTTPTimeout defines http timeout
+// HTTPTimeout defines http timeout.
 type HTTPTimeout struct {
 	ConnectTimeout   time.Duration
 	ReadWriteTimeout time.Duration

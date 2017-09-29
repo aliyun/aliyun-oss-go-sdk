@@ -28,12 +28,12 @@ type (
 
 // New creates a new client.
 //
-// endpoint        The OSS datacenter endpoint such as http://oss-cn-hangzhou.aliyuncs.com.
+// endpoint        The OSS datacenter endpoint such as http://oss-cn-hangzhou.aliyuncs.com .
 // accessKeyId     access key Id.
 // accessKeySecret access key secret.
 //
 // Client creates the new client instance, the returned value is valid when error is nil.
-// error  It's nil if no errors; otherwise it's the error object.
+// error           It's nil if no error, otherwise it's an error object.
 //
 func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption) (*Client, error) {
 	// configuration
@@ -68,10 +68,10 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 // Bucket gets the bucket instance.
 //
-// bucketName bucket name.
-// Bucket     the bucket object, when error is nil.
+// bucketName The bucket name.
+// Bucket     The bucket object, when error is nil.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) Bucket(bucketName string) (*Bucket, error) {
 	return &Bucket{
@@ -82,12 +82,12 @@ func (client Client) Bucket(bucketName string) (*Bucket, error) {
 
 // CreateBucket creates a bucket。
 //
-// bucketName bucket name, it's globably unique and immutable. The bucket name can only consists of lowercase letters, numbers and dash ('-').
-// It must start with lowercase letter or number and the length can only be between 3 to 255.
+// bucketName The bucket name, it's globably unique and immutable. The bucket name can only consist of lowercase letters, numbers and dash ('-').
+// It must start with lowercase letter or number and the length can only be between 3 and 255.
 // options  Options for creating the bucket, with optional ACL. The ACL could be ACLPrivate, ACLPublicRead, and ACLPublicReadWrite. By default it's ACLPrivate.
 // It could also be specified with StorageClass option, which supports StorageStandard, StorageIA(infrequent access), StorageArchive.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error    It's nil if no error, otherwise it's an error object.
 //
 func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	headers := make(map[string]string)
@@ -126,7 +126,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 // For the common usage scenario, please check out list_bucket.go in the sample.
 // ListBucketsResponse The response object if error is nil.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error   It's nil if no error, otherwise it's an error object.
 //
 func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 	var out ListBucketsResult
@@ -148,10 +148,10 @@ func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 
 // IsBucketExist checks if the bucket exists
 //
-// bucketName the bucket name
+// bucketName The bucket name
 //
-// bool  true if it exists, and it's only valid when error is nil.
-// error It's nil if no errors; otherwise it's the error object.
+// bool    True if it exists, and it's only valid when error is nil.
+// error   It's nil if no error, otherwise it's an error object.
 //
 func (client Client) IsBucketExist(bucketName string) (bool, error) {
 	listRes, err := client.ListBuckets(Prefix(bucketName), MaxKeys(1))
@@ -167,9 +167,9 @@ func (client Client) IsBucketExist(bucketName string) (bool, error) {
 
 // DeleteBucket deletes the bucket. Only empty bucket can be deleted (no object and parts).
 //
-// bucketName bucket name
+// bucketName The bucket name.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) DeleteBucket(bucketName string) error {
 	params := map[string]interface{}{}
@@ -184,13 +184,13 @@ func (client Client) DeleteBucket(bucketName string) error {
 
 // GetBucketLocation gets the bucket location.
 //
-// Checks out the following link for more information:
+// Checks out the following link for more information : 
 // https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/endpoint.html
 //
-// bucketName bucket name
+// bucketName The bucket name
 //
-// string Bucket's datacenter location
-// error  It's nil if no errors; otherwise it's the error object.
+// string     Bucket's datacenter location
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketLocation(bucketName string) (string, error) {
 	params := map[string]interface{}{}
@@ -206,12 +206,12 @@ func (client Client) GetBucketLocation(bucketName string) (string, error) {
 	return LocationConstraint, err
 }
 
-// SetBucketACL sets bucket's ACL
+// SetBucketACL sets bucket's ACL.
 //
-// bucketName bucket name
-// bucketAcl  bucket ACL: ACLPrivate, ACLPublicRead and ACLPublicReadWrite.
+// bucketName The bucket name
+// bucketAcl  The bucket ACL: ACLPrivate, ACLPublicRead and ACLPublicReadWrite.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 	headers := map[string]string{HTTPHeaderOssACL: string(bucketACL)}
@@ -226,10 +226,10 @@ func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 
 // GetBucketACL gets the bucket ACL.
 //
-// bucketName bucket name
+// bucketName The bucket name.
 //
-// GetBucketAclResponse The result object, and it's only valid when error is nill.
-// error It's nil if no errors; otherwise it's the error object.
+// GetBucketAclResponse The result object, and it's only valid when error is nil.
+// error      It's nil if no error, otherwise it's the error object.
 //
 func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error) {
 	var out GetBucketACLResult
@@ -250,11 +250,11 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 // For more information, checks out following link:
 // https://help.aliyun.com/document_detail/oss/user_guide/manage_object/object_lifecycle.html
 //
-// bucketName bucket name.
-// rules lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in day/month/year and days respectively.
-// Check out sample/bucket_lifecycle.go for more detail.
-//
-// error It's nil if no errors; otherwise it's the error object.
+// bucketName The bucket name.
+// rules      The lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in days and day/month/year respectively.
+// Check out sample/bucket_lifecycle.go for more details.
+// 
+// error      It's nil if no error, otherwise it's the error object.
 //
 func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule) error {
 	lxml := lifecycleXML{Rules: convLifecycleRule(rules)}
@@ -282,9 +282,9 @@ func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule
 // DeleteBucketLifecycle deletes the bucket's lifecycle.
 //
 //
-// bucketName bucket name
+// bucketName The bucket name.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) DeleteBucketLifecycle(bucketName string) error {
 	params := map[string]interface{}{}
@@ -299,10 +299,10 @@ func (client Client) DeleteBucketLifecycle(bucketName string) error {
 
 // GetBucketLifecycle gets the bucket's lifecycle settings.
 //
-// bucketName bucket name
+// bucketName The bucket name.
 //
 // GetBucketLifecycleResponse The result object upon successful request. It's only valid when error is nil.
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketLifecycle(bucketName string) (GetBucketLifecycleResult, error) {
 	var out GetBucketLifecycleResult
@@ -323,15 +323,15 @@ func (client Client) GetBucketLifecycle(bucketName string) (GetBucketLifecycleRe
 // To avoid stealing link on OSS data, OSS supports the HTTP referrer header. A whitelist referrer could be set either by API or web console, as well as
 // the allowing empty referrer flag. Note that this applies to requests from webbrowser only.
 // For example, for a bucket os-example and its referrer http://www.aliyun.com, all requests from this url could access the bucket.
-// For more information, please check out this link:
+// For more information, please check out this link :
 // https://help.aliyun.com/document_detail/oss/user_guide/security_management/referer.html
 //
-// bucketName  bucket name
-// referers referrer whitelist. A bucket could have a referrer list and each referrer supports one * and multiple ? as wildcard.
-// The sample could could be found in sample/bucket_referer.go
-// allowEmptyReferer  flag of allowing empty referrer. By default it's true.
+// bucketName  The bucket name.
+// referers    The referrer white list. A bucket could have a referrer list and each referrer supports one '*' and multiple '?' as wildcards.
+// The sample could be found in sample/bucket_referer.go
+// allowEmptyReferer  The flag of allowing empty referrer. By default it's true.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error       It's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketReferer(bucketName string, referers []string, allowEmptyReferer bool) error {
 	rxml := RefererXML{}
@@ -365,12 +365,12 @@ func (client Client) SetBucketReferer(bucketName string, referers []string, allo
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-// GetBucketReferer gets the bucket's referrer list.
+// GetBucketReferer gets the bucket's referrer white list.
 //
-// bucketName bucket name
+// bucketName  The bucket name.
 //
-// GetBucketRefererResponse The result object upon successful request. It's only valid when error is nil.
-// error It's nil if no errors; otherwise it's the error object.
+// GetBucketRefererResponse  The result object upon successful request. It's only valid when error is nil.
+// error       It's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketReferer(bucketName string) (GetBucketRefererResult, error) {
 	var out GetBucketRefererResult
@@ -394,9 +394,9 @@ func (client Client) GetBucketReferer(bucketName string) (GetBucketRefererResult
 //
 // bucketName   Bucket name to enable the log.
 // targetBucket The target bucket name to store the log files.
-// targetPrefix The log files' prefix
+// targetPrefix The log files' prefix.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error        It's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix string,
 	isEnable bool) error {
@@ -433,11 +433,11 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-// DeleteBucketLogging deletes the logging config--disables the logging on the bucket
+// DeleteBucketLogging deletes the logging config--disables the logging on the bucket.
 //
-// bucketName The bucket name to disable the logging
+// bucketName The bucket name to disable the logging.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) DeleteBucketLogging(bucketName string) error {
 	params := map[string]interface{}{}
@@ -455,7 +455,7 @@ func (client Client) DeleteBucketLogging(bucketName string) error {
 // bucketName  The bucket name
 // GetBucketLoggingResponse  The result object upon successful request. It's only valid when error is nil.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketLogging(bucketName string) (GetBucketLoggingResult, error) {
 	var out GetBucketLoggingResult
@@ -477,10 +477,10 @@ func (client Client) GetBucketLogging(bucketName string) (GetBucketLoggingResult
 // For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
 //
 // bucketName     The bucket name to enable static web site.
-// indexDocument  index page
-// errorDocument  error page
+// indexDocument  index page.
+// errorDocument  error page.
 //
-// error  It's nil if no errors; otherwise it's the error object.
+// error          It's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument string) error {
 	wxml := WebsiteXML{}
@@ -510,9 +510,9 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 
 // DeleteBucketWebsite deletes the bucket's static web site settings.
 //
-// bucketName  the bucket name
+// bucketName  The bucket name.
 //
-// error  It's nil if no errors; otherwise it's the error object.
+// error       It's nil if no error, otherwise it's an error object.
 //
 func (client Client) DeleteBucketWebsite(bucketName string) error {
 	params := map[string]interface{}{}
@@ -527,10 +527,10 @@ func (client Client) DeleteBucketWebsite(bucketName string) error {
 
 // GetBucketWebsite gets the bucket's default page (index page) and the error page.
 //
-// bucketName bucket name
+// bucketName The bucket name
 //
 // GetBucketWebsiteResponse The result object upon successful request. It's only valid when error is nil.
-// error It's nil if no errors; otherwise it's the error object.
+// error       It's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketWebsite(bucketName string) (GetBucketWebsiteResult, error) {
 	var out GetBucketWebsiteResult
@@ -550,10 +550,10 @@ func (client Client) GetBucketWebsite(bucketName string) (GetBucketWebsiteResult
 //
 // For more information, please check out https://help.aliyun.com/document_detail/oss/user_guide/security_management/cors.html
 //
-// bucketName the bucket name
-// corsRules  CORS rules to set. The related sample code is in sample/bucket_cors.go.
+// bucketName  The bucket name
+// corsRules   CORS rules to set. The related sample code is in sample/bucket_cors.go.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error       It's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) error {
 	corsxml := CORSXML{}
@@ -590,9 +590,9 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) erro
 
 // DeleteBucketCORS deletes the bucket's static website settings.
 //
-// bucketName The bucket name
+// bucketName The bucket name.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (client Client) DeleteBucketCORS(bucketName string) error {
 	params := map[string]interface{}{}
@@ -607,10 +607,10 @@ func (client Client) DeleteBucketCORS(bucketName string) error {
 
 // GetBucketCORS gets the bucket's CORS settings.
 //
-// bucketName  bucket name
+// bucketName  The bucket name.
 // GetBucketCORSResult  The result object upon successful request. It's only valid when error is nil.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error       It's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, error) {
 	var out GetBucketCORSResult
@@ -628,10 +628,10 @@ func (client Client) GetBucketCORS(bucketName string) (GetBucketCORSResult, erro
 
 // GetBucketInfo gets the bucket information.
 //
-// bucketName  bucket name
+// bucketName  The bucket name.
 // GetBucketInfoResult  The result object upon successful request. It's only valid when error is nil.
 //
-// error It's nil if no errors; otherwise it's the error object.
+// error       It's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, error) {
 	var out GetBucketInfoResult
@@ -649,7 +649,7 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 
 // UseCname sets the flag of using CName. By default it's false.
 //
-// isUseCname true: the endpoint has the CName，false:the endpoint does not have cname. Default is false.
+// isUseCname true: the endpoint has the CName，false: the endpoint does not have cname. Default is false.
 //
 func UseCname(isUseCname bool) ClientOption {
 	return func(client *Client) {
@@ -686,9 +686,9 @@ func SecurityToken(token string) ClientOption {
 	}
 }
 
-// EnableMD5 enables MD5 validation
+// EnableMD5 enables MD5 validation.
 //
-// isEnableMD5 true: enable MD5 validation;false: disable MD5 validation.
+// isEnableMD5 true: enable MD5 validation; false: disable MD5 validation.
 //
 func EnableMD5(isEnableMD5 bool) ClientOption {
 	return func(client *Client) {
@@ -698,7 +698,7 @@ func EnableMD5(isEnableMD5 bool) ClientOption {
 
 // MD5ThresholdCalcInMemory sets the memory usage threshold for computing the MD5, default is 16MB.
 //
-// threshold the memory threshold in bytes. When the uploaded content is more than 16MB, the temp file is used for computing the MD5.
+// threshold   The memory threshold in bytes. When the uploaded content is more than 16MB, the temp file is used for computing the MD5.
 //
 func MD5ThresholdCalcInMemory(threshold int64) ClientOption {
 	return func(client *Client) {
@@ -708,7 +708,7 @@ func MD5ThresholdCalcInMemory(threshold int64) ClientOption {
 
 // EnableCRC enables the CRC checksum. Default is true.
 //
-// isEnableCRC true: enable CRC checksum; false: disable the CRC checksum
+// isEnableCRC true: enable CRC checksum; false: disable the CRC checksum.
 //
 func EnableCRC(isEnableCRC bool) ClientOption {
 	return func(client *Client) {
@@ -718,7 +718,7 @@ func EnableCRC(isEnableCRC bool) ClientOption {
 
 // UserAgent specifies UserAgent. The default is aliyun-sdk-go/1.2.0 (windows/-/amd64;go1.5.2).
 //
-// userAgent user agent string
+// userAgent The user agent string.
 //
 func UserAgent(userAgent string) ClientOption {
 	return func(client *Client) {
@@ -728,7 +728,7 @@ func UserAgent(userAgent string) ClientOption {
 
 // Proxy sets the proxy (optional). The default is not using proxy.
 //
-// proxyHost proxy host in the format "host:port". For example, proxy.com:80.
+// proxyHost  The proxy host in the format "host:port". For example, proxy.com:80 .
 //
 func Proxy(proxyHost string) ClientOption {
 	return func(client *Client) {
@@ -740,9 +740,9 @@ func Proxy(proxyHost string) ClientOption {
 
 // AuthProxy sets the proxy information with user name and password.
 //
-// proxyHost proxy host in the format "host:port". For example, proxy.com:80.
-// proxyUser proxy user name
-// proxyPassword proxy password
+// proxyHost     The proxy host in the format "host:port". For example, proxy.com:80 .
+// proxyUser     The proxy user name.
+// proxyPassword The proxy password.
 //
 func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 	return func(client *Client) {

@@ -40,7 +40,7 @@ func NewBucketSample() {
 		HandleError(err)
 	}
 
-	// deletes bucket
+	// Deletes bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

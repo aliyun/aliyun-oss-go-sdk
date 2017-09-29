@@ -14,7 +14,7 @@ var (
 	futureDate = time.Date(2049, time.January, 10, 23, 0, 0, 0, time.UTC)
 )
 
-// HandleError is the error handling in the sample code
+// HandleError is the error handling method in the sample code
 func HandleError(err error) {
 	fmt.Println("occurred error:", err)
 	os.Exit(-1)

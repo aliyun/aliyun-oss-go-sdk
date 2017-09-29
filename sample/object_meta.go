@@ -7,7 +7,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ObjectMetaSample demos how to gets and sets the object metadata
+// ObjectMetaSample demos how to get and set the object metadata
 func ObjectMetaSample() {
 	// creates Bucket
 	bucket, err := GetTestBucket(bucketName)

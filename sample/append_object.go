@@ -26,7 +26,7 @@ func AppendObjectSample() {
 	var nextPos int64
 
 	// case 1: append a string to the object
-	// the first append position is 0 and the return value is for the next append's position.
+	// The first append position is 0 and the return value is for the next append's position.
 	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(str), nextPos)
 	if err != nil {
 		HandleError(err)
@@ -57,7 +57,7 @@ func AppendObjectSample() {
 
 	// case 2：append byte array to the object
 	nextPos = 0
-	// the first append position is 0, and the return value is for the next append's position.
+	// The first append position is 0, and the return value is for the next append's position.
 	nextPos, err = bucket.AppendObject(objectKey, bytes.NewReader([]byte(str)), nextPos)
 	if err != nil {
 		HandleError(err)
