@@ -9,7 +9,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// PutObjectSample demos how to upload file with checkpoint
+// PutObjectSample illustrates two methods for uploading a file: simple upload and multipart upload.
 func PutObjectSample() {
 	// creates Bucket
 	bucket, err := GetTestBucket(bucketName)
