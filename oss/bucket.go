@@ -300,7 +300,7 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 // The response header x-oss-next-append-position after each successful request also specifies the next call's append position (so the caller need not to maintain this information).
 //
 // objectKey  The target object to append to.
-// reader     io.Reader, the read instance for reading the data to append.
+// reader     io.Reader. The read instance for reading the data to append.
 // appendPosition  The start position to append.
 // destObjectProperties The options for the first appending, such as CacheControl, ContentDisposition, ContentEncoding,
 // Expires, ServerSideEncryption, ObjectACL. 
@@ -395,7 +395,7 @@ func (bucket Bucket) DeleteObject(objectKey string) error {
 //            Supported option is DeleteObjectsQuiet which means it will not return error even deletion failed (not recommended). By default it's not used.
 //
 // DeleteObjectsResult The result object.
-// error      It's nil if no error, otherwise it's an error object
+// error      It's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (DeleteObjectsResult, error) {
 	out := DeleteObjectsResult{}
@@ -439,7 +439,7 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 
 // IsObjectExist checks if the object exists.
 //
-// bool    Flag of object's existence (true:existent; false:nonexistent) when error is nil.
+// bool    Flag of object's existence  (true:exists;false:non-exist) when error is nil.
 //
 // error   It's nil if no error, otherwise it's an error object.
 //
@@ -509,7 +509,7 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 // options   Options for setting the metadata. The valid options are CacheControl, ContentDisposition, ContentEncoding, Expires,
 // ServerSideEncryption, and custom metadata.
 //
-// error     It's nil if no errors, otherwise it's an error object.
+// error     It's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) SetObjectMeta(objectKey string, options ...Option) error {
 	options = append(options, MetadataDirective(MetaReplace))

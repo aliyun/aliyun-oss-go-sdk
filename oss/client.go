@@ -229,7 +229,7 @@ func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 // bucketName The bucket name.
 //
 // GetBucketAclResponse The result object, and it's only valid when error is nil.
-// error      It's nil if no error, otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object..
 //
 func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error) {
 	var out GetBucketACLResult
@@ -254,7 +254,7 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 // rules      The lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in days and day/month/year respectively.
 // Check out sample/bucket_lifecycle.go for more details.
 // 
-// error      It's nil if no error, otherwise it's the error object.
+// error      It's nil if no error, otherwise it's an error object..
 //
 func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule) error {
 	lxml := lifecycleXML{Rules: convLifecycleRule(rules)}
