@@ -12,13 +12,13 @@ import (
 
 // InitiateMultipartUpload initializes multipart upload
 //
-// objectKey  Object name
-// options    The object constricts for upload. The valid options are CacheControl, ContentDisposition, ContentEncoding, Expires, 
-// ServerSideEncryption, Meta，check out the following link:
-// https://help.aliyun.com/document_detail/oss/api-reference/multipart-upload/InitiateMultipartUpload.html
+// objectKey                          object name
+// options                            the object constricts for upload. The valid options are CacheControl, ContentDisposition, ContentEncoding, Expires, 
+//                                ServerSideEncryption, Meta，check out the following link:
+//                                https://help.aliyun.com/document_detail/oss/api-reference/multipart-upload/InitiateMultipartUpload.html
 //
-// InitiateMultipartUploadResult The return value of the InitiateMultipartUpload, which is used for calls later on such as UploadPartFromFile,UploadPartCopy.
-// error      It's nil if the operation succeeds, otherwise it's an error object.
+// InitiateMultipartUploadResult      the return value of the InitiateMultipartUpload, which is used for calls later on such as UploadPartFromFile,UploadPartCopy.
+// error                              it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option) (InitiateMultipartUploadResult, error) {
 	var imur InitiateMultipartUploadResult
@@ -42,13 +42,13 @@ func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option
 // And thus with the same part number and upload Id, another part upload will overwrite the data.
 // Except the last one, minimal part size is 100KB. There's no limit on the last part size.
 //
-// imur        The returned value of InitiateMultipartUpload
-// reader      io.Reader the reader for the part's data.
-// size        The part size
-// partNumber  The part number (ranges from 1 to 10,000). Invalid part number will lead to InvalidArgument error.
+// imur              the returned value of InitiateMultipartUpload.
+// reader            io.Reader the reader for the part's data.
+// size              the part size.
+// partNumber        the part number (ranges from 1 to 10,000). Invalid part number will lead to InvalidArgument error.
 //
-// UploadPart  The return value of the upload part. It consists of Part number and ETag. It's valid when error is nil.
-// error       It's nil if the operation succeeds, otherwise it's an error object.
+// UploadPart        the return value of the upload part. It consists of Part number and ETag. It's valid when error is nil.
+// error             it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) UploadPart(imur InitiateMultipartUploadResult, reader io.Reader,
 	partSize int64, partNumber int, options ...Option) (UploadPart, error) {
@@ -66,14 +66,14 @@ func (bucket Bucket) UploadPart(imur InitiateMultipartUploadResult, reader io.Re
 
 // UploadPartFromFile uploads part from the file.
 //
-// imur           The return value of a successful InitiateMultipartUpload.
-// filePath       The local file path to upload.
-// startPosition  The start position in the local file.
-// partSize       The part size.
-// partNumber     The part number (from 1 to 10,000)
+// imur                    the return value of a successful InitiateMultipartUpload.
+// filePath                the local file path to upload.
+// startPosition           the start position in the local file.
+// partSize                the part size.
+// partNumber              the part number (from 1 to 10,000)
 //
-// UploadPart     The return value consists of PartNumber and ETag.
-// error          It's nil if the operation succeeds, otherwise it's an error object.
+// UploadPart              the return value consists of PartNumber and ETag.
+// error                   it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, filePath string,
 	startPosition, partSize int64, partNumber int, options ...Option) (UploadPart, error) {
@@ -99,10 +99,10 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 
 // DoUploadPart does the actual part upload.
 //
-// request part upload request
+// request                   part upload request
 //
-// UploadPartResult The result of uploading part.
-// error            It's nil if the operation succeeds, otherwise it's an error object.
+// UploadPartResult          the result of uploading part.
+// error                     it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) (*UploadPartResult, error) {
 	listener := getProgressListener(options)
@@ -134,17 +134,17 @@ func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) 
 
 // UploadPartCopy uploads part copy
 //
-// imur           The return value of InitiateMultipartUpload
-// copySrc        Source Object name
-// startPosition  The part's start index in the source file
-// partSize       The part size
-// partNumber     The part number, ranges from 1 to 10,000. If it exceeds the range OSS returns InvalidArgument error.
-// options        The constraints of source object for the copy. The copy happens only when these contraints are met. Otherwise it returns error.
-// CopySourceIfNoneMatch, CopySourceIfModifiedSince  CopySourceIfUnmodifiedSince，check out the following link for the detail
-// https://help.aliyun.com/document_detail/oss/api-reference/multipart-upload/UploadPartCopy.html
+// imur                    the return value of InitiateMultipartUpload
+// copySrc                 source Object name
+// startPosition           the part's start index in the source file
+// partSize                the part size
+// partNumber              the part number, ranges from 1 to 10,000. If it exceeds the range OSS returns InvalidArgument error.
+// options                 the constraints of source object for the copy. The copy happens only when these contraints are met. Otherwise it returns error.
+//                     CopySourceIfNoneMatch, CopySourceIfModifiedSince  CopySourceIfUnmodifiedSince，check out the following link for the detail
+//                     https://help.aliyun.com/document_detail/oss/api-reference/multipart-upload/UploadPartCopy.html
 //
-// UploadPart     The return value consists of PartNumber and ETag.
-// error          It's nil if the operation succeeds, otherwise it's an error object.
+// UploadPart              the return value consists of PartNumber and ETag.
+// error                   it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucketName, srcObjectKey string,
 	startPosition, partSize int64, partNumber int, options ...Option) (UploadPart, error) {
@@ -175,11 +175,11 @@ func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucke
 
 // CompleteMultipartUpload completes the multipart upload.
 //
-// imur   The return value of InitiateMultipartUpload.
-// parts  The array of return value of UploadPart/UploadPartFromFile/UploadPartCopy.
+// imur                                 the return value of InitiateMultipartUpload.
+// parts                                the array of return value of UploadPart/UploadPartFromFile/UploadPartCopy.
 //
-// CompleteMultipartUploadResponse  The return value when the call succeeds. Only valid when the error is nil.
-// error  It's nil if the operation succeeds, otherwise it's an error object.
+// CompleteMultipartUploadResponse      the return value when the call succeeds. Only valid when the error is nil.
+// error                                it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 	parts []UploadPart) (CompleteMultipartUploadResult, error) {
@@ -209,9 +209,9 @@ func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 
 // AbortMultipartUpload aborts the multipart upload.
 //
-// imur   The return value of InitiateMultipartUpload.
+// imur             the return value of InitiateMultipartUpload.
 //
-// error  It's nil if the operation succeeds, otherwise it's an error object.
+// error            it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) AbortMultipartUpload(imur InitiateMultipartUploadResult) error {
 	params := map[string]interface{}{}
@@ -226,10 +226,10 @@ func (bucket Bucket) AbortMultipartUpload(imur InitiateMultipartUploadResult) er
 
 // ListUploadedParts lists the uploaded parts.
 //
-// imur   The return value of InitiateMultipartUpload.
+// imur                           the return value of InitiateMultipartUpload.
 //
-// ListUploadedPartsResponse  The return value if it succeeds，only valid when error is nil.
-// error  It's nil if the operation succeeds, otherwise it's an error object.
+// ListUploadedPartsResponse      the return value if it succeeds，only valid when error is nil.
+// error                          it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) ListUploadedParts(imur InitiateMultipartUploadResult) (ListUploadedPartsResult, error) {
 	var out ListUploadedPartsResult
@@ -247,11 +247,11 @@ func (bucket Bucket) ListUploadedParts(imur InitiateMultipartUploadResult) (List
 
 // ListMultipartUploads lists all ongoing multipart upload tasks
 //
-// options  ListObject's filter. Prefix specifies the returned object's prefix; KeyMarker specifies the returned object's start point in lexicographic order;
-//          MaxKeys specifies the max entries to return; Delimiter is the character for grouping object keys.
+// options                              listObject's filter. Prefix specifies the returned object's prefix; KeyMarker specifies the returned object's start point in lexicographic order;
+//                               MaxKeys specifies the max entries to return; Delimiter is the character for grouping object keys.
 //
-// ListMultipartUploadResponse The return value if it succeeds，only valid when error is nil.
-// error    It's nil if the operation succeeds, otherwise it's an error object.
+// ListMultipartUploadResponse          the return value if it succeeds，only valid when error is nil.
+// error                                it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) ListMultipartUploads(options ...Option) (ListMultipartUploadResult, error) {
 	var out ListMultipartUploadResult

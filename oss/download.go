@@ -13,12 +13,12 @@ import (
 
 // DownloadFile downloads files with multipart download.
 //
-// objectKey  The object key.
-// filePath   The local file to download from objectKey in OSS.
-// partSize   The part size in bytes.
-// options    Object's constraints, check out GetObject for the reference.
+// objectKey       the object key.
+// filePath        the local file to download from objectKey in OSS.
+// partSize        the part size in bytes.
+// options         object's constraints, check out GetObject for the reference.
 //
-// error      It's nil when the call succeeds, otherwise it's an error object.
+// error           it's nil when the call succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < 1 {

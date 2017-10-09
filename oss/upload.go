@@ -12,12 +12,12 @@ import (
 
 // UploadFile is multipart file upload.
 //
-// objectKey  The object name.
-// filePath   The local file path to upload.
-// partSize   The part size in byte.
-// options    The options for uploading object.
+// objectKey        the object name.
+// filePath         the local file path to upload.
+// partSize         the part size in byte.
+// options          the options for uploading object.
 //
-// error      It's nil if the operation succeeds, otherwise it's an error object.
+// error            it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < MinPartSize || partSize > MaxPartSize {
