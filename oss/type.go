@@ -448,3 +448,13 @@ type createBucketConfiguration struct {
 	XMLName      xml.Name         `xml:"CreateBucketConfiguration"`
 	StorageClass StorageClassType `xml:"StorageClass,omitempty"`
 }
+
+type bucketQos struct {
+	XMLName         xml.Name `xml:"BucketUserQos"`
+	StorageCapacity int64    `xml:"StorageCapacity"`
+}
+
+type getBucketStorageCapacityResult struct {
+	XMLName         xml.Name `xml:"BucketUserQos"`
+	StorageCapacity int64    `xml:"StorageCapacity"`
+}

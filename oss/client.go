@@ -189,6 +189,25 @@ func (client Client) DeleteBucket(bucketName string) error {
 }
 
 //
+// HeadBucket 查看Bucket元信息
+//
+// bucketName 存储空间名称。
+//
+// http.Header Bucket的meta
+// error 操作无错误时返回nil，非nil为错误信息
+//
+func (client Client) HeadBucket(bucketName string) (http.Header, error) {
+	params := map[string]interface{}{}
+	resp, err := client.do("HEAD", bucketName, params, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return resp.Headers, nil
+}
+
+//
 // GetBucketLocation 查看Bucket所属数据中心位置的信息。
 //
 // 如果您想了解"访问域名和数据中心"详细信息，请参看
@@ -676,6 +695,45 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 }
 
 //
+// SetBucketStorageCapacity 设置Bucket容量限额
+//
+// bucketName 存储空间名称
+// storageCapacity Bucket限额，以GB为单位
+//
+// error 操作无错误为nil，非nil为错误信息
+//
+func (client Client) SetBucketStorageCapacity(bucketName string, storageCapacity int64) error {
+	qxml := bucketQos{StorageCapacity: storageCapacity}
+
+	params := map[string]interface{}{"qos": nil}
+	resp, err := client.doXml("PUT", bucketName, params, nil, qxml)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func (client Client) GetBucketStorageCapacity(bucketName string) (int64, error) {
+	var out getBucketStorageCapacityResult
+
+	params := map[string]interface{}{"qos": nil}
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return -1, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	if err != nil {
+		return -1, err
+	}
+
+	return out.StorageCapacity, nil
+}
+
+//
 // UseCname 设置是否使用CNAME，默认不使用。
 //
 // isUseCname true设置endpoint格式是cname格式，false为非cname格式，默认false
@@ -797,4 +855,24 @@ func (client Client) do(method, bucketName string, params map[string]interface{}
 	headers map[string]string, data io.Reader) (*Response, error) {
 	return client.Conn.Do(method, bucketName, "", params,
 		headers, data, 0, nil)
+}
+
+func (client Client) doXml(method, bucketName string, params map[string]interface{},
+	headers map[string]string, xmlInput interface{}) (*Response, error) {
+	bodyString, err := xml.Marshal(xmlInput)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bodyString)
+
+	if headers == nil {
+		headers = map[string]string{}
+	}
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers[HTTPHeaderContentType] = contentType
+
+	return client.do(method, bucketName, params, headers, buffer)
 }
