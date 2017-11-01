@@ -10,6 +10,7 @@ type HTTPTimeout struct {
 	ReadWriteTimeout time.Duration
 	HeaderTimeout    time.Duration
 	LongTimeout      time.Duration
+	IdleConnTimeout  time.Duration
 }
 
 // Config oss configure
@@ -52,6 +53,7 @@ func getDefaultOssConfig() *Config {
 	config.HTTPTimeout.ReadWriteTimeout = time.Second * 60 // 60s
 	config.HTTPTimeout.HeaderTimeout = time.Second * 60    // 60s
 	config.HTTPTimeout.LongTimeout = time.Second * 300     // 300s
+	config.HTTPTimeout.IdleConnTimeout = time.Second * 50  // 50s
 
 	config.IsUseProxy = false
 	config.ProxyHost = ""

@@ -1400,6 +1400,7 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	c.Assert(client.Conn.config.HTTPTimeout.ConnectTimeout, Equals, time.Second*11)
 	c.Assert(client.Conn.config.HTTPTimeout.ReadWriteTimeout, Equals, time.Second*12)
 	c.Assert(client.Conn.config.HTTPTimeout.HeaderTimeout, Equals, time.Second*12)
+	c.Assert(client.Conn.config.HTTPTimeout.IdleConnTimeout, Equals, time.Second*12)
 	c.Assert(client.Conn.config.HTTPTimeout.LongTimeout, Equals, time.Second*12*10)
 
 	c.Assert(client.Conn.config.SecurityToken, Equals, "token")

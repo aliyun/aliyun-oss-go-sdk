@@ -1765,6 +1765,7 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.getConfig().HTTPTimeout.ConnectTimeout, Equals, time.Second*11)
 	c.Assert(bucket.getConfig().HTTPTimeout.ReadWriteTimeout, Equals, time.Second*12)
 	c.Assert(bucket.getConfig().HTTPTimeout.HeaderTimeout, Equals, time.Second*12)
+	c.Assert(bucket.getConfig().HTTPTimeout.IdleConnTimeout, Equals, time.Second*12)
 	c.Assert(bucket.getConfig().HTTPTimeout.LongTimeout, Equals, time.Second*12*10)
 
 	c.Assert(bucket.getConfig().SecurityToken, Equals, "token")
