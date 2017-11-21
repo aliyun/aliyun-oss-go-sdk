@@ -29,22 +29,28 @@ type Conn struct {
 var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore"}
 
 // init initializes Conn
-func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
-	// New transport
-	transport := newTransport(conn, config)
+func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) error {
+	// If client not passed in, create one
+	if client == nil {
+		// New transport
+		transport := newTransport(conn, config)
 
-	// Proxy
-	if conn.config.IsUseProxy {
-		proxyURL, err := url.Parse(config.ProxyHost)
-		if err != nil {
-			return err
+		// Proxy
+		if conn.config.IsUseProxy {
+			proxyURL, err := url.Parse(config.ProxyHost)
+			if err != nil {
+				return err
+			}
+			transport.Proxy = http.ProxyURL(proxyURL)
 		}
-		transport.Proxy = http.ProxyURL(proxyURL)
+
+		// create client
+		client = &http.Client{Transport: transport}
 	}
 
 	conn.config = config
 	conn.url = urlMaker
-	conn.client = &http.Client{Transport: transport}
+	conn.client = client
 
 	return nil
 }
@@ -587,7 +593,7 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	return host, path
 }
 
-// getResource gets canonicalized resource 
+// getResource gets canonicalized resource
 func (um urlMaker) getResource(bucketName, objectName, subResource string) string {
 	if subResource != "" {
 		subResource = "?" + subResource

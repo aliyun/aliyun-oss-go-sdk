@@ -7,6 +7,7 @@ package oss
 import (
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -1420,6 +1421,16 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	client, err = New(endpoint, accessID, accessKey, UserAgent("go sdk user agent"))
 
 	c.Assert(client.Conn.config.UserAgent, Equals, "go sdk user agent")
+
+	// Check we can overide the http.Client
+	httpClient := new(http.Client)
+	client, err = New(endpoint, accessID, accessKey, HTTPClient(httpClient))
+
+	c.Assert(client.HTTPClient, Equals, httpClient)
+	c.Assert(client.Conn.client, Equals, httpClient)
+
+	client, err = New(endpoint, accessID, accessKey)
+	c.Assert(client.HTTPClient, IsNil)
 }
 
 // TestProxy
