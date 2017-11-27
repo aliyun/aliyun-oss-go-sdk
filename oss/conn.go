@@ -31,6 +31,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "web
 // init 初始化Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 	httpTimeOut := conn.config.HTTPTimeout
+	httpMaxConns := conn.config.HTTPMaxConns
 
 	// new Transport
 	transport := &http.Transport{
@@ -41,6 +42,8 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 			}
 			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
 		},
+		MaxIdleConns:          httpMaxConns.MaxIdleConns,
+		MaxIdleConnsPerHost:   httpMaxConns.MaxIdleConnsPerHost,
 		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
 	}
 

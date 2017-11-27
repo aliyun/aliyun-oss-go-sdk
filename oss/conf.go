@@ -12,26 +12,33 @@ type HTTPTimeout struct {
 	LongTimeout      time.Duration
 }
 
+// HTTPMaxConns controls the maximum number of keep-alive connections.
+type HTTPMaxConns struct {
+	MaxIdleConns        int
+	MaxIdleConnsPerHost int
+}
+
 // Config oss configure
 type Config struct {
-	Endpoint        string      // oss地址
-	AccessKeyID     string      // accessId
-	AccessKeySecret string      // accessKey
-	RetryTimes      uint        // 失败重试次数，默认5
-	UserAgent       string      // SDK名称/版本/系统信息
-	IsDebug         bool        // 是否开启调试模式，默认false
-	Timeout         uint        // 超时时间，默认60s
-	SecurityToken   string      // STS Token
-	IsCname         bool        // Endpoint是否是CNAME
-	HTTPTimeout     HTTPTimeout // HTTP的超时时间设置
-	IsUseProxy      bool        // 是否使用代理
-	ProxyHost       string      // 代理服务器地址
-	IsAuthProxy     bool        // 代理服务器是否使用用户认证
-	ProxyUser       string      // 代理服务器认证用户名
-	ProxyPassword   string      // 代理服务器认证密码
-	IsEnableMD5     bool        // 上传数据时是否启用MD5校验
-	MD5Threshold    int64       // 内存中计算MD5的上线大小，大于该值启用临时文件，单位Byte
-	IsEnableCRC     bool        // 上传数据时是否启用CRC64校验
+	Endpoint        string       // oss地址
+	AccessKeyID     string       // accessId
+	AccessKeySecret string       // accessKey
+	RetryTimes      uint         // 失败重试次数，默认5
+	UserAgent       string       // SDK名称/版本/系统信息
+	IsDebug         bool         // 是否开启调试模式，默认false
+	Timeout         uint         // 超时时间，默认60s
+	SecurityToken   string       // STS Token
+	IsCname         bool         // Endpoint是否是CNAME
+	HTTPTimeout     HTTPTimeout  // HTTP的超时时间设置
+	HTTPMaxConns    HTTPMaxConns // HTTP的最大链接限制
+	IsUseProxy      bool         // 是否使用代理
+	ProxyHost       string       // 代理服务器地址
+	IsAuthProxy     bool         // 代理服务器是否使用用户认证
+	ProxyUser       string       // 代理服务器认证用户名
+	ProxyPassword   string       // 代理服务器认证密码
+	IsEnableMD5     bool         // 上传数据时是否启用MD5校验
+	MD5Threshold    int64        // 内存中计算MD5的上线大小，大于该值启用临时文件，单位Byte
+	IsEnableCRC     bool         // 上传数据时是否启用CRC64校验
 }
 
 // 获取默认配置
@@ -52,6 +59,8 @@ func getDefaultOssConfig() *Config {
 	config.HTTPTimeout.ReadWriteTimeout = time.Second * 60 // 60s
 	config.HTTPTimeout.HeaderTimeout = time.Second * 60    // 60s
 	config.HTTPTimeout.LongTimeout = time.Second * 300     // 300s
+	config.HTTPMaxConns.MaxIdleConns = 100
+	config.HTTPMaxConns.MaxIdleConnsPerHost = 20
 
 	config.IsUseProxy = false
 	config.ProxyHost = ""
