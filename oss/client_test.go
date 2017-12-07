@@ -43,12 +43,12 @@ var (
 
 const (
 	// prefix of bucket name for bucket ops test
-	bucketNamePrefix = "go-sdk-test-bucket-xyzu-"
+	bucketNamePrefix = "go-sdk-test-bucket-xyzuv-"
 	// bucket name for object ops test
-	bucketName        = "go-sdk-test-bucket-xyzu-for-object"
-	archiveBucketName = "go-sdk-test-bucket-xyzu-for-archive"
+	bucketName        = "go-sdk-test-bucket-xyzuv-for-object"
+	archiveBucketName = "go-sdk-test-bucket-xyzuv-for-archive"
 	// object name for object ops test
-	objectNamePrefix = "go-sdk-test-object-xyzu-"
+	objectNamePrefix = "go-sdk-test-object-xyzuv-"
 	// sts region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
@@ -1400,6 +1400,7 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	c.Assert(client.Conn.config.HTTPTimeout.ConnectTimeout, Equals, time.Second*11)
 	c.Assert(client.Conn.config.HTTPTimeout.ReadWriteTimeout, Equals, time.Second*12)
 	c.Assert(client.Conn.config.HTTPTimeout.HeaderTimeout, Equals, time.Second*12)
+	c.Assert(client.Conn.config.HTTPTimeout.IdleConnTimeout, Equals, time.Second*12)
 	c.Assert(client.Conn.config.HTTPTimeout.LongTimeout, Equals, time.Second*12*10)
 
 	c.Assert(client.Conn.config.SecurityToken, Equals, "token")

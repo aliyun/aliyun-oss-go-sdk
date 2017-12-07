@@ -30,19 +30,8 @@ var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "web
 
 // init 初始化Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
-	httpTimeOut := conn.config.HTTPTimeout
-
 	// new Transport
-	transport := &http.Transport{
-		Dial: func(netw, addr string) (net.Conn, error) {
-			conn, err := net.DialTimeout(netw, addr, httpTimeOut.ConnectTimeout)
-			if err != nil {
-				return nil, err
-			}
-			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
-		},
-		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
-	}
+	transport := newTransport(conn, config)
 
 	// Proxy
 	if conn.config.IsUseProxy {
