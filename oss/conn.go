@@ -243,6 +243,9 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 }
 
 func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) string {
+	if conn.config.SecurityToken != "" {
+		params[HTTPParamSecurityToken] = conn.config.SecurityToken
+	}
 	subResource := conn.getSubResource(params)
 	canonicalizedResource := conn.url.getResource(bucketName, objectName, subResource)
 
@@ -273,9 +276,6 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
 	params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
 	params[HTTPParamSignature] = signedStr
-	if conn.config.SecurityToken != "" {
-		params[HTTPParamSecurityToken] = conn.config.SecurityToken
-	}
 
 	urlParams := conn.getURLParams(params)
 	return conn.url.getSignURL(bucketName, objectName, urlParams)
