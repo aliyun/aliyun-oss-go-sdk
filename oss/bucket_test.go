@@ -1794,7 +1794,7 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get
-	body, err := s.bucket.GetObject(objectName)
+	body, err := bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
 	c.Assert(err, IsNil)
@@ -1804,6 +1804,23 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 	lor, err := bucket.ListObjects()
 	c.Assert(err, IsNil)
 	testLogger.Println("Objects:", lor.Objects)
+
+	// Put with url
+	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get with url
+	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
+	c.Assert(err, IsNil)
+
+	body, err = bucket.GetObjectWithURL(signedURL)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
 
 	// Delete
 	err = bucket.DeleteObject(objectName)
