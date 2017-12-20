@@ -212,6 +212,16 @@ func UploadIDMarker(value string) Option {
 	return addParam("upload-id-marker", value)
 }
 
+// Callback is an option to set callback parameter
+func Callback(value string) Option {
+	return addParam("callback", value)
+}
+
+// CallbackVar is an option to set callback-var parameter
+func CallbackVar(value string) Option {
+	return addParam("callback-var", value)
+}
+
 // DeleteObjectsQuiet DeleteObjects详细(verbose)模式或简单(quiet)模式，默认详细模式。
 func DeleteObjectsQuiet(isQuiet bool) Option {
 	return addArg(deleteObjectsQuiet, isQuiet)
