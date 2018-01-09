@@ -97,23 +97,19 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	headers := make(map[string]string)
 	handleOptions(headers, options)
 
-	buffer := new(bytes.Buffer)
+	params := map[string]interface{}{}
+	var err error
+	var resp *Response
 
 	isOptSet, val, _ := isOptionSet(options, storageClass)
 	if isOptSet {
 		cbConfig := createBucketConfiguration{StorageClass: val.(StorageClassType)}
-		bs, err := xml.Marshal(cbConfig)
-		if err != nil {
-			return err
-		}
-		buffer.Write(bs)
-
-		contentType := http.DetectContentType(buffer.Bytes())
-		headers[HTTPHeaderContentType] = contentType
+		resp, err = client.doXml("PUT", bucketName, params, headers, cbConfig)
+	} else {
+		buffer := new(bytes.Buffer)
+		resp, err = client.do("PUT", bucketName, params, headers, buffer)
 	}
 
-	params := map[string]interface{}{}
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
 	if err != nil {
 		return err
 	}
@@ -186,6 +182,25 @@ func (client Client) DeleteBucket(bucketName string) error {
 
 	defer resp.Body.Close()
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
+//
+// HeadBucket 查看Bucket元信息
+//
+// bucketName 存储空间名称。
+//
+// http.Header Bucket的meta
+// error 操作无错误时返回nil，非nil为错误信息
+//
+func (client Client) HeadBucket(bucketName string) (http.Header, error) {
+	params := map[string]interface{}{}
+	resp, err := client.do("HEAD", bucketName, params, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return resp.Headers, nil
 }
 
 //
@@ -271,20 +286,9 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 //
 func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule) error {
 	lxml := lifecycleXML{Rules: convLifecycleRule(rules)}
-	bs, err := xml.Marshal(lxml)
-	if err != nil {
-		return err
-	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
 
-	contentType := http.DetectContentType(buffer.Bytes())
-	headers := map[string]string{}
-	headers[HTTPHeaderContentType] = contentType
-
-	params := map[string]interface{}{}
-	params["lifecycle"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+	params := map[string]interface{}{"lifecycle": nil}
+	resp, err := client.doXml("PUT", bucketName, params, nil, lxml)
 	if err != nil {
 		return err
 	}
@@ -360,20 +364,8 @@ func (client Client) SetBucketReferer(bucketName string, referers []string, allo
 		}
 	}
 
-	bs, err := xml.Marshal(rxml)
-	if err != nil {
-		return err
-	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
-
-	contentType := http.DetectContentType(buffer.Bytes())
-	headers := map[string]string{}
-	headers[HTTPHeaderContentType] = contentType
-
-	params := map[string]interface{}{}
-	params["referer"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+	params := map[string]interface{}{"referer": nil}
+	resp, err := client.doXml("PUT", bucketName, params, nil, rxml)
 	if err != nil {
 		return err
 	}
@@ -418,32 +410,21 @@ func (client Client) GetBucketReferer(bucketName string) (GetBucketRefererResult
 //
 func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix string,
 	isEnable bool) error {
-	var err error
-	var bs []byte
+	var lxml interface{}
+
+	params := map[string]interface{}{"logging": nil}
+
 	if isEnable {
-		lxml := LoggingXML{}
-		lxml.LoggingEnabled.TargetBucket = targetBucket
-		lxml.LoggingEnabled.TargetPrefix = targetPrefix
-		bs, err = xml.Marshal(lxml)
+		xmlLogging := LoggingXML{}
+		xmlLogging.LoggingEnabled.TargetBucket = targetBucket
+		xmlLogging.LoggingEnabled.TargetPrefix = targetPrefix
+
+		lxml = xmlLogging
 	} else {
-		lxml := loggingXMLEmpty{}
-		bs, err = xml.Marshal(lxml)
+		lxml = loggingXMLEmpty{}
 	}
 
-	if err != nil {
-		return err
-	}
-
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
-
-	contentType := http.DetectContentType(buffer.Bytes())
-	headers := map[string]string{}
-	headers[HTTPHeaderContentType] = contentType
-
-	params := map[string]interface{}{}
-	params["logging"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+	resp, err := client.doXml("PUT", bucketName, params, nil, lxml)
 	if err != nil {
 		return err
 	}
@@ -508,20 +489,8 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 	wxml.IndexDocument.Suffix = indexDocument
 	wxml.ErrorDocument.Key = errorDocument
 
-	bs, err := xml.Marshal(wxml)
-	if err != nil {
-		return err
-	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
-
-	contentType := http.DetectContentType(buffer.Bytes())
-	headers := make(map[string]string)
-	headers[HTTPHeaderContentType] = contentType
-
-	params := map[string]interface{}{}
-	params["website"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+	params := map[string]interface{}{"website": nil}
+	resp, err := client.doXml("PUT", bucketName, params, nil, wxml)
 	if err != nil {
 		return err
 	}
@@ -591,20 +560,8 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) erro
 		corsxml.CORSRules = append(corsxml.CORSRules, cr)
 	}
 
-	bs, err := xml.Marshal(corsxml)
-	if err != nil {
-		return err
-	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
-
-	contentType := http.DetectContentType(buffer.Bytes())
-	headers := map[string]string{}
-	headers[HTTPHeaderContentType] = contentType
-
-	params := map[string]interface{}{}
-	params["cors"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+	params := map[string]interface{}{"cors": nil}
+	resp, err := client.doXml("PUT", bucketName, params, nil, corsxml)
 	if err != nil {
 		return err
 	}
@@ -673,6 +630,53 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 
 	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
+}
+
+//
+// SetBucketStorageCapacity 设置Bucket容量限额
+//
+// bucketName 存储空间名称
+// storageCapacity Bucket限额，以GB为单位
+//
+// error 操作无错误为nil，非nil为错误信息
+//
+func (client Client) SetBucketStorageCapacity(bucketName string, storageCapacity int64) error {
+	qxml := bucketQos{StorageCapacity: storageCapacity}
+
+	params := map[string]interface{}{"qos": nil}
+	resp, err := client.doXml("PUT", bucketName, params, nil, qxml)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+//
+// GetBucketStorageCapacity 获取Bucket容量限额
+//
+// bucketName 存储空间名
+//
+// int64 存储限额，以GB为单位
+// error 操作无错误为 nil，非nil为错误信息
+//
+func (client Client) GetBucketStorageCapacity(bucketName string) (int64, error) {
+	var out getBucketStorageCapacityResult
+
+	params := map[string]interface{}{"qos": nil}
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return -1, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	if err != nil {
+		return -1, err
+	}
+
+	return out.StorageCapacity, nil
 }
 
 //
@@ -799,4 +803,24 @@ func (client Client) do(method, bucketName string, params map[string]interface{}
 	headers map[string]string, data io.Reader) (*Response, error) {
 	return client.Conn.Do(method, bucketName, "", params,
 		headers, data, 0, nil)
+}
+
+func (client Client) doXml(method, bucketName string, params map[string]interface{},
+	headers map[string]string, xmlInput interface{}) (*Response, error) {
+	bodyString, err := xml.Marshal(xmlInput)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bodyString)
+
+	if headers == nil {
+		headers = map[string]string{}
+	}
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers[HTTPHeaderContentType] = contentType
+
+	return client.do(method, bucketName, params, headers, buffer)
 }

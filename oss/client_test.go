@@ -1504,3 +1504,49 @@ func (s *OssClientSuite) getBucket(buckets []BucketProperties, bucket string) (b
 	}
 	return false, BucketProperties{}
 }
+
+func (s *OssClientSuite) TestHeadBucket(c *C) {
+	var bucketNameTest = bucketNamePrefix + "thb"
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	headers, err := client.HeadBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	location, err := client.GetBucketLocation(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	c.Assert(location, Equals, headers.Get("X-Oss-Bucket-Region"))
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestStorageCapacityBucket(c *C) {
+	var bucketNameTest = bucketNamePrefix + "tscb"
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	oldCapacity, err := client.GetBucketStorageCapacity(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(oldCapacity, Equals, int64(-1))
+
+	newCapacity := int64(100)
+	err = client.SetBucketStorageCapacity(bucketNameTest, newCapacity)
+	c.Assert(err, IsNil)
+
+	gotCapacity, err := client.GetBucketStorageCapacity(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(gotCapacity, Equals, newCapacity)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
