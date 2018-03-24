@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 //
@@ -66,16 +67,16 @@ func (bucket Bucket) PutLiveChannelStatus(channelName, status string) error {
 //
 // channelName 直播流频道的名称
 // playlistName 指定生成的点播列表的名称，必须以”.m3u8“结尾
-// startTime 指定查询ts文件的起始时间，格式为Unix timestamp
-// endTime 指定查询ts文件的终止时间，格式为Unix timestamp
+// startTime 指定查询ts文件的起始时间
+// endTime 指定查询ts文件的终止时间
 //
 // error 操作无错误是返回nil, 非nil为错误信息
 //
-func (bucket Bucket) PostVodPlaylist(channelName, playlistName string, startTime, endTime int64) error {
+func (bucket Bucket) PostVodPlaylist(channelName, playlistName string, startTime, endTime time.Time) error {
 	params := map[string]interface{}{}
 	params["vod"] = nil
-	params["startTime"] = strconv.FormatInt(startTime, 10)
-	params["endTime"] = strconv.FormatInt(endTime, 10)
+	params["startTime"] = strconv.FormatInt(startTime.Unix(), 10)
+	params["endTime"] = strconv.FormatInt(endTime.Unix(), 10)
 
 	key := fmt.Sprintf("%s/%s", channelName, playlistName)
 	resp, err := bucket.do("POST", key, params, nil, nil, nil)
@@ -205,4 +206,23 @@ func (bucket Bucket) DeleteLiveChannel(channelName string) error {
 	defer resp.Body.Close()
 
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
+//
+// SignRtmpURL 生成RTMP推流签名的URL, 常见的用法是生成加签的URL以供授信用户向OSS推RTMP流。
+//
+// channelName 直播流的频道名称
+// playlistName 播放列表名称，其值会覆盖LiveChannel中的配置，必须以“.m3u8”结尾
+// expires 过期时间（单位：秒），链接在当前时间再过expires秒后过期
+//
+// string 返回的加签的rtmp推流地址
+// error 操作无错误返回nil, 非nil为错误信息
+//
+func (bucket Bucket) SignRtmpURL(channelName, playlistName string, expires int64) (string, error) {
+	if expires < 0 {
+		return "", fmt.Errorf("invalid argument: %d, expires must greater than 0", expires)
+	}
+	expiration := time.Now().Unix() + expires
+
+	return bucket.Client.Conn.signRtmpURL(bucket.BucketName, channelName, playlistName, expiration), nil
 }

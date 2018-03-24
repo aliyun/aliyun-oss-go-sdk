@@ -34,9 +34,21 @@ func (s *OssBucketLiveChannelSuite) SetUpSuite(c *C) {
 
 // Run once after all tests or benckmarks have finished running
 func (s *OssBucketLiveChannelSuite) TearDownSuite(c *C) {
-	// Delete channels
-	//err := s.client.DeleteBucket(bucketName)
-	//c.Assert(err, IsNil)
+	marker := ""
+	for {
+		result, err := s.bucket.ListLiveChannel(Marker(marker))
+		c.Assert(err, IsNil)
+		if result.IsTruncated {
+			marker = result.NextMarker
+		} else {
+			break
+		}
+
+		for _, channel := range result.LiveChannel {
+			err := s.bucket.DeleteLiveChannel(channel.Name)
+			c.Assert(err, IsNil)
+		}
+	}
 	testLogger.Println("test livechannel done...")
 }
 
@@ -76,6 +88,21 @@ func (s *OssBucketLiveChannelSuite) TestCreateLiveChannel(c *C) {
 
 	err = s.bucket.DeleteLiveChannel(channelName)
 	c.Assert(err, IsNil)
+
+	invalidType := randStr(4)
+	invalidTarget := LiveChannelTarget{
+		PlaylistName: playlistName,
+		Type:         invalidType,
+	}
+
+	invalidConfig := LiveChannelConfiguration{
+		Description: "livechannel for test",
+		Status:      "enabled",
+		Target:      invalidTarget,
+	}
+
+	_, err = s.bucket.CreateLiveChannel(channelName, invalidConfig)
+	c.Assert(err, NotNil)
 }
 
 // TestDeleteLiveChannel
@@ -104,6 +131,9 @@ func (s *OssBucketLiveChannelSuite) TestDeleteLiveChannel(c *C) {
 func (s *OssBucketLiveChannelSuite) TestGetLiveChannelInfo(c *C) {
 	channelName := "test-get-channel-status"
 
+	_, err := s.bucket.GetLiveChannelInfo(channelName)
+	c.Assert(err, NotNil)
+
 	createCfg := LiveChannelConfiguration{
 		Target: LiveChannelTarget{
 			Type:         "HLS",
@@ -113,7 +143,7 @@ func (s *OssBucketLiveChannelSuite) TestGetLiveChannelInfo(c *C) {
 		},
 	}
 
-	_, err := s.bucket.CreateLiveChannel(channelName, createCfg)
+	_, err = s.bucket.CreateLiveChannel(channelName, createCfg)
 	c.Assert(err, IsNil)
 
 	getCfg, err := s.bucket.GetLiveChannelInfo(channelName)
@@ -145,19 +175,21 @@ func (s *OssBucketLiveChannelSuite) TestPutLiveChannelStatus(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert("disabled", Equals, getCfg.Status)
 
-	time.Sleep(10 * time.Second)
 	err = s.bucket.PutLiveChannelStatus(channelName, "enabled")
 	c.Assert(err, IsNil)
 	getCfg, err = s.bucket.GetLiveChannelInfo(channelName)
 	c.Assert(err, IsNil)
 	c.Assert("enabled", Equals, getCfg.Status)
 
-	time.Sleep(10 * time.Second)
 	err = s.bucket.PutLiveChannelStatus(channelName, "disabled")
 	c.Assert(err, IsNil)
 	getCfg, err = s.bucket.GetLiveChannelInfo(channelName)
 	c.Assert(err, IsNil)
 	c.Assert("disabled", Equals, getCfg.Status)
+
+	invalidStatus := randLowStr(9)
+	err = s.bucket.PutLiveChannelStatus(channelName, invalidStatus)
+	c.Assert(err, NotNil)
 
 	err = s.bucket.DeleteLiveChannel(channelName)
 	c.Assert(err, IsNil)
@@ -165,7 +197,10 @@ func (s *OssBucketLiveChannelSuite) TestPutLiveChannelStatus(c *C) {
 
 // TestGetLiveChannelHistory()
 func (s *OssBucketLiveChannelSuite) TestGetLiveChannelHistory(c *C) {
-	channelName := "test-put-channel-status"
+	channelName := "test-get-channel-history"
+
+	_, err := s.bucket.GetLiveChannelHistory(channelName)
+	c.Assert(err, NotNil)
 
 	config := LiveChannelConfiguration{
 		Target: LiveChannelTarget{
@@ -173,7 +208,7 @@ func (s *OssBucketLiveChannelSuite) TestGetLiveChannelHistory(c *C) {
 		},
 	}
 
-	_, err := s.bucket.CreateLiveChannel(channelName, config)
+	_, err = s.bucket.CreateLiveChannel(channelName, config)
 	c.Assert(err, IsNil)
 
 	history, err := s.bucket.GetLiveChannelHistory(channelName)
@@ -188,13 +223,16 @@ func (s *OssBucketLiveChannelSuite) TestGetLiveChannelHistory(c *C) {
 func (s *OssBucketLiveChannelSuite) TestGetLiveChannelStat(c *C) {
 	channelName := "test-get-channel-stat"
 
+	_, err := s.bucket.GetLiveChannelStat(channelName)
+	c.Assert(err, NotNil)
+
 	config := LiveChannelConfiguration{
 		Target: LiveChannelTarget{
 			Type: "HLS",
 		},
 	}
 
-	_, err := s.bucket.CreateLiveChannel(channelName, config)
+	_, err = s.bucket.CreateLiveChannel(channelName, config)
 	c.Assert(err, IsNil)
 
 	stat, err := s.bucket.GetLiveChannelStat(channelName)
@@ -219,8 +257,8 @@ func (s *OssBucketLiveChannelSuite) TestPostVodPlaylist(c *C) {
 	_, err := s.bucket.CreateLiveChannel(channelName, config)
 	c.Assert(err, IsNil)
 
-	endTime := time.Now().Unix() - 60
-	startTime := endTime - 3600
+	endTime := time.Now().Add(-1 * time.Minute)
+	startTime := endTime.Add(-60 * time.Minute)
 
 	err = s.bucket.PostVodPlaylist(channelName, playlistName, startTime, endTime)
 	c.Assert(err, NotNil)
@@ -229,6 +267,7 @@ func (s *OssBucketLiveChannelSuite) TestPostVodPlaylist(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestListLiveChannel
 func (s *OssBucketLiveChannelSuite) TestListLiveChannel(c *C) {
 	result, err := s.bucket.ListLiveChannel()
 	c.Assert(err, IsNil)
@@ -277,6 +316,33 @@ func (s *OssBucketLiveChannelSuite) TestListLiveChannel(c *C) {
 		err := s.bucket.DeleteLiveChannel(channelName)
 		c.Assert(err, IsNil)
 	}
+}
+
+// TestPostVodPlaylist
+func (s *OssBucketLiveChannelSuite) TestSignRtmpURL(c *C) {
+	channelName := "test-sign-rtmp-url"
+	playlistName := "test-sign-rtmp-url.m3u8"
+
+	config := LiveChannelConfiguration{
+		Target: LiveChannelTarget{
+			Type:         "HLS",
+			PlaylistName: playlistName,
+		},
+	}
+
+	_, err := s.bucket.CreateLiveChannel(channelName, config)
+	c.Assert(err, IsNil)
+
+	expires := int64(3600)
+	signedRtmpURL, err := s.bucket.SignRtmpURL(channelName, playlistName, expires)
+	c.Assert(err, IsNil)
+	playURL := getPlayURL(s.bucket.BucketName, channelName, playlistName)
+	fmt.Printf("the value of signedRtmpURL, playURL is %v, %v", signedRtmpURL, playURL)
+	hasPrefix := strings.HasPrefix(signedRtmpURL, playURL)
+	c.Assert(hasPrefix, Equals, true)
+
+	err = s.bucket.DeleteLiveChannel(channelName)
+	c.Assert(err, IsNil)
 }
 
 // private
