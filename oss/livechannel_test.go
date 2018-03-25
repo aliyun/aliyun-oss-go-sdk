@@ -341,6 +341,10 @@ func (s *OssBucketLiveChannelSuite) TestSignRtmpURL(c *C) {
 	hasPrefix := strings.HasPrefix(signedRtmpURL, playURL)
 	c.Assert(hasPrefix, Equals, true)
 
+	invalidExpires := int64(-1)
+	signedRtmpURL, err = s.bucket.SignRtmpURL(channelName, playlistName, invalidExpires)
+	c.Assert(err, NotNil)
+
 	err = s.bucket.DeleteLiveChannel(channelName)
 	c.Assert(err, IsNil)
 }

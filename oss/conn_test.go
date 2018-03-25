@@ -2,6 +2,8 @@ package oss
 
 import (
 	"net/http"
+	"strings"
+	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -123,4 +125,27 @@ func (s *OssConnSuite) TestConnToolFunc(c *C) {
 	unexpect := UnexpectedStatusCodeError{[]int{200}, 202}
 	c.Assert(len(unexpect.Error()) > 0, Equals, true)
 	c.Assert(unexpect.Got(), Equals, 202)
+}
+
+func (s *OssConnSuite) TestSignRtmpURL(c *C) {
+	cfg := getDefaultOssConfig()
+	um := urlMaker{}
+	um.Init(endpoint, false, false)
+	conn := Conn{cfg, &um, nil}
+
+	//Anonymous
+	channelName := "test-sign-rtmp-url"
+	playlistName := "playlist.m3u8"
+	expiration := time.Now().Unix() + 3600
+	signedRtmpURL := conn.signRtmpURL(bucketName, channelName, playlistName, expiration)
+	playURL := getPublishURL(bucketName, channelName)
+	hasPrefix := strings.HasPrefix(signedRtmpURL, playURL)
+	c.Assert(hasPrefix, Equals, true)
+
+	//empty playlist name
+	playlistName = ""
+	signedRtmpURL = conn.signRtmpURL(bucketName, channelName, playlistName, expiration)
+	playURL = getPublishURL(bucketName, channelName)
+	hasPrefix = strings.HasPrefix(signedRtmpURL, playURL)
+	c.Assert(hasPrefix, Equals, true)
 }
