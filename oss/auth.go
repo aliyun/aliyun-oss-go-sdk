@@ -79,13 +79,13 @@ func (conn Conn) getRtmpSignedStr(bucketName, channelName, playlistName string, 
 	sort.Strings(canonParamsKeys)
 	canonParamsStr := ""
 	for _, key := range canonParamsKeys {
-		canonParamsStr = fmt.Sprintf("%s%s:%s\n", canonParamsKeys, key, params[key].(string))
+		canonParamsStr = fmt.Sprintf("%s%s:%s\n", canonParamsStr, key, params[key].(string))
 	}
 
 	expireStr := strconv.FormatInt(expiration, 10)
 	signStr := expireStr + "\n" + canonParamsStr + canonResource
 
-	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.SecurityToken))
+	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.AccessKeySecret))
 	io.WriteString(h, signStr)
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	return signedStr

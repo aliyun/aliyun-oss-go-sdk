@@ -38,15 +38,16 @@ func (s *OssBucketLiveChannelSuite) TearDownSuite(c *C) {
 	for {
 		result, err := s.bucket.ListLiveChannel(Marker(marker))
 		c.Assert(err, IsNil)
-		if result.IsTruncated {
-			marker = result.NextMarker
-		} else {
-			break
-		}
 
 		for _, channel := range result.LiveChannel {
 			err := s.bucket.DeleteLiveChannel(channel.Name)
 			c.Assert(err, IsNil)
+		}
+
+		if result.IsTruncated {
+			marker = result.NextMarker
+		} else {
+			break
 		}
 	}
 	testLogger.Println("test livechannel done...")
@@ -336,8 +337,7 @@ func (s *OssBucketLiveChannelSuite) TestSignRtmpURL(c *C) {
 	expires := int64(3600)
 	signedRtmpURL, err := s.bucket.SignRtmpURL(channelName, playlistName, expires)
 	c.Assert(err, IsNil)
-	playURL := getPlayURL(s.bucket.BucketName, channelName, playlistName)
-	fmt.Printf("the value of signedRtmpURL, playURL is %v, %v", signedRtmpURL, playURL)
+	playURL := getPublishURL(s.bucket.BucketName, channelName)
 	hasPrefix := strings.HasPrefix(signedRtmpURL, playURL)
 	c.Assert(hasPrefix, Equals, true)
 
