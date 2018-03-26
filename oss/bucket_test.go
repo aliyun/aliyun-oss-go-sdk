@@ -58,7 +58,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	testLogger.Println("test bucket started")
 }
 
-// Run before each test or benchmark starts running
+// Run once after all tests or benckmarks have finished running
 func (s *OssBucketSuite) TearDownSuite(c *C) {
 	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
 		// Delete Multipart
@@ -84,13 +84,13 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 	testLogger.Println("test bucket completed")
 }
 
-// Run after each test or benchmark runs
+// Run before each test or benchmark starts
 func (s *OssBucketSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// Run after each test or benchmark runs
 func (s *OssBucketSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)

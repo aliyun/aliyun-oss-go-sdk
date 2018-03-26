@@ -114,6 +114,7 @@ const (
 	HTTPParamAccessKeyID   = "OSSAccessKeyId"
 	HTTPParamSignature     = "Signature"
 	HTTPParamSecurityToken = "security-token"
+	HTTPParamPlaylistName  = "playlistName"
 )
 
 // 其它常量
