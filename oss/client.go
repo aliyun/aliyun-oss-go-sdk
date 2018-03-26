@@ -794,6 +794,17 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 	}
 }
 
+//
+// WarpHttpTransport 用于修改HTTP的Transport
+//
+// modifior将在HTTP 的Transport上被执行
+//
+func WarpHttpTransport(modifior func(*http.Transport)) ClientOption {
+	return func(client *Client) {
+		client.Config.WarpHttpTransport = modifior
+	}
+}
+
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
 	headers map[string]string, data io.Reader) (*Response, error) {

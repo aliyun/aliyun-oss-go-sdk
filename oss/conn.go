@@ -42,6 +42,10 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 		transport.Proxy = http.ProxyURL(proxyURL)
 	}
 
+	if conn.config.WarpHttpTransport != nil {
+		conn.config.WarpHttpTransport(transport)
+	}
+
 	conn.config = config
 	conn.url = urlMaker
 	conn.client = &http.Client{Transport: transport}
