@@ -172,6 +172,16 @@ func Origin(value string) Option {
 	return setHeader(HTTPHeaderOrigin, value)
 }
 
+// XCallBack is an option to set x-oss-callback header
+func XCallBack(value string) Option {
+	return setHeader(HTTPHeaderOssCallBack, value)
+}
+
+// XCallBackVar is an option to set x-oss-callback header
+func XCallBackVar(value string) Option {
+	return setHeader(HTTPHeaderOssCallBackVar, value)
+}
+
 // Delimiter is an option to set delimiler parameter
 func Delimiter(value string) Option {
 	return addParam("delimiter", value)
@@ -210,6 +220,16 @@ func KeyMarker(value string) Option {
 // UploadIDMarker is an option to set upload-id-marker parameter
 func UploadIDMarker(value string) Option {
 	return addParam("upload-id-marker", value)
+}
+
+// CallBack is an option to set callback parameter
+func CallBack(value string) Option {
+	return addParam("callback", value)
+}
+
+// CallBackVar is an option to set callback-var parameter
+func CallBackVar(value string) Option {
+	return addParam("callback-var", value)
 }
 
 // DeleteObjectsQuiet DeleteObjects详细(verbose)模式或简单(quiet)模式，默认详细模式。
@@ -312,7 +332,25 @@ func addArg(key string, value interface{}) Option {
 	}
 }
 
-func handleOptions(headers map[string]string, options []Option) error {
+func handleParamOptions(params map[string]interface{}, options []Option) error {
+	tempParams := map[string]optionValue{}
+	for _, option := range options {
+		if option != nil {
+			if err := option(tempParams); err != nil {
+				return err
+			}
+		}
+	}
+
+	for k, v := range tempParams {
+		if v.Type == optionParam {
+			params[k] = v.Value
+		}
+	}
+	return nil
+}
+
+func handleHeaderOptions(headers map[string]string, options []Option) error {
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {

@@ -95,7 +95,7 @@ func (client Client) Bucket(bucketName string) (*Bucket, error) {
 //
 func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	headers := make(map[string]string)
-	handleOptions(headers, options)
+	handleHeaderOptions(headers, options)
 
 	buffer := new(bytes.Buffer)
 

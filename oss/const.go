@@ -106,6 +106,8 @@ const (
 	HTTPHeaderOssRequestID                   = "X-Oss-Request-Id"
 	HTTPHeaderOssCRC64                       = "X-Oss-Hash-Crc64ecma"
 	HTTPHeaderOssSymlinkTarget               = "X-Oss-Symlink-Target"
+	HTTPHeaderOssCallBack					 = "x-oss-callback"
+	HTTPHeaderOssCallBackVar				 = "x-oss-callback-var"
 )
 
 // Http Param

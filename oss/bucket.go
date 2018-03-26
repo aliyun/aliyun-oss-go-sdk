@@ -285,7 +285,7 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 	var out CopyObjectResult
 	options = append(options, CopySource(bucket.BucketName, url.QueryEscape(srcObjectKey)))
 	headers := make(map[string]string)
-	err := handleOptions(headers, options)
+	err := handleHeaderOptions(headers, options)
 	if err != nil {
 		return out, err
 	}
@@ -348,7 +348,7 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 	headers := make(map[string]string)
 
 	opts := addContentType(options, request.ObjectKey)
-	handleOptions(headers, opts)
+	handleHeaderOptions(headers, opts)
 
 	var initCRC uint64
 	isCRCSet, initCRCOpt, _ := isOptionSet(options, initCRC64)
@@ -358,7 +358,7 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 
 	listener := getProgressListener(options)
 
-	handleOptions(headers, opts)
+	handleHeaderOptions(headers, opts)
 	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, request.ObjectKey, params, headers,
 		request.Reader, initCRC, listener)
 	if err != nil {
@@ -722,7 +722,7 @@ func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec i
 	}
 
 	headers := make(map[string]string)
-	err = handleOptions(headers, options)
+	err = handleHeaderOptions(headers, options)
 	if err != nil {
 		return "", err
 	}
@@ -916,7 +916,11 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 func (bucket Bucket) do(method, objectName string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
 	headers := make(map[string]string)
-	err := handleOptions(headers, options)
+	err := handleHeaderOptions(headers, options)
+	if err != nil {
+		return nil, err
+	}
+	err = handleParamOptions(params, options)
 	if err != nil {
 		return nil, err
 	}
@@ -927,7 +931,7 @@ func (bucket Bucket) do(method, objectName string, params map[string]interface{}
 func (bucket Bucket) doURL(method HTTPMethod, signedURL string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
 	headers := make(map[string]string)
-	err := handleOptions(headers, options)
+	err := handleHeaderOptions(headers, options)
 	if err != nil {
 		return nil, err
 	}
