@@ -43,6 +43,50 @@ func GetTestBucket(bucketName string) (*oss.Bucket, error) {
 	return bucket, nil
 }
 
+// DeleteTestBucketAndLiveChannel 删除sample的channelname和bucket，该函数为了简化sample，让sample代码更明了
+func DeleteTestBucketAndLiveChannel(bucketName string) error {
+	// New Client
+	client, err := oss.New(endpoint, accessID, accessKey)
+	if err != nil {
+		return err
+	}
+
+	// Get Bucket
+	bucket, err := client.Bucket(bucketName)
+	if err != nil {
+		return err
+	}
+
+	marker := ""
+	for {
+		result, err := bucket.ListLiveChannel(oss.Marker(marker))
+		if err != nil {
+			HandleError(err)
+		}
+
+		for _, channel := range result.LiveChannel {
+			err := bucket.DeleteLiveChannel(channel.Name)
+			if err != nil {
+				HandleError(err)
+			}
+		}
+
+		if result.IsTruncated {
+			marker = result.NextMarker
+		} else {
+			break
+		}
+	}
+
+	// Delete Bucket
+	err = client.DeleteBucket(bucketName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DeleteTestBucketAndObject 删除sample的object和bucket，该函数为了简化sample，让sample代码更明了
 func DeleteTestBucketAndObject(bucketName string) error {
 	// New Client
