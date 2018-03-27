@@ -125,6 +125,14 @@ func (s *OssBucketLiveChannelSuite) TestDeleteLiveChannel(c *C) {
 	err = s.bucket.DeleteLiveChannel(channelName)
 	c.Assert(err, IsNil)
 
+	emptyChannelName := ""
+	err = s.bucket.DeleteLiveChannel(emptyChannelName)
+	c.Assert(err, NotNil)
+
+	longChannelName := randStr(65)
+	err = s.bucket.DeleteLiveChannel(longChannelName)
+	c.Assert(err, NotNil)
+
 	config, err = s.bucket.GetLiveChannelInfo(channelName)
 	c.Assert(err, NotNil)
 }
@@ -312,6 +320,10 @@ func (s *OssBucketLiveChannelSuite) TestListLiveChannel(c *C) {
 	result, err = s.bucket.ListLiveChannel(MaxKeys(maxKeys))
 	c.Assert(err, IsNil)
 	ok = compareListResult(result, "", "", "", maxKeys, false, 200)
+
+	invalidMaxKeys := -1
+	result, err = s.bucket.ListLiveChannel(MaxKeys(invalidMaxKeys))
+	c.Assert(err, NotNil)
 
 	for i := 0; i < 200; i++ {
 		channelName := fmt.Sprintf("%s-%03d", prefix, i)

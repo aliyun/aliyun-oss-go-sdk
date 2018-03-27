@@ -149,3 +149,18 @@ func (s *OssConnSuite) TestSignRtmpURL(c *C) {
 	hasPrefix = strings.HasPrefix(signedRtmpURL, playURL)
 	c.Assert(hasPrefix, Equals, true)
 }
+
+func (s *OssConnSuite) TestGetRtmpSignedStr(c *C) {
+	cfg := getDefaultOssConfig()
+	um := urlMaker{}
+	um.Init(endpoint, false, false)
+	conn := Conn{cfg, &um, nil}
+
+	//Anonymous
+	channelName := "test-get-rtmp-signed-str"
+	playlistName := "playlist.m3u8"
+	expiration := time.Now().Unix() + 3600
+	params := map[string]interface{}{}
+	signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, params)
+	c.Assert(signedStr, Equals, "")
+}

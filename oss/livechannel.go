@@ -199,6 +199,10 @@ func (bucket Bucket) DeleteLiveChannel(channelName string) error {
 	params := map[string]interface{}{}
 	params["live"] = nil
 
+	if channelName == "" {
+		return fmt.Errorf("invalid argument: channel name is empty")
+	}
+
 	resp, err := bucket.do("DELETE", channelName, params, nil, nil, nil)
 	if err != nil {
 		return err
