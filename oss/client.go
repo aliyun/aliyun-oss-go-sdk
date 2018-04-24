@@ -671,6 +671,8 @@ func Timeout(connectTimeoutSec, readWriteTimeout int64) ClientOption {
 			time.Second * time.Duration(readWriteTimeout)
 		client.Config.HTTPTimeout.HeaderTimeout =
 			time.Second * time.Duration(readWriteTimeout)
+		client.Config.HTTPTimeout.IdleConnTimeout =
+			time.Second * time.Duration(readWriteTimeout)
 		client.Config.HTTPTimeout.LongTimeout =
 			time.Second * time.Duration(readWriteTimeout*10)
 	}

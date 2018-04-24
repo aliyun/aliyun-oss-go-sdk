@@ -33,16 +33,7 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
 	httpTimeOut := conn.config.HTTPTimeout
 
 	// new Transport
-	transport := &http.Transport{
-		Dial: func(netw, addr string) (net.Conn, error) {
-			conn, err := net.DialTimeout(netw, addr, httpTimeOut.ConnectTimeout)
-			if err != nil {
-				return nil, err
-			}
-			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
-		},
-		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
-	}
+	transport := newTransport(conn, config)
 
 	// Proxy
 	if conn.config.IsUseProxy {
@@ -254,6 +245,9 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 }
 
 func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) string {
+	if conn.config.SecurityToken != "" {
+		params[HTTPParamSecurityToken] = conn.config.SecurityToken
+	}
 	subResource := conn.getSubResource(params)
 	canonicalizedResource := conn.url.getResource(bucketName, objectName, subResource)
 
@@ -284,9 +278,6 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
 	params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
 	params[HTTPParamSignature] = signedStr
-	if conn.config.SecurityToken != "" {
-		params[HTTPParamSecurityToken] = conn.config.SecurityToken
-	}
 
 	urlParams := conn.getURLParams(params)
 	return conn.url.getSignURL(bucketName, objectName, urlParams)

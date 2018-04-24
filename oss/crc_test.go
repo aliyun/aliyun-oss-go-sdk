@@ -6,6 +6,7 @@ import (
 	"hash/crc64"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -126,12 +127,89 @@ func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	}
 }
 
-// TestEnableCRCAndMD5 enables MD5 and CRC
+// testCRC64Combine tests crc64 on vector[0..pos] which should have CRC-64 crc.
+// Also test CRC64Combine on vector[] split in two.
+func testCRC64Combine(c *C, str string, pos int, crc uint64) {
+	tabECMA := crc64.MakeTable(crc64.ECMA)
+
+	// test crc64
+	hash := crc64.New(tabECMA)
+	io.WriteString(hash, str)
+	crc1 := hash.Sum64()
+	c.Assert(crc1, Equals, crc)
+
+	// test crc64 combine
+	hash = crc64.New(tabECMA)
+	io.WriteString(hash, str[0:pos])
+	crc1 = hash.Sum64()
+
+	hash = crc64.New(tabECMA)
+	io.WriteString(hash, str[pos:len(str)])
+	crc2 := hash.Sum64()
+
+	crc1 = CRC64Combine(crc1, crc2, uint64(len(str)-pos))
+	c.Assert(crc1, Equals, crc)
+}
+
+// TestCRCCombine tests CRC64Combine
+func (s *OssCrcSuite) TestCRCCombine(c *C) {
+	str := "123456789"
+	testCRC64Combine(c, str, (len(str)+1)>>1, 0x995DC9BBDF1939FA)
+
+	str = "This is a test of the emergency broadcast system."
+	testCRC64Combine(c, str, (len(str)+1)>>1, 0x27DB187FC15BBC72)
+}
+
+// TestCRCRepeatedCombine tests CRC64Combine
+func (s *OssCrcSuite) TestCRCRepeatedCombine(c *C) {
+	tab := crc64.MakeTable(crc64.ECMA)
+	str := "Even if I could be Shakespeare, I think I should still choose to be Faraday. - A. Huxley"
+
+	for i := 0; i <= len(str); i++ {
+		hash := crc64.New(tab)
+		io.WriteString(hash, string(str[0:i]))
+		prev := hash.Sum64()
+
+		hash = crc64.New(tab)
+		io.WriteString(hash, string(str[i:len(str)]))
+		post := hash.Sum64()
+
+		crc := CRC64Combine(prev, post, uint64(len(str)-i))
+		testLogger.Println("TestCRCRepeatedCombine:", prev, post, crc, i, len(str))
+		c.Assert(crc == 0x7AD25FAFA1710407, Equals, true)
+	}
+}
+
+// TestCRCRandomCombine tests CRC64Combine
+func (s *OssCrcSuite) TestCRCRandomCombine(c *C) {
+	tab := crc64.MakeTable(crc64.ECMA)
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+
+	body, err := ioutil.ReadFile(fileName)
+	c.Assert(err, IsNil)
+
+	for i := 0; i < 10; i++ {
+		fileParts, err := SplitFileByPartNum(fileName, 1+rand.Intn(9999))
+		c.Assert(err, IsNil)
+
+		var crc uint64
+		for _, part := range fileParts {
+			calc := NewCRC(tab, 0)
+			calc.Write(body[part.Offset : part.Offset+part.Size])
+			crc = CRC64Combine(crc, calc.Sum64(), (uint64)(part.Size))
+		}
+
+		testLogger.Println("TestCRCRandomCombine:", crc, i, fileParts)
+		c.Assert(crc == 0x2B612D24FFF64222, Equals, true)
+	}
+}
+
+// TestEnableCRCAndMD5 tests MD5 and CRC check
 func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-2.jpg"
-	objectValue := "ç©ºå±±æ–°é›¨åŽï¼Œå¤©æ°”æ™šæ¥ç§‹ã€‚æ˜Žæœˆæ¾é—´ç…§ï¼Œæ¸…æ³‰çŸ³ä¸Šæµã€‚ç«¹å–§å½’æµ£å¥³ï¼ŒèŽ²åŠ¨ä¸‹æ¸”èˆŸã€‚éšæ„æ˜¥èŠ³æ­‡ï¼ŒçŽ‹å­™è‡ªå¯ç•™ã€‚"
+	objectValue := "ç©ºå±±æ–°é›¨åŽï¼Œå¤©æ°”æ™šæ¥ç§‹ã€‚æ˜Žæœˆæ¾é—´ç…§ï¼Œæ¸…æ³‰çŸ³ä¸Šæµã€‚ç«¹å–§å½’æµ£å¥³ï¼ŒèŽ²åŠ¨ä¸‹æ¸”èˆŸã€‚éšæ„æ˜¥èŠ³æ­‡ï¼ŒçŽ‹å­™è‡ªå¯ç•™ã€?
 
 	client, err := New(endpoint, accessID, accessKey, EnableCRC(true), EnableMD5(true), MD5ThresholdCalcInMemory(200*1024))
 	c.Assert(err, IsNil)
@@ -228,7 +306,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-3.jpg"
-	objectValue := "ä¸­å²é¢‡å¥½é“ï¼Œæ™šå®¶å—å±±é™²ã€‚å…´æ¥æ¯ç‹¬å¾€ï¼Œèƒœäº‹ç©ºè‡ªçŸ¥ã€‚è¡Œåˆ°æ°´ç©·å¤„ï¼Œåçœ‹äº‘èµ·æ—¶ã€‚å¶ç„¶å€¼æž—åŸï¼Œè°ˆç¬‘æ— è¿˜æœŸã€‚"
+	objectValue := "ÖÐËêÆÄºÃµÀ£¬Íí¼ÒÄÏÉ½Úï¡£ÐËÀ´Ã¿¶ÀÍù£¬Ê¤ÊÂ¿Õ×ÔÖª¡£ÐÐµ½Ë®Çî´¦£¬×ø¿´ÔÆÆðÊ±¡£Å¼È»ÖµÁÖÛÅ£¬Ì¸Ð¦ÎÞ»¹ÆÚ¡£"
 
 	client, err := New(endpoint, accessID, accessKey, EnableCRC(false), EnableMD5(false))
 	c.Assert(err, IsNil)
@@ -323,7 +401,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	objectValue := "ç§¯é›¨ç©ºæž—çƒŸç«è¿Ÿï¼Œè’¸è—œç‚Šé»é¥·ä¸œè‘ã€‚æ¼ æ¼ æ°´ç”°é£žç™½é¹­ï¼Œé˜´é˜´å¤æœ¨å•­é»„é¹‚ã€‚å±±ä¸­ä¹ é™è§‚æœæ§¿ï¼Œæ¾ä¸‹æ¸…æ–‹æŠ˜éœ²è‘µã€‚é‡Žè€ä¸Žäººäº‰å¸­ç½¢ï¼Œæµ·é¸¥ä½•äº‹æ›´ç›¸ç–‘ã€‚"
+	objectValue := "»ýÓê¿ÕÁÖÑÌ»ð³Ù£¬ÕôÞ¼´¶ÊòâÃ¶«Ç¡£Ä®Ä®Ë®Ìï·É°×ðØ£¬ÒõÒõÏÄÄ¾ßù»Æð¿¡£É½ÖÐÏ°¾²¹Û³¯éÈ£¬ËÉÏÂÇåÕ«ÕÛÂ¶¿û¡£Ò°ÀÏÓëÈËÕùÏ¯°Õ£¬º£Å¸ºÎÊÂ¸üÏàÒÉ¡£"
 
 	mh := md5.Sum([]byte(objectValue))
 	md5B64 := base64.StdEncoding.EncodeToString(mh[:])
@@ -387,7 +465,7 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 // TestAppendObjectNegative
 func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
 	objectName := objectNamePrefix + "taoncrc"
-	objectValue := "ç©ºå±±ä¸è§äººï¼Œä½†é—»äººè¯­å“ã€‚è¿”å½±å…¥æ·±æž—ï¼Œå¤ç…§é’è‹”ä¸Šã€‚"
+	objectValue := "¿ÕÉ½²»¼ûÈË£¬µ«ÎÅÈËÓïÏì¡£·µÓ°ÈëÉîÁÖ£¬¸´ÕÕÇàÌ¦ÉÏ¡£"
 
 	nextPos, err := s.bucket.AppendObject(objectName, strings.NewReader(objectValue), 0, InitCRC(0))
 	c.Assert(err, IsNil)

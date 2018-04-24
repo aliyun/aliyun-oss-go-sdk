@@ -118,8 +118,8 @@ const (
 
 // other constants
 const (
-	MaxPartSize = 5 * 1024 * 1024 * 1024 // max part sizeï¼Œ5GB
-	MinPartSize = 100 * 1024             // min part sizeï¼Œ100KB.
+	MaxPartSize = 5 * 1024 * 1024 * 1024 // max part sizeï¼?GB
+	MinPartSize = 100 * 1024             // min part sizeï¼?00KB.
 
 	FilePermMode = os.FileMode(0664) // default file permission
 
@@ -128,5 +128,5 @@ const (
 
 	CheckpointFileSuffix = ".cp" // Checkpoint file suffix
 
-	Version = "1.6.0" // Go sdk version
+	Version = "1.8.0" // Go sdk version
 )

@@ -4,7 +4,6 @@ package oss
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/baiyubin/aliyun-sts-go-sdk/sts"
 
 	. "gopkg.in/check.v1"
 )
@@ -1764,6 +1765,7 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.getConfig().HTTPTimeout.ConnectTimeout, Equals, time.Second*11)
 	c.Assert(bucket.getConfig().HTTPTimeout.ReadWriteTimeout, Equals, time.Second*12)
 	c.Assert(bucket.getConfig().HTTPTimeout.HeaderTimeout, Equals, time.Second*12)
+	c.Assert(bucket.getConfig().HTTPTimeout.IdleConnTimeout, Equals, time.Second*12)
 	c.Assert(bucket.getConfig().HTTPTimeout.LongTimeout, Equals, time.Second*12*10)
 
 	c.Assert(bucket.getConfig().SecurityToken, Equals, "token")
@@ -1775,19 +1777,17 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 func (s *OssBucketSuite) _TestSTSTonek(c *C) {
 	objectName := objectNamePrefix + "tst"
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
-	stsServer := ""
-	stsEndpoint := ""
-	stsBucketName := ""
 
-	stsRes, err := getSTSToken(stsServer)
-	c.Assert(err, IsNil)
-	testLogger.Println("sts:", stsRes)
+	stsClient := sts.NewClient(stsaccessID, stsaccessKey, stsARN, "oss_test_sess")
 
-	client, err := New(stsEndpoint, stsRes.AccessID, stsRes.AccessKey,
-		SecurityToken(stsRes.SecurityToken))
+	resp, err := stsClient.AssumeRole(1800)
 	c.Assert(err, IsNil)
 
-	bucket, err := client.Bucket(stsBucketName)
+	client, err := New(endpoint, resp.Credentials.AccessKeyId, resp.Credentials.AccessKeySecret,
+		SecurityToken(resp.Credentials.SecurityToken))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 
 	// Put
@@ -1795,7 +1795,7 @@ func (s *OssBucketSuite) _TestSTSTonek(c *C) {
 	c.Assert(err, IsNil)
 
 	// Get
-	body, err := s.bucket.GetObject(objectName)
+	body, err := bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
 	c.Assert(err, IsNil)
@@ -1805,6 +1805,23 @@ func (s *OssBucketSuite) _TestSTSTonek(c *C) {
 	lor, err := bucket.ListObjects()
 	c.Assert(err, IsNil)
 	testLogger.Println("Objects:", lor.Objects)
+
+	// Put with url
+	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get with url
+	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
+	c.Assert(err, IsNil)
+
+	body, err = bucket.GetObjectWithURL(signedURL)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
 
 	// Delete
 	err = bucket.DeleteObject(objectName)
@@ -1864,12 +1881,6 @@ func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	err = client.DeleteBucket(bucketName)
-	c.Assert(err, NotNil)
-
-	_, err = getSTSToken("")
-	c.Assert(err, NotNil)
-
-	_, err = getSTSToken("http://me.php")
 	c.Assert(err, NotNil)
 }
 
@@ -2188,43 +2199,6 @@ func isFileExist(filename string) (bool, error) {
 	} else {
 		return true, nil
 	}
-}
-
-// The response data of the get request from STS Server
-type getSTSResult struct {
-	Status        int    `json:"status"`        // http status, 200 is ok, non-200 means failure
-	AccessID      string `json:"accessId"`      //STS AccessId
-	AccessKey     string `json:"accessKey"`     // STS AccessKey
-	Expiration    string `json:"expiration"`    // STS Token
-	SecurityToken string `json:"securityToken"` // Token's expiration time in GMT
-	Bucket        string `json:"bucket"`        // the available bucket
-	Endpoint      string `json:"endpoint"`      // the endpoint
-}
-
-// Gets the STS response. It's valid only when the error is nil.
-func getSTSToken(STSServer string) (getSTSResult, error) {
-	result := getSTSResult{}
-	resp, err := http.Get(STSServer)
-	if err != nil {
-		return result, err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return result, err
-	}
-
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return result, err
-	}
-
-	if result.Status != 200 {
-		return result, errors.New("Server Return Status:" + strconv.Itoa(result.Status))
-	}
-
-	return result, nil
 }
 
 func readBody(body io.ReadCloser) (string, error) {
