@@ -164,7 +164,7 @@ type downloadPart struct {
 	Start  int64  // start index
 	End    int64  // end index
 	Offset int64  // offset
-        CRC64  uint64 // CRC check value of part
+	CRC64  uint64 // CRC check value of part
 }
 
 // getDownloadParts gets download parts
