@@ -209,7 +209,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-2.jpg"
-	objectValue := "¿ÕÉ½ĞÂÓêºó£¬ÌìÆøÍíÀ´Çï¡£Ã÷ÔÂËÉ¼äÕÕ£¬ÇåÈªÊ¯ÉÏÁ÷¡£ÖñĞú¹éä½Å®£¬Á«¶¯ÏÂÓæÖÛ¡£ËæÒâ´º·¼Ğª£¬ÍõËï×Ô¿ÉÁô¡£"
+	objectValue := "ç©ºå±±æ–°é›¨åï¼Œå¤©æ°”æ™šæ¥ç§‹ã€‚æ˜æœˆæ¾é—´ç…§ï¼Œæ¸…æ³‰çŸ³ä¸Šæµã€‚ç«¹å–§å½’æµ£å¥³ï¼Œè²åŠ¨ä¸‹æ¸”èˆŸã€‚éšæ„æ˜¥èŠ³æ­‡ï¼Œç‹å­™è‡ªå¯ç•™ã€‚"
 
 	client, err := New(endpoint, accessID, accessKey, EnableCRC(true), EnableMD5(true), MD5ThresholdCalcInMemory(200*1024))
 	c.Assert(err, IsNil)
@@ -306,7 +306,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-3.jpg"
-	objectValue := "ÖĞËêÆÄºÃµÀ£¬Íí¼ÒÄÏÉ½Úï¡£ĞËÀ´Ã¿¶ÀÍù£¬Ê¤ÊÂ¿Õ×ÔÖª¡£ĞĞµ½Ë®Çî´¦£¬×ø¿´ÔÆÆğÊ±¡£Å¼È»ÖµÁÖÛÅ£¬Ì¸Ğ¦ÎŞ»¹ÆÚ¡£"
+	objectValue := "ä¸­å²é¢‡å¥½é“ï¼Œæ™šå®¶å—å±±é™²ã€‚å…´æ¥æ¯ç‹¬å¾€ï¼Œèƒœäº‹ç©ºè‡ªçŸ¥ã€‚è¡Œåˆ°æ°´ç©·å¤„ï¼Œåçœ‹äº‘èµ·æ—¶ã€‚å¶ç„¶å€¼æ—åŸï¼Œè°ˆç¬‘æ— è¿˜æœŸã€‚"
 
 	client, err := New(endpoint, accessID, accessKey, EnableCRC(false), EnableMD5(false))
 	c.Assert(err, IsNil)
@@ -401,7 +401,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	objectValue := "»ıÓê¿ÕÁÖÑÌ»ğ³Ù£¬ÕôŞ¼´¶ÊòâÃ¶«Ç¡£Ä®Ä®Ë®Ìï·É°×ğØ£¬ÒõÒõÏÄÄ¾ßù»Æğ¿¡£É½ÖĞÏ°¾²¹Û³¯éÈ£¬ËÉÏÂÇåÕ«ÕÛÂ¶¿û¡£Ò°ÀÏÓëÈËÕùÏ¯°Õ£¬º£Å¸ºÎÊÂ¸üÏàÒÉ¡£"
+	objectValue := "ç§¯é›¨ç©ºæ—çƒŸç«è¿Ÿï¼Œè’¸è—œç‚Šé»é¥·ä¸œè‘ã€‚æ¼ æ¼ æ°´ç”°é£ç™½é¹­ï¼Œé˜´é˜´å¤æœ¨å•­é»„é¹‚ã€‚å±±ä¸­ä¹ é™è§‚æœæ§¿ï¼Œæ¾ä¸‹æ¸…æ–‹æŠ˜éœ²è‘µã€‚é‡è€ä¸äººäº‰å¸­ç½¢ï¼Œæµ·é¸¥ä½•äº‹æ›´ç›¸ç–‘ã€‚"
 
 	mh := md5.Sum([]byte(objectValue))
 	md5B64 := base64.StdEncoding.EncodeToString(mh[:])
@@ -465,7 +465,7 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 // TestAppendObjectNegative
 func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
 	objectName := objectNamePrefix + "taoncrc"
-	objectValue := "¿ÕÉ½²»¼ûÈË£¬µ«ÎÅÈËÓïÏì¡£·µÓ°ÈëÉîÁÖ£¬¸´ÕÕÇàÌ¦ÉÏ¡£"
+	objectValue := "ç©ºå±±ä¸è§äººï¼Œä½†é—»äººè¯­å“ã€‚è¿”å½±å…¥æ·±æ—ï¼Œå¤ç…§é’è‹”ä¸Šã€‚"
 
 	nextPos, err := s.bucket.AppendObject(objectName, strings.NewReader(objectValue), 0, InitCRC(0))
 	c.Assert(err, IsNil)
