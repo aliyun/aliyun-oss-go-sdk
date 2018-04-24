@@ -543,7 +543,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCombineCRCInParts tests DownloadPartsµÄCRC Combine
+// TestCombineCRCInDownloadParts tests DonwloadParts CRC Combine
 func (s *OssDownloadSuite) TestCombineCRCInDownloadParts(c *C) {
 	crc := combineCRCInParts(nil)
 	c.Assert(crc == 0, Equals, true)
