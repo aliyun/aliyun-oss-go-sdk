@@ -1426,7 +1426,7 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 func (s *OssClientSuite) TestProxy(c *C) {
 	bucketNameTest := bucketNamePrefix + "tp"
 	objectName := "体育/奥运/首金"
-	objectValue := "大江东去，浪淘尽，千古风流人物�?故垒西边，人道是、三国周郎赤壁�?
+	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。"
 
 	client, err := New(endpoint, accessID, accessKey, AuthProxy(proxyHost, proxyUser, proxyPasswd))
 
