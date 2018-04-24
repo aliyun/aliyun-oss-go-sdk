@@ -118,8 +118,8 @@ const (
 
 // other constants
 const (
-	MaxPartSize = 5 * 1024 * 1024 * 1024 // max part sizeï¼?GB
-	MinPartSize = 100 * 1024             // min part sizeï¼?00KB.
+	MaxPartSize = 5 * 1024 * 1024 * 1024 // max part size, GB
+	MinPartSize = 100 * 1024             // min part size, KB
 
 	FilePermMode = os.FileMode(0664) // default file permission
 
