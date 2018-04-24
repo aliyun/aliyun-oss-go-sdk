@@ -1773,8 +1773,7 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.getConfig().IsEnableMD5, Equals, false)
 }
 
-// TestSTSTonek
-func (s *OssBucketSuite) _TestSTSTonek(c *C) {
+func (s *OssBucketSuite) TestSTSToken(c *C) {
 	objectName := objectNamePrefix + "tst"
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
 

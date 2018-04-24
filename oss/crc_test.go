@@ -209,7 +209,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-2.jpg"
-	objectValue := "绌哄北鏂伴洦鍚庯紝澶╂皵鏅氭潵绉嬨�傛槑鏈堟澗闂寸収锛屾竻娉夌煶涓婃祦銆傜鍠у綊娴ｅコ锛岃幉鍔ㄤ笅娓旇垷銆傞殢鎰忔槬鑺虫瓏锛岀帇瀛欒嚜鍙暀銆?
+	objectValue := "空山新雨后，天气晚来秋。明月松间照，清泉石上流。竹喧归浣女，莲动下渔舟。随意春芳歇，王孙自可留。"
 
 	client, err := New(endpoint, accessID, accessKey, EnableCRC(true), EnableMD5(true), MD5ThresholdCalcInMemory(200*1024))
 	c.Assert(err, IsNil)

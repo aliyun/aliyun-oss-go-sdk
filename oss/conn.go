@@ -30,8 +30,6 @@ var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "web
 
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
-	httpTimeOut := conn.config.HTTPTimeout
-
 	// new Transport
 	transport := newTransport(conn, config)
 

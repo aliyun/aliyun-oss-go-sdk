@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"hash"
+	"hash/crc64"
 	"io"
 	"io/ioutil"
 	"os"
@@ -22,7 +24,7 @@ import (
 //
 func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < 1 {
-		return errors.New("oss: part size smaller than 1 ")
+		return errors.New("oss: part size smaller than 1")
 	}
 
 	cpConf, err := getCpConfig(options, filePath)
@@ -57,11 +59,12 @@ func getRangeConfig(options []Option) (*unpackedRange, error) {
 
 // downloadWorkerArg is download worker's parameters
 type downloadWorkerArg struct {
-	bucket   *Bucket
-	key      string
-	filePath string
-	options  []Option
-	hook     downloadPartHook
+	bucket    *Bucket
+	key       string
+	filePath  string
+	options   []Option
+	hook      downloadPartHook
+	enableCRC bool
 }
 
 // downloadPartHook is hook for test
@@ -104,6 +107,14 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 		}
 		defer rd.Close()
 
+		var crcCalc hash.Hash64
+		if arg.enableCRC {
+			crcCalc = crc64.New(crcTable())
+			contentLen := part.End - part.Start + 1
+			rd = ioutil.NopCloser(TeeReader(rd, crcCalc, contentLen, nil, nil))
+		}
+		defer rd.Close()
+
 		select {
 		case <-die:
 			return
@@ -130,6 +141,10 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			break
 		}
 
+		if arg.enableCRC {
+			part.CRC64 = crcCalc.Sum64()
+		}
+
 		fd.Close()
 		results <- part
 	}
@@ -152,16 +167,25 @@ type downloadPart struct {
 }
 
 // getDownloadParts gets download parts
-func getDownloadParts(bucket *Bucket, objectKey string, partSize int64, uRange *unpackedRange) ([]downloadPart, error) {
+func getDownloadParts(bucket *Bucket, objectKey string, partSize int64, uRange *unpackedRange) ([]downloadPart, bool, uint64, error) {
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
-		return nil, err
+		return nil, false, 0, err
 	}
 
 	parts := []downloadPart{}
 	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
 	if err != nil {
-		return nil, err
+		return nil, false, 0, err
+	}
+
+	enableCRC := false
+	crcVal := (uint64)(0)
+	if bucket.getConfig().IsEnableCRC && meta.Get(HTTPHeaderOssCRC64) != "" {
+		if uRange == nil || (!uRange.hasStart && !uRange.hasEnd) {
+			enableCRC = true
+			crcVal, _ = strconv.ParseUint(meta.Get(HTTPHeaderOssCRC64), 10, 0)
+		}
 	}
 
 	part := downloadPart{}
@@ -172,10 +196,11 @@ func getDownloadParts(bucket *Bucket, objectKey string, partSize int64, uRange *
 		part.Start = offset
 		part.End = GetPartEnd(offset, end, partSize)
 		part.Offset = start
+		part.CRC64 = 0
 		parts = append(parts, part)
 		i++
 	}
-	return parts, nil
+	return parts, enableCRC, crcVal, nil
 }
 
 // getObjectBytes gets object bytes length
@@ -185,6 +210,20 @@ func getObjectBytes(parts []downloadPart) int64 {
 		ob += (part.End - part.Start + 1)
 	}
 	return ob
+}
+
+// combineCRCInParts caculates the total CRC of continuous parts
+func combineCRCInParts(dps []downloadPart) uint64 {
+	if dps == nil || len(dps) == 0 {
+		return 0
+	}
+
+	crc := dps[0].CRC64
+	for i := 1; i < len(dps); i++ {
+		crc = CRC64Combine(crc, dps[i].CRC64, (uint64)(dps[i].End-dps[i].Start+1))
+	}
+
+	return crc
 }
 
 // downloadFile downloads file concurrently without checkpoint.
@@ -200,7 +239,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	fd.Close()
 
 	// gets the parts of the file
-	parts, err := getDownloadParts(&bucket, objectKey, partSize, uRange)
+	parts, enableCRC, expectedCRC, err := getDownloadParts(&bucket, objectKey, partSize, uRange)
 	if err != nil {
 		return err
 	}
@@ -216,7 +255,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	publishProgress(listener, event)
 
 	// start the download workers
-	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker}
+	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
@@ -226,13 +265,12 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 
 	// Waiting for parts download finished
 	completed := 0
-	ps := make([]downloadPart, len(parts))
 	for completed < len(parts) {
 		select {
 		case part := <-results:
 			completed++
-			ps[part.Index] = part
 			completedBytes += (part.End - part.Start + 1)
+			parts[part.Index].CRC64 = part.CRC64
 			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes)
 			publishProgress(listener, event)
 		case err := <-failed:
@@ -250,6 +288,14 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	event = newProgressEvent(TransferCompletedEvent, completedBytes, totalBytes)
 	publishProgress(listener, event)
 
+	if enableCRC {
+		actualCRC := combineCRCInParts(parts)
+		err = checkDownloadCRC(actualCRC, expectedCRC)
+		if err != nil {
+			return err
+		}
+	}
+
 	return os.Rename(tempFilePath, filePath)
 }
 
@@ -258,15 +304,17 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 const downloadCpMagic = "92611BED-89E2-46B6-89E5-72F273D4B0A3"
 
 type downloadCheckpoint struct {
-	Magic    string         // magic
-	MD5      string         // cp content MD5
-	FilePath string         // local file
-	Object   string         // key
-	ObjStat  objectStat     // object status
-	Parts    []downloadPart // all download parts
-	PartStat []bool         // parts' download status
-	Start    int64          // start point of the file
-	End      int64          // end point of the file
+	Magic     string         // magic
+	MD5       string         // cp content MD5
+	FilePath  string         // local file
+	Object    string         // key
+	ObjStat   objectStat     // object status
+	Parts     []downloadPart // all download parts
+	PartStat  []bool         // parts' download status
+	Start     int64          // start point of the file
+	End       int64          // end point of the file
+	enableCRC bool           // whether has CRC check
+	CRC       uint64         // CRC check value
 }
 
 type objectStat struct {
@@ -397,7 +445,7 @@ func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
 	// parts
-	cp.Parts, err = getDownloadParts(bucket, objectKey, partSize, uRange)
+	cp.Parts, cp.enableCRC, cp.CRC, err = getDownloadParts(bucket, objectKey, partSize, uRange)
 	if err != nil {
 		return err
 	}
@@ -454,7 +502,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	publishProgress(listener, event)
 
 	// starts the download workers
-	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker}
+	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, dcp.enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
@@ -469,6 +517,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		case part := <-results:
 			completed++
 			dcp.PartStat[part.Index] = true
+			dcp.Parts[part.Index].CRC64 = part.CRC64
 			dcp.dump(cpFilePath)
 			completedBytes += (part.End - part.Start + 1)
 			event = newProgressEvent(TransferDataEvent, completedBytes, dcp.ObjStat.Size)
@@ -487,6 +536,14 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 
 	event = newProgressEvent(TransferCompletedEvent, completedBytes, dcp.ObjStat.Size)
 	publishProgress(listener, event)
+
+	if dcp.enableCRC {
+		actualCRC := combineCRCInParts(dcp.Parts)
+		err = checkDownloadCRC(actualCRC, dcp.CRC)
+		if err != nil {
+			return err
+		}
+	}
 
 	return dcp.complete(cpFilePath, tempFilePath)
 }
