@@ -160,10 +160,11 @@ func downloadScheduler(jobs chan downloadPart, parts []downloadPart) {
 
 // downloadPart defines download part
 type downloadPart struct {
-	Index  int   // part number, starting from 0
-	Start  int64 // start index
-	End    int64 // end index
-	Offset int64 // offset
+	Index  int    // part number, starting from 0
+	Start  int64  // start index
+	End    int64  // end index
+	Offset int64  // offset
+        CRC64  uint64 // CRC check value of part
 }
 
 // getDownloadParts gets download parts
