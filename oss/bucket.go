@@ -34,7 +34,7 @@ type Bucket struct {
 //
 // error  操作无错误为nil，非nil为错误信息。
 //
-func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Option) error {
+func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Option) (int, error) {
 	opts := addContentType(options, objectKey)
 
 	request := &PutObjectRequest{
@@ -42,12 +42,15 @@ func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Op
 		Reader:    reader,
 	}
 	resp, err := bucket.DoPutObject(request, opts)
+
 	if err != nil {
-		return err
+		return 500, err
 	}
+
+	statusCode := resp.StatusCode
 	defer resp.Body.Close()
 
-	return err
+	return statusCode, err
 }
 
 //
