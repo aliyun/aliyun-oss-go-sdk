@@ -109,7 +109,7 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 
-	// part size is 100K and three threads with checkpoint are used.
+	// part size is 100K and three threads with checkpoint
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
 	if err != nil {
 		HandleError(err)
@@ -121,7 +121,7 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 
-	// case 7：Use GZIP encoding for downloading the file.
+	// case 7：Use GZIP encoding for downloading the file, GetObject/GetObjectToFile are the same.
 	err = bucket.PutObjectFromFile(objectKey, htmlLocalFile)
 	if err != nil {
 		HandleError(err)

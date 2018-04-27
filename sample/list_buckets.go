@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ListBucketsSample demos the list bucket
+// ListBucketsSample demos the list bucket, including default and specified parameters.
 func ListBucketsSample() {
 	var myBuckets = []string{
 		"my-bucket-1",
@@ -52,14 +52,14 @@ func ListBucketsSample() {
 	}
 	fmt.Println("my buckets:", lbr.Buckets)
 
-	// case 2：specifies the max keys 3
+	// case 2：specifies the max keys : 3
 	lbr, err = client.ListBuckets(oss.MaxKeys(3))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my buckets max num:", lbr.Buckets)
 
-	// case3：specifies the prefix
+	// case3：specifies the prefix of buckets.
 	lbr, err = client.ListBuckets(oss.Prefix("my-bucket-2"))
 	if err != nil {
 		HandleError(err)

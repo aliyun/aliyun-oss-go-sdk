@@ -59,7 +59,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
-// DoURL sends the request with presigned url.
+// DoURL sends the request with signed url and returns the response result.
 func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	// get uri form signedURL

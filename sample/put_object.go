@@ -31,7 +31,7 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// case3：uploads the local file with file handle
+	// case3：uploads the local file with file handle, user should open the file at first.
 	fd, err := os.Open(localFile)
 	if err != nil {
 		HandleError(err)
@@ -43,13 +43,13 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// case 4：uploads an object with local file name
+	// case 4：uploads an object with local file name, user need not open the file.
 	err = bucket.PutObjectFromFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// case5：uploads a object with specified properties.
+	// case5：uploads a object with specified properties, PutObject/PutObjectFromFile/UploadFile also support this feature.
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.ObjectACL(oss.ACLPublicRead),
@@ -79,13 +79,14 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// part size is 100K and three threads are used with checkpoint
+	// part size is 100K and 3 threads are used with checkpoint
 	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// specifies the local file path for checkpoint files.
+	// specifies the local file path for checkpoint files. 
+	// the 2nd paramter of Checkpoint can specify the file path, when the file path is empty, it will upload the directory.
 	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.Checkpoint(true, localFile+".cp"))
 	if err != nil {
 		HandleError(err)

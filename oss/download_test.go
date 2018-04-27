@@ -82,7 +82,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	// download the file
+	// download the file by default
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -144,7 +144,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	// download a file with checkpoint
+	// download a file with default checkpoint
 	downloadPartHooker = DownErrorHooker
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
@@ -309,7 +309,7 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-3.jpg"
 
-	// upload file
+	// upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -324,7 +324,7 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 
-	// the invalid part size
+	// invalid part size
 	err = s.bucket.DownloadFile(objectName, newFile, 0, Routines(2))
 	c.Assert(err, NotNil)
 
@@ -355,7 +355,7 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestDownloadWithRange concurrent download with range specified and checkpoint enabled
+// TestDownloadWithRange tests concurrent download with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	objectName := objectNamePrefix + "tdwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -449,7 +449,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDownloadWithCheckoutAndRange Concurrent download with checkpoint
+// TestDownloadWithCheckoutAndRange tests concurrent download with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	objectName := objectNamePrefix + "tdwcr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"

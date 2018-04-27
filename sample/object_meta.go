@@ -38,7 +38,7 @@ func ObjectMetaSample() {
 	}
 	fmt.Println("Object Meta:", props)
 
-	// case 2：gets the Object meta as well as custom meta
+	// case 2：gets all the detailed object meta including custom meta
 	props, err = bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		HandleError(err)

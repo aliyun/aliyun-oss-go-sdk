@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ListObjectsSample demos the file list
+// ListObjectsSample demos the file list, including default and specified parameters.
 func ListObjectsSample() {
 	var myObjects = []Object{
 		{"my-object-1", ""},
@@ -51,7 +51,7 @@ func ListObjectsSample() {
 	}
 	fmt.Println("my objects prefix :", getObjectsFormResponse(lor))
 
-	// case4：specifies the mark
+	// case4：specifies the marker
 	lor, err = bucket.ListObjects(oss.Marker("my-object-22"))
 	if err != nil {
 		HandleError(err)

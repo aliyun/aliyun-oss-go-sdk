@@ -76,7 +76,7 @@ func defaultDownloadPartHook(part downloadPart) error {
 	return nil
 }
 
-// defaultDownloadProgressListener defines default ProgressListener
+// defaultDownloadProgressListener defines default ProgressListener, shields the ProgressListener in Options of GetObject. 
 type defaultDownloadProgressListener struct {
 }
 
@@ -502,7 +502,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	// starts the download workers
+	// starts the download workers thread
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, dcp.enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)

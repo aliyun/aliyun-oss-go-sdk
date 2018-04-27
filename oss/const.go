@@ -6,20 +6,20 @@ import "os"
 type ACLType string
 
 const (
-	// ACLPrivate definition
+	// ACLPrivate definition : private read and write 
 	ACLPrivate ACLType = "private"
 
-	// ACLPublicRead definition
+	// ACLPublicRead definition : public read and private write
 	ACLPublicRead ACLType = "public-read"
 
-	// ACLPublicReadWrite definition
+	// ACLPublicReadWrite definition : public read and public write
 	ACLPublicReadWrite ACLType = "public-read-write"
 
 	// ACLDefault Object. It's only applicable for object
 	ACLDefault ACLType = "default"
 )
 
-// MetadataDirectiveType specifying the behavior of metadata when copying object.
+// MetadataDirectiveType specifying whether use the metadata of source object when copying object.
 type MetadataDirectiveType string
 
 const (

@@ -299,7 +299,7 @@ func (cp *copyCheckpoint) dump(filePath string) error {
 		return err
 	}
 
-	// dum
+	// dump
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
