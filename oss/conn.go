@@ -536,7 +536,7 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 	um.IsProxy = isProxy
 }
 
-// getURL builds URL
+// getURL gets URL
 func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	host, path := um.buildURL(bucket, object)
 	addr := ""
@@ -549,7 +549,7 @@ func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	return uri
 }
 
-// getSignURL builds Sign URL
+// getSignURL gets Sign URL
 func (um urlMaker) getSignURL(bucket, object, params string) string {
 	host, path := um.buildURL(bucket, object)
 	return fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
@@ -587,7 +587,7 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	return host, path
 }
 
-// getResource canonicalizes Resource 
+// getResource gets canonicalized Resource 
 func (um urlMaker) getResource(bucketName, objectName, subResource string) string {
 	if subResource != "" {
 		subResource = "?" + subResource
