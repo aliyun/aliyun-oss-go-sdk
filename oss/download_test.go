@@ -91,7 +91,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Use two threads to download the file and total parts count is 5
+	// Use 2 coroutines to download the file and total parts count is 5
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(2))
 	c.Assert(err, IsNil)
@@ -101,7 +101,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Use 5 threads to download the file and the total parts count is 5.
+	// Use 5 coroutines to download the file and the total parts count is 5.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
@@ -111,7 +111,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Use 10 threads to download the file and the total parts count is 5.
+	// Use 10 coroutines to download the file and the total parts count is 5.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(10))
 	c.Assert(err, IsNil)

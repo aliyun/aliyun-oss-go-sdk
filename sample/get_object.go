@@ -97,25 +97,27 @@ func GetObjectSample() {
 	}
 
 	// case 6：big file's multipart download, concurrent and checkpoint is supported.
-	// multipart download with part size 100KB. By default single thread is used and no checkpoint
+	// multipart download with part size 100KB. By default single coroutine is used and no checkpoint
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// part size is 100K and thee threads are used
+	// part size is 100K and 3 coroutines are used
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024, oss.Routines(3))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// part size is 100K and three threads with checkpoint
+	// part size is 100K and 3 coroutines with checkpoint
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
 	if err != nil {
 		HandleError(err)
 	}
-
-	// specify the checkpoint file path
+	
+	// 断点续传功能需要使用本地文件，记录哪些分片已经下载。该文件路径可以Checkpoint的第二个参数指定，如果为空，则为下载文件目录。
+	// specify the checkpoint file path to record which parts have been downloaded. 
+	// This file path can be specified by 
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024, oss.Checkpoint(true, "mynewfile.cp"))
 	if err != nil {
 		HandleError(err)

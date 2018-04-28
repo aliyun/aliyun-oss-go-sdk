@@ -7,7 +7,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// NewBucketSample demos how to initialize client and bucket
+// NewBucketSample shows how to initialize client and bucket
 func NewBucketSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

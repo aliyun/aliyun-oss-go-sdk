@@ -67,19 +67,19 @@ func PutObjectSample() {
 	fmt.Println("Object Meta:", props)
 
 	// case 6：big file's multipart upload. It supports concurrent upload with checkpoint
-	// multipart upload with 100K as part size. By default 1 thread is used and no checkpoint is used.
+	// multipart upload with 100K as part size. By default 1 coroutine is used and no checkpoint is used.
 	err = bucket.UploadFile(objectKey, localFile, 100*1024)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// part size is 100K and three threads are used
+	// part size is 100K and 3 coroutines are used
 	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.Routines(3))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// part size is 100K and 3 threads are used with checkpoint
+	// part size is 100K and 3 coroutines are used with checkpoint
 	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
 	if err != nil {
 		HandleError(err)

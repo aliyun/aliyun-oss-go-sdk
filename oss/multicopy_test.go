@@ -353,7 +353,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// copy with multiple threads, no errors.
+	// copy with multiple coroutines, no errors.
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 

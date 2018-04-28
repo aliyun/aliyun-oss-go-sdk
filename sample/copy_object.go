@@ -86,13 +86,13 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
-	// part size is 100K and three threads for the concurrent copy
+	// part size is 100K and three coroutines for the concurrent copy
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Routines(3))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// part size is 100K and three threads for the concurrent copy with checkpoint
+	// part size is 100K and three coroutines for the concurrent copy with checkpoint
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
 	if err != nil {
 		HandleError(err)
