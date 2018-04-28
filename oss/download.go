@@ -306,7 +306,7 @@ const downloadCpMagic = "92611BED-89E2-46B6-89E5-72F273D4B0A3"
 
 type downloadCheckpoint struct {
 	Magic     string         // magic
-	MD5       string         // cp content MD5
+	MD5       string         // checkpoint content MD5
 	FilePath  string         // local file
 	Object    string         // key
 	ObjStat   objectStat     // object status
@@ -324,7 +324,7 @@ type objectStat struct {
 	Etag         string // etag
 }
 
-// isValid flags of CP data is valid. It returns true when the data is valid and the checkpoint is valid and the object is not updated.
+// isValid flags of checkpoint data is valid. It returns true when the data is valid and the checkpoint is valid and the object is not updated.
 func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *unpackedRange) (bool, error) {
 	// Compare the CP's Magic and the MD5
 	cpb := cp
@@ -366,7 +366,7 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 	return true, nil
 }
 
-// load CP from local file
+// load checkpoint from local file
 func (cp *downloadCheckpoint) load(filePath string) error {
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -463,12 +463,12 @@ func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
 	return os.Rename(downFilepath, cp.FilePath)
 }
 
-// downloadFileWithCp downloads files with CP
+// downloadFileWithCp downloads files with checkpoint
 func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int, uRange *unpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)
 
-	// LOAD CP data
+	// LOAD checkpoint data
 	dcp := downloadCheckpoint{}
 	err := dcp.load(cpFilePath)
 	if err != nil {

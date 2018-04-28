@@ -830,7 +830,7 @@ func (s *OssBucketMultipartSuite) TestUploadFileNegative(c *C) {
 	err = s.bucket.UploadFile(objectName, "/root/123abc9874", 1024*1024*1024)
 	c.Assert(err, NotNil)
 
-	// empty Key
+	// invalid key , key is empty.
 	err = s.bucket.UploadFile("", fileName, 100*1024)
 	c.Assert(err, NotNil)
 }
