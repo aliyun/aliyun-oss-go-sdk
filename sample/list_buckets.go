@@ -66,14 +66,14 @@ func ListBucketsSample() {
 	}
 	fmt.Println("my buckets prefix :", lbr.Buckets)
 
-	// case 4：specifies the marker
+	// case 4：specifies the marker to return from a certain one
 	lbr, err = client.ListBuckets(oss.Marker("my-bucket-22"))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my buckets marker :", lbr.Buckets)
 
-	// case 5：specifies max key and list all buckets with paging
+	// case 5：specifies max key and list all buckets with paging, return 3 items each time.
 	marker := oss.Marker("")
 	for {
 		lbr, err = client.ListBuckets(oss.MaxKeys(3), marker)
@@ -87,7 +87,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// case 6：list bucket with marker and max key
+	// case 6：list bucket with marker and max key; return 3 items each time.
 	marker = oss.Marker("my-bucket-22")
 	for {
 		lbr, err = client.ListBuckets(oss.MaxKeys(3), marker)
@@ -101,7 +101,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// case 7：list bucket with prefix and max key
+	// case 7：list bucket with prefix and max key, return 3 items each time.
 	pre := oss.Prefix("my-bucket-2")
 	marker = oss.Marker("")
 	for {

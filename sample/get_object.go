@@ -83,14 +83,14 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 	etag := meta.Get(oss.HTTPHeaderEtag)
-	// Etag contraint is met, download the file
+	// Check the content, Etag contraint is met, download the file
 	body, err = bucket.GetObject(objectKey, oss.IfMatch(etag))
 	if err != nil {
 		HandleError(err)
 	}
 	body.Close()
 
-	// ETag contraint is not met, do not download the file
+	// Check the content, ETag contraint is not met, do not download the file
 	body, err = bucket.GetObject(objectKey, oss.IfNoneMatch(etag))
 	if err == nil {
 		HandleError(err)

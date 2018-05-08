@@ -125,7 +125,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// DownErrorHooker downloads part request Hook
+// DownErrorHooker requests Hook by DownloadPart
 func DownErrorHooker(part downloadPart) error {
 	if part.Index == 4 {
 		time.Sleep(time.Second)

@@ -72,7 +72,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// case 6：list object with paging , marker and max keys
+	// case 6：list object with paging , marker and max keys; return 3 items each time.
 	marker = oss.Marker("my-object-22")
 	for {
 		lor, err = bucket.ListObjects(oss.MaxKeys(3), marker)
@@ -86,7 +86,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// case 7：list object with paging , with prefix and max keys
+	// case 7：list object with paging , with prefix and max keys; return 2 items each time.
 	pre := oss.Prefix("my-object-2")
 	marker = oss.Marker("")
 	for {

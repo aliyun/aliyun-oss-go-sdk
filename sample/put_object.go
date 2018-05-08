@@ -25,7 +25,7 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// case 2：uploads a object from a byte[]
+	// case 2：uploads a object whose value is a byte[]
 	err = bucket.PutObject(objectKey, bytes.NewReader([]byte(val)))
 	if err != nil {
 		HandleError(err)
