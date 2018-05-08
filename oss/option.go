@@ -233,7 +233,7 @@ func Checkpoint(isEnable bool, filePath string) Option {
 	return addArg(checkpointConfig, &cpConfig{isEnable, filePath})
 }
 
-// Routines DownloadFile/UploadFile thread count
+// Routines DownloadFile/UploadFile routine count
 func Routines(n int) Option {
 	return addArg(routineNum, n)
 }

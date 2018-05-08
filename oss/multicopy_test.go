@@ -68,7 +68,7 @@ func (s *OssCopySuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCopyRoutineWithoutRecovery is multiple threaded copy without checkpoint
+// TestCopyRoutineWithoutRecovery is multi-routine copy without resumable recovery
 func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwr"
 	destObjectName := srcObjectName + "-copy"
@@ -80,7 +80,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// does not specify parameter 'routines', by default it's single threaded
+	// does not specify parameter 'routines', by default it's single routine
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -95,7 +95,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// Specifies one thread.
+	// Specifies one routine.
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(1))
 	c.Assert(err, IsNil)
 
@@ -110,7 +110,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// Specifies three threads, which is less than parts count 5
+	// Specifies three routines, which is less than parts count 5
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -125,7 +125,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// Specifies 5 threads which is same as parts count
+	// Specifies 5 routines which is same as parts count
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
 
@@ -140,7 +140,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// Specifies thread count 10, which is more than parts count
+	// Specifies routine count 10, which is more than parts count
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(10))
 	c.Assert(err, IsNil)
 
@@ -155,7 +155,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// invalid thread count, will use single thread
+	// invalid routine count, will use single routine
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(-1))
 	c.Assert(err, IsNil)
 
@@ -201,7 +201,7 @@ func CopyErrorHooker(part copyPart) error {
 	return nil
 }
 
-// TestCopyRoutineWithoutRecoveryNegative is a multiple threads copy without checkpoint
+// TestCopyRoutineWithoutRecoveryNegative is a multiple routines copy without checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwrn"
 	destObjectName := srcObjectName + "-copy"
@@ -212,7 +212,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	c.Assert(err, IsNil)
 
 	copyPartHooker = CopyErrorHooker
-	// worker thread errors
+	// worker routine errors
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(2))
 
 	c.Assert(err, NotNil)
@@ -238,7 +238,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCopyRoutineWithRecovery is a multiple threaded copy with checkpoint
+// TestCopyRoutineWithRecovery is a multiple routines copy with resumable recovery
 func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	srcObjectName := objectNamePrefix + "tcrtr"
 	destObjectName := srcObjectName + "-copy"
@@ -251,7 +251,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	os.Remove(newFile)
 
 	// Routines default value，CP's default path is destObjectName+.cp
-	// Copy object with checkpoint enabled, single threaded.
+	// Copy object with checkpoint enabled, single runtine.
 	// Copy 4 parts---the CopyErrorHooker makes sure the copy of part 5 will fail.
 	copyPartHooker = CopyErrorHooker
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Checkpoint(true, ""))
@@ -392,7 +392,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCopyRoutineWithRecoveryNegative is a multiple threaded copy without checkpoint
+// TestCopyRoutineWithRecoveryNegative is a multiple routineed copy without checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 	srcObjectName := objectNamePrefix + "tcrwrn"
 	destObjectName := srcObjectName + "-copy"

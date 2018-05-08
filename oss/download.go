@@ -502,7 +502,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	// starts the download workers thread
+	// starts the download workers routine
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, dcp.enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)

@@ -80,7 +80,7 @@ func CopyObjectSample() {
 	fmt.Println("meta:", meta)
 
 	// case 6：big file's multipart copy. It supports concurrent copy with resumable upload
-	// copy file with multipart. The part size is 100K. By default one thread is used without resumable upload
+	// copy file with multipart. The part size is 100K. By default one routine is used without resumable upload
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024)
 	if err != nil {
 		HandleError(err)

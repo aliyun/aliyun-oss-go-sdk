@@ -10,7 +10,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// GetObjectSample shows the streaming download, range download and download with checkpoint
+// GetObjectSample shows the streaming download, range download and resumable download. 
 func GetObjectSample() {
 	// creates Bucket
 	bucket, err := GetTestBucket(bucketName)
@@ -96,7 +96,7 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 
-	// case 6：big file's multipart download, concurrent and checkpoint is supported.
+	// case 6：big file's multipart download, concurrent and resumable download is supported.
 	// multipart download with part size 100KB. By default single coroutine is used and no checkpoint
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024)
 	if err != nil {

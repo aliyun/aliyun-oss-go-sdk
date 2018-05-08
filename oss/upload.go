@@ -56,7 +56,7 @@ func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
 	return cpc, nil
 }
 
-// getRoutines gets the thread count. by default it's 1.
+// getRoutines gets the routine count. by default it's 1.
 func getRoutines(options []Option) int {
 	rtnOpt, err := findOption(options, routineNum, nil)
 	if err != nil || rtnOpt == nil {

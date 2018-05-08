@@ -134,7 +134,7 @@ func DownErrorHooker(part downloadPart) error {
 	return nil
 }
 
-// TestDownloadRoutineWithRecovery multi-thread resumable download
+// TestDownloadRoutineWithRecovery multi-routine resumable download
 func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	objectName := objectNamePrefix + "tdrtr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -175,7 +175,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Download with checkpoint
+	// Resumable download with checkpoint
 	os.Remove(newFile)
 	downloadPartHooker = DownErrorHooker
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, objectName+".cp"))
@@ -207,7 +207,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Download with checkpoint at a time. No error is expected in the download procedure.
+	// Resumable download with checkpoint at a time. No error is expected in the download procedure.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
@@ -219,7 +219,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Download with checkpoint at a time. No error is expected in the download procedure.
+	// Resumable download with checkpoint at a time. No error is expected in the download procedure.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
@@ -313,7 +313,7 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	// worker thread error
+	// worker routine error
 	downloadPartHooker = DownErrorHooker
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(2))
 	c.Assert(err, NotNil)

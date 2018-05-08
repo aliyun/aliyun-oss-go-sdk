@@ -69,13 +69,13 @@ func (s *OssUploadSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithoutRecovery tests multithreaded upload without checkpoint
+// TestUploadRoutineWithoutRecovery tests multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	objectName := objectNamePrefix + "turwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file.jpg"
 
-	// Routines is not specified, by default single thread
+	// Routines is not specified, by default single routine
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -90,7 +90,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies thread count as 1
+	// specifies routine count as 1
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(1))
 	c.Assert(err, IsNil)
 
@@ -105,7 +105,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies thread count as 3, which is smaller than parts count 5
+	// specifies routine count as 3, which is smaller than parts count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -120,7 +120,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies thread count as 5, which is same as the part count 5
+	// specifies routine count as 5, which is same as the part count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
 
@@ -135,7 +135,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies thread count as 10, which is bigger than the part count 5.
+	// specifies routine count as 10, which is bigger than the part count 5.
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10))
 	c.Assert(err, IsNil)
 
@@ -150,7 +150,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// invalid thread count, it will use 1 automatically.
+	// invalid routine count, it will use 1 automatically.
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(0))
 	os.Remove(newFile)
 	err = s.bucket.GetObjectToFile(objectName, newFile)
@@ -163,7 +163,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// invalid thread count, it will use 1 automatically
+	// invalid routine count, it will use 1 automatically
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(-1))
 	os.Remove(newFile)
 	err = s.bucket.GetObjectToFile(objectName, newFile)
@@ -204,13 +204,13 @@ func ErrorHooker(id int, chunk FileChunk) error {
 	return nil
 }
 
-// TestUploadRoutineWithoutRecoveryNegative is multithreaded upload without checkpoint
+// TestUploadRoutineWithoutRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + "turwrn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	uploadPartHooker = ErrorHooker
-	// worker thread error
+	// worker routine error
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
@@ -228,7 +228,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestUploadRoutineWithRecovery is multithreaded upload with checkpoint
+// TestUploadRoutineWithRecovery is multi-routine upload with resumable recovery
 func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	objectName := objectNamePrefix + "turtr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -331,7 +331,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// upload all 5 parts with 10 threads without error
+	// upload all 5 parts with 10 routines without error
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -365,7 +365,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadRoutineWithRecoveryNegative is multithreaded upload without checkpoint
+// TestUploadRoutineWithRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + "turrn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
