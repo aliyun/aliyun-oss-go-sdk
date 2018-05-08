@@ -134,7 +134,7 @@ func DownErrorHooker(part downloadPart) error {
 	return nil
 }
 
-// TestDownloadRoutineWithRecovery multiupart download with checkpoint
+// TestDownloadRoutineWithRecovery multi-thread resumable download
 func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	objectName := objectNamePrefix + "tdrtr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -207,7 +207,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Download with checkpoint. No error is expected.
+	// Download with checkpoint at a time. No error is expected in the download procedure.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
@@ -219,7 +219,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Download with checkpoint. No error is expected.
+	// Download with checkpoint at a time. No error is expected in the download procedure.
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)

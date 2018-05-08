@@ -79,8 +79,8 @@ func CopyObjectSample() {
 	}
 	fmt.Println("meta:", meta)
 
-	// case 6：big file's multipart copy. It supports concurrent copy with checkpoint
-	// copy file with multipart. The part size is 100K. By default one thread is used and no checkpoint
+	// case 6：big file's multipart copy. It supports concurrent copy with resumable upload
+	// copy file with multipart. The part size is 100K. By default one thread is used without resumable upload
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024)
 	if err != nil {
 		HandleError(err)
@@ -92,7 +92,7 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
-	// part size is 100K and three coroutines for the concurrent copy with checkpoint
+	// part size is 100K and three coroutines for the concurrent copy with resumable upload
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
 	if err != nil {
 		HandleError(err)
