@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ListObjectsSample demos the file list, including default and specified parameters.
+// ListObjectsSample shows the file list, including default and specified parameters.
 func ListObjectsSample() {
 	var myObjects = []Object{
 		{"my-object-1", ""},

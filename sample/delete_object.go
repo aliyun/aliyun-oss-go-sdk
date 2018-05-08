@@ -7,7 +7,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// DeleteObjectSample demos how to delete single file or multiple files
+// DeleteObjectSample shows how to delete single file or multiple files
 func DeleteObjectSample() {
 	// creates a Bucket
 	bucket, err := GetTestBucket(bucketName)

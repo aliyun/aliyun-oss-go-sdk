@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketCORSSample demos how to get or set the bucket CORS.
+// BucketCORSSample shows how to get or set the bucket CORS.
 func BucketCORSSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

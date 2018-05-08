@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ListBucketsSample demos the list bucket, including default and specified parameters.
+// ListBucketsSample shows the list bucket, including default and specified parameters.
 func ListBucketsSample() {
 	var myBuckets = []string{
 		"my-bucket-1",

@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketACLSample demos how to get and set the bucket ACL
+// BucketACLSample shows how to get and set the bucket ACL
 func BucketACLSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

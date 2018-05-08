@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketRefererSample demos how to set, get and delete the bucket referer.
+// BucketRefererSample shows how to set, get and delete the bucket referer.
 func BucketRefererSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

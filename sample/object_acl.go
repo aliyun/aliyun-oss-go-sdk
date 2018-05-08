@@ -7,7 +7,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ObjectACLSample demos how to set and get object ACL
+// ObjectACLSample shows how to set and get object ACL
 func ObjectACLSample() {
 	// creates Bucket
 	bucket, err := GetTestBucket(bucketName)

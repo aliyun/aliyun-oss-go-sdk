@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketLoggingSample demos how to set, get and delete the bucket logging configuration
+// BucketLoggingSample shows how to set, get and delete the bucket logging configuration
 func BucketLoggingSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

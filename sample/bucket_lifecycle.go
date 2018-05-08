@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketLifecycleSample demos how to set, get and delete bucket's lifecycle.
+// BucketLifecycleSample shows how to set, get and delete bucket's lifecycle.
 func BucketLifecycleSample() {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)

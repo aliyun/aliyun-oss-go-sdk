@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CopyObjectSample demos the copy files usage
+// CopyObjectSample shows the copy files usage
 func CopyObjectSample() {
 	// creates a Bucket
 	bucket, err := GetTestBucket(bucketName)

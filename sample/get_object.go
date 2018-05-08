@@ -10,7 +10,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// GetObjectSample demos the streaming download, range download and download with checkpoint
+// GetObjectSample shows the streaming download, range download and download with checkpoint
 func GetObjectSample() {
 	// creates Bucket
 	bucket, err := GetTestBucket(bucketName)
