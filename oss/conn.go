@@ -587,7 +587,7 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	return host, path
 }
 
-// getResource gets canonicalized Resource 
+// getResource gets canonicalized resource 
 func (um urlMaker) getResource(bucketName, objectName, subResource string) string {
 	if subResource != "" {
 		subResource = "?" + subResource

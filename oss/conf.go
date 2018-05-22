@@ -13,7 +13,7 @@ type HTTPTimeout struct {
 	IdleConnTimeout  time.Duration
 }
 
-// Config defines oss configure
+// Config defines oss configuration
 type Config struct {
 	Endpoint        string      // oss endpoint
 	AccessKeyID     string      // accessId
