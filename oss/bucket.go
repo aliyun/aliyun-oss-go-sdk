@@ -807,11 +807,11 @@ func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.R
 
 // GetObjectToFileWithURL downloads the object into a local file with the signed url.
 //
-// signedURL            the signed URL
-// filePath             the local file path to download to.
-// options              the options for downloading object. Check out the parameter options in function GetObject for the reference.
+// signedURL    the signed url
+// filePath     the local file path to download to.
+// options      the options for downloading object. Check out the parameter options in function GetObject for the reference.
 //
-// error                it's nil if no error, otherwise it's an error object.
+// error        it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options ...Option) error {
 	tempFilePath := filePath + TempFileSuffix
