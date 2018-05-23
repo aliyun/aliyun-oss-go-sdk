@@ -97,9 +97,9 @@ func copyScheduler(jobs chan copyPart, parts []copyPart) {
 
 // copy part structure
 type copyPart struct {
-	Number int   // part number (from 1 to 10,000)
-	Start  int64 // the start index in the source file.
-	End    int64 // the end index in the source file
+	Number int   // Part number (from 1 to 10,000)
+	Start  int64 // The start index in the source file.
+	End    int64 // The end index in the source file
 }
 
 // getCopyParts calculates copy parts
@@ -171,10 +171,10 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 		go copyWorker(w, arg, jobs, results, failed, die)
 	}
 
-	// Starts the scheduler
+	// Start the scheduler
 	go copyScheduler(jobs, parts)
 
-	// Waits for the parts finished.
+	// Wait for the parts finished.
 	completed := 0
 	ups := make([]UploadPart, len(parts))
 	for completed < len(parts) {
@@ -215,17 +215,17 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 const copyCpMagic = "84F1F18C-FF1D-403B-A1D8-9DEB5F65910A"
 
 type copyCheckpoint struct {
-	Magic          string       // magic
-	MD5            string       // cp content MD5
-	SrcBucketName  string       // source bucket
-	SrcObjectKey   string       // source object
-	DestBucketName string       // target bucket
-	DestObjectKey  string       // target object
-	CopyID         string       // copy id
-	ObjStat        objectStat   // object stat
-	Parts          []copyPart   // copy parts
-	CopyParts      []UploadPart // the uploaded parts
-	PartStat       []bool       // the part status
+	Magic          string       // Magic
+	MD5            string       // CP content MD5
+	SrcBucketName  string       // Source bucket
+	SrcObjectKey   string       // Source object
+	DestBucketName string       // Target bucket
+	DestObjectKey  string       // Target object
+	CopyID         string       // Copy id
+	ObjStat        objectStat   // Object stat
+	Parts          []copyPart   // Copy parts
+	CopyParts      []UploadPart // The uploaded parts
+	PartStat       []bool       // The part status
 }
 
 // isValid checks if the data is valid which means CP is valid and object is not updated.
@@ -241,7 +241,7 @@ func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error)
 		return false, nil
 	}
 
-	// Makes sure the object is not updated.
+	// Make sure the object is not updated.
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return false, err
@@ -279,11 +279,11 @@ func (cp *copyCheckpoint) update(part UploadPart) {
 	cp.PartStat[part.PartNumber-1] = true
 }
 
-// dump dumps the cp to the file
+// dump dumps the CP to the file
 func (cp *copyCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
-	// Calculates MD5
+	// Calculate MD5
 	bcp.MD5 = ""
 	js, err := json.Marshal(bcp)
 	if err != nil {
@@ -396,7 +396,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 		os.Remove(cpFilePath)
 	}
 
-	// Load error or the cp data is invalid---reinitialize
+	// Load error or the CP data is invalid---reinitialize
 	valid, err := ccp.isValid(srcBucket, srcObjectKey)
 	if err != nil || !valid {
 		if err = ccp.prepare(srcBucket, srcObjectKey, descBucket, destObjectKey, partSize, options); err != nil {

@@ -48,7 +48,7 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 	}
 
 	// Give other parameters values
-	// when sign url, date is expires
+	// when sign URL, date is expires
 	date := req.Header.Get(HTTPHeaderDate)
 	contentType := req.Header.Get(HTTPHeaderContentType)
 	contentMd5 := req.Header.Get(HTTPHeaderContentMD5)

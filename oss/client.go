@@ -18,7 +18,7 @@ import (
 type (
 	// Client oss client
 	Client struct {
-		Config *Config // Oss Client configure
+		Config *Config // OSS Client configure
 		Conn   *Conn   // Send http request
 	}
 

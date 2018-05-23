@@ -355,14 +355,14 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	os.Remove(filePath)
 	os.Remove(newFile)
 
-	// Sign url error
+	// Sign URL error
 	str, err = s.bucket.SignURL(objectName, HTTPGet, -1)
 	c.Assert(err, NotNil)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// Invalid url parse
+	// Invalid URL parse
 	str = randStr(20)
 
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
@@ -1805,14 +1805,14 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 	c.Assert(err, IsNil)
 	testLogger.Println("Objects:", lor.Objects)
 
-	// Put with url
+	// Put with URL
 	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
 	c.Assert(err, IsNil)
 
 	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Get with url
+	// Get with URL
 	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
 	c.Assert(err, IsNil)
 

@@ -161,7 +161,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
 	publishProgress(listener, event)
 
-	// Starts the worker coroutine
+	// Start the worker coroutine
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go worker(w, arg, jobs, results, failed, die)
@@ -210,25 +210,25 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 const uploadCpMagic = "FE8BB4EA-B593-4FAC-AD7A-2459A36E2E62"
 
 type uploadCheckpoint struct {
-	Magic     string   // magic
-	MD5       string   // checkpoint file content's MD5
-	FilePath  string   // local file path
-	FileStat  cpStat   // file state
-	ObjectKey string   // key
-	UploadID  string   // upload id
-	Parts     []cpPart // all parts of the local file
+	Magic     string   // Magic
+	MD5       string   // Checkpoint file content's MD5
+	FilePath  string   // Local file path
+	FileStat  cpStat   // File state
+	ObjectKey string   // Key
+	UploadID  string   // Upload id
+	Parts     []cpPart // All parts of the local file
 }
 
 type cpStat struct {
-	Size         int64     // file size
-	LastModified time.Time // file's last modified time
-	MD5          string    // local file's MD5
+	Size         int64     // File size
+	LastModified time.Time // File's last modified time
+	MD5          string    // Local file's MD5
 }
 
 type cpPart struct {
-	Chunk       FileChunk  // file chunk
-	Part        UploadPart // uploaded part
-	IsCompleted bool       // upload complete flag
+	Chunk       FileChunk  // File chunk
+	Part        UploadPart // Uploaded part
+	IsCompleted bool       // Upload complete flag
 }
 
 // isValid checks if the uploaded data is valid---it's valid when the file is not updated and the checkpoint data is valid.
@@ -419,7 +419,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 		os.Remove(cpFilePath)
 	}
 
-	// Load error or the cp data is invalid.
+	// Load error or the CP data is invalid.
 	valid, err := ucp.isValid(filePath)
 	if err != nil || !valid {
 		if err = prepare(&ucp, objectKey, filePath, partSize, &bucket, options); err != nil {

@@ -259,7 +259,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	copyPartHooker = defaultCopyPartHook
 
-	// Check cp
+	// Check CP
 	ccp := copyCheckpoint{}
 	err = ccp.load(destObjectName + ".cp")
 	c.Assert(err, IsNil)
@@ -302,7 +302,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	copyPartHooker = defaultCopyPartHook
 
-	// Check cp
+	// Check CP
 	ccp = copyCheckpoint{}
 	err = ccp.load(srcObjectName + ".cp")
 	c.Assert(err, IsNil)

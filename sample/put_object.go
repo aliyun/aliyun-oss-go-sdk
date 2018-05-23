@@ -11,7 +11,7 @@ import (
 
 // PutObjectSample illustrates two methods for uploading a file: simple upload and multipart upload.
 func PutObjectSample() {
-	// Creates Bucket
+	// Create Bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -85,14 +85,14 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// Specifies the local file path for checkpoint files. 
+	// Specify the local file path for checkpoint files. 
 	// the 2nd parameter of Checkpoint can specify the file path, when the file path is empty, it will upload the directory.
 	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.Checkpoint(true, localFile+".cp"))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Deletes object and bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

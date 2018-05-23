@@ -18,13 +18,13 @@ func ListObjectsSample() {
 		{"my-object-31", ""},
 		{"my-object-32", ""}}
 
-	// Creates Bucket
+	// Create Bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates object
+	// Create object
 	err = CreateObjects(bucket, myObjects)
 	if err != nil {
 		HandleError(err)

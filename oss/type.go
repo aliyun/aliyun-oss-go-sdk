@@ -9,13 +9,13 @@ import (
 // ListBucketsResult defines the result object from ListBuckets request
 type ListBucketsResult struct {
 	XMLName     xml.Name           `xml:"ListAllMyBucketsResult"`
-	Prefix      string             `xml:"Prefix"`         // the prefix in this query
-	Marker      string             `xml:"Marker"`         // the marker filter.
-	MaxKeys     int                `xml:"MaxKeys"`        // the max entry count to return. This information is returned when IsTruncated is true.
-	IsTruncated bool               `xml:"IsTruncated"`    // flag True means there's remaining buckets to return.
-	NextMarker  string             `xml:"NextMarker"`     // the marker filter for the next list call
-	Owner       Owner              `xml:"Owner"`          // the owner information
-	Buckets     []BucketProperties `xml:"Buckets>Bucket"` // the Bucket list
+	Prefix      string             `xml:"Prefix"`         // The prefix in this query
+	Marker      string             `xml:"Marker"`         // The marker filter.
+	MaxKeys     int                `xml:"MaxKeys"`        // The max entry count to return. This information is returned when IsTruncated is true.
+	IsTruncated bool               `xml:"IsTruncated"`    // Flag True means there's remaining buckets to return.
+	NextMarker  string             `xml:"NextMarker"`     // The marker filter for the next list call
+	Owner       Owner              `xml:"Owner"`          // The owner information
+	Buckets     []BucketProperties `xml:"Buckets>Bucket"` // The Bucket list
 }
 
 // BucketProperties defines bucket properties
@@ -43,10 +43,10 @@ type LifecycleConfiguration struct {
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
 	XMLName    xml.Name            `xml:"Rule"`
-	ID         string              `xml:"ID"`         // the Rule Id
-	Prefix     string              `xml:"Prefix"`     // the object key prefix
-	Status     string              `xml:"Status"`     // the rule status (enabled or not)
-	Expiration LifecycleExpiration `xml:"Expiration"` // the expiration property
+	ID         string              `xml:"ID"`         // The Rule Id
+	Prefix     string              `xml:"Prefix"`     // The object key prefix
+	Status     string              `xml:"Status"`     // The rule status (enabled or not)
+	Expiration LifecycleExpiration `xml:"Expiration"` // The expiration property
 }
 
 // LifecycleExpiration defines the rule's expiration property
@@ -131,7 +131,7 @@ type GetBucketRefererResult RefererXML
 // LoggingXML defines Logging config
 type LoggingXML struct {
 	XMLName        xml.Name       `xml:"BucketLoggingStatus"`
-	LoggingEnabled LoggingEnabled `xml:"LoggingEnabled"` // the logging config information
+	LoggingEnabled LoggingEnabled `xml:"LoggingEnabled"` // The logging config information
 }
 
 type loggingXMLEmpty struct {
@@ -141,8 +141,8 @@ type loggingXMLEmpty struct {
 // LoggingEnabled defines the logging config information
 type LoggingEnabled struct {
 	XMLName      xml.Name `xml:"LoggingEnabled"`
-	TargetBucket string   `xml:"TargetBucket"` // the bucket name for storing the log files
-	TargetPrefix string   `xml:"TargetPrefix"` // the log file prefix
+	TargetBucket string   `xml:"TargetBucket"` // The bucket name for storing the log files
+	TargetPrefix string   `xml:"TargetPrefix"` // The log file prefix
 }
 
 // GetBucketLoggingResult defines the result from GetBucketLogging request
@@ -151,14 +151,14 @@ type GetBucketLoggingResult LoggingXML
 // WebsiteXML defines Website configuration
 type WebsiteXML struct {
 	XMLName       xml.Name      `xml:"WebsiteConfiguration"`
-	IndexDocument IndexDocument `xml:"IndexDocument"` // the index page
-	ErrorDocument ErrorDocument `xml:"ErrorDocument"` // the error page
+	IndexDocument IndexDocument `xml:"IndexDocument"` // The index page
+	ErrorDocument ErrorDocument `xml:"ErrorDocument"` // The error page
 }
 
 // IndexDocument defines the index page info
 type IndexDocument struct {
 	XMLName xml.Name `xml:"IndexDocument"`
-	Suffix  string   `xml:"Suffix"` // the file name for the index page
+	Suffix  string   `xml:"Suffix"` // The file name for the index page
 }
 
 // ErrorDocument defines the 404 error page info
@@ -179,11 +179,11 @@ type CORSXML struct {
 // CORSRule defines CORS rules
 type CORSRule struct {
 	XMLName       xml.Name `xml:"CORSRule"`
-	AllowedOrigin []string `xml:"AllowedOrigin"` // allowed origins. By default it's wildcard '*'
-	AllowedMethod []string `xml:"AllowedMethod"` // allowed methods
-	AllowedHeader []string `xml:"AllowedHeader"` // allowed headers
-	ExposeHeader  []string `xml:"ExposeHeader"`  // allowed response headers
-	MaxAgeSeconds int      `xml:"MaxAgeSeconds"` // max cache ages in seconds
+	AllowedOrigin []string `xml:"AllowedOrigin"` // Allowed origins. By default it's wildcard '*'
+	AllowedMethod []string `xml:"AllowedMethod"` // Allowed methods
+	AllowedHeader []string `xml:"AllowedHeader"` // Allowed headers
+	ExposeHeader  []string `xml:"ExposeHeader"`  // Allowed response headers
+	MaxAgeSeconds int      `xml:"MaxAgeSeconds"` // Max cache ages in seconds
 }
 
 // GetBucketCORSResult defines the result from GetBucketCORS request
@@ -213,12 +213,12 @@ type ListObjectsResult struct {
 	XMLName        xml.Name           `xml:"ListBucketResult"`
 	Prefix         string             `xml:"Prefix"`                // The object prefix
 	Marker         string             `xml:"Marker"`                // The marker filter.
-	MaxKeys        int                `xml:"MaxKeys"`               // max keys to return
-	Delimiter      string             `xml:"Delimiter"`             // the delimiter for grouping objects' name
-	IsTruncated    bool               `xml:"IsTruncated"`           // flag indicates if all results are returned (when it's false)
-	NextMarker     string             `xml:"NextMarker"`            // the start point of the next query
+	MaxKeys        int                `xml:"MaxKeys"`               // Max keys to return
+	Delimiter      string             `xml:"Delimiter"`             // The delimiter for grouping objects' name
+	IsTruncated    bool               `xml:"IsTruncated"`           // Flag indicates if all results are returned (when it's false)
+	NextMarker     string             `xml:"NextMarker"`            // The start point of the next query
 	Objects        []ObjectProperties `xml:"Contents"`              // Object list
-	CommonPrefixes []string           `xml:"CommonPrefixes>Prefix"` // you can think of commonprefixes as "folders" whose names end with the delimiter
+	CommonPrefixes []string           `xml:"CommonPrefixes>Prefix"` // You can think of commonprefixes as "folders" whose names end with the delimiter
 }
 
 // ObjectProperties defines Objecct properties
@@ -236,15 +236,15 @@ type ObjectProperties struct {
 // Owner defines Bucket/Object's owner
 type Owner struct {
 	XMLName     xml.Name `xml:"Owner"`
-	ID          string   `xml:"ID"`          // owner Id
+	ID          string   `xml:"ID"`          // Owner Id
 	DisplayName string   `xml:"DisplayName"` // Owner's display name
 }
 
 // CopyObjectResult defines result object of CopyObject
 type CopyObjectResult struct {
 	XMLName      xml.Name  `xml:"CopyObjectResult"`
-	LastModified time.Time `xml:"LastModified"` // new Object's last modified time.
-	ETag         string    `xml:"ETag"`         // new Object's ETag
+	LastModified time.Time `xml:"LastModified"` // New Object's last modified time.
+	ETag         string    `xml:"ETag"`         // New Object's ETag
 }
 
 // GetObjectACLResult defines result of GetObjectACL request
@@ -252,8 +252,8 @@ type GetObjectACLResult GetBucketACLResult
 
 type deleteXML struct {
 	XMLName xml.Name       `xml:"Delete"`
-	Objects []DeleteObject `xml:"Object"` // objects to delete
-	Quiet   bool           `xml:"Quiet"`  // flag of quiet mode.
+	Objects []DeleteObject `xml:"Object"` // Objects to delete
+	Quiet   bool           `xml:"Quiet"`  // Flag of quiet mode.
 }
 
 // DeleteObject defines the struct for deleting object
@@ -265,7 +265,7 @@ type DeleteObject struct {
 // DeleteObjectsResult defines result of DeleteObjects request
 type DeleteObjectsResult struct {
 	XMLName        xml.Name `xml:"DeleteResult"`
-	DeletedObjects []string `xml:"Deleted>Key"` // deleted object list
+	DeletedObjects []string `xml:"Deleted>Key"` // Deleted object list
 }
 
 // InitiateMultipartUploadResult defines result of InitiateMultipartUpload request
@@ -273,7 +273,7 @@ type InitiateMultipartUploadResult struct {
 	XMLName  xml.Name `xml:"InitiateMultipartUploadResult"`
 	Bucket   string   `xml:"Bucket"`   // Bucket name
 	Key      string   `xml:"Key"`      // Object name to upload
-	UploadID string   `xml:"UploadId"` // generated UploadId
+	UploadID string   `xml:"UploadId"` // Generated UploadId
 }
 
 // UploadPart defines the upload/copy part
@@ -300,7 +300,7 @@ func (slice uploadParts) Swap(i, j int) {
 // UploadPartCopyResult defines result object of multipart copy request.
 type UploadPartCopyResult struct {
 	XMLName      xml.Name  `xml:"CopyPartResult"`
-	LastModified time.Time `xml:"LastModified"` // last modified time
+	LastModified time.Time `xml:"LastModified"` // Last modified time
 	ETag         string    `xml:"ETag"`         // ETag
 }
 
@@ -323,18 +323,18 @@ type ListUploadedPartsResult struct {
 	XMLName              xml.Name       `xml:"ListPartsResult"`
 	Bucket               string         `xml:"Bucket"`               // Bucket name
 	Key                  string         `xml:"Key"`                  // Object name
-	UploadID             string         `xml:"UploadId"`             // upload Id
+	UploadID             string         `xml:"UploadId"`             // Upload Id
 	NextPartNumberMarker string         `xml:"NextPartNumberMarker"` // Next Part number
-	MaxParts             int            `xml:"MaxParts"`             // max parts count
-	IsTruncated          bool           `xml:"IsTruncated"`          // flag indicates all entries returned.false: all entries returned.
-	UploadedParts        []UploadedPart `xml:"Part"`                 // uploaded parts
+	MaxParts             int            `xml:"MaxParts"`             // Max parts count
+	IsTruncated          bool           `xml:"IsTruncated"`          // Flag indicates all entries returned.false: all entries returned.
+	UploadedParts        []UploadedPart `xml:"Part"`                 // Uploaded parts
 }
 
 // UploadedPart defines uploaded part
 type UploadedPart struct {
 	XMLName      xml.Name  `xml:"Part"`
 	PartNumber   int       `xml:"PartNumber"`   // Part number
-	LastModified time.Time `xml:"LastModified"` // last modified time
+	LastModified time.Time `xml:"LastModified"` // Last modified time
 	ETag         string    `xml:"ETag"`         // ETag cache
 	Size         int       `xml:"Size"`         // Part size
 }
@@ -344,23 +344,23 @@ type ListMultipartUploadResult struct {
 	XMLName            xml.Name            `xml:"ListMultipartUploadsResult"`
 	Bucket             string              `xml:"Bucket"`                // Bucket name
 	Delimiter          string              `xml:"Delimiter"`             // Delimiter for grouping object.
-	Prefix             string              `xml:"Prefix"`                // object prefix
-	KeyMarker          string              `xml:"KeyMarker"`             // object key marker
-	UploadIDMarker     string              `xml:"UploadIdMarker"`        // uploadId marker
-	NextKeyMarker      string              `xml:"NextKeyMarker"`         // next key marker, if not all entries returned.
-	NextUploadIDMarker string              `xml:"NextUploadIdMarker"`    // next uploadId marker, if not all entries returned.
-	MaxUploads         int                 `xml:"MaxUploads"`            // max uploads to return
-	IsTruncated        bool                `xml:"IsTruncated"`           // flag indicates all entries are returned.
-	Uploads            []UncompletedUpload `xml:"Upload"`                // ongoing uploads (not completed, not aborted)
-	CommonPrefixes     []string            `xml:"CommonPrefixes>Prefix"` // common prefixes list.
+	Prefix             string              `xml:"Prefix"`                // Object prefix
+	KeyMarker          string              `xml:"KeyMarker"`             // Object key marker
+	UploadIDMarker     string              `xml:"UploadIdMarker"`        // UploadId marker
+	NextKeyMarker      string              `xml:"NextKeyMarker"`         // Next key marker, if not all entries returned.
+	NextUploadIDMarker string              `xml:"NextUploadIdMarker"`    // Next uploadId marker, if not all entries returned.
+	MaxUploads         int                 `xml:"MaxUploads"`            // Max uploads to return
+	IsTruncated        bool                `xml:"IsTruncated"`           // Flag indicates all entries are returned.
+	Uploads            []UncompletedUpload `xml:"Upload"`                // Ongoing uploads (not completed, not aborted)
+	CommonPrefixes     []string            `xml:"CommonPrefixes>Prefix"` // Common prefixes list.
 }
 
 // UncompletedUpload structure wraps an uncompleted Upload task
 type UncompletedUpload struct {
 	XMLName   xml.Name  `xml:"Upload"`
 	Key       string    `xml:"Key"`       // Object name
-	UploadID  string    `xml:"UploadId"`  // the UploadId
-	Initiated time.Time `xml:"Initiated"` // initialization time in the format such as 2012-02-23T04:18:23.000Z
+	UploadID  string    `xml:"UploadId"`  // The UploadId
+	Initiated time.Time `xml:"Initiated"` // Initialization time in the format such as 2012-02-23T04:18:23.000Z
 }
 
 // decodeDeleteObjectsResult decodes deleting objects result in URL encoding

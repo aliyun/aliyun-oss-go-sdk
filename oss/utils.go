@@ -48,10 +48,10 @@ func getSysInfo() sysInfo {
 
 // unpackedRange
 type unpackedRange struct {
-	hasStart bool  // flag indicates if the start point is specified
-	hasEnd   bool  // flag indicates if the end point is specified
-	start    int64 // start point
-	end      int64 // end point
+	hasStart bool  // Flag indicates if the start point is specified
+	hasEnd   bool  // Flag indicates if the end point is specified
+	start    int64 // Start point
+	end      int64 // End point
 }
 
 // invalidRangeError returns invalid Range Error
@@ -166,9 +166,9 @@ func GetNowGMT() string {
 
 // FileChunk is the file chunk definition
 type FileChunk struct {
-	Number int   // chunk number
-	Offset int64 // chunk offset
-	Size   int64 // chunk size.
+	Number int   // Chunk number
+	Offset int64 // Chunk offset
+	Size   int64 // Chunk size.
 }
 
 // SplitFileByPartNum splits big file to parts by the num of parts.

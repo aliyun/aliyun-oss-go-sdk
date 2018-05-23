@@ -160,10 +160,10 @@ func downloadScheduler(jobs chan downloadPart, parts []downloadPart) {
 
 // downloadPart defines download part
 type downloadPart struct {
-	Index  int    // part number, starting from 0
-	Start  int64  // start index
-	End    int64  // end index
-	Offset int64  // offset
+	Index  int    // Part number, starting from 0
+	Start  int64  // Start index
+	End    int64  // End index
+	Offset int64  // Offset
 	CRC64  uint64 // CRC check value of part
 }
 
@@ -239,7 +239,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	}
 	fd.Close()
 
-	// Gets the parts of the file
+	// Get the parts of the file
 	parts, enableCRC, expectedCRC, err := getDownloadParts(&bucket, objectKey, partSize, uRange)
 	if err != nil {
 		return err
@@ -305,23 +305,23 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 const downloadCpMagic = "92611BED-89E2-46B6-89E5-72F273D4B0A3"
 
 type downloadCheckpoint struct {
-	Magic     string         // magic
-	MD5       string         // checkpoint content MD5
-	FilePath  string         // local file
-	Object    string         // key
-	ObjStat   objectStat     // object status
-	Parts     []downloadPart // all download parts
-	PartStat  []bool         // parts' download status
-	Start     int64          // start point of the file
-	End       int64          // end point of the file
-	enableCRC bool           // whether has CRC check
+	Magic     string         // Magic
+	MD5       string         // Checkpoint content MD5
+	FilePath  string         // Local file
+	Object    string         // Key
+	ObjStat   objectStat     // Object status
+	Parts     []downloadPart // All download parts
+	PartStat  []bool         // Parts' download status
+	Start     int64          // Start point of the file
+	End       int64          // End point of the file
+	enableCRC bool           // Whether has CRC check
 	CRC       uint64         // CRC check value
 }
 
 type objectStat struct {
-	Size         int64  // object size
-	LastModified string // last modified time
-	Etag         string // etag
+	Size         int64  // Object size
+	LastModified string // Last modified time
+	Etag         string // Etag
 }
 
 // isValid flags of checkpoint data is valid. It returns true when the data is valid and the checkpoint is valid and the object is not updated.

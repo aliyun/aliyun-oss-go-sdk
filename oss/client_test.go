@@ -25,31 +25,31 @@ type OssClientSuite struct{}
 var _ = Suite(&OssClientSuite{})
 
 var (
-	// endpoint/id/key
+	// ENDPOINT/ID/KEY
 	endpoint  = os.Getenv("OSS_TEST_ENDPOINT")
 	accessID  = os.Getenv("OSS_TEST_ACCESS_KEY_ID")
 	accessKey = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
 
-	// proxy
+	// Proxy
 	proxyHost   = os.Getenv("OSS_TEST_PROXY_HOST")
 	proxyUser   = os.Getenv("OSS_TEST_PROXY_USER")
 	proxyPasswd = os.Getenv("OSS_TEST_PROXY_PASSWORD")
 
-	// sts
+	// STS
 	stsaccessID  = os.Getenv("OSS_TEST_STS_ID")
 	stsaccessKey = os.Getenv("OSS_TEST_STS_KEY")
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
 )
 
 const (
-	// prefix of bucket name for bucket ops test
+	// Prefix of bucket name for bucket ops test
 	bucketNamePrefix = "go-sdk-test-bucket-xyz-"
-	// bucket name for object ops test
+	// Bucket name for object ops test
 	bucketName        = "go-sdk-test-bucket-xyz-for-object"
 	archiveBucketName = "go-sdk-test-bucket-xyz-for-archive"
-	// object name for object ops test
+	// Object name for object ops test
 	objectNamePrefix = "go-sdk-test-object-xyz-"
-	// sts region is one and only hangzhou
+	// STS region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
 
@@ -212,7 +212,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	// create bucket with config and test get bucket info
+	// Create bucket with config and test get bucket info
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
 		bucketNameTest := bucketNamePrefix + randLowStr(5)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage), ACL(ACLPublicRead))
@@ -269,7 +269,7 @@ func (s *OssClientSuite) TestCreateBucketNegative(c *C) {
 	c.Assert(err, NotNil)
 	testLogger.Println(err)
 
-	// Acl invalid
+	// ACL invalid
 	err = client.CreateBucket(bucketNamePrefix+"tcbn", ACL("InvaldAcl"))
 	c.Assert(err, NotNil)
 	testLogger.Println(err)
@@ -1451,14 +1451,14 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign url for get object
+	// Sign URL for get object
 	str, err = bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
-	// Get object with url
+	// Get object with URL
 	body, err := bucket.GetObjectWithURL(str)
 	c.Assert(err, IsNil)
 	str, err = readBody(body)

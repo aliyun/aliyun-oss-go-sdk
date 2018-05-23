@@ -241,7 +241,7 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-3.jpg"
 
-	// upload the file
+	// Upload the file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 

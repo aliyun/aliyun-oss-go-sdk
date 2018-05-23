@@ -28,7 +28,7 @@ type ProgressListener interface {
 	ProgressChanged(event *ProgressEvent)
 }
 
-// -------------------- private --------------------
+// -------------------- Private --------------------
 
 func newProgressEvent(eventType ProgressEventType, consumed, total int64) *ProgressEvent {
 	return &ProgressEvent{

@@ -9,13 +9,13 @@ import (
 
 // ObjectACLSample shows how to set and get object ACL
 func ObjectACLSample() {
-	// Creates Bucket
+	// Create Bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates object
+	// Create object
 	err = bucket.PutObject(objectKey, strings.NewReader("YoursObjectValue"))
 	if err != nil {
 		HandleError(err)
@@ -27,14 +27,14 @@ func ObjectACLSample() {
 		HandleError(err)
 	}
 
-	// Gets Object ACL，returns one of the three values: private、public-read、public-read-write
+	// Get Object ACL，returns one of the three values: private、public-read、public-read-write
 	goar, err := bucket.GetObjectACL(objectKey)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Object ACL:", goar.ACL)
 
-	// Deletes object and bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

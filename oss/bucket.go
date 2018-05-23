@@ -683,12 +683,12 @@ func (bucket Bucket) RestoreObject(objectKey string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
 }
 
-// SignURL signs the url. Users could access the object directly with this url without getting the AK.
+// SignURL signs the URL. Users could access the object directly with this URL without getting the AK.
 //
 // objectKey    the target object to sign.
-// signURLConfig    the config for the signed url
+// signURLConfig    the config for the signed URL
 //
-// string    returns the signed url, when error is nil.
+// string    returns the signed URL, when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec int64, options ...Option) (string, error) {
@@ -711,7 +711,7 @@ func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec i
 	return bucket.Client.Conn.signURL(method, bucket.BucketName, objectKey, expiration, params, headers), nil
 }
 
-// PutObjectWithURL uploads an object with the url. If the object exists, it will be overwritten.
+// PutObjectWithURL uploads an object with the URL. If the object exists, it will be overwritten.
 // PutObjectWithURL It will not generate minetype according to the key name.
 //
 // signedURL    signed URL.
@@ -732,7 +732,7 @@ func (bucket Bucket) PutObjectWithURL(signedURL string, reader io.Reader, option
 	return err
 }
 
-// PutObjectFromFileWithURL uploads an object from a local file with the signed url.
+// PutObjectFromFileWithURL uploads an object from a local file with the signed URL.
 // PutObjectFromFileWithURL It does not generate mimetype according to object key's name or the local file name.
 //
 // signedURL    the signed URL.
@@ -787,9 +787,9 @@ func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, opti
 	return resp, err
 }
 
-// GetObjectWithURL downloads the object and returns the reader instance,  with the signed url.
+// GetObjectWithURL downloads the object and returns the reader instance,  with the signed URL.
 //
-// signedURL    the signed url.
+// signedURL    the signed URL.
 // options    options for downloading the object. Valid options are IfModifiedSince, IfUnmodifiedSince, IfMatch,
 //            IfNoneMatch, AcceptEncoding. For more information, check out the following link:
 //            https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
@@ -805,7 +805,7 @@ func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.R
 	return result.Response.Body, nil
 }
 
-// GetObjectToFileWithURL downloads the object into a local file with the signed url.
+// GetObjectToFileWithURL downloads the object into a local file with the signed URL.
 //
 // signedURL    the signed URL
 // filePath    the local file path to download to.
@@ -850,7 +850,7 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 	return os.Rename(tempFilePath, filePath)
 }
 
-// DoGetObjectWithURL is the actual API that downloads the file with the signed url.
+// DoGetObjectWithURL is the actual API that downloads the file with the signed URL.
 //
 // signedURL    the signed URL.
 // options    the options for getting object. Check out parameter options in GetObject for the reference.

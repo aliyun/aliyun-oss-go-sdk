@@ -15,24 +15,24 @@ type HTTPTimeout struct {
 
 // Config defines oss configuration
 type Config struct {
-	Endpoint        string      // oss endpoint
-	AccessKeyID     string      // accessId
-	AccessKeySecret string      // accessKey
-	RetryTimes      uint        // retry count by default it's 5.
+	Endpoint        string      // OSS endpoint
+	AccessKeyID     string      // AccessId
+	AccessKeySecret string      // AccessKey
+	RetryTimes      uint        // Retry count by default it's 5.
 	UserAgent       string      // SDK name/version/system information
-	IsDebug         bool        // enable debug mode. Default is false.
-	Timeout         uint        // timeout in seconds. By default it's 60.
+	IsDebug         bool        // Enable debug mode. Default is false.
+	Timeout         uint        // Timeout in seconds. By default it's 60.
 	SecurityToken   string      // STS Token
-	IsCname         bool        // if cname is in the endpoint.
+	IsCname         bool        // If cname is in the endpoint.
 	HTTPTimeout     HTTPTimeout // HTTP timeout
-	IsUseProxy      bool        // flag of using proxy.
-	ProxyHost       string      // flag of using proxy host.
-	IsAuthProxy     bool        // flag of needs authentication
-	ProxyUser       string      // proxy user
-	ProxyPassword   string      // proxy password
-	IsEnableMD5     bool        // flag of enabling MD5 for upload
+	IsUseProxy      bool        // Flag of using proxy.
+	ProxyHost       string      // Flag of using proxy host.
+	IsAuthProxy     bool        // Flag of needs authentication
+	ProxyUser       string      // Proxy user
+	ProxyPassword   string      // Proxy password
+	IsEnableMD5     bool        // Flag of enabling MD5 for upload
 	MD5Threshold    int64       // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
-	IsEnableCRC     bool        // flag of enabling CRC for upload.
+	IsEnableCRC     bool        // Flag of enabling CRC for upload.
 }
 
 // getDefaultOssConfig gets the default config.
@@ -45,7 +45,7 @@ func getDefaultOssConfig() *Config {
 	config.RetryTimes = 5
 	config.IsDebug = false
 	config.UserAgent = userAgent
-	config.Timeout = 60 // seconds
+	config.Timeout = 60  // Seconds
 	config.SecurityToken = ""
 	config.IsCname = false
 

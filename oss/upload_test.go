@@ -242,7 +242,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
 
-	// Check cp
+	// Check CP
 	ucp := uploadCheckpoint{}
 	err = ucp.load(fileName + ".cp")
 	c.Assert(err, IsNil)
@@ -283,7 +283,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
 
-	// Check cp
+	// Check CP
 	ucp = uploadCheckpoint{}
 	err = ucp.load(objectName + ".cp")
 	c.Assert(err, IsNil)

@@ -45,20 +45,20 @@ func BucketLifecycleSample() {
 		HandleError(err)
 	}
 
-	// Gets the bucket's lifecycle
+	// Get the bucket's lifecycle
 	gbl, err := client.GetBucketLifecycle(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket Lifecycle:", gbl.Rules)
 
-	// Deletes Bucket's Lifecycle
+	// Delete Bucket's Lifecycle
 	err = client.DeleteBucketLifecycle(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Deletes bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

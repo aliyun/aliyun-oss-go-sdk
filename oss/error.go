@@ -10,11 +10,11 @@ import (
 // ServiceError contains fields of the error response from Oss Service REST API.
 type ServiceError struct {
 	XMLName    xml.Name `xml:"Error"`
-	Code       string   `xml:"Code"`      // the error code returned from OSS to the caller
-	Message    string   `xml:"Message"`   // the detail error message from OSS
-	RequestID  string   `xml:"RequestId"` // the UUID used to uniquely identify the request
-	HostID     string   `xml:"HostId"`    // the OSS server cluster's Id
-	RawMessage string   // the raw messages from OSS
+	Code       string   `xml:"Code"`      // The error code returned from OSS to the caller
+	Message    string   `xml:"Message"`   // The detail error message from OSS
+	RequestID  string   `xml:"RequestId"` // The UUID used to uniquely identify the request
+	HostID     string   `xml:"HostId"`    // The OSS server cluster's Id
+	RawMessage string   // The raw messages from OSS
 	StatusCode int      // HTTP status code
 }
 
@@ -64,8 +64,8 @@ func checkRespCode(respCode int, allowed []int) error {
 type CRCCheckError struct {
 	clientCRC uint64 // Calculated CRC64 in client
 	serverCRC uint64 // Calculated CRC64 in server
-	operation string // upload operations such as PutObject/AppendObject/UploadPart, etc
-	requestID string // the request id of this operation
+	operation string // Upload operations such as PutObject/AppendObject/UploadPart, etc
+	requestID string // The request id of this operation
 }
 
 // Error implements interface error

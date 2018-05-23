@@ -132,13 +132,13 @@ func (s *OssCrcSuite) TestCRCGolden(c *C) {
 func testCRC64Combine(c *C, str string, pos int, crc uint64) {
 	tabECMA := crc64.MakeTable(crc64.ECMA)
 
-	// Test crc64
+	// Test CRC64
 	hash := crc64.New(tabECMA)
 	io.WriteString(hash, str)
 	crc1 := hash.Sum64()
 	c.Assert(crc1, Equals, crc)
 
-	// Test crc64 combine
+	// Test CRC64 combine
 	hash = crc64.New(tabECMA)
 	io.WriteString(hash, str[0:pos])
 	crc1 = hash.Sum64()

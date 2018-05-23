@@ -98,7 +98,7 @@ func DeleteObjectSample() {
 	}
 	fmt.Println("Objects:", getObjectsFormResponse(lsRes))
 
-	// Deletes object and bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

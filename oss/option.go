@@ -13,7 +13,7 @@ type optionType string
 const (
 	optionParam optionType = "HTTPParameter" // URL parameter
 	optionHTTP  optionType = "HTTPHeader"    // HTTP header
-	optionArg   optionType = "FuncArgument"  // function argument
+	optionArg   optionType = "FuncArgument"  // Function argument
 )
 
 const (

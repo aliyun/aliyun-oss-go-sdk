@@ -30,7 +30,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "web
 
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
-	// new Transport
+	// New Transport
 	transport := newTransport(conn, config)
 
 	// Proxy
@@ -494,7 +494,7 @@ func (c *timeoutConn) SetWriteDeadline(t time.Time) error {
 	return c.conn.SetWriteDeadline(t)
 }
 
-// UrlMaker - build url and resource
+// UrlMaker - build URL and resource
 const (
 	urlTypeCname  = 1
 	urlTypeIP     = 2
@@ -502,10 +502,10 @@ const (
 )
 
 type urlMaker struct {
-	Scheme  string // http or https
-	NetLoc  string // host or ip
+	Scheme  string // Http or https
+	NetLoc  string // Host or ip
 	Type    int    // 1 CNAME 2 IP 3 ALIYUN
-	IsProxy bool   // proxy
+	IsProxy bool   // Proxy
 }
 
 // Init parses endpoint
