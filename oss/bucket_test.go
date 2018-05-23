@@ -1805,14 +1805,14 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 	c.Assert(err, IsNil)
 	testLogger.Println("Objects:", lor.Objects)
 
-	// Put with URL
+	// Put with url
 	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
 	c.Assert(err, IsNil)
 
 	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Get with URL
+	// Get with url
 	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
 	c.Assert(err, IsNil)
 

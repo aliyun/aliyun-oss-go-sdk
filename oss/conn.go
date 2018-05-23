@@ -30,7 +30,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "web
 
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
-	// New Transport
+	// new Transport
 	transport := newTransport(conn, config)
 
 	// Proxy
