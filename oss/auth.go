@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// headerSorter defines the key-value structure for storing the sorted data in signHeader
+// headerSorter defines the key-value structure for storing the sorted data in signHeader.
 type headerSorter struct {
 	Keys []string
 	Vals []string

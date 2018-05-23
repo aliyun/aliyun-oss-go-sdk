@@ -13,13 +13,13 @@ import (
 
 // CopyFile is multipart copy object
 //
-// srcBucketName      source bucket name
-// srcObjectKey       source object name
-// destObjectKey      target object name in the form of bucketname.objectkey
-// partSize           the part size in byte.
-// options            object's contraints. Check out function InitiateMultipartUpload。
+// srcBucketName    source bucket name
+// srcObjectKey    source object name
+// destObjectKey    target object name in the form of bucketname.objectkey
+// partSize    the part size in byte.
+// options    object's contraints. Check out function InitiateMultipartUpload。
 //
-// error              it's nil if the operation succeeds, otherwise it's an error object.
+// error    it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string, partSize int64, options ...Option) error {
 	destBucketName := bucket.BucketName
@@ -143,13 +143,13 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
 	listener := getProgressListener(options)
 
-	// get copy parts
+	// Get copy parts
 	parts, err := getCopyParts(srcBucket, srcObjectKey, partSize)
 	if err != nil {
 		return err
 	}
 
-	// initialize the multipart upload
+	// Initialize the multipart upload
 	imur, err := descBucket.InitiateMultipartUpload(destObjectKey, options...)
 	if err != nil {
 		return err
@@ -165,16 +165,16 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
 	publishProgress(listener, event)
 
-	// start copy workers
+	// Start copy workers
 	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
 	for w := 1; w <= routines; w++ {
 		go copyWorker(w, arg, jobs, results, failed, die)
 	}
 
-	// starts the scheduler
+	// Starts the scheduler
 	go copyScheduler(jobs, parts)
 
-	// waits for the parts finished.
+	// Waits for the parts finished.
 	completed := 0
 	ups := make([]UploadPart, len(parts))
 	for completed < len(parts) {
@@ -201,7 +201,7 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	event = newProgressEvent(TransferCompletedEvent, completedBytes, totalBytes)
 	publishProgress(listener, event)
 
-	// complete the multipart upload
+	// Complete the multipart upload
 	_, err = descBucket.CompleteMultipartUpload(imur, ups)
 	if err != nil {
 		bucket.AbortMultipartUpload(imur)
@@ -230,7 +230,7 @@ type copyCheckpoint struct {
 
 // isValid checks if the data is valid which means CP is valid and object is not updated.
 func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error) {
-	// compare CP's magic number and the MD5.
+	// Compare CP's magic number and the MD5.
 	cpb := cp
 	cpb.MD5 = ""
 	js, _ := json.Marshal(cpb)
@@ -241,7 +241,7 @@ func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error)
 		return false, nil
 	}
 
-	// makes sure the object is not updated.
+	// Makes sure the object is not updated.
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return false, err
@@ -283,7 +283,7 @@ func (cp *copyCheckpoint) update(part UploadPart) {
 func (cp *copyCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
-	// calculates MD5
+	// Calculates MD5
 	bcp.MD5 = ""
 	js, err := json.Marshal(bcp)
 	if err != nil {
@@ -293,13 +293,13 @@ func (cp *copyCheckpoint) dump(filePath string) error {
 	b64 := base64.StdEncoding.EncodeToString(sum[:])
 	bcp.MD5 = b64
 
-	// serialization
+	// Serialization
 	js, err = json.Marshal(bcp)
 	if err != nil {
 		return err
 	}
 
-	// dump
+	// Dump
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
@@ -328,14 +328,14 @@ func (cp copyCheckpoint) getCompletedBytes() int64 {
 // prepare initializes the multipart upload
 func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBucket *Bucket, destObjectKey string,
 	partSize int64, options []Option) error {
-	// cp
+	// CP
 	cp.Magic = copyCpMagic
 	cp.SrcBucketName = srcBucket.BucketName
 	cp.SrcObjectKey = srcObjectKey
 	cp.DestBucketName = destBucket.BucketName
 	cp.DestObjectKey = destObjectKey
 
-	// object
+	// Object
 	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey)
 	if err != nil {
 		return err
@@ -350,7 +350,7 @@ func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBu
 	cp.ObjStat.LastModified = meta.Get(HTTPHeaderLastModified)
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
-	// parts
+	// Parts
 	cp.Parts, err = getCopyParts(srcBucket, srcObjectKey, partSize)
 	if err != nil {
 		return err
@@ -361,7 +361,7 @@ func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBu
 	}
 	cp.CopyParts = make([]UploadPart, len(cp.Parts))
 
-	// init copy
+	// Init copy
 	imur, err := destBucket.InitiateMultipartUpload(destObjectKey, options...)
 	if err != nil {
 		return err
@@ -389,14 +389,14 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
 	listener := getProgressListener(options)
 
-	// LOAD CP data
+	// Load CP data
 	ccp := copyCheckpoint{}
 	err = ccp.load(cpFilePath)
 	if err != nil {
 		os.Remove(cpFilePath)
 	}
 
-	// LOAD error or the cp data is invalid---reinitialize
+	// Load error or the cp data is invalid---reinitialize
 	valid, err := ccp.isValid(srcBucket, srcObjectKey)
 	if err != nil || !valid {
 		if err = ccp.prepare(srcBucket, srcObjectKey, descBucket, destObjectKey, partSize, options); err != nil {
@@ -405,7 +405,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 		os.Remove(cpFilePath)
 	}
 
-	// unfinished parts.
+	// Unfinished parts.
 	parts := ccp.todoParts()
 	imur := InitiateMultipartUploadResult{
 		Bucket:   destBucketName,
@@ -421,16 +421,16 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	event := newProgressEvent(TransferStartedEvent, completedBytes, ccp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	// start the worker coroutines
+	// Start the worker coroutines
 	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
 	for w := 1; w <= routines; w++ {
 		go copyWorker(w, arg, jobs, results, failed, die)
 	}
 
-	// start the scheduler
+	// Start the scheduler
 	go copyScheduler(jobs, parts)
 
-	// waits for the parts completed.
+	// Waits for the parts completed.
 	completed := 0
 	for completed < len(parts) {
 		select {

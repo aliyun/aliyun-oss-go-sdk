@@ -15,12 +15,12 @@ import (
 
 // DownloadFile downloads files with multipart download.
 //
-// objectKey       the object key.
-// filePath        the local file to download from objectKey in OSS.
-// partSize        the part size in bytes.
-// options         object's constraints, check out GetObject for the reference.
+// objectKey    the object key.
+// filePath    the local file to download from objectKey in OSS.
+// partSize    the part size in bytes.
+// options    object's constraints, check out GetObject for the reference.
 //
-// error           it's nil when the call succeeds, otherwise it's an error object.
+// error    it's nil when the call succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < 1 {
@@ -92,11 +92,11 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			break
 		}
 
-		// resolve options
+		// Resolve options
 		r := Range(part.Start, part.End)
 		p := Progress(&defaultDownloadProgressListener{})
 		opts := make([]Option, len(arg.options)+2)
-		// append orderly, can not be reversed!
+		// Append orderly, can not be reversed!
 		opts = append(opts, arg.options...)
 		opts = append(opts, r, p)
 
@@ -239,7 +239,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	}
 	fd.Close()
 
-	// gets the parts of the file
+	// Gets the parts of the file
 	parts, enableCRC, expectedCRC, err := getDownloadParts(&bucket, objectKey, partSize, uRange)
 	if err != nil {
 		return err
@@ -255,13 +255,13 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
 	publishProgress(listener, event)
 
-	// start the download workers
+	// Start the download workers
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
 
-	// download parts concurrently
+	// Download parts concurrently
 	go downloadScheduler(jobs, parts)
 
 	// Waiting for parts download finished
@@ -337,7 +337,7 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 		return false, nil
 	}
 
-	// ensure the object is not updated.
+	// Ensure the object is not updated.
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return false, err
@@ -355,7 +355,7 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 		return false, nil
 	}
 
-	// check the download range
+	// Check the download range
 	if uRange != nil {
 		start, end := adjustRange(uRange, objectSize)
 		if start != cp.Start || end != cp.End {
@@ -381,7 +381,7 @@ func (cp *downloadCheckpoint) load(filePath string) error {
 func (cp *downloadCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
-	// calculate MD5
+	// Calculate MD5
 	bcp.MD5 = ""
 	js, err := json.Marshal(bcp)
 	if err != nil {
@@ -391,13 +391,13 @@ func (cp *downloadCheckpoint) dump(filePath string) error {
 	b64 := base64.StdEncoding.EncodeToString(sum[:])
 	bcp.MD5 = b64
 
-	// serialize
+	// Serialize
 	js, err = json.Marshal(bcp)
 	if err != nil {
 		return err
 	}
 
-	// dump
+	// Dump
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
@@ -425,12 +425,12 @@ func (cp downloadCheckpoint) getCompletedBytes() int64 {
 
 // prepare initiates download tasks
 func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string, partSize int64, uRange *unpackedRange) error {
-	// cp
+	// CP
 	cp.Magic = downloadCpMagic
 	cp.FilePath = filePath
 	cp.Object = objectKey
 
-	// object
+	// Object
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return err
@@ -445,7 +445,7 @@ func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string
 	cp.ObjStat.LastModified = meta.Get(HTTPHeaderLastModified)
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
-	// parts
+	// Parts
 	cp.Parts, cp.enableCRC, cp.CRC, err = getDownloadParts(bucket, objectKey, partSize, uRange)
 	if err != nil {
 		return err
@@ -463,19 +463,19 @@ func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
 	return os.Rename(downFilepath, cp.FilePath)
 }
 
-// downloadFileWithCp downloads files with checkpoint
+// downloadFileWithCp downloads files with checkpoint.
 func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int, uRange *unpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)
 
-	// LOAD checkpoint data
+	// Load checkpoint data.
 	dcp := downloadCheckpoint{}
 	err := dcp.load(cpFilePath)
 	if err != nil {
 		os.Remove(cpFilePath)
 	}
 
-	// LOAD error or data invalid. Re-initialize the download
+	// Load error or data invalid. Re-initialize the download.
 	valid, err := dcp.isValid(&bucket, objectKey, uRange)
 	if err != nil || !valid {
 		if err = dcp.prepare(&bucket, objectKey, filePath, partSize, uRange); err != nil {
@@ -484,14 +484,14 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		os.Remove(cpFilePath)
 	}
 
-	// Creates the file if not exists. Otherwise the parts download will overwrite it
+	// Creates the file if not exists. Otherwise the parts download will overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
 	if err != nil {
 		return err
 	}
 	fd.Close()
 
-	// unfinished parts
+	// Unfinished parts
 	parts := dcp.todoParts()
 	jobs := make(chan downloadPart, len(parts))
 	results := make(chan downloadPart, len(parts))
@@ -502,16 +502,16 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	// starts the download workers routine
+	// Starts the download workers routine
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, dcp.enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
 
-	// concurrently downloads parts
+	// Concurrently downloads parts
 	go downloadScheduler(jobs, parts)
 
-	// waits for the parts download finished
+	// Waits for the parts download finished
 	completed := 0
 	for completed < len(parts) {
 		select {

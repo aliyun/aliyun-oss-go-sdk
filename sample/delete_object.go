@@ -9,7 +9,7 @@ import (
 
 // DeleteObjectSample shows how to delete single file or multiple files
 func DeleteObjectSample() {
-	// creates a Bucket
+	// Creates a Bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -17,7 +17,7 @@ func DeleteObjectSample() {
 
 	var val = "抽刀断水水更流，举杯销愁愁更愁。 人生在世不称意，明朝散发弄扁舟。"
 
-	// case 1：deletes a Object
+	// Case 1：deletes a Object
 	err = bucket.PutObject(objectKey, strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -28,7 +28,7 @@ func DeleteObjectSample() {
 		HandleError(err)
 	}
 
-	// case 2：deletes multiple Objects
+	// Case 2：deletes multiple Objects
 	err = bucket.PutObject(objectKey+"1", strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -51,7 +51,7 @@ func DeleteObjectSample() {
 	}
 	fmt.Println("Objects:", getObjectsFormResponse(lsRes))
 
-	// case 3：deletes multiple objects and it will return deleted objects in detail mode which is by default.
+	// Case 3：deletes multiple objects and it will return deleted objects in detail mode which is by default.
 	err = bucket.PutObject(objectKey+"1", strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -75,7 +75,7 @@ func DeleteObjectSample() {
 	}
 	fmt.Println("Objects:", getObjectsFormResponse(lsRes))
 
-	// case 4：deletes multiple objects and returns undeleted objects in quiet mode
+	// Case 4：deletes multiple objects and returns undeleted objects in quiet mode
 	err = bucket.PutObject(objectKey+"1", strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
@@ -98,7 +98,7 @@ func DeleteObjectSample() {
 	}
 	fmt.Println("Objects:", getObjectsFormResponse(lsRes))
 
-	// deletes object and bucket
+	// Deletes object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

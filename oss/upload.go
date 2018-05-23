@@ -12,12 +12,12 @@ import (
 
 // UploadFile is multipart file upload.
 //
-// objectKey        the object name.
-// filePath         the local file path to upload.
-// partSize         the part size in byte.
-// options          the options for uploading object.
+// objectKey    the object name.
+// filePath    the local file path to upload.
+// partSize    the part size in byte.
+// options    the options for uploading object.
 //
-// error            it's nil if the operation succeeds, otherwise it's an error object.
+// error    it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < MinPartSize || partSize > MaxPartSize {
@@ -145,7 +145,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 		return err
 	}
 
-	// initialize the multipart upload
+	// Initialize the multipart upload
 	imur, err := bucket.InitiateMultipartUpload(objectKey, options...)
 	if err != nil {
 		return err
@@ -161,16 +161,16 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
 	publishProgress(listener, event)
 
-	// starts the worker coroutine
+	// Starts the worker coroutine
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go worker(w, arg, jobs, results, failed, die)
 	}
 
-	// schedule the jobs
+	// Schedule the jobs
 	go scheduler(jobs, chunks)
 
-	// waiting for the upload finished
+	// Waiting for the upload finished
 	completed := 0
 	parts := make([]UploadPart, len(chunks))
 	for completed < len(chunks) {
@@ -197,7 +197,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	event = newProgressEvent(TransferStartedEvent, completedBytes, totalBytes)
 	publishProgress(listener, event)
 
-	// complete the multpart upload
+	// Complete the multpart upload
 	_, err = bucket.CompleteMultipartUpload(imur, parts)
 	if err != nil {
 		bucket.AbortMultipartUpload(imur)
@@ -233,7 +233,7 @@ type cpPart struct {
 
 // isValid checks if the uploaded data is valid---it's valid when the file is not updated and the checkpoint data is valid.
 func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
-	// compares the CP's magic number and MD5.
+	// Compares the CP's magic number and MD5.
 	cpb := cp
 	cpb.MD5 = ""
 	js, _ := json.Marshal(cpb)
@@ -244,7 +244,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 		return false, nil
 	}
 
-	// makes sure if the local file is updated.
+	// Makes sure if the local file is updated.
 	fd, err := os.Open(filePath)
 	if err != nil {
 		return false, err
@@ -261,7 +261,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 		return false, err
 	}
 
-	// compares the file size, file's last modified time and file's MD5
+	// Compares the file size, file's last modified time and file's MD5
 	if cp.FileStat.Size != st.Size() ||
 		cp.FileStat.LastModified != st.ModTime() ||
 		cp.FileStat.MD5 != md {
@@ -286,7 +286,7 @@ func (cp *uploadCheckpoint) load(filePath string) error {
 func (cp *uploadCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
-	// calculates MD5
+	// Calculates MD5
 	bcp.MD5 = ""
 	js, err := json.Marshal(bcp)
 	if err != nil {
@@ -296,13 +296,13 @@ func (cp *uploadCheckpoint) dump(filePath string) error {
 	b64 := base64.StdEncoding.EncodeToString(sum[:])
 	bcp.MD5 = b64
 
-	// serialization
+	// Serialization
 	js, err = json.Marshal(bcp)
 	if err != nil {
 		return err
 	}
 
-	// dump
+	// Dump
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
@@ -350,12 +350,12 @@ func calcFileMD5(filePath string) (string, error) {
 
 // prepare initializes the multipart upload
 func prepare(cp *uploadCheckpoint, objectKey, filePath string, partSize int64, bucket *Bucket, options []Option) error {
-	// cp
+	// CP
 	cp.Magic = uploadCpMagic
 	cp.FilePath = filePath
 	cp.ObjectKey = objectKey
 
-	// localfile
+	// Local file
 	fd, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -374,7 +374,7 @@ func prepare(cp *uploadCheckpoint, objectKey, filePath string, partSize int64, b
 	}
 	cp.FileStat.MD5 = md
 
-	// chunks
+	// Chunks
 	parts, err := SplitFileByPartSize(filePath, partSize)
 	if err != nil {
 		return err
@@ -386,7 +386,7 @@ func prepare(cp *uploadCheckpoint, objectKey, filePath string, partSize int64, b
 		cp.Parts[i].IsCompleted = false
 	}
 
-	// init load
+	// Init load
 	imur, err := bucket.InitiateMultipartUpload(objectKey, options...)
 	if err != nil {
 		return err
@@ -412,14 +412,14 @@ func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePa
 func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int) error {
 	listener := getProgressListener(options)
 
-	// LOAD CP data
+	// Load CP data
 	ucp := uploadCheckpoint{}
 	err := ucp.load(cpFilePath)
 	if err != nil {
 		os.Remove(cpFilePath)
 	}
 
-	// LOAD error or the cp data is invalid.
+	// Load error or the cp data is invalid.
 	valid, err := ucp.isValid(filePath)
 	if err != nil || !valid {
 		if err = prepare(&ucp, objectKey, filePath, partSize, &bucket, options); err != nil {
@@ -443,16 +443,16 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	event := newProgressEvent(TransferStartedEvent, completedBytes, ucp.FileStat.Size)
 	publishProgress(listener, event)
 
-	// starts the workers
+	// Starts the workers
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go worker(w, arg, jobs, results, failed, die)
 	}
 
-	// schedule jobs
+	// Schedule jobs
 	go scheduler(jobs, chunks)
 
-	// waiting for the job finished
+	// Waiting for the job finished
 	completed := 0
 	for completed < len(chunks) {
 		select {
@@ -478,7 +478,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	event = newProgressEvent(TransferCompletedEvent, completedBytes, ucp.FileStat.Size)
 	publishProgress(listener, event)
 
-	// complete the multipart upload
+	// Complete the multipart upload
 	err = complete(&ucp, &bucket, ucp.allParts(), cpFilePath)
 	return err
 }

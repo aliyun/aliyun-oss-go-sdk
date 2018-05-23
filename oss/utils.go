@@ -67,13 +67,13 @@ func parseRange(normalizedRange string) (*unpackedRange, error) {
 	var start int64
 	var end int64
 
-	// bytes==M-N or ranges=M-N
+	// Bytes==M-N or ranges=M-N
 	nrSlice := strings.Split(normalizedRange, "=")
 	if len(nrSlice) != 2 || nrSlice[0] != "bytes" {
 		return nil, invalidRangeError(normalizedRange)
 	}
 
-	// bytes=M-N,X-Y
+	// Bytes=M-N,X-Y
 	rSlice := strings.Split(nrSlice[1], ",")
 	rStr := rSlice[0]
 

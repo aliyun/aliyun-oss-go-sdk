@@ -24,7 +24,7 @@ func ListBucketsSample() {
 		HandleError(err)
 	}
 
-	// remove other bucket
+	// Remove other bucket
 	lbr, err := client.ListBuckets()
 	if err != nil {
 		HandleError(err)
@@ -37,7 +37,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// creates bucket
+	// Creates bucket
 	for _, bucketName := range myBuckets {
 		err = client.CreateBucket(bucketName)
 		if err != nil {
@@ -45,35 +45,35 @@ func ListBucketsSample() {
 		}
 	}
 
-	// case 1：use default parameter
+	// Case 1：use default parameter
 	lbr, err = client.ListBuckets()
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my buckets:", lbr.Buckets)
 
-	// case 2：specifies the max keys : 3
+	// Case 2：specifies the max keys : 3
 	lbr, err = client.ListBuckets(oss.MaxKeys(3))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my buckets max num:", lbr.Buckets)
 
-	// case3：specifies the prefix of buckets.
+	// Case 3：specifies the prefix of buckets.
 	lbr, err = client.ListBuckets(oss.Prefix("my-bucket-2"))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my buckets prefix :", lbr.Buckets)
 
-	// case 4：specifies the marker to return from a certain one
+	// Case 4：specifies the marker to return from a certain one
 	lbr, err = client.ListBuckets(oss.Marker("my-bucket-22"))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my buckets marker :", lbr.Buckets)
 
-	// case 5：specifies max key and list all buckets with paging, return 3 items each time.
+	// Case 5：specifies max key and list all buckets with paging, return 3 items each time.
 	marker := oss.Marker("")
 	for {
 		lbr, err = client.ListBuckets(oss.MaxKeys(3), marker)
@@ -87,7 +87,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// case 6：list bucket with marker and max key; return 3 items each time.
+	// Case 6：list bucket with marker and max key; return 3 items each time.
 	marker = oss.Marker("my-bucket-22")
 	for {
 		lbr, err = client.ListBuckets(oss.MaxKeys(3), marker)
@@ -101,7 +101,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// case 7：list bucket with prefix and max key, return 3 items each time.
+	// Case 7：list bucket with prefix and max key, return 3 items each time.
 	pre := oss.Prefix("my-bucket-2")
 	marker = oss.Marker("")
 	for {
@@ -117,7 +117,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// deletes bucket
+	// Deletes bucket
 	for _, bucketName := range myBuckets {
 		err = client.DeleteBucket(bucketName)
 		if err != nil {

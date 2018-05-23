@@ -14,7 +14,7 @@ import (
 
 // AppendObjectSample shows the append file's usage
 func AppendObjectSample() {
-	// 创建Bucket
+	// Create Bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -25,20 +25,20 @@ func AppendObjectSample() {
 	var str = "弃我去者，昨日之日不可留。 乱我心者，今日之日多烦忧！"
 	var nextPos int64
 
-	// case 1: append a string to the object
+	// Case 1: append a string to the object
 	// The first append position is 0 and the return value is for the next append's position.
 	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(str), nextPos)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// second append
+	// Second append
 	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(str), nextPos)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// download
+	// Download
 	body, err := bucket.GetObject(objectKey)
 	if err != nil {
 		HandleError(err)
@@ -55,7 +55,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// case 2：append byte array to the object
+	// Case 2：append byte array to the object
 	nextPos = 0
 	// The first append position is 0, and the return value is for the next append's position.
 	nextPos, err = bucket.AppendObject(objectKey, bytes.NewReader([]byte(str)), nextPos)
@@ -63,13 +63,13 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// second append
+	// Second append
 	nextPos, err = bucket.AppendObject(objectKey, bytes.NewReader([]byte(str)), nextPos)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// download
+	// Download
 	body, err = bucket.GetObject(objectKey)
 	if err != nil {
 		HandleError(err)
@@ -86,7 +86,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	//case 3：append a local file to the object
+	// Case 3：append a local file to the object
 	fd, err := os.Open(localFile)
 	if err != nil {
 		HandleError(err)
@@ -99,7 +99,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// case 4，get the next append position by GetObjectDetailedMeta
+	// Case 4，get the next append position by GetObjectDetailedMeta
 	props, err := bucket.GetObjectDetailedMeta(objectKey)
 	nextPos, err = strconv.ParseInt(props.Get(oss.HTTPHeaderOssNextAppendPosition), 10, 0)
 	if err != nil {
@@ -116,7 +116,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// case 5：Specifies the object properties for the first append, including the "x-oss-meta"'s custom metadata.
+	// Case 5：Specifies the object properties for the first append, including the "x-oss-meta"'s custom metadata.
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.ObjectACL(oss.ACLPublicRead),
@@ -127,7 +127,7 @@ func AppendObjectSample() {
 	if err != nil {
 		HandleError(err)
 	}
-	// second append.
+	// Second append.
 	fd.Seek(0, os.SEEK_SET)
 	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(str), nextPos)
 	if err != nil {
@@ -146,7 +146,7 @@ func AppendObjectSample() {
 	}
 	fmt.Println("Object ACL:", goar.ACL)
 
-	// deletes the object and bucket
+	// Deletes the object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

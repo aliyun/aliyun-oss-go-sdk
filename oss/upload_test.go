@@ -90,7 +90,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies routine count as 1
+	// Specifies routine count as 1
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(1))
 	c.Assert(err, IsNil)
 
@@ -105,7 +105,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies routine count as 3, which is smaller than parts count 5
+	// Specifies routine count as 3, which is smaller than parts count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -120,7 +120,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies routine count as 5, which is same as the part count 5
+	// Specifies routine count as 5, which is same as the part count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
 
@@ -135,7 +135,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// specifies routine count as 10, which is bigger than the part count 5.
+	// Specifies routine count as 10, which is bigger than the part count 5.
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10))
 	c.Assert(err, IsNil)
 
@@ -150,7 +150,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// invalid routine count, it will use 1 automatically.
+	// Invalid routine count, it will use 1 automatically.
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(0))
 	os.Remove(newFile)
 	err = s.bucket.GetObjectToFile(objectName, newFile)
@@ -163,7 +163,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// invalid routine count, it will use 1 automatically
+	// Invalid routine count, it will use 1 automatically
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(-1))
 	os.Remove(newFile)
 	err = s.bucket.GetObjectToFile(objectName, newFile)
@@ -176,7 +176,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// option
+	// Option
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Meta("myprop", "mypropval"))
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
@@ -210,17 +210,17 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	uploadPartHooker = ErrorHooker
-	// worker routine error
+	// Worker routine error
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
 
-	// local file does not exist
+	// Local file does not exist
 	err = s.bucket.UploadFile(objectName, "NotExist", 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 
-	// the part size is invalid
+	// The part size is invalid
 	err = s.bucket.UploadFile(objectName, fileName, 1024, Routines(2))
 	c.Assert(err, NotNil)
 
@@ -234,15 +234,15 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file-2.jpg"
 
-	// use default Routines and default CP file path (fileName+.cp)
-	// first upload for 4 parts
+	// Use default Routines and default CP file path (fileName+.cp)
+	// First upload for 4 parts
 	uploadPartHooker = ErrorHooker
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
 
-	// check cp
+	// Check cp
 	ucp := uploadCheckpoint{}
 	err = ucp.load(fileName + ".cp")
 	c.Assert(err, IsNil)
@@ -258,7 +258,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(len(ucp.todoParts()), Equals, 1)
 	c.Assert(len(ucp.allParts()), Equals, 5)
 
-	// second upload, finish the remaining part
+	// Second upload, finish the remaining part
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -276,14 +276,14 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(fileName + ".cp")
 	c.Assert(err, NotNil)
 
-	// specifies Routines and CP
+	// Specifies Routines and CP
 	uploadPartHooker = ErrorHooker
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2), Checkpoint(true, objectName+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
 
-	// check cp
+	// Check cp
 	ucp = uploadCheckpoint{}
 	err = ucp.load(objectName + ".cp")
 	c.Assert(err, IsNil)
@@ -316,7 +316,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(objectName + ".cp")
 	c.Assert(err, NotNil)
 
-	// uploads all 5 parts without error
+	// Uploads all 5 parts without error
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -331,7 +331,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// upload all 5 parts with 10 routines without error
+	// Upload all 5 parts with 10 routines without error
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -346,7 +346,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// option
+	// Option
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, ""), Meta("myprop", "mypropval"))
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
@@ -370,14 +370,14 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + "turrn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
-	// the local file does not exist
+	// The local file does not exist
 	err := s.bucket.UploadFile(objectName, "NotExist", 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
 	err = s.bucket.UploadFile(objectName, "NotExist", 100*1024, Routines(2), Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
-	// specified part size is invalid
+	// Specified part size is invalid
 	err = s.bucket.UploadFile(objectName, fileName, 1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
 
@@ -402,7 +402,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	err := copyFile(fileName, localFile)
 	c.Assert(err, IsNil)
 
-	// first upload for 4 parts
+	// First upload for 4 parts
 	uploadPartHooker = ErrorHooker
 	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
@@ -413,7 +413,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	err = copyFile(fileName, localFile)
 	c.Assert(err, IsNil)
 
-	// updating the file. The second upload will re-upload all 5 parts
+	// Updating the file. The second upload will re-upload all 5 parts
 	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 

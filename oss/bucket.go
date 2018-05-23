@@ -25,13 +25,13 @@ type Bucket struct {
 
 // PutObject creates a new object and it will overwrite the original one if it exists already.
 //
-// objectKey      the object key in UTF-8 encoding. The length must be between 1 and 1023, and cannot start with "/" or "\".
-// reader         io.Reader instance for reading the data for uploading
-// options        the options for uploading the object. The valid options here are CacheControl, ContentDisposition, ContentEncoding
+// objectKey    the object key in UTF-8 encoding. The length must be between 1 and 1023, and cannot start with "/" or "\".
+// reader    io.Reader instance for reading the data for uploading
+// options    the options for uploading the object. The valid options here are CacheControl, ContentDisposition, ContentEncoding
 //            Expires, ServerSideEncryption, ObjectACL and Meta. Refer to the link below for more details.
 //            https://help.aliyun.com/document_detail/oss/api-reference/object/PutObject.html
 //
-// error          it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Option) error {
 	opts := addContentType(options, objectKey)
@@ -51,11 +51,11 @@ func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Op
 
 // PutObjectFromFile creates a new object from the local file.
 //
-// objectKey      object key.
-// filePath       the local file path to upload.
-// options        the options for uploading the object. Refer to the parameter options in PutObject for more details.
+// objectKey    object key.
+// filePath    the local file path to upload.
+// options    the options for uploading the object. Refer to the parameter options in PutObject for more details.
 //
-// error          it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) PutObjectFromFile(objectKey, filePath string, options ...Option) error {
 	fd, err := os.Open(filePath)
@@ -81,11 +81,11 @@ func (bucket Bucket) PutObjectFromFile(objectKey, filePath string, options ...Op
 
 // DoPutObject does the actual upload work.
 //
-// request        the request instance for uploading an object.
-// options        the options for uploading an object.
+// request    the request instance for uploading an object.
+// options    the options for uploading an object.
 //
-// Response       the response from OSS.
-// error          it's nil if no error, otherwise it's an error object.
+// Response    the response from OSS.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*Response, error) {
 	isOptSet, _, _ := isOptionSet(options, HTTPHeaderContentType)
@@ -115,13 +115,13 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 
 // GetObject downloads the object.
 //
-// objectKey        the object key.
-// options          the options for downloading the object. The valid values are: Range, IfModifiedSince, IfUnmodifiedSince, IfMatch,
-//              IfNoneMatch, AcceptEncoding. For more details, please check out:
-//              https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
+// objectKey    the object key.
+// options    the options for downloading the object. The valid values are: Range, IfModifiedSince, IfUnmodifiedSince, IfMatch,
+//            IfNoneMatch, AcceptEncoding. For more details, please check out:
+//            https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
 //
 // io.ReadCloser    reader instance for reading data from response. It must be called close() after the usage and only valid when error is nil.
-// error            it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadCloser, error) {
 	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
@@ -133,16 +133,16 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 
 // GetObjectToFile downloads the data to a local file.
 //
-// objectKey        the object key to download.
-// filePath         the local file to store the object data.
-// options          the options for downloading the object. Refer to the parameter options in method GetObject for more details.
+// objectKey    the object key to download.
+// filePath    the local file to store the object data.
+// options    the options for downloading the object. Refer to the parameter options in method GetObject for more details.
 //
-// error            it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Option) error {
 	tempFilePath := filePath + TempFileSuffix
 
-	// calls the API to actually download the object. Returns the result instance
+	// Calls the API to actually download the object. Returns the result instance
 	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
 	if err != nil {
 		return err
@@ -155,14 +155,14 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 		return err
 	}
 
-	// copy the data to the local file path.
+	// Copy the data to the local file path.
 	_, err = io.Copy(fd, result.Response.Body)
 	fd.Close()
 	if err != nil {
 		return err
 	}
 
-	// compares the CRC value
+	// Compares the CRC value
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if bucket.getConfig().IsEnableCRC && !hasRange {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
@@ -178,11 +178,11 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 
 // DoGetObject is the actual API that gets the object. It's the internal function called by other public APIs
 //
-// request                the request to download the object.
-// options                the options for downloading the file. Checks out the parameter options in method GetObject.
+// request    the request to download the object.
+// options    the options for downloading the file. Checks out the parameter options in method GetObject.
 //
-// GetObjectResult        the result instance of getting the object.
-// error                  it's nil if no error, otherwise it's an error object.
+// GetObjectResult    the result instance of getting the object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*GetObjectResult, error) {
 	params := map[string]interface{}{}
@@ -195,7 +195,7 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 		Response: resp,
 	}
 
-	// crc
+	// CRC
 	var crcCalc hash.Hash64
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if bucket.getConfig().IsEnableCRC && !hasRange {
@@ -204,7 +204,7 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 		result.ClientCRC = crcCalc
 	}
 
-	// progress
+	// Progress
 	listener := getProgressListener(options)
 
 	contentLen, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderContentLength), 10, 64)
@@ -215,15 +215,15 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 
 // CopyObject copies the object inside the bucket.
 //
-// srcObjectKey        the source object to copy.
-// destObjectKey       the target object to copy.
-// options             options for copying an object. You can specify the conditions of copy. The valid conditions are CopySourceIfMatch,
-//                 CopySourceIfNoneMatch, CopySourceIfModifiedSince, CopySourceIfUnmodifiedSince, MetadataDirective.
-//                 Also you can specify the target object's attributes, such as CacheControl, ContentDisposition, ContentEncoding, Expires, 
-//                 ServerSideEncryption, ObjectACL, Meta. Refer to the link below for more details :
-//                 https://help.aliyun.com/document_detail/oss/api-reference/object/CopyObject.html
+// srcObjectKey    the source object to copy.
+// destObjectKey    the target object to copy.
+// options    options for copying an object. You can specify the conditions of copy. The valid conditions are CopySourceIfMatch,
+//            CopySourceIfNoneMatch, CopySourceIfModifiedSince, CopySourceIfUnmodifiedSince, MetadataDirective.
+//            Also you can specify the target object's attributes, such as CacheControl, ContentDisposition, ContentEncoding, Expires, 
+//            ServerSideEncryption, ObjectACL, Meta. Refer to the link below for more details :
+//            https://help.aliyun.com/document_detail/oss/api-reference/object/CopyObject.html
 //
-// error               it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
@@ -241,12 +241,12 @@ func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...O
 
 // CopyObjectTo copies the object to another bucket.
 //
-// srcObjectKey        source object key. The source bucket is Bucket.BucketName.
-// destBucketName      target Bucket name.
-// destObjectKey       target Object name.
-// options             copy options, check out parameter options in function CopyObject for more details.
+// srcObjectKey    source object key. The source bucket is Bucket.BucketName.
+// destBucketName    target Bucket name.
+// destObjectKey    target Object name.
+// options    copy options, check out parameter options in function CopyObject for more details.
 //
-// error               it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) CopyObjectTo(destBucketName, destObjectKey, srcObjectKey string, options ...Option) (CopyObjectResult, error) {
 	return bucket.copy(srcObjectKey, destBucketName, destObjectKey, options...)
@@ -255,12 +255,12 @@ func (bucket Bucket) CopyObjectTo(destBucketName, destObjectKey, srcObjectKey st
 //
 // CopyObjectFrom copies the object to another bucket.
 //
-// srcBucketName       source bucket name.
-// srcObjectKey        source object name.
-// destObjectKey       target object name. The target bucket name is bucket.BucketName.
-// options             copy options. Check out parameter options in function CopyObject.
+// srcBucketName    source bucket name.
+// srcObjectKey    source object name.
+// destObjectKey    target object name. The target bucket name is bucket.BucketName.
+// options    copy options. Check out parameter options in function CopyObject.
 //
-// error               it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) CopyObjectFrom(srcBucketName, srcObjectKey, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	destBucketName := bucket.BucketName
@@ -299,14 +299,14 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 // For example, the first appendObject's appendPosition is 0 and it uploaded 65536 bytes data, then the second call's position is 65536.
 // The response header x-oss-next-append-position after each successful request also specifies the next call's append position (so the caller need not to maintain this information).
 //
-// objectKey                  the target object to append to.
-// reader                     io.Reader. The read instance for reading the data to append.
-// appendPosition             the start position to append.
-// destObjectProperties       the options for the first appending, such as CacheControl, ContentDisposition, ContentEncoding,
-//                        Expires, ServerSideEncryption, ObjectACL. 
+// objectKey    the target object to append to.
+// reader    io.Reader. The read instance for reading the data to append.
+// appendPosition    the start position to append.
+// destObjectProperties    the options for the first appending, such as CacheControl, ContentDisposition, ContentEncoding,
+//                         Expires, ServerSideEncryption, ObjectACL. 
 //
-// int64                      the next append position, it's valid when error is nil.
-// error                      it's nil if no error, otherwise it's an error object.
+// int64    the next append position, it's valid when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosition int64, options ...Option) (int64, error) {
 	request := &AppendObjectRequest{
@@ -325,11 +325,11 @@ func (bucket Bucket) AppendObject(objectKey string, reader io.Reader, appendPosi
 
 // DoAppendObject is the actual API that does the object append.
 //
-// request                   the request object for appending object.
-// options                   the options for appending object.
+// request    the request object for appending object.
+// options    the options for appending object.
 //
-// AppendObjectResult        the result object for appending object.
-// error                     it's nil if no error, otherwise it's an error object.
+// AppendObjectResult    the result object for appending object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Option) (*AppendObjectResult, error) {
 	params := map[string]interface{}{}
@@ -374,9 +374,9 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 
 // DeleteObject deletes the object.
 //
-// objectKey         the object key to delete.
+// objectKey    the object key to delete.
 //
-// error             it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DeleteObject(objectKey string) error {
 	params := map[string]interface{}{}
@@ -390,12 +390,12 @@ func (bucket Bucket) DeleteObject(objectKey string) error {
 
 // DeleteObjects deletes multiple objects.
 //
-// objectKeys               the object keys to delete.
-// options                  the options for deleting objects.
-//                      Supported option is DeleteObjectsQuiet which means it will not return error even deletion failed (not recommended). By default it's not used.
+// objectKeys    the object keys to delete.
+// options    the options for deleting objects.
+//            Supported option is DeleteObjectsQuiet which means it will not return error even deletion failed (not recommended). By default it's not used.
 //
-// DeleteObjectsResult      the result object.
-// error                    it's nil if no error, otherwise it's an error object.
+// DeleteObjectsResult    the result object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (DeleteObjectsResult, error) {
 	out := DeleteObjectsResult{}
@@ -439,9 +439,9 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 
 // IsObjectExist checks if the object exists.
 //
-// bool           flag of object's existence (true:exists;false:non-exist) when error is nil.
+// bool    flag of object's existence (true:exists;false:non-exist) when error is nil.
 //
-// error          it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
 	_, err := bucket.GetObjectMeta(objectKey)
@@ -461,23 +461,23 @@ func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
 
 // ListObjects lists the objects under the current bucket.
 //
-// options           it contains all the filters for listing objects.
-//               It could specify a prefix filter on object keys,  the max keys count to return and the object key marker and the delimiter for grouping object names.
-//               The key marker means the returned objects' key must be greater than it in lexicographic order.
+// options    it contains all the filters for listing objects.
+//            It could specify a prefix filter on object keys,  the max keys count to return and the object key marker and the delimiter for grouping object names.
+//            The key marker means the returned objects' key must be greater than it in lexicographic order.
 // 
-//               For example, if the bucket has 8 objects, my-object-1, my-object-11, my-object-2, my-object-21,
-//               my-object-22, my-object-3, my-object-31, my-object-32. If the prefix is my-object-2 (no other filters), then it returns
-//               my-object-2, my-object-21, my-object-22 three objects. If the marker is my-object-22 (no other filters), then it returns
-//               my-object-3, my-object-31, my-object-32 three objects. If the max keys is 5, then it returns 5 objects.
-//               The three filters could be used together to achieve filter and paging functionality.
-//               If the prefix is the folder name, then it could list all files under this folder (including the files under its subfolders).
-//               But if the delimiter is specified with '/', then it only returns that folder's files (no subfolder's files). The direct subfolders are in the commonPrefixes properties.
-//               For example, if the bucket has three objects fun/test.jpg, fun/movie/001.avi, fun/movie/007.avi. And if the prefix is "fun/", then it returns all three objects.
-//               But if the delimiter is '/', then only "fun/test.jpg" is returned as files and fun/movie/ is returned as common prefix.
+//            For example, if the bucket has 8 objects, my-object-1, my-object-11, my-object-2, my-object-21,
+//            my-object-22, my-object-3, my-object-31, my-object-32. If the prefix is my-object-2 (no other filters), then it returns
+//            my-object-2, my-object-21, my-object-22 three objects. If the marker is my-object-22 (no other filters), then it returns
+//            my-object-3, my-object-31, my-object-32 three objects. If the max keys is 5, then it returns 5 objects.
+//            The three filters could be used together to achieve filter and paging functionality.
+//            If the prefix is the folder name, then it could list all files under this folder (including the files under its subfolders).
+//            But if the delimiter is specified with '/', then it only returns that folder's files (no subfolder's files). The direct subfolders are in the commonPrefixes properties.
+//            For example, if the bucket has three objects fun/test.jpg, fun/movie/001.avi, fun/movie/007.avi. And if the prefix is "fun/", then it returns all three objects.
+//            But if the delimiter is '/', then only "fun/test.jpg" is returned as files and fun/movie/ is returned as common prefix.
 // 
-//               For common usage scenario, check out sample/list_object.go.
+//            For common usage scenario, check out sample/list_object.go.
 // 
-// ListObjectsResponse     the return value after operation succeeds (only valid when error is nil).
+// ListObjectsResponse    the return value after operation succeeds (only valid when error is nil).
 //
 func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 	var out ListObjectsResult
@@ -505,11 +505,11 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 
 // SetObjectMeta sets the metadata of the Object.
 //
-// objectKey        object
-// options          options for setting the metadata. The valid options are CacheControl, ContentDisposition, ContentEncoding, Expires,
-//              ServerSideEncryption, and custom metadata.
+// objectKey    object
+// options    options for setting the metadata. The valid options are CacheControl, ContentDisposition, ContentEncoding, Expires,
+//            ServerSideEncryption, and custom metadata.
 //
-// error            it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) SetObjectMeta(objectKey string, options ...Option) error {
 	options = append(options, MetadataDirective(MetaReplace))
@@ -519,12 +519,12 @@ func (bucket Bucket) SetObjectMeta(objectKey string, options ...Option) error {
 
 // GetObjectDetailedMeta gets the object's detailed metadata
 //
-// objectKey        object key.
-// options          the constraints of the object. Only when the object meets the requirements this method will return the metadata. Otherwise returns error. Valid options are IfModifiedSince, IfUnmodifiedSince,
-//              IfMatch, IfNoneMatch. For more details check out https://help.aliyun.com/document_detail/oss/api-reference/object/HeadObject.html
+// objectKey    object key.
+// options    the constraints of the object. Only when the object meets the requirements this method will return the metadata. Otherwise returns error. Valid options are IfModifiedSince, IfUnmodifiedSince,
+//            IfMatch, IfNoneMatch. For more details check out https://help.aliyun.com/document_detail/oss/api-reference/object/HeadObject.html
 //
-// http.Header      object meta when error is nil.
-// error            it's nil if no error, otherwise it's an error object.
+// http.Header    object meta when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) (http.Header, error) {
 	params := map[string]interface{}{}
@@ -542,10 +542,10 @@ func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) 
 // GetObjectMeta is more lightweight than GetObjectDetailedMeta as it only returns basic metadata including ETag
 // size, LastModified. The size information is in the HTTP header Content-Length.
 //
-// objectKey         object key
+// objectKey    object key
 //
-// http.Header       the object's metadata, valid when error is nil.
-// error             it's nil if no error, otherwise it's an error object.
+// http.Header    the object's metadata, valid when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 	params := map[string]interface{}{}
@@ -571,10 +571,10 @@ func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 // Object write operations include PutObject, PostObject, AppendObject, DeleteObject, DeleteMultipleObjects,
 // CompleteMultipartUpload and CopyObject on target object.
 //
-// objectKey           the target object key (to set the ACL on)
-// objectAcl           object ACL. Valid options are PrivateACL , PublicReadACL, PublicReadWriteACL.
+// objectKey    the target object key (to set the ACL on)
+// objectAcl    object ACL. Valid options are PrivateACL , PublicReadACL, PublicReadWriteACL.
 //
-// error               it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 	options := []Option{ObjectACL(objectACL)}
@@ -590,10 +590,10 @@ func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 
 // GetObjectACL gets object's ACL
 //
-// objectKey              the object to get ACL from.
+// objectKey    the object to get ACL from.
 //
-// GetObjectACLResult     the result object when error is nil. GetObjectACLResult.Acl is the object acl.
-// error                  it's nil if no error, otherwise it's an error object.
+// GetObjectACLResult    the result object when error is nil. GetObjectACLResult.Acl is the object acl.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) {
 	var out GetObjectACLResult
@@ -617,10 +617,10 @@ func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) 
 // If trying to add an existing file, as long as the caller has the write permission, the existing one will be overwritten.
 // If the x-oss-meta- is specified, it will be added as the metadata of the symlink file.
 //
-// symObjectKey         the symlink object's key.
-// targetObjectKey      the target object key to point to.
+// symObjectKey    the symlink object's key.
+// targetObjectKey    the target object key to point to.
 //
-// error                it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, options ...Option) error {
 	options = append(options, symlinkTarget(url.QueryEscape(targetObjectKey)))
@@ -637,10 +637,10 @@ func (bucket Bucket) PutSymlink(symObjectKey string, targetObjectKey string, opt
 // GetSymlink gets the symlink object with the specified key.
 // If the symlink object does not exist, returns 404.
 //
-// objectKey            the symlink object's key.
+// objectKey    the symlink object's key.
 //
-// error                it's nil if no error, otherwise it's an error object.
-//                  When error is nil, the target file key is in the X-Oss-Symlink-Target header of the returned object.
+// error    it's nil if no error, otherwise it's an error object.
+//          When error is nil, the target file key is in the X-Oss-Symlink-Target header of the returned object.
 //
 func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 	params := map[string]interface{}{}
@@ -668,9 +668,9 @@ func (bucket Bucket) GetSymlink(objectKey string) (http.Header, error) {
 // By default, the restored object is available for access for one day. After that it will be unavailable again.
 // But if another RestoreObject are called after the file is restored, then it will extend one day's access time of that object, up to 7 days.
 //
-// objectKey             object key to restore.
+// objectKey    object key to restore.
 //
-// error                 it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) RestoreObject(objectKey string) error {
 	params := map[string]interface{}{}
@@ -685,11 +685,11 @@ func (bucket Bucket) RestoreObject(objectKey string) error {
 
 // SignURL signs the url. Users could access the object directly with this url without getting the AK.
 //
-// objectKey           the target object to sign.
-// signURLConfig       the config for the signed url
+// objectKey    the target object to sign.
+// signURLConfig    the config for the signed url
 //
-// string              returns the signed url, when error is nil.
-// error               it's nil if no error, otherwise it's an error object.
+// string    returns the signed url, when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec int64, options ...Option) (string, error) {
 	if expiredInSec < 0 {
@@ -714,13 +714,13 @@ func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec i
 // PutObjectWithURL uploads an object with the url. If the object exists, it will be overwritten.
 // PutObjectWithURL It will not generate minetype according to the key name.
 //
-// signedURL          signed URL.
-// reader             io.Reader the read instance for reading the data for the upload.
-// options            the options for uploading the data. The valid options are CacheControl, ContentDisposition, ContentEncoding,
-//                Expires, ServerSideEncryption, ObjectACL and custom metadata. Check out the following link for details:
-//                https://help.aliyun.com/document_detail/oss/api-reference/object/PutObject.html
+// signedURL    signed URL.
+// reader    io.Reader the read instance for reading the data for the upload.
+// options    the options for uploading the data. The valid options are CacheControl, ContentDisposition, ContentEncoding,
+//            Expires, ServerSideEncryption, ObjectACL and custom metadata. Check out the following link for details:
+//            https://help.aliyun.com/document_detail/oss/api-reference/object/PutObject.html
 //
-// error              it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) PutObjectWithURL(signedURL string, reader io.Reader, options ...Option) error {
 	resp, err := bucket.DoPutObjectWithURL(signedURL, reader, options)
@@ -735,11 +735,11 @@ func (bucket Bucket) PutObjectWithURL(signedURL string, reader io.Reader, option
 // PutObjectFromFileWithURL uploads an object from a local file with the signed url.
 // PutObjectFromFileWithURL It does not generate mimetype according to object key's name or the local file name.
 //
-// signedURL           the signed URL.
-// filePath            local file path, such as dirfile.txt, for uploading.
-// options             options for uploading, same as the options in PutObject function.
+// signedURL    the signed URL.
+// filePath    local file path, such as dirfile.txt, for uploading.
+// options    options for uploading, same as the options in PutObject function.
 //
-// error               it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) PutObjectFromFileWithURL(signedURL, filePath string, options ...Option) error {
 	fd, err := os.Open(filePath)
@@ -759,12 +759,12 @@ func (bucket Bucket) PutObjectFromFileWithURL(signedURL, filePath string, option
 
 // DoPutObjectWithURL is the actual API that does the upload with URL work(internal for SDK)
 //
-// signedURL          the signed URL.
-// reader             io.Reader the read instance for getting the data to upload.
-// options            options for uploading.
+// signedURL    the signed URL.
+// reader    io.Reader the read instance for getting the data to upload.
+// options    options for uploading.
 //
-// Response           the response object which contains the HTTP response.
-// error              it's nil if no error, otherwise it's an error object.
+// Response    the response object which contains the HTTP response.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, options []Option) (*Response, error) {
 	listener := getProgressListener(options)
@@ -789,13 +789,13 @@ func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, opti
 
 // GetObjectWithURL downloads the object and returns the reader instance,  with the signed url.
 //
-// signedURL            the signed url.
-// options              options for downloading the object. Valid options are IfModifiedSince, IfUnmodifiedSince, IfMatch,
-//                  IfNoneMatch, AcceptEncoding. For more information, check out the following link:
-//                  https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
+// signedURL    the signed url.
+// options    options for downloading the object. Valid options are IfModifiedSince, IfUnmodifiedSince, IfMatch,
+//            IfNoneMatch, AcceptEncoding. For more information, check out the following link:
+//            https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
 //
-// io.ReadCloser        the reader object for getting the data from response. It needs be closed after the usage. It's only valid when error is nill.
-// error                it's nil if no error, otherwise it's an error object.
+// io.ReadCloser    the reader object for getting the data from response. It needs be closed after the usage. It's only valid when error is nill.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.ReadCloser, error) {
 	result, err := bucket.DoGetObjectWithURL(signedURL, options)
@@ -807,36 +807,36 @@ func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.R
 
 // GetObjectToFileWithURL downloads the object into a local file with the signed url.
 //
-// signedURL    the signed url
-// filePath     the local file path to download to.
-// options      the options for downloading object. Check out the parameter options in function GetObject for the reference.
+// signedURL    the signed URL
+// filePath    the local file path to download to.
+// options    the options for downloading object. Check out the parameter options in function GetObject for the reference.
 //
-// error        it's nil if no error, otherwise it's an error object.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options ...Option) error {
 	tempFilePath := filePath + TempFileSuffix
 
-	// gets the object's content
+	// Gets the object's content
 	result, err := bucket.DoGetObjectWithURL(signedURL, options)
 	if err != nil {
 		return err
 	}
 	defer result.Response.Body.Close()
 
-	// if the file does not exist, create one. If exists, then overwrite it.
+	// If the file does not exist, create one. If exists, then overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
 	if err != nil {
 		return err
 	}
 
-	// saves the data to the file.
+	// Saves the data to the file.
 	_, err = io.Copy(fd, result.Response.Body)
 	fd.Close()
 	if err != nil {
 		return err
 	}
 
-	// compares the CRC value. If CRC values do not match, return error.
+	// Compares the CRC value. If CRC values do not match, return error.
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if bucket.getConfig().IsEnableCRC && !hasRange {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
@@ -852,11 +852,11 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 
 // DoGetObjectWithURL is the actual API that downloads the file with the signed url.
 //
-// signedURL            the signed URL.
-// options              the options for getting object. Check out parameter options in GetObject for the reference.
+// signedURL    the signed URL.
+// options    the options for getting object. Check out parameter options in GetObject for the reference.
 //
-// GetObjectResult      the result object when the error is nil.
-// error                it's nil if no error, otherwise it's an error object.
+// GetObjectResult    the result object when the error is nil.
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*GetObjectResult, error) {
 	params := map[string]interface{}{}
@@ -869,7 +869,7 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 		Response: resp,
 	}
 
-	// crc
+	// CRC
 	var crcCalc hash.Hash64
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if bucket.getConfig().IsEnableCRC && !hasRange {
@@ -878,7 +878,7 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 		result.ClientCRC = crcCalc
 	}
 
-	// progress
+	// Progress
 	listener := getProgressListener(options)
 
 	contentLen, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderContentLength), 10, 64)

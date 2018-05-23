@@ -14,7 +14,7 @@ func BucketRefererSample() {
 		HandleError(err)
 	}
 
-	// creates the bucket with default parameters
+	// Creates the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -26,20 +26,20 @@ func BucketRefererSample() {
 		"http://www.*.com",
 	}
 
-	// case 1：sets referers. The referers are with wildcards ? and * which could represent one and zero to multiple characters
+	// Case 1：sets referers. The referers are with wildcards ? and * which could represent one and zero to multiple characters
 	err = client.SetBucketReferer(bucketName, referers, false)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// case 2：clear referers
+	// Case 2：clear referers
 	referers = []string{}
 	err = client.SetBucketReferer(bucketName, referers, true)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// gets Bucket referer config
+	// Gets Bucket referer config
 	gbr, err := client.GetBucketReferer(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -47,7 +47,7 @@ func BucketRefererSample() {
 	fmt.Println("Bucket Referers:", gbr.RefererList,
 		"AllowEmptyReferer:", gbr.AllowEmptyReferer)
 
-	// deletes bucket
+	// Deletes bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

@@ -15,7 +15,7 @@ const (
 	// ACLPublicReadWrite definition : public read and public write
 	ACLPublicReadWrite ACLType = "public-read-write"
 
-	// ACLDefault Object. It's only applicable for object
+	// ACLDefault Object. It's only applicable for object. 
 	ACLDefault ACLType = "default"
 )
 
@@ -116,17 +116,17 @@ const (
 	HTTPParamSecurityToken = "security-token"
 )
 
-// other constants
+// Other constants
 const (
-	MaxPartSize = 5 * 1024 * 1024 * 1024 // max part size, 5GB
-	MinPartSize = 100 * 1024             // min part size, 100KB
+	MaxPartSize = 5 * 1024 * 1024 * 1024 // Max part size, 5GB
+	MinPartSize = 100 * 1024             // Min part size, 100KB
 
-	FilePermMode = os.FileMode(0664) // default file permission
+	FilePermMode = os.FileMode(0664) // Default file permission
 
-	TempFilePrefix = "oss-go-temp-"  // temp file prefix
-	TempFileSuffix = ".temp"         // temp file suffix
+	TempFilePrefix = "oss-go-temp-"  // Temp file prefix
+	TempFileSuffix = ".temp"         // Temp file suffix
 
 	CheckpointFileSuffix = ".cp"     // Checkpoint file suffix
 
-	Version = "1.8.0" // Go sdk版本
+	Version = "1.8.0" // Go SDK version
 )

@@ -331,7 +331,7 @@ func handleOptions(headers map[string]string, options []Option) error {
 }
 
 func getRawParams(options []Option) (map[string]interface{}, error) {
-	// option
+	// Option
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
@@ -342,7 +342,7 @@ func getRawParams(options []Option) (map[string]interface{}, error) {
 	}
 
 	paramsm := map[string]interface{}{}
-	// serialize
+	// Serialize
 	for k, v := range params {
 		if v.Type == optionParam {
 			vs := params[k]

@@ -62,7 +62,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 // DoURL sends the request with signed url and returns the response result.
 func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
-	// get uri form signedURL
+	// Get URI form signedURL
 	uri, err := url.ParseRequestURI(signedURL)
 	if err != nil {
 		return nil, err
@@ -103,19 +103,19 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 		}
 	}
 
-	// transfer started
+	// Transfer started
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
 	publishProgress(listener, event)
 
 	resp, err := conn.client.Do(req)
 	if err != nil {
-		// transfer failed
+		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
 		publishProgress(listener, event)
 		return nil, err
 	}
 
-	// transfer completed
+	// Transfer completed
 	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength)
 	publishProgress(listener, event)
 
@@ -123,14 +123,14 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 }
 
 func (conn Conn) getURLParams(params map[string]interface{}) string {
-	// sort
+	// Sort
 	keys := make([]string, 0, len(params))
 	for k := range params {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
-	// serialize
+	// Serialize
 	var buf bytes.Buffer
 	for _, k := range keys {
 		if buf.Len() > 0 {
@@ -146,7 +146,7 @@ func (conn Conn) getURLParams(params map[string]interface{}) string {
 }
 
 func (conn Conn) getSubResource(params map[string]interface{}) string {
-	// sort
+	// Sort
 	keys := make([]string, 0, len(params))
 	for k := range params {
 		if conn.isParamSign(k) {
@@ -155,7 +155,7 @@ func (conn Conn) getSubResource(params map[string]interface{}) string {
 	}
 	sort.Strings(keys)
 
-	// serialize
+	// Serialize
 	var buf bytes.Buffer
 	for _, k := range keys {
 		if buf.Len() > 0 {
@@ -223,19 +223,19 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 
 	conn.signHeader(req, canonicalizedResource)
 
-	// transfer started
+	// Transfer started
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
 	publishProgress(listener, event)
 
 	resp, err := conn.client.Do(req)
 	if err != nil {
-		// transfer failed
+		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
 		publishProgress(listener, event)
 		return nil, err
 	}
 
-	// transfer completed
+	// Transfer completed
 	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength)
 	publishProgress(listener, event)
 
@@ -288,7 +288,7 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 	var crc hash.Hash64
 	reader := body
 
-	// length
+	// Length
 	switch v := body.(type) {
 	case *bytes.Buffer:
 		req.ContentLength = int64(v.Len())
@@ -303,20 +303,20 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 	}
 	req.Header.Set(HTTPHeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
 
-	// md5
+	// MD5
 	if body != nil && conn.config.IsEnableMD5 && req.Header.Get(HTTPHeaderContentMD5) == "" {
 		md5 := ""
 		reader, md5, file, _ = calcMD5(body, req.ContentLength, conn.config.MD5Threshold)
 		req.Header.Set(HTTPHeaderContentMD5, md5)
 	}
 
-	// crc
+	// CRC
 	if reader != nil && conn.config.IsEnableCRC {
 		crc = NewCRC(crcTable(), initCRC)
 		reader = TeeReader(reader, crc, req.ContentLength, listener, tracker)
 	}
 
-	// http body
+	// HTTP body
 	rc, ok := reader.(io.ReadCloser)
 	if !ok && reader != nil {
 		rc = ioutil.NopCloser(reader)
@@ -346,10 +346,10 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		}
 
 		if len(respBody) == 0 {
-			// no error in response body
+			// No error in response body
 			err = fmt.Errorf("oss: service returned without a response body (%s)", resp.Status)
 		} else {
-			// response contains storage service error object, unmarshal
+			// Response contains storage service error object, unmarshal
 			srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
 				resp.Header.Get(HTTPHeaderOssRequestID))
 			if err != nil { // error unmarshaling the error response
@@ -364,7 +364,7 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 			Body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body
 		}, err
 	} else if statusCode >= 300 && statusCode <= 307 {
-		// oss use 3xx, but response has no body
+		// OSS use 3xx, but response has no body
 		err := fmt.Errorf("oss: service returned %d,%s", resp.StatusCode, resp.Status)
 		return &Response{
 			StatusCode: resp.StatusCode,
@@ -390,7 +390,7 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 
 func calcMD5(body io.Reader, contentLen, md5Threshold int64) (reader io.Reader, b64 string, tempFile *os.File, err error) {
 	if contentLen == 0 || contentLen > md5Threshold {
-		// huge body, use temporary file
+		// Huge body, use temporary file
 		tempFile, err = ioutil.TempFile(os.TempDir(), TempFilePrefix)
 		if tempFile != nil {
 			io.Copy(tempFile, body)
@@ -403,7 +403,7 @@ func calcMD5(body io.Reader, contentLen, md5Threshold int64) (reader io.Reader, 
 			reader = tempFile
 		}
 	} else {
-		// small body, use memory
+		// Small body, use memory
 		buf, _ := ioutil.ReadAll(body)
 		sum := md5.Sum(buf)
 		b64 = base64.StdEncoding.EncodeToString(sum[:])

@@ -14,7 +14,7 @@ func BucketCORSSample() {
 		HandleError(err)
 	}
 
-	// creates the bucket with default parameters
+	// Creates the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -36,32 +36,32 @@ func BucketCORSSample() {
 		MaxAgeSeconds: 100,
 	}
 
-	// case 1：sets the bucket CORS rules
+	// Case 1：sets the bucket CORS rules
 	err = client.SetBucketCORS(bucketName, []oss.CORSRule{rule1})
 	if err != nil {
 		HandleError(err)
 	}
 
-	// case 3：sets the bucket CORS rules. if CORS rules exist, they will be overwritten.
+	// Case 2：sets the bucket CORS rules. if CORS rules exist, they will be overwritten.
 	err = client.SetBucketCORS(bucketName, []oss.CORSRule{rule1, rule2})
 	if err != nil {
 		HandleError(err)
 	}
 
-	// gets the bucket's CORS
+	// Gets the bucket's CORS
 	gbl, err := client.GetBucketCORS(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket CORS:", gbl.CORSRules)
 
-	// deletes Bucket's CORS
+	// Deletes Bucket's CORS
 	err = client.DeleteBucketCORS(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// deletes bucket
+	// Deletes bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

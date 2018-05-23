@@ -14,8 +14,8 @@ type ListBucketsResult struct {
 	MaxKeys     int                `xml:"MaxKeys"`        // the max entry count to return. This information is returned when IsTruncated is true.
 	IsTruncated bool               `xml:"IsTruncated"`    // flag True means there's remaining buckets to return.
 	NextMarker  string             `xml:"NextMarker"`     // the marker filter for the next list call
-	Owner       Owner              `xml:"Owner"`          // owner information
-	Buckets     []BucketProperties `xml:"Buckets>Bucket"` // Bucket list
+	Owner       Owner              `xml:"Owner"`          // the owner information
+	Buckets     []BucketProperties `xml:"Buckets>Bucket"` // the Bucket list
 }
 
 // BucketProperties defines bucket properties
@@ -43,8 +43,8 @@ type LifecycleConfiguration struct {
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
 	XMLName    xml.Name            `xml:"Rule"`
-	ID         string              `xml:"ID"`         // Rule Id
-	Prefix     string              `xml:"Prefix"`     // object key prefix
+	ID         string              `xml:"ID"`         // the Rule Id
+	Prefix     string              `xml:"Prefix"`     // the object key prefix
 	Status     string              `xml:"Status"`     // the rule status (enabled or not)
 	Expiration LifecycleExpiration `xml:"Expiration"` // the expiration property
 }
@@ -122,7 +122,7 @@ type GetBucketLifecycleResult LifecycleConfiguration
 type RefererXML struct {
 	XMLName           xml.Name `xml:"RefererConfiguration"`
 	AllowEmptyReferer bool     `xml:"AllowEmptyReferer"`   // Allow empty referrer
-	RefererList       []string `xml:"RefererList>Referer"` // referer whitelist
+	RefererList       []string `xml:"RefererList>Referer"` // Referer whitelist
 }
 
 // GetBucketRefererResult defines result object for GetBucketReferer request
@@ -131,7 +131,7 @@ type GetBucketRefererResult RefererXML
 // LoggingXML defines Logging config
 type LoggingXML struct {
 	XMLName        xml.Name       `xml:"BucketLoggingStatus"`
-	LoggingEnabled LoggingEnabled `xml:"LoggingEnabled"` // The logging  config information
+	LoggingEnabled LoggingEnabled `xml:"LoggingEnabled"` // the logging config information
 }
 
 type loggingXMLEmpty struct {
@@ -141,8 +141,8 @@ type loggingXMLEmpty struct {
 // LoggingEnabled defines the logging config information
 type LoggingEnabled struct {
 	XMLName      xml.Name `xml:"LoggingEnabled"`
-	TargetBucket string   `xml:"TargetBucket"` // The bucket name for storing the log files
-	TargetPrefix string   `xml:"TargetPrefix"` // The log file prefix
+	TargetBucket string   `xml:"TargetBucket"` // the bucket name for storing the log files
+	TargetPrefix string   `xml:"TargetPrefix"` // the log file prefix
 }
 
 // GetBucketLoggingResult defines the result from GetBucketLogging request

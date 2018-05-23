@@ -44,7 +44,7 @@ func (s *OssCopySuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	//Delete Objects
+	// Delete Objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
 
@@ -75,12 +75,12 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "copy-new-file.jpg"
 
-	// upload source file
+	// Upload source file
 	err := s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// does not specify parameter 'routines', by default it's single routine
+	// Does not specify parameter 'routines', by default it's single routine
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024)
 	c.Assert(err, IsNil)
 
@@ -155,7 +155,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// invalid routine count, will use single routine
+	// Invalid routine count, will use single routine
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(-1))
 	c.Assert(err, IsNil)
 
@@ -170,7 +170,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// option
+	// Option
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(3), Meta("myprop", "mypropval"))
 
 	meta, err := s.bucket.GetObjectDetailedMeta(destObjectName)
@@ -207,12 +207,12 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
-	// upload source file
+	// Upload source file
 	err := s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
 	copyPartHooker = CopyErrorHooker
-	// worker routine errors
+	// Worker routine errors
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(2))
 
 	c.Assert(err, NotNil)
@@ -245,7 +245,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "copy-new-file.jpg"
 
-	// upload source file
+	// Upload source file
 	err := s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
@@ -259,7 +259,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	copyPartHooker = defaultCopyPartHook
 
-	// check cp
+	// Check cp
 	ccp := copyCheckpoint{}
 	err = ccp.load(destObjectName + ".cp")
 	c.Assert(err, IsNil)
@@ -302,7 +302,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	copyPartHooker = defaultCopyPartHook
 
-	// check cp
+	// Check cp
 	ccp = copyCheckpoint{}
 	err = ccp.load(srcObjectName + ".cp")
 	c.Assert(err, IsNil)
@@ -353,7 +353,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// copy with multiple coroutines, no errors.
+	// Copy with multiple coroutines, no errors.
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(10), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -368,7 +368,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// option
+	// Option
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(5), Checkpoint(true, ""), Meta("myprop", "mypropval"))
 	c.Assert(err, IsNil)
 
@@ -428,12 +428,12 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	// Creates a target bucket
 	err = s.client.CreateBucket(destBucketName)
 
-	// upload source file
+	// Upload source file
 	err = s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// copies files
+	// Copies files
 	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(5), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -448,7 +448,7 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// copies file with options
+	// Copies file with options
 	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(10), Checkpoint(true, "copy.cp"), Meta("myprop", "mypropval"))
 	c.Assert(err, IsNil)
 

@@ -29,7 +29,7 @@ func CnameSample() {
 		HandleError(err)
 	}
 
-	// lookup Bucket ACL
+	// Look up Bucket ACL
 	gbar, err := client.GetBucketACL(bucketName4Cname)
 	if err != nil {
 		HandleError(err)

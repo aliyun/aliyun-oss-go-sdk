@@ -152,14 +152,14 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	content := randStr(20)
 	createFile(filePath, content, c)
 
-	// sign url for put
+	// Sign URL for put
 	str, err := s.bucket.SignURL(objectName, HTTPPut, 60, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
-	// put object with url
+	// Put object with URL
 	fd, err := os.Open(filePath)
 	c.Assert(err, IsNil)
 	defer fd.Close()
@@ -167,7 +167,7 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	err = s.bucket.PutObjectWithURL(str, fd, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 
-	// put object from file with url
+	// Put object from file with URL
 	err = s.bucket.PutObjectFromFileWithURL(str, filePath, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 
@@ -180,21 +180,21 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	_, err = s.bucket.DoPutObjectWithURL(str, fd, options)
 	c.Assert(err, IsNil)
 
-	// sign url for get
+	// Sign URL for get
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
-	// get object with url
+	// Get object with URL
 	body, err := s.bucket.GetObjectWithURL(str, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 	str, err = readBody(body)
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, content)
 
-	// get object to file with url
+	// Get object to file with URL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 10, Progress(&OssProgressListener{}))
 	c.Assert(err, IsNil)
 
@@ -218,7 +218,7 @@ func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
 	objectName := objectNamePrefix + "tpon.html"
 	localFile := "../sample/The Go Programming Language.html"
 
-	// invalid endpoint
+	// Invalid endpoint
 	client, err := New("http://oss-cn-taikang.aliyuncs.com", accessID, accessKey)
 	c.Assert(err, IsNil)
 
@@ -393,7 +393,7 @@ func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
 
 	//time.Sleep(70 * time.Second) TODO
 
-	// read should fail
+	// Read should fail
 	for err == nil {
 		n, err = body.Read(buf)
 		n += n
@@ -424,7 +424,7 @@ func (s *OssProgressSuite) TestDownloadFile(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-progress-2.jpg"
 
-	// upload
+	// Upload
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -446,7 +446,7 @@ func (s *OssProgressSuite) TestCopyFile(c *C) {
 	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
-	// upload
+	// Upload
 	err := s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
