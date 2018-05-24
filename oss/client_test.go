@@ -49,7 +49,7 @@ const (
 	archiveBucketName = "go-sdk-test-bucket-xyz-for-archive"
 	// object name for object ops test
 	objectNamePrefix = "go-sdk-test-object-xyz-"
-	// sts region is one and only hangzhou
+	// STS region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
 
