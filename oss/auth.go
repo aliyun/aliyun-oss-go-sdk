@@ -12,13 +12,13 @@ import (
 	"strings"
 )
 
-// 用于signHeader的字典排序存放容器。
+// headerSorter defines the key-value structure for storing the sorted data in signHeader.
 type headerSorter struct {
 	Keys []string
 	Vals []string
 }
 
-// 生成签名方法（直接设置请求的Header）。
+// signHeader signs the header and sets it as the authorization header.
 func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 	// Get the final Authorization' string
 	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
@@ -48,7 +48,7 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 	}
 
 	// Give other parameters values
-	// when sign url, date is expires
+	// when sign URL, date is expires
 	date := req.Header.Get(HTTPHeaderDate)
 	contentType := req.Header.Get(HTTPHeaderContentType)
 	contentMd5 := req.Header.Get(HTTPHeaderContentMD5)
@@ -61,7 +61,7 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 	return signedStr
 }
 
-// Additional function for function SignHeader.
+// newHeaderSorter is an additional function for function SignHeader.
 func newHeaderSorter(m map[string]string) *headerSorter {
 	hs := &headerSorter{
 		Keys: make([]string, 0, len(m)),
@@ -75,22 +75,22 @@ func newHeaderSorter(m map[string]string) *headerSorter {
 	return hs
 }
 
-// Additional function for function SignHeader.
+// Sort is an additional function for function SignHeader.
 func (hs *headerSorter) Sort() {
 	sort.Sort(hs)
 }
 
-// Additional function for function SignHeader.
+// Len is an additional function for function SignHeader.
 func (hs *headerSorter) Len() int {
 	return len(hs.Vals)
 }
 
-// Additional function for function SignHeader.
+// Less is an additional function for function SignHeader.
 func (hs *headerSorter) Less(i, j int) bool {
 	return bytes.Compare([]byte(hs.Keys[i]), []byte(hs.Keys[j])) < 0
 }
 
-// Additional function for function SignHeader.
+// Swap is an additional function for function SignHeader.
 func (hs *headerSorter) Swap(i, j int) {
 	hs.Vals[i], hs.Vals[j] = hs.Vals[j], hs.Vals[i]
 	hs.Keys[i], hs.Keys[j] = hs.Keys[j], hs.Keys[i]

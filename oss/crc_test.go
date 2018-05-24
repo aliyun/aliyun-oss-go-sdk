@@ -21,7 +21,7 @@ type OssCrcSuite struct {
 
 var _ = Suite(&OssCrcSuite{})
 
-// Run once when the suite starts running
+// SetUpSuite runs once when the suite starts running
 func (s *OssCrcSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -37,7 +37,7 @@ func (s *OssCrcSuite) SetUpSuite(c *C) {
 	testLogger.Println("test crc started")
 }
 
-// Run before each test or benchmark starts running
+// TearDownSuite runs before each test or benchmark starts running
 func (s *OssCrcSuite) TearDownSuite(c *C) {
 	// Delete Part
 	lmur, err := s.bucket.ListMultipartUploads()
@@ -62,19 +62,19 @@ func (s *OssCrcSuite) TearDownSuite(c *C) {
 	testLogger.Println("test crc completed")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest runs after each test or benchmark runs
 func (s *OssCrcSuite) SetUpTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest runs once after all tests or benchmarks have finished running
 func (s *OssCrcSuite) TearDownTest(c *C) {
 	err := removeTempFiles("../oss", ".jpg")
 	c.Assert(err, IsNil)
 }
 
-// TestCRCGolden 测试OSS实现的CRC64
+// TestCRCGolden tests OSS's CRC64
 func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	type crcTest struct {
 		out uint64
@@ -127,18 +127,18 @@ func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	}
 }
 
-// testCRC64Combine test crc64 on vector[0..pos] which should have CRC-64 crc.
+// testCRC64Combine tests crc64 on vector[0..pos] which should have CRC-64 crc.
 // Also test CRC64Combine on vector[] split in two.
 func testCRC64Combine(c *C, str string, pos int, crc uint64) {
 	tabECMA := crc64.MakeTable(crc64.ECMA)
 
-	// test crc64
+	// Test CRC64
 	hash := crc64.New(tabECMA)
 	io.WriteString(hash, str)
 	crc1 := hash.Sum64()
 	c.Assert(crc1, Equals, crc)
 
-	// test crc64 combine
+	// Test CRC64 combine
 	hash = crc64.New(tabECMA)
 	io.WriteString(hash, str[0:pos])
 	crc1 = hash.Sum64()
@@ -151,7 +151,7 @@ func testCRC64Combine(c *C, str string, pos int, crc uint64) {
 	c.Assert(crc1, Equals, crc)
 }
 
-// TestCRCGolden 测试CRC64Combine
+// TestCRCCombine tests CRC64Combine
 func (s *OssCrcSuite) TestCRCCombine(c *C) {
 	str := "123456789"
 	testCRC64Combine(c, str, (len(str)+1)>>1, 0x995DC9BBDF1939FA)
@@ -160,7 +160,7 @@ func (s *OssCrcSuite) TestCRCCombine(c *C) {
 	testCRC64Combine(c, str, (len(str)+1)>>1, 0x27DB187FC15BBC72)
 }
 
-// TestCRCGolden 测试CRC64Combine
+// TestCRCRepeatedCombine tests CRC64Combine
 func (s *OssCrcSuite) TestCRCRepeatedCombine(c *C) {
 	tab := crc64.MakeTable(crc64.ECMA)
 	str := "Even if I could be Shakespeare, I think I should still choose to be Faraday. - A. Huxley"
@@ -180,7 +180,7 @@ func (s *OssCrcSuite) TestCRCRepeatedCombine(c *C) {
 	}
 }
 
-// TestCRCGolden 测试CRC64Combine
+// TestCRCRandomCombine tests CRC64Combine
 func (s *OssCrcSuite) TestCRCRandomCombine(c *C) {
 	tab := crc64.MakeTable(crc64.ECMA)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -204,7 +204,7 @@ func (s *OssCrcSuite) TestCRCRandomCombine(c *C) {
 	}
 }
 
-// TestEnableCRCAndMD5 开启MD5和CRC校验
+// TestEnableCRCAndMD5 tests MD5 and CRC check
 func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tecam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -301,7 +301,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDisableCRCAndMD5 关闭MD5和CRC校验
+// TestDisableCRCAndMD5 disables MD5 and CRC
 func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -397,7 +397,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSpecifyContentMD5 指定MD5
+// TestSpecifyContentMD5 specifies MD5
 func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	objectName := objectNamePrefix + "tdcam"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -462,7 +462,7 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCopyObjectToOrFromNegative
+// TestAppendObjectNegative
 func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
 	objectName := objectNamePrefix + "taoncrc"
 	objectValue := "空山不见人，但闻人语响。返影入深林，复照青苔上。"

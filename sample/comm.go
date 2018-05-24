@@ -14,13 +14,13 @@ var (
 	futureDate = time.Date(2049, time.January, 10, 23, 0, 0, 0, time.UTC)
 )
 
-// HandleError sample中的错误处理
+// HandleError is the error handling method in the sample code
 func HandleError(err error) {
 	fmt.Println("occurred error:", err)
 	os.Exit(-1)
 }
 
-// GetTestBucket 创建sample的Bucket并返回OssBucket对象，该函数为了简化sample，让sample代码更明了
+// GetTestBucket creates the test bucket
 func GetTestBucket(bucketName string) (*oss.Bucket, error) {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)
@@ -43,7 +43,7 @@ func GetTestBucket(bucketName string) (*oss.Bucket, error) {
 	return bucket, nil
 }
 
-// DeleteTestBucketAndObject 删除sample的object和bucket，该函数为了简化sample，让sample代码更明了
+// DeleteTestBucketAndObject deletes the test bucket and its objects
 func DeleteTestBucketAndObject(bucketName string) error {
 	// New Client
 	client, err := oss.New(endpoint, accessID, accessKey)
@@ -94,13 +94,13 @@ func DeleteTestBucketAndObject(bucketName string) error {
 	return nil
 }
 
-// Object pair of key and value
+// Object defines pair of key and value
 type Object struct {
 	Key   string
 	Value string
 }
 
-// CreateObjects 创建一组对象，该函数为了简化sample，让sample代码更明了
+// CreateObjects creates some objects
 func CreateObjects(bucket *oss.Bucket, objects []Object) error {
 	for _, object := range objects {
 		err := bucket.PutObject(object.Key, strings.NewReader(object.Value))
@@ -111,7 +111,7 @@ func CreateObjects(bucket *oss.Bucket, objects []Object) error {
 	return nil
 }
 
-// DeleteObjects 删除sample的object和bucket，该函数为了简化sample，让sample代码更明了
+// DeleteObjects deletes some objects.
 func DeleteObjects(bucket *oss.Bucket, objects []Object) error {
 	for _, object := range objects {
 		err := bucket.DeleteObject(object.Key)
