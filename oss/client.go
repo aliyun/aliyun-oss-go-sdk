@@ -36,31 +36,31 @@ type (
 // error    it's nil if no error, otherwise it's an error object.
 //
 func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption) (*Client, error) {
-	// configuration
+	// Configuration
 	config := getDefaultOssConfig()
 	config.Endpoint = endpoint
 	config.AccessKeyID = accessKeyID
 	config.AccessKeySecret = accessKeySecret
 
-	// url parse
+	// URL parse
 	url := &urlMaker{}
 	url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
 
-	// http connect
+	// HTTP connect
 	conn := &Conn{config: config, url: url}
 
-	// oss client
+	// OSS client
 	client := &Client{
 		config,
 		conn,
 	}
 
-	// client options parse
+	// Client options parse
 	for _, option := range options {
 		option(client)
 	}
 
-	// create http connect
+	// Create http connect
 	err := conn.init(config, url)
 
 	return client, err
