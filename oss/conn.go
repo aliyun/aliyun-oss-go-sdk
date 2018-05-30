@@ -459,7 +459,7 @@ func newTimeoutConn(conn net.Conn, timeout time.Duration, longTimeout time.Durat
 func (c *timeoutConn) Read(b []byte) (n int, err error) {
 	c.SetReadDeadline(time.Now().Add(c.timeout))
 	n, err = c.conn.Read(b)
-	c.SetReadDeadline(time.Now().Add(c.longTimeout))
+	c.SetWriteDeadline(time.Now().Add(c.longTimeout))
 	return n, err
 }
 
@@ -593,7 +593,7 @@ func (um urlMaker) getResource(bucketName, objectName, subResource string) strin
 		subResource = "?" + subResource
 	}
 	if bucketName == "" {
-		return fmt.Sprintf("/%s%s", bucketName, subResource)
+		return fmt.Sprintf("/%s", subResource)
 	}
 	return fmt.Sprintf("/%s/%s%s", bucketName, objectName, subResource)
 }
