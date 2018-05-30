@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -284,34 +285,29 @@ func Process(value string) Option {
 	return addParam("X-Oss-Process", value)
 }
 func setHeader(key string, value interface{}) Option {
-	return func(params map[string]optionValue) error {
+	return assignParams(key, value, optionHTTP)
+}
+
+func addParam(key string, value interface{}) Option {
+	return assignParams(key, value, optionParam)
+}
+
+func addArg(key string, value interface{}) Option {
+	return assignParams(key, value, optionArg)
+}
+
+func assignParams(key string, value interface{}, typ optionType) Option {
+	return func(map[string]optionValue) error {
 		if value == nil || reflect.ValueOf(value).IsNil() {
 			return nil
 		}
 		if params == nil {
-			params = map[string]interface{}{}
+			return errors.New("input param `params` nil")
 		}
-		params[key] = optionValue{value, optionHTTP}
-		return nil
-	}
-}
-
-func addParam(key string, value interface{}) Option {
-	return func(params map[string]optionValue) error {
-		if value == nil {
-			return nil
+		if _, ok := params[key]; ok {
+			return fmt.Errorf("map params key[%s] already exists.", key)
 		}
-		params[key] = optionValue{value, optionParam}
-		return nil
-	}
-}
-
-func addArg(key string, value interface{}) Option {
-	return func(params map[string]optionValue) error {
-		if value == nil {
-			return nil
-		}
-		params[key] = optionValue{value, optionArg}
+		params[key] = optionValue{value, typ}
 		return nil
 	}
 }
