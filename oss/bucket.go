@@ -142,14 +142,14 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Option) error {
 	tempFilePath := filePath + TempFileSuffix
 
-	// Calls the API to actually download the object. Returns the result instance
+	// Calls the API to actually download the object. Returns the result instance.
 	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
 	if err != nil {
 		return err
 	}
 	defer result.Response.Body.Close()
 
-	// If the local file does not exist, create a new one. If it exists, overwrites it.
+	// If the local file does not exist, create a new one. If it exists, overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	return os.Rename(tempFilePath, filePath)
 }
 
-// DoGetObject is the actual API that gets the object. It's the internal function called by other public APIs
+// DoGetObject is the actual API that gets the object. It's the internal function called by other public APIs.
 //
 // request    the request to download the object.
 // options    the options for downloading the file. Checks out the parameter options in method GetObject.
@@ -241,9 +241,9 @@ func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...O
 
 // CopyObjectTo copies the object to another bucket.
 //
-// srcObjectKey    source object key. The source bucket is Bucket.BucketName.
-// destBucketName    target Bucket name.
-// destObjectKey    target Object name.
+// srcObjectKey    source object key. The source bucket is Bucket.BucketName .
+// destBucketName    target bucket name.
+// destObjectKey    target object name.
 // options    copy options, check out parameter options in function CopyObject for more details.
 //
 // error    it's nil if no error, otherwise it's an error object.
@@ -572,7 +572,7 @@ func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
 // CompleteMultipartUpload and CopyObject on target object.
 //
 // objectKey    the target object key (to set the ACL on)
-// objectAcl    object ACL. Valid options are PrivateACL , PublicReadACL, PublicReadWriteACL.
+// objectAcl    object ACL. Valid options are PrivateACL, PublicReadACL, PublicReadWriteACL.
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -816,7 +816,7 @@ func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.R
 func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options ...Option) error {
 	tempFilePath := filePath + TempFileSuffix
 
-	// Gets the object's content
+	// Get the object's content
 	result, err := bucket.DoGetObjectWithURL(signedURL, options)
 	if err != nil {
 		return err

@@ -18,8 +18,8 @@ import (
 type (
 	// Client oss client
 	Client struct {
-		Config *Config // OSS Client configure
-		Conn   *Conn   // Send http request
+		Config *Config // OSS client configuration
+		Conn   *Conn   // Send HTTP request
 	}
 
 	// ClientOption client option such as UseCname, Timeout, SecurityToken.
@@ -60,7 +60,7 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 		option(client)
 	}
 
-	// Create http connect
+	// Create HTTP connection
 	err := conn.init(config, url)
 
 	return client, err
@@ -80,7 +80,7 @@ func (client Client) Bucket(bucketName string) (*Bucket, error) {
 	}, nil
 }
 
-// CreateBucket creates a bucket。
+// CreateBucket creates a bucket.
 //
 // bucketName    the bucket name, it's globably unique and immutable. The bucket name can only consist of lowercase letters, numbers and dash ('-').
 //               It must start with lowercase letter or number and the length can only be between 3 and 255.
@@ -254,7 +254,7 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 // rules    the lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in days and day/month/year respectively.
 //          Check out sample/bucket_lifecycle.go for more details.
 // 
-// error    it's nil if no error, otherwise it's an error object..
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule) error {
 	lxml := lifecycleXML{Rules: convLifecycleRule(rules)}
@@ -322,7 +322,7 @@ func (client Client) GetBucketLifecycle(bucketName string) (GetBucketLifecycleRe
 //
 // To avoid stealing link on OSS data, OSS supports the HTTP referrer header. A whitelist referrer could be set either by API or web console, as well as
 // the allowing empty referrer flag. Note that this applies to requests from webbrowser only.
-// For example, for a bucket os-example and its referrer http://www.aliyun.com, all requests from this url could access the bucket.
+// For example, for a bucket os-example and its referrer http://www.aliyun.com, all requests from this URL could access the bucket.
 // For more information, please check out this link :
 // https://help.aliyun.com/document_detail/oss/user_guide/security_management/referer.html
 //
@@ -649,7 +649,7 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 
 // UseCname sets the flag of using CName. By default it's false.
 //
-// isUseCname    true: the endpoint has the CName，false: the endpoint does not have cname. Default is false.
+// isUseCname    true: the endpoint has the CName, false: the endpoint does not have cname. Default is false.
 //
 func UseCname(isUseCname bool) ClientOption {
 	return func(client *Client) {
@@ -658,7 +658,7 @@ func UseCname(isUseCname bool) ClientOption {
 	}
 }
 
-// Timeout sets the http timeout in seconds.
+// Timeout sets the HTTP timeout in seconds.
 //
 // connectTimeoutSec    HTTP timeout in seconds. Default is 10 seconds. 0 means infinite (not recommended)
 // readWriteTimeout    HTTP read or write's timeout in seconds. Default is 20 seconds. 0 means infinite.

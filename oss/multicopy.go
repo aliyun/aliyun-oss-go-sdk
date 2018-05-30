@@ -17,7 +17,7 @@ import (
 // srcObjectKey    source object name
 // destObjectKey    target object name in the form of bucketname.objectkey
 // partSize    the part size in byte.
-// options    object's contraints. Check out function InitiateMultipartUpload。
+// options    object's contraints. Check out function InitiateMultipartUpload.
 //
 // error    it's nil if the operation succeeds, otherwise it's an error object.
 //

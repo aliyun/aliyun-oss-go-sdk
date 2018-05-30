@@ -19,19 +19,19 @@ func PutObjectSample() {
 
 	var val = "花间一壶酒，独酌无相亲。 举杯邀明月，对影成三人。"
 
-	// Case 1：uploads a object from a string
+	// Case 1: uploads a object from a string
 	err = bucket.PutObject(objectKey, strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 2：uploads a object whose value is a byte[]
+	// Case 2: uploads a object whose value is a byte[]
 	err = bucket.PutObject(objectKey, bytes.NewReader([]byte(val)))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 3：uploads the local file with file handle, user should open the file at first.
+	// Case 3: uploads the local file with file handle, user should open the file at first.
 	fd, err := os.Open(localFile)
 	if err != nil {
 		HandleError(err)
@@ -43,13 +43,13 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 4：uploads an object with local file name, user need not open the file.
+	// Case 4: uploads an object with local file name, user need not open the file.
 	err = bucket.PutObjectFromFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 5：uploads a object with specified properties, PutObject/PutObjectFromFile/UploadFile also support this feature.
+	// Case 5: uploads a object with specified properties, PutObject/PutObjectFromFile/UploadFile also support this feature.
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.ObjectACL(oss.ACLPublicRead),
@@ -66,7 +66,7 @@ func PutObjectSample() {
 	}
 	fmt.Println("Object Meta:", props)
 
-	// Case 6：big file's multipart upload. It supports concurrent upload with resumable upload.
+	// Case 6: big file's multipart upload. It supports concurrent upload with resumable upload.
 	// multipart upload with 100K as part size. By default 1 coroutine is used and no checkpoint is used.
 	err = bucket.UploadFile(objectKey, localFile, 100*1024)
 	if err != nil {

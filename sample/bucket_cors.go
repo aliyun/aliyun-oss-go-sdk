@@ -36,13 +36,13 @@ func BucketCORSSample() {
 		MaxAgeSeconds: 100,
 	}
 
-	// Case 1：sets the bucket CORS rules
+	// Case 1: sets the bucket CORS rules
 	err = client.SetBucketCORS(bucketName, []oss.CORSRule{rule1})
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 2：sets the bucket CORS rules. if CORS rules exist, they will be overwritten.
+	// Case 2: sets the bucket CORS rules. if CORS rules exist, they will be overwritten.
 	err = client.SetBucketCORS(bucketName, []oss.CORSRule{rule1, rule2})
 	if err != nil {
 		HandleError(err)

@@ -55,7 +55,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 2：append byte array to the object
+	// Case 2: append byte array to the object
 	nextPos = 0
 	// The first append position is 0, and the return value is for the next append's position.
 	nextPos, err = bucket.AppendObject(objectKey, bytes.NewReader([]byte(str)), nextPos)
@@ -86,7 +86,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 3：append a local file to the object
+	// Case 3: append a local file to the object
 	fd, err := os.Open(localFile)
 	if err != nil {
 		HandleError(err)
@@ -99,7 +99,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 4：get the next append position by GetObjectDetailedMeta
+	// Case 4: get the next append position by GetObjectDetailedMeta
 	props, err := bucket.GetObjectDetailedMeta(objectKey)
 	nextPos, err = strconv.ParseInt(props.Get(oss.HTTPHeaderOssNextAppendPosition), 10, 0)
 	if err != nil {
@@ -116,7 +116,7 @@ func AppendObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 5：Specifies the object properties for the first append, including the "x-oss-meta"'s custom metadata.
+	// Case 5: Specifies the object properties for the first append, including the "x-oss-meta"'s custom metadata.
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.ObjectACL(oss.ACLPublicRead),

@@ -250,7 +250,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// Routines default value，CP's default path is destObjectName+.cp
+	// Routines default value, CP's default path is destObjectName+.cp
 	// Copy object with checkpoint enabled, single runtine.
 	// Copy 4 parts---the CopyErrorHooker makes sure the copy of part 5 will fail.
 	copyPartHooker = CopyErrorHooker

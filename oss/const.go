@@ -2,7 +2,7 @@ package oss
 
 import "os"
 
-// ACLType Bucket/Object ACL
+// ACLType bucket/object ACL
 type ACLType string
 
 const (
@@ -30,7 +30,7 @@ const (
 	MetaReplace MetadataDirectiveType = "REPLACE"
 )
 
-// StorageClassType Bucket storage type
+// StorageClassType bucket storage type
 type StorageClassType string
 
 const (
@@ -64,7 +64,7 @@ const (
 	HTTPDelete HTTPMethod = "DELETE"
 )
 
-// Http headers
+// HTTP headers
 const (
 	HTTPHeaderAcceptEncoding     string = "Accept-Encoding"
 	HTTPHeaderAuthorization             = "Authorization"
@@ -108,7 +108,7 @@ const (
 	HTTPHeaderOssSymlinkTarget               = "X-Oss-Symlink-Target"
 )
 
-// Http Param
+// HTTP Param
 const (
 	HTTPParamExpires       = "Expires"
 	HTTPParamAccessKeyID   = "OSSAccessKeyId"
@@ -128,5 +128,5 @@ const (
 
 	CheckpointFileSuffix = ".cp"     // Checkpoint file suffix
 
-	Version = "1.8.0" // Go sdk版本
+	Version = "1.8.0" // Go SDK version
 )

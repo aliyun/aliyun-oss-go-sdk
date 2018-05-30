@@ -9,32 +9,32 @@ import (
 
 // NewBucketSample shows how to initialize client and bucket
 func NewBucketSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Create Bucket
+	// Create bucket
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// New Bucket
+	// New bucket
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Put Object，uploads an Object
+	// Put object, uploads an object
 	var objectName = "myobject"
 	err = bucket.PutObject(objectName, strings.NewReader("MyObjectValue"))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Delete Object，deletes an Object
+	// Delete object, deletes an object
 	err = bucket.DeleteObject(objectName)
 	if err != nil {
 		HandleError(err)

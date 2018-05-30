@@ -20,7 +20,7 @@ type headerSorter struct {
 
 // signHeader signs the header and sets it as the authorization header.
 func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
-	// Get the final Authorization' string
+	// Get the final authorization' string
 	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
 
 	// Give the parameter "Authorization" value
@@ -28,7 +28,7 @@ func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 }
 
 func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) string {
-	// Find out the "x-oss-"'s address in this request'header
+	// Find out the "x-oss-"'s address in header of the request
 	temp := make(map[string]string)
 
 	for k, v := range req.Header {
@@ -38,10 +38,10 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 	}
 	hs := newHeaderSorter(temp)
 
-	// Sort the temp by the Ascending Order
+	// Sort the temp by the ascending order
 	hs.Sort()
 
-	// Get the CanonicalizedOSSHeaders
+	// Get the canonicalizedOSSHeaders
 	canonicalizedOSSHeaders := ""
 	for i := range hs.Keys {
 		canonicalizedOSSHeaders += hs.Keys[i] + ":" + hs.Vals[i] + "\n"

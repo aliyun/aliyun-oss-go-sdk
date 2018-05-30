@@ -36,7 +36,7 @@ func CnameSample() {
 	}
 	fmt.Println("Bucket ACL:", gbar.ACL)
 
-	// ListBuckets， the list operation could not be done by cname's endpoint
+	// ListBuckets, the list operation could not be done by cname's endpoint
 	_, err = client.ListBuckets()
 	if err == nil {
 		HandleError(err)
@@ -47,7 +47,7 @@ func CnameSample() {
 		HandleError(err)
 	}
 
-	objectValue := "长忆观潮，满郭人争江上望。来疑沧海尽成空，万面鼓声中。弄潮儿向涛头立，手把红旗旗不湿。别来几向梦中看，梦觉尚心寒。"
+	objectValue := "长忆观潮, 满郭人争江上望。来疑沧海尽成空, 万面鼓声中。弄潮儿向涛头立, 手把红旗旗不湿。别来几向梦中看, 梦觉尚心寒。"
 
 	// PutObject
 	err = bucket.PutObject(objectKey, strings.NewReader(objectValue))

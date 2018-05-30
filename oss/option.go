@@ -31,7 +31,7 @@ type (
 		Type  optionType
 	}
 
-	// Option http option
+	// Option HTTP option
 	Option func(map[string]optionValue) error
 )
 

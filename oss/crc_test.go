@@ -39,7 +39,7 @@ func (s *OssCrcSuite) SetUpSuite(c *C) {
 
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssCrcSuite) TearDownSuite(c *C) {
-	// Delete Part
+	// Delete part
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
 
@@ -50,7 +50,7 @@ func (s *OssCrcSuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// Delete Objects
+	// Delete objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
 

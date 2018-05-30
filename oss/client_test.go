@@ -25,7 +25,7 @@ type OssClientSuite struct{}
 var _ = Suite(&OssClientSuite{})
 
 var (
-	// ENDPOINT/ID/KEY
+	// Endpoint/ID/Key
 	endpoint  = os.Getenv("OSS_TEST_ENDPOINT")
 	accessID  = os.Getenv("OSS_TEST_ACCESS_KEY_ID")
 	accessKey = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
@@ -42,14 +42,14 @@ var (
 )
 
 const (
-	// prefix of bucket name for bucket ops test
+	// Prefix of bucket name for bucket ops test
 	bucketNamePrefix = "go-sdk-test-bucket-xyz-"
-	// bucket name for object ops test
+	// Bucket name for object ops test
 	bucketName        = "go-sdk-test-bucket-xyz-for-object"
 	archiveBucketName = "go-sdk-test-bucket-xyz-for-archive"
-	// object name for object ops test
+	// Object name for object ops test
 	objectNamePrefix = "go-sdk-test-object-xyz-"
-	// sts region is one and only hangzhou
+	// STS region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
 
@@ -212,7 +212,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	// Create bucket with config and test get bucket info
+	// Create bucket with config and test GetBucketInfo
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
 		bucketNameTest := bucketNamePrefix + randLowStr(5)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage), ACL(ACLPublicRead))
@@ -233,7 +233,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	err = client.CreateBucket("ERRORBUCKETNAME", StorageClass(StorageArchive))
 	c.Assert(err, NotNil)
 
-	// Create bucket with config and test list bucket
+	// Create bucket with config and test ListBuckets
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
 		bucketNameTest := bucketNamePrefix + randLowStr(5)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage))
@@ -1193,7 +1193,7 @@ func (s *OssClientSuite) TestDeleteBucketCORS(c *C) {
 	_, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, NotNil)
 
-	// Detele after delete
+	// Detele after deleting
 	err = client.DeleteBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
@@ -1250,7 +1250,7 @@ func (s *OssClientSuite) TestSetBucketCORSNegative(c *C) {
 	_, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, NotNil)
 
-	// Detele after delete
+	// Detele after deleting
 	err = client.DeleteBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
@@ -1393,7 +1393,7 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 		Timeout(11, 12), SecurityToken("token"), Proxy(proxyHost))
 	c.Assert(err, IsNil)
 
-	// Create Bucket timeout
+	// CreateBucket timeout
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, NotNil)
 

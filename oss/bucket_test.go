@@ -61,7 +61,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 // TearDownSuite runs before each test or benchmark starts running.
 func (s *OssBucketSuite) TearDownSuite(c *C) {
 	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
-		// Delete Multipart
+		// Delete multipart
 		lmu, err := bucket.ListMultipartUploads()
 		c.Assert(err, IsNil)
 
@@ -71,7 +71,7 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 			c.Assert(err, IsNil)
 		}
 
-		// Delete Objects
+		// Delete objects
 		lor, err := bucket.ListObjects()
 		c.Assert(err, IsNil)
 
@@ -462,7 +462,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Key
 	objectName = "test/此情无计可消除/才下眉头/却上 心头/。，；：‘’“”？（）『』【】《》！@#￥%……&×/test+ =-_*&^%$#@!`~[]{}()<>|\\/?.,;.txt"
 
-	// Sign URL for put
+	// Sign URL for PutObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 
@@ -470,7 +470,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign URL for get object
+	// Sign URL for GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 
@@ -981,7 +981,7 @@ func (s *OssBucketSuite) TestListObjects(c *C) {
 	c.Assert(err, IsNil)
 	left := len(lor.Objects)
 
-	// Put three object
+	// Put three objects
 	err = s.bucket.PutObject(objectName+"1", strings.NewReader(""))
 	c.Assert(err, IsNil)
 	err = s.bucket.PutObject(objectName+"2", strings.NewReader(""))
@@ -1081,7 +1081,7 @@ func (s *OssBucketSuite) TestListObjectsEncodingType(c *C) {
 func (s *OssBucketSuite) TestIsObjectExist(c *C) {
 	objectName := objectNamePrefix + "tibe"
 
-	// Put three object
+	// Put three objects
 	err := s.bucket.PutObject(objectName+"1", strings.NewReader(""))
 	c.Assert(err, IsNil)
 	err = s.bucket.PutObject(objectName+"11", strings.NewReader(""))
@@ -1805,14 +1805,14 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 	c.Assert(err, IsNil)
 	testLogger.Println("Objects:", lor.Objects)
 
-	// Put with url
+	// Put with URL
 	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
 	c.Assert(err, IsNil)
 
 	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Get with url
+	// Get with URL
 	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
 	c.Assert(err, IsNil)
 
@@ -2008,12 +2008,12 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 func (s *OssBucketSuite) TestRestoreObject(c *C) {
 	objectName := objectNamePrefix + "restore"
 
-	// List Object
+	// List objects
 	lor, err := s.archiveBucket.ListObjects()
 	c.Assert(err, IsNil)
 	left := len(lor.Objects)
 
-	// Put three object
+	// Put object
 	err = s.archiveBucket.PutObject(objectName, strings.NewReader(""))
 	c.Assert(err, IsNil)
 
@@ -2026,22 +2026,22 @@ func (s *OssBucketSuite) TestRestoreObject(c *C) {
 		c.Assert(object.Type, Equals, "Normal")
 	}
 
-	// Head Object
+	// Head object
 	meta, err := s.archiveBucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
 	_, ok := meta["X-Oss-Restore"]
 	c.Assert(ok, Equals, false)
 	c.Assert(meta.Get("X-Oss-Storage-Class"), Equals, "Archive")
 
-	// Error Restore
+	// Error restore object
 	err = s.archiveBucket.RestoreObject("notexistobject")
 	c.Assert(err, NotNil)
 
-	// Restore Object
+	// Restore object
 	err = s.archiveBucket.RestoreObject(objectName)
 	c.Assert(err, IsNil)
 
-	// Head Object
+	// Head object
 	meta, err = s.archiveBucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
 	c.Assert(meta.Get("X-Oss-Restore"), Equals, "ongoing-request=\"true\"")

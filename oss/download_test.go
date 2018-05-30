@@ -369,7 +369,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	fileSize, err := getFileSize(fileName)
 	c.Assert(err, IsNil)
 
-	// Download with range，from 1024 to 4096
+	// Download with range, from 1024 to 4096
 	os.Remove(newFile)
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Range(1024, 4095))
 	c.Assert(err, IsNil)

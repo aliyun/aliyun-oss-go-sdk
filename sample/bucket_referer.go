@@ -26,13 +26,13 @@ func BucketRefererSample() {
 		"http://www.*.com",
 	}
 
-	// Case 1：sets referers. The referers are with wildcards ? and * which could represent one and zero to multiple characters
+	// Case 1: sets referers. The referers are with wildcards ? and * which could represent one and zero to multiple characters
 	err = client.SetBucketReferer(bucketName, referers, false)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 2：clear referers
+	// Case 2: clear referers
 	referers = []string{}
 	err = client.SetBucketReferer(bucketName, referers, true)
 	if err != nil {

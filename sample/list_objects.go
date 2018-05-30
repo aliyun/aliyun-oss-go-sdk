@@ -30,35 +30,35 @@ func ListObjectsSample() {
 		HandleError(err)
 	}
 
-	// Case 1：uses default parameters
+	// Case 1: uses default parameters
 	lor, err := bucket.ListObjects()
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects:", getObjectsFormResponse(lor))
 
-	// Case 2：specifies max keys
+	// Case 2: specifies max keys
 	lor, err = bucket.ListObjects(oss.MaxKeys(3))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects max num:", getObjectsFormResponse(lor))
 
-	// Case 3：specifies prefix of objects
+	// Case 3: specifies prefix of objects
 	lor, err = bucket.ListObjects(oss.Prefix("my-object-2"))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects prefix :", getObjectsFormResponse(lor))
 
-	// Case 4：specifies the marker
+	// Case 4: specifies the marker
 	lor, err = bucket.ListObjects(oss.Marker("my-object-22"))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects marker :", getObjectsFormResponse(lor))
 
-	// Case 5：list object with paging. each page has 3 objects
+	// Case 5: list object with paging. each page has 3 objects
 	marker := oss.Marker("")
 	for {
 		lor, err = bucket.ListObjects(oss.MaxKeys(3), marker)
@@ -72,7 +72,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// Case 6：list object with paging , marker and max keys; return 3 items each time.
+	// Case 6: list object with paging , marker and max keys; return 3 items each time.
 	marker = oss.Marker("my-object-22")
 	for {
 		lor, err = bucket.ListObjects(oss.MaxKeys(3), marker)
@@ -86,7 +86,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// Case 7：list object with paging , with prefix and max keys; return 2 items each time.
+	// Case 7: list object with paging , with prefix and max keys; return 2 items each time.
 	pre := oss.Prefix("my-object-2")
 	marker = oss.Marker("")
 	for {
@@ -107,7 +107,7 @@ func ListObjectsSample() {
 		HandleError(err)
 	}
 
-	// Case 8：combile the prefix and delimiter for grouping. ListObjectsResponse.Objects is the objects returned.
+	// Case 8: combile the prefix and delimiter for grouping. ListObjectsResponse.Objects is the objects returned.
 	// ListObjectsResponse.CommonPrefixes is the common prefixes returned.
 	myObjects = []Object{
 		{"fun/test.txt", ""},

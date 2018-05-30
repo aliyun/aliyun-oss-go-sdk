@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Conn defines oss conn
+// Conn defines OSS conn
 type Conn struct {
 	config *Config
 	url    *urlMaker
@@ -30,7 +30,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "web
 
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
-	// new Transport
+	// New transport
 	transport := newTransport(conn, config)
 
 	// Proxy
@@ -59,7 +59,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
-// DoURL sends the request with signed url and returns the response result.
+// DoURL sends the request with signed URL and returns the response result.
 func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	// Get URI form signedURL
@@ -440,7 +440,7 @@ func xmlUnmarshal(body io.Reader, v interface{}) error {
 	return xml.Unmarshal(data, v)
 }
 
-// timeoutConn handles http timeout
+// timeoutConn handles HTTP timeout
 type timeoutConn struct {
 	conn        net.Conn
 	timeout     time.Duration
@@ -494,7 +494,7 @@ func (c *timeoutConn) SetWriteDeadline(t time.Time) error {
 	return c.conn.SetWriteDeadline(t)
 }
 
-// UrlMaker - build URL and resource
+// UrlMaker builds URL and resource
 const (
 	urlTypeCname  = 1
 	urlTypeIP     = 2
