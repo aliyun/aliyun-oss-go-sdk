@@ -3,6 +3,7 @@ package oss
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -284,8 +285,11 @@ func Process(value string) Option {
 }
 func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
-		if value == nil {
+		if value == nil || reflect.ValueOf(value).IsNil() {
 			return nil
+		}
+		if params == nil {
+			params = map[string]interface{}{}
 		}
 		params[key] = optionValue{value, optionHTTP}
 		return nil
