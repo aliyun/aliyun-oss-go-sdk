@@ -12,10 +12,10 @@ type ListBucketsResult struct {
 	Prefix      string             `xml:"Prefix"`         // The prefix in this query
 	Marker      string             `xml:"Marker"`         // The marker filter.
 	MaxKeys     int                `xml:"MaxKeys"`        // The max entry count to return. This information is returned when IsTruncated is true.
-	IsTruncated bool               `xml:"IsTruncated"`    // Flag True means there's remaining buckets to return.
+	IsTruncated bool               `xml:"IsTruncated"`    // Flag true means there's remaining buckets to return.
 	NextMarker  string             `xml:"NextMarker"`     // The marker filter for the next list call
 	Owner       Owner              `xml:"Owner"`          // The owner information
-	Buckets     []BucketProperties `xml:"Buckets>Bucket"` // The Bucket list
+	Buckets     []BucketProperties `xml:"Buckets>Bucket"` // The bucket list
 }
 
 // BucketProperties defines bucket properties
@@ -43,7 +43,7 @@ type LifecycleConfiguration struct {
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
 	XMLName    xml.Name            `xml:"Rule"`
-	ID         string              `xml:"ID"`         // The Rule Id
+	ID         string              `xml:"ID"`         // The rule ID
 	Prefix     string              `xml:"Prefix"`     // The object key prefix
 	Status     string              `xml:"Status"`     // The rule status (enabled or not)
 	Expiration LifecycleExpiration `xml:"Expiration"` // The expiration property
@@ -118,7 +118,7 @@ func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day i
 // GetBucketLifecycleResult defines GetBucketLifecycle's result object
 type GetBucketLifecycleResult LifecycleConfiguration
 
-// RefererXML defines Referer config
+// RefererXML defines Referer configuration
 type RefererXML struct {
 	XMLName           xml.Name `xml:"RefererConfiguration"`
 	AllowEmptyReferer bool     `xml:"AllowEmptyReferer"`   // Allow empty referrer
@@ -128,17 +128,17 @@ type RefererXML struct {
 // GetBucketRefererResult defines result object for GetBucketReferer request
 type GetBucketRefererResult RefererXML
 
-// LoggingXML defines Logging config
+// LoggingXML defines logging configuration
 type LoggingXML struct {
 	XMLName        xml.Name       `xml:"BucketLoggingStatus"`
-	LoggingEnabled LoggingEnabled `xml:"LoggingEnabled"` // The logging config information
+	LoggingEnabled LoggingEnabled `xml:"LoggingEnabled"` // The logging configuration information
 }
 
 type loggingXMLEmpty struct {
 	XMLName xml.Name `xml:"BucketLoggingStatus"`
 }
 
-// LoggingEnabled defines the logging config information
+// LoggingEnabled defines the logging configuration information
 type LoggingEnabled struct {
 	XMLName      xml.Name `xml:"LoggingEnabled"`
 	TargetBucket string   `xml:"TargetBucket"` // The bucket name for storing the log files
@@ -186,7 +186,7 @@ type CORSRule struct {
 	MaxAgeSeconds int      `xml:"MaxAgeSeconds"` // Max cache ages in seconds
 }
 
-// GetBucketCORSResult defines the result from GetBucketCORS request
+// GetBucketCORSResult defines the result from GetBucketCORS request.
 type GetBucketCORSResult CORSXML
 
 // GetBucketInfoResult defines the result from GetBucketInfo request.
@@ -204,7 +204,7 @@ type BucketInfo struct {
 	ExtranetEndpoint string    `xml:"ExtranetEndpoint"`        // Bucket external endpoint
 	IntranetEndpoint string    `xml:"IntranetEndpoint"`        // Bucket internal endpoint
 	ACL              string    `xml:"AccessControlList>Grant"` // Bucket ACL
-	Owner            Owner     `xml:"Owner"`                   // Bucket Owner
+	Owner            Owner     `xml:"Owner"`                   // Bucket owner
 	StorageClass     string    `xml:"StorageClass"`            // Bucket storage class
 }
 
@@ -224,8 +224,8 @@ type ListObjectsResult struct {
 // ObjectProperties defines Objecct properties
 type ObjectProperties struct {
 	XMLName      xml.Name  `xml:"Contents"`
-	Key          string    `xml:"Key"`          // Object Key
-	Type         string    `xml:"Type"`         // Object Type
+	Key          string    `xml:"Key"`          // Object key
+	Type         string    `xml:"Type"`         // Object type
 	Size         int64     `xml:"Size"`         // Object size
 	ETag         string    `xml:"ETag"`         // Object ETag
 	Owner        Owner     `xml:"Owner"`        // Object owner information
@@ -236,15 +236,15 @@ type ObjectProperties struct {
 // Owner defines Bucket/Object's owner
 type Owner struct {
 	XMLName     xml.Name `xml:"Owner"`
-	ID          string   `xml:"ID"`          // Owner Id
+	ID          string   `xml:"ID"`          // Owner ID
 	DisplayName string   `xml:"DisplayName"` // Owner's display name
 }
 
 // CopyObjectResult defines result object of CopyObject
 type CopyObjectResult struct {
 	XMLName      xml.Name  `xml:"CopyObjectResult"`
-	LastModified time.Time `xml:"LastModified"` // New Object's last modified time.
-	ETag         string    `xml:"ETag"`         // New Object's ETag
+	LastModified time.Time `xml:"LastModified"` // New object's last modified time.
+	ETag         string    `xml:"ETag"`         // New object's ETag
 }
 
 // GetObjectACLResult defines result of GetObjectACL request
@@ -323,8 +323,8 @@ type ListUploadedPartsResult struct {
 	XMLName              xml.Name       `xml:"ListPartsResult"`
 	Bucket               string         `xml:"Bucket"`               // Bucket name
 	Key                  string         `xml:"Key"`                  // Object name
-	UploadID             string         `xml:"UploadId"`             // Upload Id
-	NextPartNumberMarker string         `xml:"NextPartNumberMarker"` // Next Part number
+	UploadID             string         `xml:"UploadId"`             // Upload ID
+	NextPartNumberMarker string         `xml:"NextPartNumberMarker"` // Next part number
 	MaxParts             int            `xml:"MaxParts"`             // Max parts count
 	IsTruncated          bool           `xml:"IsTruncated"`          // Flag indicates all entries returned.false: all entries returned.
 	UploadedParts        []UploadedPart `xml:"Part"`                 // Uploaded parts
@@ -355,7 +355,7 @@ type ListMultipartUploadResult struct {
 	CommonPrefixes     []string            `xml:"CommonPrefixes>Prefix"` // Common prefixes list.
 }
 
-// UncompletedUpload structure wraps an uncompleted Upload task
+// UncompletedUpload structure wraps an uncompleted upload task
 type UncompletedUpload struct {
 	XMLName   xml.Name  `xml:"Upload"`
 	Key       string    `xml:"Key"`       // Object name

@@ -34,7 +34,7 @@ func (s *OssUploadSuite) SetUpSuite(c *C) {
 
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssUploadSuite) TearDownSuite(c *C) {
-	// Delete Part
+	// Delete part
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
 
@@ -45,7 +45,7 @@ func (s *OssUploadSuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// Delete Objects
+	// Delete objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
 
@@ -195,7 +195,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// ErrorHooker is a UploadPart Hook---it will fail the 5th part's upload.
+// ErrorHooker is a UploadPart hook---it will fail the 5th part's upload.
 func ErrorHooker(id int, chunk FileChunk) error {
 	if chunk.Number == 5 {
 		time.Sleep(time.Second)
@@ -234,7 +234,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file-2.jpg"
 
-	// Use default Routines and default CP file path (fileName+.cp)
+	// Use default routines and default CP file path (fileName+.cp)
 	// First upload for 4 parts
 	uploadPartHooker = ErrorHooker
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
@@ -276,7 +276,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(fileName + ".cp")
 	c.Assert(err, NotNil)
 
-	// Specifies Routines and CP
+	// Specifies routines and CP
 	uploadPartHooker = ErrorHooker
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2), Checkpoint(true, objectName+".cp"))
 	c.Assert(err, NotNil)

@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Conn defines OSS conn
+// Conn defines OSS Conn
 type Conn struct {
 	config *Config
 	url    *urlMaker
@@ -502,9 +502,9 @@ const (
 )
 
 type urlMaker struct {
-	Scheme  string // Http or https
-	NetLoc  string // Host or ip
-	Type    int    // 1 CNAME 2 IP 3 ALIYUN
+	Scheme  string // HTTP or HTTPS
+	NetLoc  string // Host or IP
+	Type    int    // 1 CNAME, 2 IP, 3 ALIYUN
 	IsProxy bool   // Proxy
 }
 
@@ -549,7 +549,7 @@ func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	return uri
 }
 
-// getSignURL gets Sign URL
+// getSignURL gets sign URL
 func (um urlMaker) getSignURL(bucket, object, params string) string {
 	host, path := um.buildURL(bucket, object)
 	return fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)

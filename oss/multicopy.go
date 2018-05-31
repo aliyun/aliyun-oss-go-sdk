@@ -95,7 +95,7 @@ func copyScheduler(jobs chan copyPart, parts []copyPart) {
 	close(jobs)
 }
 
-// copy part structure
+// copyPart structure
 type copyPart struct {
 	Number int   // Part number (from 1 to 10,000)
 	Start  int64 // The start index in the source file.
@@ -165,7 +165,7 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
 	publishProgress(listener, event)
 
-	// Start copy workers
+	// Start to copy workers
 	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
 	for w := 1; w <= routines; w++ {
 		go copyWorker(w, arg, jobs, results, failed, die)
@@ -221,7 +221,7 @@ type copyCheckpoint struct {
 	SrcObjectKey   string       // Source object
 	DestBucketName string       // Target bucket
 	DestObjectKey  string       // Target object
-	CopyID         string       // Copy id
+	CopyID         string       // Copy ID
 	ObjStat        objectStat   // Object stat
 	Parts          []copyPart   // Copy parts
 	CopyParts      []UploadPart // The uploaded parts
@@ -430,7 +430,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	// Start the scheduler
 	go copyScheduler(jobs, parts)
 
-	// Waits for the parts completed.
+	// Wait for the parts completed.
 	completed := 0
 	for completed < len(parts) {
 		select {

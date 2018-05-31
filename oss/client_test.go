@@ -175,7 +175,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-    // CreateBcuket creates with ACLPublicRead
+    // CreateBucket creates with ACLPublicRead
 	err = client.CreateBucket(bucketNameTest, ACL(ACLPublicRead))
 	c.Assert(err, IsNil)
 	time.Sleep(5 * time.Second)
@@ -212,7 +212,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	// Create bucket with config and test GetBucketInfo
+	// Create bucket with configuration and test GetBucketInfo
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
 		bucketNameTest := bucketNamePrefix + randLowStr(5)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage), ACL(ACLPublicRead))
@@ -229,11 +229,11 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// Error put bucket with config
+	// Error put bucket with configuration
 	err = client.CreateBucket("ERRORBUCKETNAME", StorageClass(StorageArchive))
 	c.Assert(err, NotNil)
 
-	// Create bucket with config and test ListBuckets
+	// Create bucket with configuration and test ListBuckets
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
 		bucketNameTest := bucketNamePrefix + randLowStr(5)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage))

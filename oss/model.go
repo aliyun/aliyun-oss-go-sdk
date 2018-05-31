@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// Response defines HTTP response from oss
+// Response defines HTTP response from OSS
 type Response struct {
 	StatusCode int
 	Headers    http.Header

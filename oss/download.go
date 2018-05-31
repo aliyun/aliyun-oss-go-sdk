@@ -76,7 +76,7 @@ func defaultDownloadPartHook(part downloadPart) error {
 	return nil
 }
 
-// defaultDownloadProgressListener defines default ProgressListener, shields the ProgressListener in Options of GetObject. 
+// defaultDownloadProgressListener defines default ProgressListener, shields the ProgressListener in options of GetObject. 
 type defaultDownloadProgressListener struct {
 }
 

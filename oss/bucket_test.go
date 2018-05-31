@@ -239,7 +239,7 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(meta.Get(HTTPHeaderContentType), Equals, "application/octet-stream")
 	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "")
 
-	// Sign URL for get object
+	// Sign URL for function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -253,7 +253,7 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
 
-	// Sign URL for put with options
+	// Sign URL for function PutObjectWithURL
 	options := []Option{
 		ObjectACL(ACLPublicRead),
 		Meta("myprop", "mypropval"),
@@ -294,7 +294,7 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(acl.ACL, Equals, string(ACLPublicRead))
 
-	// Sign URL for get object
+	// Sign URL for function GetObjectToFileWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 
@@ -320,7 +320,7 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
 	c.Assert(body, IsNil)
 
-	// Sign URL for get object with options
+	// Sign URL for function GetObjectToFileWithURL
 	options = []Option{
 		Expires(futureDate),
 		ObjectACL(ACLPublicRead),
@@ -378,7 +378,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	objectValue := "弃我去者，昨日之日不可留；乱我心者，今日之日多烦忧。长风万里送秋雁，对此可以酣高楼。蓬莱文章建安骨，中间小谢又清发。" +
 		"俱怀逸兴壮思飞，欲上青天揽明月。抽刀断水水更流，举杯销愁愁更愁。人生在世不称意，明朝散发弄扁舟。"
 
-	// Sign URL for put
+	// Sign URL for function PutObjectWithURL
 	str, err := s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -389,7 +389,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign URL for get object
+	// Sign URL for function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -406,7 +406,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Key with escaped chars
 	objectName = "<>[]()`?.,!@#$%^&'/*-_=+~:;"
 
-	// Sign URL for put
+	// Sign URL for funciton PutObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -417,7 +417,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign URL for get object
+	// Sign URL for function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -434,7 +434,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Key with Chinese chars
 	objectName = "风吹柳花满店香，吴姬压酒劝客尝。金陵子弟来相送，欲行不行各尽觞。请君试问东流水，别意与之谁短长。"
 
-	// Sign URL for put
+	// Sign URL for function PutObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -445,7 +445,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign URL for get object
+	// Sign URL for get function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -462,7 +462,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Key
 	objectName = "test/此情无计可消除/才下眉头/却上 心头/。，；：‘’“”？（）『』【】《》！@#￥%……&×/test+ =-_*&^%$#@!`~[]{}()<>|\\/?.,;.txt"
 
-	// Sign URL for PutObjectWithURL
+	// Sign URL for function PutObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 
@@ -470,7 +470,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign URL for GetObjectWithURL
+	// Sign URL for function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 
@@ -517,7 +517,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKeyAndPorxy(c *C) {
 	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign URL for get object
+	// Sign URL for function GetObjectWithURL
 	str, err = bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
@@ -534,7 +534,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKeyAndPorxy(c *C) {
 	// Key with Chinese chars
 	objectName = "test/此情无计可消除/才下眉头/却上 心头/。，；：‘’“”？（）『』【】《》！@#￥%……&×/test+ =-_*&^%$#@!`~[]{}()<>|\\/?.,;.txt"
 
-	// Sign URL for put
+	// Sign URL for function PutObjectWithURL
 	str, err = bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
 
@@ -542,7 +542,7 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKeyAndPorxy(c *C) {
 	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Sign URL for get object
+	// Sign URL for function GetObjectWithURL
 	str, err = bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
 
@@ -877,7 +877,7 @@ func (s *OssBucketSuite) TestGetObjectToWriterNegative(c *C) {
 	_, err = s.bucket.GetObject(objectName, Range(15, 1000))
 	c.Assert(err, IsNil)
 
-	// No exist
+	// Not exist
 	err = s.bucket.GetObjectToFile(objectName, "/root/123abc9874")
 	c.Assert(err, NotNil)
 
@@ -1147,7 +1147,7 @@ func (s *OssBucketSuite) TestDeleteObject(c *C) {
 func (s *OssBucketSuite) TestDeleteObjects(c *C) {
 	objectName := objectNamePrefix + "tdos"
 
-	// Delete object
+	// Delete objects
 	err := s.bucket.PutObject(objectName, strings.NewReader(""))
 	c.Assert(err, IsNil)
 
@@ -1286,7 +1286,7 @@ func (s *OssBucketSuite) TestSetObjectMeta(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// No exist
+	// Not exist
 	err = s.bucket.SetObjectMeta(objectName, Expires(futureDate))
 	c.Assert(err, NotNil)
 }

@@ -47,7 +47,7 @@ func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option
 // size    the part size.
 // partNumber    the part number (ranges from 1 to 10,000). Invalid part number will lead to InvalidArgument error.
 //
-// UploadPart    the return value of the upload part. It consists of Part number and ETag. It's valid when error is nil.
+// UploadPart    the return value of the upload part. It consists of PartNumber and ETag. It's valid when error is nil.
 // error    it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) UploadPart(imur InitiateMultipartUploadResult, reader io.Reader,

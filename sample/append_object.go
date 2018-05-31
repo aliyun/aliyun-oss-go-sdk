@@ -14,7 +14,7 @@ import (
 
 // AppendObjectSample shows the append file's usage
 func AppendObjectSample() {
-	// Create Bucket
+	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)

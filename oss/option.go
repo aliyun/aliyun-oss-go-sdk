@@ -222,7 +222,7 @@ func StorageClass(value StorageClassType) Option {
 	return addArg(storageClass, value)
 }
 
-// Checkpoint configuration.
+// Checkpoint configuration
 type cpConfig struct {
 	IsEnable bool
 	FilePath string

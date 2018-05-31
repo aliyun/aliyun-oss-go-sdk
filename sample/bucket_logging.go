@@ -51,7 +51,7 @@ func BucketLoggingSample() {
 		HandleError(err)
 	}
 
-	// Gets bucket's logging config
+	// Gets bucket's logging configuration
 	gbl, err := client.GetBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -63,14 +63,14 @@ func BucketLoggingSample() {
 		HandleError(err)
 	}
 
-	// Gets the Bucket logging config
+	// Gets the Bucket logging configuration
 	gbl, err = client.GetBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket Logging:", gbl.LoggingEnabled)
 
-	// Deletes Bucket's logging config
+	// Deletes Bucket's logging configuration
 	err = client.DeleteBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)

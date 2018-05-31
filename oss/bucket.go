@@ -257,7 +257,7 @@ func (bucket Bucket) CopyObjectTo(destBucketName, destObjectKey, srcObjectKey st
 //
 // srcBucketName    source bucket name.
 // srcObjectKey    source object name.
-// destObjectKey    target object name. The target bucket name is bucket.BucketName.
+// destObjectKey    target object name. The target bucket name is Bucket.BucketName.
 // options    copy options. Check out parameter options in function CopyObject.
 //
 // error    it's nil if no error, otherwise it's an error object.
@@ -592,7 +592,7 @@ func (bucket Bucket) SetObjectACL(objectKey string, objectACL ACLType) error {
 //
 // objectKey    the object to get ACL from.
 //
-// GetObjectACLResult    the result object when error is nil. GetObjectACLResult.Acl is the object acl.
+// GetObjectACLResult    the result object when error is nil. GetObjectACLResult.Acl is the object ACL.
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectACL(objectKey string) (GetObjectACLResult, error) {
@@ -686,7 +686,7 @@ func (bucket Bucket) RestoreObject(objectKey string) error {
 // SignURL signs the URL. Users could access the object directly with this URL without getting the AK.
 //
 // objectKey    the target object to sign.
-// signURLConfig    the config for the signed URL
+// signURLConfig    the configuration for the signed URL
 //
 // string    returns the signed URL, when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
@@ -794,7 +794,7 @@ func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, opti
 //            IfNoneMatch, AcceptEncoding. For more information, check out the following link:
 //            https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
 //
-// io.ReadCloser    the reader object for getting the data from response. It needs be closed after the usage. It's only valid when error is nill.
+// io.ReadCloser    the reader object for getting the data from response. It needs be closed after the usage. It's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.ReadCloser, error) {
@@ -829,14 +829,14 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 		return err
 	}
 
-	// Saves the data to the file.
+	// Save the data to the file.
 	_, err = io.Copy(fd, result.Response.Body)
 	fd.Close()
 	if err != nil {
 		return err
 	}
 
-	// Compares the CRC value. If CRC values do not match, return error.
+	// Compare the CRC value. If CRC values do not match, return error.
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
 	if bucket.getConfig().IsEnableCRC && !hasRange {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()

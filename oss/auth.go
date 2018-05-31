@@ -20,7 +20,7 @@ type headerSorter struct {
 
 // signHeader signs the header and sets it as the authorization header.
 func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
-	// Get the final authorization' string
+	// Get the final authorization string
 	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
 
 	// Give the parameter "Authorization" value

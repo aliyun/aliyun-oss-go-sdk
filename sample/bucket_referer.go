@@ -39,7 +39,7 @@ func BucketRefererSample() {
 		HandleError(err)
 	}
 
-	// Gets Bucket referer config
+	// Gets Bucket referer configuration
 	gbr, err := client.GetBucketReferer(bucketName)
 	if err != nil {
 		HandleError(err)

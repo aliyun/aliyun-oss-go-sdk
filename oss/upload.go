@@ -40,7 +40,7 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 
 // ----- concurrent upload without checkpoint  -----
 
-// getCpConfig gets Checkpoint configuration
+// getCpConfig gets checkpoint configuration
 func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
 	cpc := &cpConfig{}
 	cpcOpt, err := findOption(options, checkpointConfig, nil)
@@ -215,7 +215,7 @@ type uploadCheckpoint struct {
 	FilePath  string   // Local file path
 	FileStat  cpStat   // File state
 	ObjectKey string   // Key
-	UploadID  string   // Upload id
+	UploadID  string   // Upload ID
 	Parts     []cpPart // All parts of the local file
 }
 
@@ -286,7 +286,7 @@ func (cp *uploadCheckpoint) load(filePath string) error {
 func (cp *uploadCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
-	// Calculates MD5
+	// Calculate MD5
 	bcp.MD5 = ""
 	js, err := json.Marshal(bcp)
 	if err != nil {
@@ -443,7 +443,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	event := newProgressEvent(TransferStartedEvent, completedBytes, ucp.FileStat.Size)
 	publishProgress(listener, event)
 
-	// Starts the workers
+	// Start the workers
 	arg := workerArg{&bucket, filePath, imur, uploadPartHooker}
 	for w := 1; w <= routines; w++ {
 		go worker(w, arg, jobs, results, failed, die)

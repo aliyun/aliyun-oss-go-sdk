@@ -44,7 +44,7 @@ func (s *OssCopySuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// Delete Objects
+	// Delete objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
 
@@ -125,7 +125,7 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
-	// Specifies 5 routines which is same as parts count
+	// Specifies 5 routines which is the same as parts count
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
 

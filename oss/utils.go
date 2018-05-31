@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// userAgent gets User Agent
+// userAgent gets user agent
 // It has the SDK version information, OS information and GO version
 var userAgent = func() string {
 	sys := getSysInfo()
@@ -54,7 +54,7 @@ type unpackedRange struct {
 	end      int64 // End point
 }
 
-// invalidRangeError returns invalid Range Error
+// invalidRangeError returns invalid range error
 func invalidRangeError(r string) error {
 	return fmt.Errorf("InvalidRange %s", r)
 }
@@ -171,7 +171,7 @@ type FileChunk struct {
 	Size   int64 // Chunk size.
 }
 
-// SplitFileByPartNum splits big file to parts by the num of parts.
+// SplitFileByPartNum splits big file into parts by the num of parts.
 // Split the file with specified parts count, returns the split result when error is nil.
 func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 	if chunkNum <= 0 || chunkNum > 10000 {
@@ -210,7 +210,7 @@ func SplitFileByPartNum(fileName string, chunkNum int) ([]FileChunk, error) {
 	return chunks, nil
 }
 
-// SplitFileByPartSize splits big file to parts by the size of parts.
+// SplitFileByPartSize splits big file into parts by the size of parts.
 // Splits the file by the part size. Returns the FileChunk when error is nil.
 func SplitFileByPartSize(fileName string, chunkSize int64) ([]FileChunk, error) {
 	if chunkSize <= 0 {
@@ -259,7 +259,7 @@ func GetPartEnd(begin int64, total int64, per int64) int64 {
 	return begin + per - 1
 }
 
-// crcTable returns the Table constructed from the specified polynomial
+// crcTable returns the table constructed from the specified polynomial
 var crcTable = func() *crc64.Table {
 	return crc64.MakeTable(crc64.ECMA)
 }

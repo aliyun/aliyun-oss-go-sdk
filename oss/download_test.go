@@ -34,7 +34,7 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssDownloadSuite) TearDownSuite(c *C) {
-	// Delete Part
+	// Delete part
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
 
@@ -45,7 +45,7 @@ func (s *OssDownloadSuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// Delete Objects
+	// Delete objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
 
@@ -72,7 +72,7 @@ func (s *OssDownloadSuite) TearDownTest(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDownloadRoutineWithoutRecovery multipart download without checkpoint
+// TestDownloadRoutineWithoutRecovery multipart downloads without checkpoint
 func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	objectName := objectNamePrefix + "tdrwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -125,7 +125,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// DownErrorHooker requests Hook by DownloadPart
+// DownErrorHooker requests hook by downloadPart
 func DownErrorHooker(part downloadPart) error {
 	if part.Index == 4 {
 		time.Sleep(time.Second)
@@ -275,7 +275,7 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestDownloadObjectChange the file is updated during the upload
+// TestDownloadObjectChange tests the file is updated during the upload
 func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 	objectName := objectNamePrefix + "tdloc"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -303,7 +303,7 @@ func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 	c.Assert(eq, Equals, true)
 }
 
-// TestDownloadNegative Download Negative
+// TestDownloadNegative tests downloading negative
 func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	objectName := objectNamePrefix + "tdn"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -355,7 +355,7 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
-// TestDownloadWithRange tests concurrent download with range specified and checkpoint enabled
+// TestDownloadWithRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	objectName := objectNamePrefix + "tdwr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -449,7 +449,7 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestDownloadWithCheckoutAndRange tests concurrent download with range specified and checkpoint enabled
+// TestDownloadWithCheckoutAndRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	objectName := objectNamePrefix + "tdwcr"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
@@ -543,7 +543,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestCombineCRCInDownloadParts tests DonwloadParts CRC Combine
+// TestCombineCRCInDownloadParts tests combineCRCInParts
 func (s *OssDownloadSuite) TestCombineCRCInDownloadParts(c *C) {
 	crc := combineCRCInParts(nil)
 	c.Assert(crc == 0, Equals, true)

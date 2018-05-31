@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-// Client Sdk's entry point. It's for bucket related options such as create/delete/set bucket (such as set/get acl/lifecycle/referer/logging/website).
+// Client SDK's entry point. It's for bucket related options such as create/delete/set bucket (such as set/get ACL/lifecycle/referer/logging/website).
 // Object related operations are done by Bucket class.
 // Users use oss.New to create Client instance.
 //
 type (
-	// Client oss client
+	// Client OSS client
 	Client struct {
 		Config *Config // OSS client configuration
 		Conn   *Conn   // Send HTTP request
@@ -229,7 +229,7 @@ func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 // bucketName    the bucket name.
 //
 // GetBucketAclResponse    the result object, and it's only valid when error is nil.
-// error    it's nil if no error, otherwise it's an error object..
+// error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error) {
 	var out GetBucketACLResult
@@ -433,7 +433,7 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-// DeleteBucketLogging deletes the logging config--disables the logging on the bucket.
+// DeleteBucketLogging deletes the logging configuration to disable the logging on the bucket.
 //
 // bucketName    the bucket name to disable the logging.
 //

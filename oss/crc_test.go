@@ -127,7 +127,7 @@ func (s *OssCrcSuite) TestCRCGolden(c *C) {
 	}
 }
 
-// testCRC64Combine tests crc64 on vector[0..pos] which should have CRC-64 crc.
+// testCRC64Combine tests CRC64 on vector[0..pos] which should have CRC64 crc.
 // Also test CRC64Combine on vector[] split in two.
 func testCRC64Combine(c *C, str string, pos int, crc uint64) {
 	tabECMA := crc64.MakeTable(crc64.ECMA)
@@ -370,7 +370,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	//	MultipartUpload
+	// MultipartUpload
 	chunks, err := SplitFileByPartSize(fileName, 100*1024)
 	imurUpload, err := bucket.InitiateMultipartUpload(objectName)
 	c.Assert(err, IsNil)

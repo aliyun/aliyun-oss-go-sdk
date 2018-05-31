@@ -32,7 +32,7 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.bucket = bucket
 
-	// Delete Part
+	// Delete part
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
 
@@ -43,7 +43,7 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// Delete Objects
+	// Delete objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
 
@@ -57,7 +57,7 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssBucketMultipartSuite) TearDownSuite(c *C) {
-	// Delete Part
+	// Delete part
 	lmur, err := s.bucket.ListMultipartUploads()
 	c.Assert(err, IsNil)
 
@@ -68,7 +68,7 @@ func (s *OssBucketMultipartSuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	// Delete Objects
+	// Delete objects
 	lor, err := s.bucket.ListObjects()
 	c.Assert(err, IsNil)
 
