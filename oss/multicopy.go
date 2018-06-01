@@ -252,7 +252,7 @@ func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error)
 		return false, err
 	}
 
-	// Compares the object size and last modified time and etag.
+	// Compare the object size and last modified time and etag.
 	if cp.ObjStat.Size != objectSize ||
 		cp.ObjStat.LastModified != meta.Get(HTTPHeaderLastModified) ||
 		cp.ObjStat.Etag != meta.Get(HTTPHeaderEtag) {

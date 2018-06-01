@@ -276,7 +276,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(fileName + ".cp")
 	c.Assert(err, NotNil)
 
-	// Specifies routines and CP
+	// Specify routines and CP
 	uploadPartHooker = ErrorHooker
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2), Checkpoint(true, objectName+".cp"))
 	c.Assert(err, NotNil)

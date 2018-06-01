@@ -348,7 +348,7 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 		return false, err
 	}
 
-	// Compare the object size, last modified time and ETag
+	// Compare the object size, last modified time and etag
 	if cp.ObjStat.Size != objectSize ||
 		cp.ObjStat.LastModified != meta.Get(HTTPHeaderLastModified) ||
 		cp.ObjStat.Etag != meta.Get(HTTPHeaderEtag) {

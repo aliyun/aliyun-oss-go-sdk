@@ -21,7 +21,7 @@ func ObjectMetaSample() {
 		HandleError(err)
 	}
 
-	// Case 0: sets bucket meta. one or more properties could be set
+	// Case 0: Set bucket meta. one or more properties could be set
 	// Note: Meta is case insensitive
 	options := []oss.Option{
 		oss.Expires(futureDate),
@@ -31,21 +31,21 @@ func ObjectMetaSample() {
 		HandleError(err)
 	}
 
-	// Case 1: gets the object metadata. Only return basic meta information includes ETag, size and last modified.
+	// Case 1: Get the object metadata. Only return basic meta information includes ETag, size and last modified.
 	props, err := bucket.GetObjectMeta(objectKey)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Object Meta:", props)
 
-	// Case 2: gets all the detailed object meta including custom meta
+	// Case 2: Get all the detailed object meta including custom meta
 	props, err = bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Expires:", props.Get("Expires"))
 
-	// Case 3: gets the object's all metadata with contraints. When constraints are met, return the metadata.
+	// Case 3: Get the object's all metadata with contraints. When constraints are met, return the metadata.
 	props, err = bucket.GetObjectDetailedMeta(objectKey, oss.IfUnmodifiedSince(futureDate))
 	if err != nil {
 		HandleError(err)

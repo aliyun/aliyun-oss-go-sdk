@@ -24,7 +24,7 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 1: downloads the object into ReadCloser(). The body needs to be closed
+	// Case 1: Download the object into ReadCloser(). The body needs to be closed
 	body, err := bucket.GetObject(objectKey)
 	if err != nil {
 		HandleError(err)
@@ -36,7 +36,7 @@ func GetObjectSample() {
 	}
 	data = data // use data
 
-	// Case 2: downloads the object to byte array. This is for small object.
+	// Case 2: Download the object to byte array. This is for small object.
 	buf := new(bytes.Buffer)
 	body, err = bucket.GetObject(objectKey)
 	if err != nil {
@@ -45,7 +45,7 @@ func GetObjectSample() {
 	io.Copy(buf, body)
 	body.Close()
 
-	// Case 3: downloads the object to local file. The file handle needs to be specified
+	// Case 3: Download the object to local file. The file handle needs to be specified
 	fd, err := os.OpenFile("mynewfile-1.jpg", os.O_WRONLY|os.O_CREATE, 0660)
 	if err != nil {
 		HandleError(err)
@@ -59,13 +59,13 @@ func GetObjectSample() {
 	io.Copy(fd, body)
 	body.Close()
 
-	// Case 4: downloads the object to local file with file name specified
+	// Case 4: Download the object to local file with file name specified
 	err = bucket.GetObjectToFile(objectKey, "mynewfile-2.jpg")
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 5: gets the object with contraints. When contraints are met, download the file. Otherwise return precondition error
+	// Case 5: Get the object with contraints. When contraints are met, download the file. Otherwise return precondition error
 	// last modified time constraint is met, download the file
 	body, err = bucket.GetObject(objectKey, oss.IfModifiedSince(pastDate))
 	if err != nil {
@@ -96,7 +96,7 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 6: big file's multipart download, concurrent and resumable download is supported.
+	// Case 6: Big file's multipart download, concurrent and resumable download is supported.
 	// multipart download with part size 100KB. By default single coroutine is used and no checkpoint
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024)
 	if err != nil {

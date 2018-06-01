@@ -21,7 +21,7 @@ func ObjectACLSample() {
 		HandleError(err)
 	}
 
-	// Case 1: sets bucket ACL, valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
+	// Case 1: Set bucket ACL, valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
 	err = bucket.SetObjectACL(objectKey, oss.ACLPrivate)
 	if err != nil {
 		HandleError(err)

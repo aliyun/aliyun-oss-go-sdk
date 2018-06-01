@@ -20,14 +20,14 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 1: copy an existing object
+	// Case 1: Copy an existing object
 	var descObjectKey = "descobject"
 	_, err = bucket.CopyObject(objectKey, descObjectKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 2: copy an existing object to another existing object
+	// Case 2: Copy an existing object to another existing object
 	_, err = bucket.CopyObject(objectKey, descObjectKey)
 	if err != nil {
 		HandleError(err)
@@ -38,7 +38,7 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 3: copy file with constraints. When the constraints are met, the copy executes. otherwise the copy does not execute.
+	// Case 3: Copy file with constraints. When the constraints are met, the copy executes. otherwise the copy does not execute.
 	// constraints are not met, copy does not execute
 	_, err = bucket.CopyObject(objectKey, descObjectKey, oss.CopySourceIfModifiedSince(futureDate))
 	if err == nil {
@@ -51,7 +51,7 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 4: specify the properties when copying. The MetadataDirective needs to be MetaReplace
+	// Case 4: Specify the properties when copying. The MetadataDirective needs to be MetaReplace
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.Meta("myprop", "mypropval"),
@@ -67,7 +67,7 @@ func CopyObjectSample() {
 	}
 	fmt.Println("meta:", meta)
 
-	// Case 5: when the source file is the same as the target file, the copy could be used to update metadata
+	// Case 5: When the source file is the same as the target file, the copy could be used to update metadata
 	options = []oss.Option{
 		oss.Expires(futureDate),
 		oss.Meta("myprop", "mypropval"),
@@ -79,7 +79,7 @@ func CopyObjectSample() {
 	}
 	fmt.Println("meta:", meta)
 
-	// Case 6: big file's multipart copy. It supports concurrent copy with resumable upload
+	// Case 6: Big file's multipart copy. It supports concurrent copy with resumable upload
 	// copy file with multipart. The part size is 100K. By default one routine is used without resumable upload
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024)
 	if err != nil {
