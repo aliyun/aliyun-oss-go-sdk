@@ -405,7 +405,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 		os.Remove(cpFilePath)
 	}
 
-	// Unfinished parts.
+	// Unfinished parts
 	parts := ccp.todoParts()
 	imur := InitiateMultipartUploadResult{
 		Bucket:   destBucketName,

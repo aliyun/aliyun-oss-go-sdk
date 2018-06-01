@@ -8,13 +8,13 @@ import (
 
 // CopyObjectSample shows the copy files usage
 func CopyObjectSample() {
-	// Creates a bucket
+	// Create a bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates an object
+	// Create an object
 	err = bucket.PutObjectFromFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)

@@ -10,7 +10,7 @@ import (
 type ListBucketsResult struct {
 	XMLName     xml.Name           `xml:"ListAllMyBucketsResult"`
 	Prefix      string             `xml:"Prefix"`         // The prefix in this query
-	Marker      string             `xml:"Marker"`         // The marker filter.
+	Marker      string             `xml:"Marker"`         // The marker filter
 	MaxKeys     int                `xml:"MaxKeys"`        // The max entry count to return. This information is returned when IsTruncated is true.
 	IsTruncated bool               `xml:"IsTruncated"`    // Flag true means there's remaining buckets to return.
 	NextMarker  string             `xml:"NextMarker"`     // The marker filter for the next list call

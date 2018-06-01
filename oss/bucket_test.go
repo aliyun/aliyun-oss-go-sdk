@@ -1590,11 +1590,11 @@ func (s *OssBucketSuite) TestCopyObjectToOrFromNegative(c *C) {
 	destBucket := bucketName + "-destn"
 	objectNameDest := objectName + "destn"
 
-	// Object no exist
+	// Object not exist
 	_, err := s.bucket.CopyObjectTo(bucketName, objectName, objectNameDest)
 	c.Assert(err, NotNil)
 
-	// Bucket no exist
+	// Bucket not exist
 	_, err = s.bucket.CopyObjectFrom(destBucket, objectNameDest, objectName)
 	c.Assert(err, NotNil)
 }

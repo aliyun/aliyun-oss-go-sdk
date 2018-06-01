@@ -62,7 +62,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 // DoURL sends the request with signed URL and returns the response result.
 func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
-	// Get URI form signedURL
+	// Get URI from signedURL
 	uri, err := url.ParseRequestURI(signedURL)
 	if err != nil {
 		return nil, err

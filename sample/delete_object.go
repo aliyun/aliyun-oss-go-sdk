@@ -9,7 +9,7 @@ import (
 
 // DeleteObjectSample shows how to delete single file or multiple files
 func DeleteObjectSample() {
-	// Creates a bucket
+	// Create a bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)

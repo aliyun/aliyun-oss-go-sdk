@@ -233,7 +233,7 @@ type cpPart struct {
 
 // isValid checks if the uploaded data is valid---it's valid when the file is not updated and the checkpoint data is valid.
 func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
-	// Compares the CP's magic number and MD5.
+	// Compare the CP's magic number and MD5.
 	cpb := cp
 	cpb.MD5 = ""
 	js, _ := json.Marshal(cpb)
@@ -244,7 +244,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 		return false, nil
 	}
 
-	// Makes sure if the local file is updated.
+	// Make sure if the local file is updated.
 	fd, err := os.Open(filePath)
 	if err != nil {
 		return false, err
@@ -261,7 +261,7 @@ func (cp uploadCheckpoint) isValid(filePath string) (bool, error) {
 		return false, err
 	}
 
-	// Compares the file size, file's last modified time and file's MD5
+	// Compare the file size, file's last modified time and file's MD5
 	if cp.FileStat.Size != st.Size() ||
 		cp.FileStat.LastModified != st.ModTime() ||
 		cp.FileStat.MD5 != md {

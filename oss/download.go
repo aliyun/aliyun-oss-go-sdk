@@ -484,7 +484,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		os.Remove(cpFilePath)
 	}
 
-	// Creates the file if not exists. Otherwise the parts download will overwrite it.
+	// Create the file if not exists. Otherwise the parts download will overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
 	if err != nil {
 		return err
@@ -502,7 +502,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	// Starts the download workers routine
+	// Start the download workers routine
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, dcp.enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
@@ -511,7 +511,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	// Concurrently downloads parts
 	go downloadScheduler(jobs, parts)
 
-	// Waits for the parts download finished
+	// Wait for the parts download finished
 	completed := 0
 	for completed < len(parts) {
 		select {

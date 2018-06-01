@@ -14,26 +14,26 @@ func BucketACLSample() {
 		HandleError(err)
 	}
 
-	// Creates a bucket with default parameters
+	// Create a bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Sets bucket ACL. The valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
+	// Set bucket ACL. The valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
 	err = client.SetBucketACL(bucketName, oss.ACLPublicRead)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Gets bucket ACL
+	// Get bucket ACL
 	gbar, err := client.GetBucketACL(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket ACL:", gbar.ACL)
 
-	// Deletes the bucket
+	// Delete the bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

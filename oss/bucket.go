@@ -439,7 +439,7 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 
 // IsObjectExist checks if the object exists.
 //
-// bool    flag of object's existence (true:exists;false:non-exist) when error is nil.
+// bool    flag of object's existence (true:exists; false:non-exist) when error is nil.
 //
 // error    it's nil if no error, otherwise it's an error object.
 //

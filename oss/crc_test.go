@@ -274,7 +274,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	//	MultipartUpload
+	// MultipartUpload
 	chunks, err := SplitFileByPartSize(fileName, 100*1024)
 	imurUpload, err := bucket.InitiateMultipartUpload(objectName)
 	c.Assert(err, IsNil)
@@ -445,7 +445,7 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	//	MultipartUpload
+	// MultipartUpload
 	imurUpload, err := s.bucket.InitiateMultipartUpload(objectName)
 	c.Assert(err, IsNil)
 

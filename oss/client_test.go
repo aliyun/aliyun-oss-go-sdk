@@ -257,7 +257,7 @@ func (s *OssClientSuite) TestCreateBucketNegative(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	// BucketName invalid
+	// Bucket name invalid
 	err = client.CreateBucket("xx")
 	c.Assert(err, NotNil)
 
@@ -318,7 +318,7 @@ func (s *OssClientSuite) TestDeleteBucketNegative(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	// BucketName invalid
+	// Bucket name invalid
 	err = client.DeleteBucket("xx")
 	c.Assert(err, NotNil)
 
@@ -328,7 +328,7 @@ func (s *OssClientSuite) TestDeleteBucketNegative(c *C) {
 	err = client.DeleteBucket("_bucket")
 	c.Assert(err, NotNil)
 
-	// Delete no exist
+	// Delete no exist bucket
 	err = client.DeleteBucket("notexist")
 	c.Assert(err, NotNil)
 
@@ -1242,7 +1242,7 @@ func (s *OssClientSuite) TestSetBucketCORSNegative(c *C) {
 	_, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	// Detele
+	// Delete
 	err = client.DeleteBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
@@ -1250,7 +1250,7 @@ func (s *OssClientSuite) TestSetBucketCORSNegative(c *C) {
 	_, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, NotNil)
 
-	// Detele after deleting
+	// Delete after deleting
 	err = client.DeleteBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
@@ -1469,15 +1469,15 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)
 
-	// Get Object
+	// Get object
 	_, err = bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 
-	// List Objects
+	// List objects
 	_, err = bucket.ListObjects()
 	c.Assert(err, IsNil)
 
-	// Delete Object
+	// Delete object
 	err = bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 

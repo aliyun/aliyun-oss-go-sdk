@@ -90,7 +90,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// Specifies routine count as 1
+	// Specify routine count as 1
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(1))
 	c.Assert(err, IsNil)
 
@@ -105,7 +105,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// Specifies routine count as 3, which is smaller than parts count 5
+	// Specify routine count as 3, which is smaller than parts count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
@@ -120,7 +120,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// Specifies routine count as 5, which is same as the part count 5
+	// Specify routine count as 5, which is same as the part count 5
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(5))
 	c.Assert(err, IsNil)
 
@@ -135,7 +135,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// Specifies routine count as 10, which is bigger than the part count 5.
+	// Specify routine count as 10, which is bigger than the part count 5.
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10))
 	c.Assert(err, IsNil)
 
@@ -316,7 +316,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(objectName + ".cp")
 	c.Assert(err, NotNil)
 
-	// Uploads all 5 parts without error
+	// Upload all 5 parts without error
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 
@@ -413,7 +413,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	err = copyFile(fileName, localFile)
 	c.Assert(err, IsNil)
 
-	// Updating the file. The second upload will re-upload all 5 parts
+	// Updating the file. The second upload will re-upload all 5 parts.
 	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, ""))
 	c.Assert(err, IsNil)
 

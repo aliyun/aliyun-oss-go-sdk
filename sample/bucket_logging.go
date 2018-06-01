@@ -70,7 +70,7 @@ func BucketLoggingSample() {
 	}
 	fmt.Println("Bucket Logging:", gbl.LoggingEnabled)
 
-	// Delete the Bucket's logging configuration
+	// Delete the bucket's logging configuration
 	err = client.DeleteBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
