@@ -8,13 +8,13 @@ import (
 
 // CopyObjectSample shows the copy files usage
 func CopyObjectSample() {
-	// Creates a Bucket
+	// Creates a bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates an Object
+	// Creates an object
 	err = bucket.PutObjectFromFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)
@@ -67,7 +67,7 @@ func CopyObjectSample() {
 	}
 	fmt.Println("meta:", meta)
 
-	// Case 5: when the source file is same as the target file, the copy could be used to update metadata
+	// Case 5: when the source file is the same as the target file, the copy could be used to update metadata
 	options = []oss.Option{
 		oss.Expires(futureDate),
 		oss.Meta("myprop", "mypropval"),
@@ -104,7 +104,7 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
-	// Deletes object and bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

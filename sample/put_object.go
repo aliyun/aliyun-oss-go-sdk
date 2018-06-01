@@ -11,7 +11,7 @@ import (
 
 // PutObjectSample illustrates two methods for uploading a file: simple upload and multipart upload.
 func PutObjectSample() {
-	// Create Bucket
+	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -19,13 +19,13 @@ func PutObjectSample() {
 
 	var val = "花间一壶酒，独酌无相亲。 举杯邀明月，对影成三人。"
 
-	// Case 1: uploads a object from a string
+	// Case 1: uploads an object from a string
 	err = bucket.PutObject(objectKey, strings.NewReader(val))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 2: uploads a object whose value is a byte[]
+	// Case 2: uploads an object whose value is a byte[]
 	err = bucket.PutObject(objectKey, bytes.NewReader([]byte(val)))
 	if err != nil {
 		HandleError(err)
@@ -49,7 +49,7 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 5: uploads a object with specified properties, PutObject/PutObjectFromFile/UploadFile also support this feature.
+	// Case 5: uploads an object with specified properties, PutObject/PutObjectFromFile/UploadFile also support this feature.
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.ObjectACL(oss.ACLPublicRead),

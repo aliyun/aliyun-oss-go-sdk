@@ -8,13 +8,13 @@ import (
 
 // BucketCORSSample shows how to get or set the bucket CORS.
 func BucketCORSSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates the bucket with default parameters
+	// Create the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -48,14 +48,14 @@ func BucketCORSSample() {
 		HandleError(err)
 	}
 
-	// Gets the bucket's CORS
+	// Get the bucket's CORS
 	gbl, err := client.GetBucketCORS(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket CORS:", gbl.CORSRules)
 
-	// Deletes Bucket's CORS
+	// Delete bucket's CORS
 	err = client.DeleteBucketCORS(bucketName)
 	if err != nil {
 		HandleError(err)

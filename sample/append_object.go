@@ -127,7 +127,7 @@ func AppendObjectSample() {
 	if err != nil {
 		HandleError(err)
 	}
-	// Second append.
+	// Second append
 	fd.Seek(0, os.SEEK_SET)
 	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(str), nextPos)
 	if err != nil {
@@ -146,7 +146,7 @@ func AppendObjectSample() {
 	}
 	fmt.Println("Object ACL:", goar.ACL)
 
-	// Deletes the object and bucket
+	// Delete the object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

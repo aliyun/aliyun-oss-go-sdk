@@ -22,19 +22,19 @@ func HandleError(err error) {
 
 // GetTestBucket creates the test bucket
 func GetTestBucket(bucketName string) (*oss.Bucket, error) {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create Bucket
+	// Create bucket
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get Bucket
+	// Get bucket
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
 		return nil, err
@@ -45,19 +45,19 @@ func GetTestBucket(bucketName string) (*oss.Bucket, error) {
 
 // DeleteTestBucketAndObject deletes the test bucket and its objects
 func DeleteTestBucketAndObject(bucketName string) error {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		return err
 	}
 
-	// Get Bucket
+	// Get bucket
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
 		return err
 	}
 
-	// Delete Part
+	// Delete part
 	lmur, err := bucket.ListMultipartUploads()
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func DeleteTestBucketAndObject(bucketName string) error {
 		}
 	}
 
-	// Delete Objects
+	// Delete objects
 	lor, err := bucket.ListObjects()
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func DeleteTestBucketAndObject(bucketName string) error {
 		}
 	}
 
-	// Delete Bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		return err

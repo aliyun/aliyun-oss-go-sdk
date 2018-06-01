@@ -9,20 +9,20 @@ import (
 
 // ObjectMetaSample shows how to get and set the object metadata
 func ObjectMetaSample() {
-	// Creates Bucket
+	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Deletes object
+	// Delete object
 	err = bucket.PutObject(objectKey, strings.NewReader("YoursObjectValue"))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 0: sets Bucket Meta. one or more properties could be set
-	// note: Meta is case insensitive
+	// Case 0: sets bucket meta. one or more properties could be set
+	// Note: Meta is case insensitive
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.Meta("myprop", "mypropval")}
@@ -63,7 +63,7 @@ func ObjectMetaSample() {
 	}
 	fmt.Println("Object ACL:", goar.ACL)
 
-	// Deletes object and bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

@@ -8,13 +8,13 @@ import (
 
 // BucketRefererSample shows how to set, get and delete the bucket referer.
 func BucketRefererSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates the bucket with default parameters
+	// Create the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -39,7 +39,7 @@ func BucketRefererSample() {
 		HandleError(err)
 	}
 
-	// Gets Bucket referer configuration
+	// Get bucket referer configuration
 	gbr, err := client.GetBucketReferer(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -47,7 +47,7 @@ func BucketRefererSample() {
 	fmt.Println("Bucket Referers:", gbr.RefererList,
 		"AllowEmptyReferer:", gbr.AllowEmptyReferer)
 
-	// Deletes bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

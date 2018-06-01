@@ -18,7 +18,7 @@ func ListBucketsSample() {
 		"my-bucket-31",
 		"my-bucket-32"}
 
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
@@ -37,7 +37,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// Creates bucket
+	// Create bucket
 	for _, bucketName := range myBuckets {
 		err = client.CreateBucket(bucketName)
 		if err != nil {
@@ -45,7 +45,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// Case 1: use default parameter
+	// Case 1: uses default parameter
 	lbr, err = client.ListBuckets()
 	if err != nil {
 		HandleError(err)
@@ -87,7 +87,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// Case 6: list bucket with marker and max key; return 3 items each time.
+	// Case 6: lists bucket with marker and max key; return 3 items each time.
 	marker = oss.Marker("my-bucket-22")
 	for {
 		lbr, err = client.ListBuckets(oss.MaxKeys(3), marker)
@@ -101,7 +101,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// Case 7: list bucket with prefix and max key, return 3 items each time.
+	// Case 7: lists bucket with prefix and max key, return 3 items each time.
 	pre := oss.Prefix("my-bucket-2")
 	marker = oss.Marker("")
 	for {
@@ -117,7 +117,7 @@ func ListBucketsSample() {
 		}
 	}
 
-	// Deletes bucket
+	// Delete bucket
 	for _, bucketName := range myBuckets {
 		err = client.DeleteBucket(bucketName)
 		if err != nil {

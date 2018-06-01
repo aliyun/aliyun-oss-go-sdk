@@ -8,7 +8,7 @@ import (
 
 // BucketACLSample shows how to get and set the bucket ACL
 func BucketACLSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
@@ -20,13 +20,13 @@ func BucketACLSample() {
 		HandleError(err)
 	}
 
-	// Sets Bucket ACL. The valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
+	// Sets bucket ACL. The valid ACLs are ACLPrivate、ACLPublicRead、ACLPublicReadWrite
 	err = client.SetBucketACL(bucketName, oss.ACLPublicRead)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Gets Bucket ACL
+	// Gets bucket ACL
 	gbar, err := client.GetBucketACL(bucketName)
 	if err != nil {
 		HandleError(err)

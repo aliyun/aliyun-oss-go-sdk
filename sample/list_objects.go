@@ -18,13 +18,13 @@ func ListObjectsSample() {
 		{"my-object-31", ""},
 		{"my-object-32", ""}}
 
-	// Create Bucket
+	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Create object
+	// Create objects
 	err = CreateObjects(bucket, myObjects)
 	if err != nil {
 		HandleError(err)
@@ -58,7 +58,7 @@ func ListObjectsSample() {
 	}
 	fmt.Println("my objects marker :", getObjectsFormResponse(lor))
 
-	// Case 5: list object with paging. each page has 3 objects
+	// Case 5: lists object with paging. each page has 3 objects
 	marker := oss.Marker("")
 	for {
 		lor, err = bucket.ListObjects(oss.MaxKeys(3), marker)
@@ -72,7 +72,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// Case 6: list object with paging , marker and max keys; return 3 items each time.
+	// Case 6: lists object with paging , marker and max keys; return 3 items each time.
 	marker = oss.Marker("my-object-22")
 	for {
 		lor, err = bucket.ListObjects(oss.MaxKeys(3), marker)
@@ -86,7 +86,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// Case 7: list object with paging , with prefix and max keys; return 2 items each time.
+	// Case 7: lists object with paging , with prefix and max keys; return 2 items each time.
 	pre := oss.Prefix("my-object-2")
 	marker = oss.Marker("")
 	for {
@@ -107,7 +107,7 @@ func ListObjectsSample() {
 		HandleError(err)
 	}
 
-	// Case 8: combile the prefix and delimiter for grouping. ListObjectsResponse.Objects is the objects returned.
+	// Case 8: combiles the prefix and delimiter for grouping. ListObjectsResponse.Objects is the objects returned.
 	// ListObjectsResponse.CommonPrefixes is the common prefixes returned.
 	myObjects = []Object{
 		{"fun/test.txt", ""},
@@ -117,7 +117,7 @@ func ListObjectsSample() {
 		{"fun/music/001.mp3", ""},
 		{"fun/music/001.mp3", ""}}
 
-	// Creates object
+	// Create object
 	err = CreateObjects(bucket, myObjects)
 	if err != nil {
 		HandleError(err)
@@ -130,7 +130,7 @@ func ListObjectsSample() {
 	fmt.Println("my objects prefix :", getObjectsFormResponse(lor),
 		"common prefixes:", lor.CommonPrefixes)
 
-	// Deletes object and bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

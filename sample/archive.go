@@ -8,7 +8,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ArchiveSample archives Sample
+// ArchiveSample archives sample
 func ArchiveSample() {
 	// Create archive bucket
 	client, err := oss.New(endpoint, accessID, accessKey)

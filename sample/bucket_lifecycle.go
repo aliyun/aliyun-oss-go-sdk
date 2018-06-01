@@ -8,19 +8,19 @@ import (
 
 // BucketLifecycleSample shows how to set, get and delete bucket's lifecycle.
 func BucketLifecycleSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates the bucket with default parameters
+	// Create the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 1: sets the lifecycle. The Rule Id is id1 and the applied objects' prefix is one and expired time is 11/11/2015
+	// Case 1: sets the lifecycle. The rule ID is id1 and the applied objects' prefix is one and expired time is 11/11/2015
 	var rule1 = oss.BuildLifecycleRuleByDate("id1", "one", true, 2015, 11, 11)
 	var rules = []oss.LifecycleRule{rule1}
 	err = client.SetBucketLifecycle(bucketName, rules)
@@ -28,7 +28,7 @@ func BucketLifecycleSample() {
 		HandleError(err)
 	}
 
-	// Case 2: Sets the Lifecycle, The rule Id is id2 and the applied objects' prefix is two and the expired time is three days after the object created.
+	// Case 2: sets the lifecycle, The rule ID is id2 and the applied objects' prefix is two and the expired time is three days after the object created.
 	var rule2 = oss.BuildLifecycleRuleByDays("id2", "two", true, 3)
 	rules = []oss.LifecycleRule{rule2}
 	err = client.SetBucketLifecycle(bucketName, rules)
@@ -36,7 +36,7 @@ func BucketLifecycleSample() {
 		HandleError(err)
 	}
 
-	// Case 3: creates two rules in the bucket for different objects. The rule with the same Id will be overwritten.
+	// Case 3: creates two rules in the bucket for different objects. The rule with the same ID will be overwritten.
 	var rule3 = oss.BuildLifecycleRuleByDays("id1", "two", true, 365)
 	var rule4 = oss.BuildLifecycleRuleByDate("id2", "one", true, 2016, 11, 11)
 	rules = []oss.LifecycleRule{rule3, rule4}
@@ -52,7 +52,7 @@ func BucketLifecycleSample() {
 	}
 	fmt.Println("Bucket Lifecycle:", gbl.Rules)
 
-	// Delete Bucket's Lifecycle
+	// Delete bucket's Lifecycle
 	err = client.DeleteBucketLifecycle(bucketName)
 	if err != nil {
 		HandleError(err)

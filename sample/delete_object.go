@@ -9,7 +9,7 @@ import (
 
 // DeleteObjectSample shows how to delete single file or multiple files
 func DeleteObjectSample() {
-	// Creates a Bucket
+	// Creates a bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -17,7 +17,7 @@ func DeleteObjectSample() {
 
 	var val = "抽刀断水水更流，举杯销愁愁更愁。 人生在世不称意，明朝散发弄扁舟。"
 
-	// Case 1: deletes a Object
+	// Case 1: deletes an object
 	err = bucket.PutObject(objectKey, strings.NewReader(val))
 	if err != nil {
 		HandleError(err)

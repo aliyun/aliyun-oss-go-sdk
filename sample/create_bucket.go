@@ -8,7 +8,7 @@ import (
 
 // CreateBucketSample shows how to create bucket
 func CreateBucketSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
@@ -22,7 +22,7 @@ func CreateBucketSample() {
 		HandleError(err)
 	}
 
-	// Deletes bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -34,13 +34,13 @@ func CreateBucketSample() {
 		HandleError(err)
 	}
 
-	// Case 3: repeat the same bucket. OSS will not return error, but just no op. The ACL is not updated.
+	// Case 3: repeats the same bucket. OSS will not return error, but just no op. The ACL is not updated.
 	err = client.CreateBucket(bucketName, oss.ACL(oss.ACLPublicReadWrite))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Deletes bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

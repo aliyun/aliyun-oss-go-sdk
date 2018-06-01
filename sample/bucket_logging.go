@@ -8,25 +8,25 @@ import (
 
 // BucketLoggingSample shows how to set, get and delete the bucket logging configuration
 func BucketLoggingSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Creates the bucket with default parameters
+	// Create the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
-	// Creates Target bucket for storing the logging files.
+	// Create target bucket to store the logging files.
 	var targetBucketName = "target-bucket"
 	err = client.CreateBucket(targetBucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Case 1: sets Logging for object prefixed with "prefix-1" and save their access logs to the target bucket
+	// Case 1: sets the logging for the object prefixed with "prefix-1" and save their access logs to the target bucket
 	err = client.SetBucketLogging(bucketName, targetBucketName, "prefix-1", true)
 	if err != nil {
 		HandleError(err)
@@ -39,7 +39,7 @@ func BucketLoggingSample() {
 		HandleError(err)
 	}
 
-	// Deletes the bucket's logging configuration
+	// Delete the bucket's logging configuration
 	err = client.DeleteBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -51,7 +51,7 @@ func BucketLoggingSample() {
 		HandleError(err)
 	}
 
-	// Gets bucket's logging configuration
+	// Get the bucket's logging configuration
 	gbl, err := client.GetBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -63,20 +63,20 @@ func BucketLoggingSample() {
 		HandleError(err)
 	}
 
-	// Gets the Bucket logging configuration
+	// Get the bucket's logging configuration
 	gbl, err = client.GetBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket Logging:", gbl.LoggingEnabled)
 
-	// Deletes Bucket's logging configuration
+	// Delete the Bucket's logging configuration
 	err = client.DeleteBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Deletes bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

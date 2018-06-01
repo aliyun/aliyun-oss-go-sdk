@@ -12,13 +12,13 @@ import (
 
 // GetObjectSample shows the streaming download, range download and resumable download. 
 func GetObjectSample() {
-	// Creates Bucket
+	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// Uploads the object
+	// Upload the object
 	err = bucket.PutObjectFromFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)
@@ -65,7 +65,7 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 
-	// Case 5: gets the object with contraints. When contraints are met, download the file. OTherwise return precondition error
+	// Case 5: gets the object with contraints. When contraints are met, download the file. Otherwise return precondition error
 	// last modified time constraint is met, download the file
 	body, err = bucket.GetObject(objectKey, oss.IfModifiedSince(pastDate))
 	if err != nil {
@@ -83,14 +83,14 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 	etag := meta.Get(oss.HTTPHeaderEtag)
-	// Check the content, Etag contraint is met, download the file
+	// Check the content, etag contraint is met, download the file
 	body, err = bucket.GetObject(objectKey, oss.IfMatch(etag))
 	if err != nil {
 		HandleError(err)
 	}
 	body.Close()
 
-	// Check the content, ETag contraint is not met, do not download the file
+	// Check the content, etag contraint is not met, do not download the file
 	body, err = bucket.GetObject(objectKey, oss.IfNoneMatch(etag))
 	if err == nil {
 		HandleError(err)
@@ -133,7 +133,7 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 
-	// Deletes the object and bucket
+	// Delete the object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

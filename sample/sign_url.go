@@ -10,7 +10,7 @@ import (
 
 // SignURLSample signs URL sample
 func SignURLSample() {
-	// Create Bucket
+	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
