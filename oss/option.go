@@ -3,6 +3,7 @@ package oss
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -117,7 +118,7 @@ func IfNoneMatch(value string) Option {
 
 // CopySource is an option to set X-Oss-Copy-Source header
 func CopySource(sourceBucket, sourceObject string) Option {
-	return setHeader(HTTPHeaderOssCopySource, "/"+sourceBucket+"/"+sourceObject)
+	return setHeader(HTTPHeaderOssCopySource, "/"+url.QueryEscape(sourceBucket+"/"+sourceObject))
 }
 
 // CopySourceRange is an option to set X-Oss-Copy-Source header
