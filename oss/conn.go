@@ -524,7 +524,11 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 	host, _, err := net.SplitHostPort(um.NetLoc)
 	if err != nil {
 		host = um.NetLoc
+		if host[0] == '[' && host[len(host)-1] == ']' {
+			host = host[1 : len(host)-1]
+		}
 	}
+
 	ip := net.ParseIP(host)
 	if ip != nil {
 		um.Type = urlTypeIP
