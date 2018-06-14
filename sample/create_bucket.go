@@ -6,9 +6,9 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CreateBucketSample 展示了如何创建存储空间
+// CreateBucketSample shows how to create bucket
 func CreateBucketSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
@@ -16,31 +16,31 @@ func CreateBucketSample() {
 
 	DeleteTestBucketAndObject(bucketName)
 
-	// 场景1：使用默认参数创建bucket
+	// Case 1: Create a bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 删除bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景2：创建bucket时指定其权限
+	// Case 2: Create the bucket with ACL
 	err = client.CreateBucket(bucketName, oss.ACL(oss.ACLPublicRead))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景3：重复创建OSS不会报错，但是不做任何操作，指定的ACL无效
+	// Case 3: Repeat the same bucket. OSS will not return error, but just no op. The ACL is not updated.
 	err = client.CreateBucket(bucketName, oss.ACL(oss.ACLPublicReadWrite))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 删除bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)
