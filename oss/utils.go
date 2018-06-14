@@ -229,7 +229,7 @@ func SplitFileByPartSize(fileName string, chunkSize int64) ([]FileChunk, error) 
 	}
 	var chunkN = stat.Size() / chunkSize
 	if chunkN >= 10000 {
-		return nil, errors.New("Too many parts, please increase part size.")
+		return nil, errors.New("Too many parts, please increase part size")
 	}
 
 	var chunks []FileChunk
