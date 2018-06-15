@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// HTTPTimeout http timeout
+// HTTPTimeout defines HTTP timeout.
 type HTTPTimeout struct {
 	ConnectTimeout   time.Duration
 	ReadWriteTimeout time.Duration
@@ -13,29 +13,29 @@ type HTTPTimeout struct {
 	IdleConnTimeout  time.Duration
 }
 
-// Config oss configure
+// Config defines oss configuration
 type Config struct {
-	Endpoint        string      // oss地址
-	AccessKeyID     string      // accessId
-	AccessKeySecret string      // accessKey
-	RetryTimes      uint        // 失败重试次数，默认5
-	UserAgent       string      // SDK名称/版本/系统信息
-	IsDebug         bool        // 是否开启调试模式，默认false
-	Timeout         uint        // 超时时间，默认60s
+	Endpoint        string      // OSS endpoint
+	AccessKeyID     string      // AccessId
+	AccessKeySecret string      // AccessKey
+	RetryTimes      uint        // Retry count by default it's 5.
+	UserAgent       string      // SDK name/version/system information
+	IsDebug         bool        // Enable debug mode. Default is false.
+	Timeout         uint        // Timeout in seconds. By default it's 60.
 	SecurityToken   string      // STS Token
-	IsCname         bool        // Endpoint是否是CNAME
-	HTTPTimeout     HTTPTimeout // HTTP的超时时间设置
-	IsUseProxy      bool        // 是否使用代理
-	ProxyHost       string      // 代理服务器地址
-	IsAuthProxy     bool        // 代理服务器是否使用用户认证
-	ProxyUser       string      // 代理服务器认证用户名
-	ProxyPassword   string      // 代理服务器认证密码
-	IsEnableMD5     bool        // 上传数据时是否启用MD5校验
-	MD5Threshold    int64       // 内存中计算MD5的上线大小，大于该值启用临时文件，单位Byte
-	IsEnableCRC     bool        // 上传数据时是否启用CRC64校验
+	IsCname         bool        // If cname is in the endpoint.
+	HTTPTimeout     HTTPTimeout // HTTP timeout
+	IsUseProxy      bool        // Flag of using proxy.
+	ProxyHost       string      // Flag of using proxy host.
+	IsAuthProxy     bool        // Flag of needing authentication.
+	ProxyUser       string      // Proxy user
+	ProxyPassword   string      // Proxy password
+	IsEnableMD5     bool        // Flag of enabling MD5 for upload.
+	MD5Threshold    int64       // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
+	IsEnableCRC     bool        // Flag of enabling CRC for upload.
 }
 
-// 获取默认配置
+// getDefaultOssConfig gets the default configuration.
 func getDefaultOssConfig() *Config {
 	config := Config{}
 
@@ -45,7 +45,7 @@ func getDefaultOssConfig() *Config {
 	config.RetryTimes = 5
 	config.IsDebug = false
 	config.UserAgent = userAgent
-	config.Timeout = 60 // seconds
+	config.Timeout = 60  // Seconds
 	config.SecurityToken = ""
 	config.IsCname = false
 

@@ -6,52 +6,52 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// BucketLoggingSample 展示了如何设置/读取/清除存储空间的日志(Bucket Logging)
+// BucketLoggingSample shows how to set, get and delete the bucket logging configuration
 func BucketLoggingSample() {
-	// New Client
+	// New client
 	client, err := oss.New(endpoint, accessID, accessKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 创建bucket
+	// Create the bucket with default parameters
 	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
-	// 创建Target bucket，存储访问日志
+	// Create target bucket to store the logging files.
 	var targetBucketName = "target-bucket"
 	err = client.CreateBucket(targetBucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景1：设置Logging，bucketName中以"prefix"为前缀的object的访问日志将被记录到targetBucketName
+	// Case 1: Set the logging for the object prefixed with "prefix-1" and save their access logs to the target bucket
 	err = client.SetBucketLogging(bucketName, targetBucketName, "prefix-1", true)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景2：设置Logging，bucketName中以"prefix"为前缀的object的访问日志将被记录到bucketName
-	// 注意：相同bucket，相同prefix，多次设置后者会覆盖前者
+	// Case 2: Set the logging for the object prefixed with "prefix-2" and save their logs to the same bucket
+	// Note: the rule will overwrite other rules if they have same bucket and prefix
 	err = client.SetBucketLogging(bucketName, bucketName, "prefix-2", true)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 删除Bucket上的Logging设置
+	// Delete the bucket's logging configuration
 	err = client.DeleteBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景3：设置但不生效
+	// Case 3: Set the logging without enabling it
 	err = client.SetBucketLogging(bucketName, targetBucketName, "prefix-3", false)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 获取Bucket上设置的Logging
+	// Get the bucket's logging configuration
 	gbl, err := client.GetBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -63,20 +63,20 @@ func BucketLoggingSample() {
 		HandleError(err)
 	}
 
-	// 获取Bucket上设置的Logging
+	// Get the bucket's logging configuration
 	gbl, err = client.GetBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket Logging:", gbl.LoggingEnabled)
 
-	// 删除Bucket上的Logging设置
+	// Delete the bucket's logging configuration
 	err = client.DeleteBucketLogging(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 删除bucket
+	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {
 		HandleError(err)

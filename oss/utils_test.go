@@ -143,7 +143,7 @@ func (s *OssUtilsSuite) TestParseRange(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "InvalidRange bytes=1-N")
 
-	// ranges=M-N
+	// Ranges=M-N
 	ur, err := parseRange("bytes=1024-4096")
 	c.Assert(err, IsNil)
 	c.Assert(ur.start, Equals, (int64)(1024))
@@ -151,7 +151,7 @@ func (s *OssUtilsSuite) TestParseRange(c *C) {
 	c.Assert(ur.hasStart, Equals, true)
 	c.Assert(ur.hasEnd, Equals, true)
 
-	// ranges=M-N,X-Y
+	// Ranges=M-N,X-Y
 	ur, err = parseRange("bytes=1024-4096,2048-4096")
 	c.Assert(err, IsNil)
 	c.Assert(ur.start, Equals, (int64)(1024))
@@ -159,7 +159,7 @@ func (s *OssUtilsSuite) TestParseRange(c *C) {
 	c.Assert(ur.hasStart, Equals, true)
 	c.Assert(ur.hasEnd, Equals, true)
 
-	// ranges=M-
+	// Ranges=M-
 	ur, err = parseRange("bytes=1024-")
 	c.Assert(err, IsNil)
 	c.Assert(ur.start, Equals, (int64)(1024))
@@ -167,7 +167,7 @@ func (s *OssUtilsSuite) TestParseRange(c *C) {
 	c.Assert(ur.hasStart, Equals, true)
 	c.Assert(ur.hasEnd, Equals, false)
 
-	// ranges=-N
+	// Ranges=-N
 	ur, err = parseRange("bytes=-4096")
 	c.Assert(err, IsNil)
 	c.Assert(ur.start, Equals, (int64)(0))
@@ -177,7 +177,7 @@ func (s *OssUtilsSuite) TestParseRange(c *C) {
 }
 
 func (s *OssUtilsSuite) TestAdjustRange(c *C) {
-	// nil
+	// Nil
 	start, end := adjustRange(nil, 8192)
 	c.Assert(start, Equals, (int64)(0))
 	c.Assert(end, Equals, (int64)(8192))
