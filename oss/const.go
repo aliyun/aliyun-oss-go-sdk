@@ -6,7 +6,7 @@ import "os"
 type ACLType string
 
 const (
-	// ACLPrivate definition : private read and write 
+	// ACLPrivate definition : private read and write
 	ACLPrivate ACLType = "private"
 
 	// ACLPublicRead definition : public read and private write
@@ -15,7 +15,7 @@ const (
 	// ACLPublicReadWrite definition : public read and public write
 	ACLPublicReadWrite ACLType = "public-read-write"
 
-	// ACLDefault Object. It's only applicable for object. 
+	// ACLDefault Object. It's only applicable for object.
 	ACLDefault ACLType = "default"
 )
 
@@ -128,5 +128,5 @@ const (
 
 	CheckpointFileSuffix = ".cp"     // Checkpoint file suffix
 
-	Version = "1.8.0" // Go SDK version
+	Version = "1.9.0" // Go SDK version
 )
