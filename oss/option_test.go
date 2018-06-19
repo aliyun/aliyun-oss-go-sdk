@@ -2,6 +2,7 @@ package oss
 
 import (
 	"net/http"
+	"net/url"
 
 	. "gopkg.in/check.v1"
 )
@@ -90,7 +91,8 @@ var headerTestcases = []optionTestCase{
 	{
 		option: CopySource("bucket_name", "object_name"),
 		key:    "X-Oss-Copy-Source",
-		value:  "/bucket_name/object_name",
+		//value:  "/bucket_name/object_name",
+		value: "/" + url.QueryEscape("bucket_name/object_name"),
 	},
 	{
 		option: CopySourceIfModifiedSince(pastDate),
