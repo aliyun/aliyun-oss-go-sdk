@@ -208,7 +208,7 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 	listener := getProgressListener(options)
 
 	contentLen, _ := strconv.ParseInt(resp.Headers.Get(HTTPHeaderContentLength), 10, 64)
-	resp.Body = ioutil.NopCloser(TeeReader(resp.Body, crcCalc, contentLen, listener, nil))
+	resp.Body = TeeReader(resp.Body, crcCalc, contentLen, listener, nil)
 
 	return result, nil
 }
