@@ -6,28 +6,28 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CopyObjectSample 展示了拷贝文件的用法
+// CopyObjectSample shows the copy files usage
 func CopyObjectSample() {
-	// 创建Bucket
+	// Create a bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 创建一个Object
+	// Create an object
 	err = bucket.PutObjectFromFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景1：把已经存在的对象copy成一个新对象
+	// Case 1: Copy an existing object
 	var descObjectKey = "descobject"
 	_, err = bucket.CopyObject(objectKey, descObjectKey)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景2：把已经存在的对象copy成一个新对象，目标对象存在时，会覆盖
+	// Case 2: Copy an existing object to another existing object
 	_, err = bucket.CopyObject(objectKey, descObjectKey)
 	if err != nil {
 		HandleError(err)
@@ -38,20 +38,20 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
-	// 场景3：对象copy时对源对象执行约束条件，满足时候copy，不满足时返回错误，不执行copy
-	// 约束条件不满足，copy没有执行
+	// Case 3: Copy file with constraints. When the constraints are met, the copy executes. otherwise the copy does not execute.
+	// constraints are not met, copy does not execute
 	_, err = bucket.CopyObject(objectKey, descObjectKey, oss.CopySourceIfModifiedSince(futureDate))
 	if err == nil {
 		HandleError(err)
 	}
 	fmt.Println("CopyObjectError:", err)
-	// 约束条件满足，copy执行
+	// Constraints are met, the copy executes
 	_, err = bucket.CopyObject(objectKey, descObjectKey, oss.CopySourceIfUnmodifiedSince(futureDate))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景4：对象copy时，可以指定目标对象的Properties，同时一定要指定MetadataDirective为MetaReplace
+	// Case 4: Specify the properties when copying. The MetadataDirective needs to be MetaReplace
 	options := []oss.Option{
 		oss.Expires(futureDate),
 		oss.Meta("myprop", "mypropval"),
@@ -67,7 +67,7 @@ func CopyObjectSample() {
 	}
 	fmt.Println("meta:", meta)
 
-	// 场景5：当源对象和目标对象相同时，目的是用来修改源对象的meta
+	// Case 5: When the source file is the same as the target file, the copy could be used to update metadata
 	options = []oss.Option{
 		oss.Expires(futureDate),
 		oss.Meta("myprop", "mypropval"),
@@ -79,32 +79,32 @@ func CopyObjectSample() {
 	}
 	fmt.Println("meta:", meta)
 
-	// 场景6：大文件分片拷贝，支持并发、断点续传功能。
-	// 分片上传，分片大小为100K。默认使用不使用并发上传，不使用断点续传。
+	// Case 6: Big file's multipart copy. It supports concurrent copy with resumable upload
+	// copy file with multipart. The part size is 100K. By default one routine is used without resumable upload
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 分片大小为100K，3个协程并发拷贝。
+	// Part size is 100K and three coroutines for the concurrent copy
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Routines(3))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 分片大小为100K，3个协程并发拷贝，使用断点续传拷贝文件。
+	// Part size is 100K and three coroutines for the concurrent copy with resumable upload
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Routines(3), oss.Checkpoint(true, ""))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 断点续传功能需要使用本地文件，记录哪些分片已经上传。该文件路径可以Checkpoint的第二个参数指定，如果为空，则为当前目录下的{descObjectKey}.cp。
+	// Specify the checkpoint file path. If the checkpoint file path is not specified, the current folder is used.
 	err = bucket.CopyFile(bucketName, objectKey, descObjectKey, 100*1024, oss.Checkpoint(true, localFile+".cp"))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 删除object和bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

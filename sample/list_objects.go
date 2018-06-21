@@ -6,7 +6,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// ListObjectsSample 展示了列举文件的用法，包括默认参数列举、指定参数列举
+// ListObjectsSample shows the file list, including default and specified parameters.
 func ListObjectsSample() {
 	var myObjects = []Object{
 		{"my-object-1", ""},
@@ -18,47 +18,47 @@ func ListObjectsSample() {
 		{"my-object-31", ""},
 		{"my-object-32", ""}}
 
-	// 创建Bucket
+	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 创建object
+	// Create objects
 	err = CreateObjects(bucket, myObjects)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景1：使用默认参数参数
+	// Case 1: Use default parameters
 	lor, err := bucket.ListObjects()
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects:", getObjectsFormResponse(lor))
 
-	// 场景2：指定最大返回数量
+	// Case 2: Specify max keys
 	lor, err = bucket.ListObjects(oss.MaxKeys(3))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects max num:", getObjectsFormResponse(lor))
 
-	// 场景3：返回指定前缀的Bucket
+	// Case 3: Specify prefix of objects
 	lor, err = bucket.ListObjects(oss.Prefix("my-object-2"))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects prefix :", getObjectsFormResponse(lor))
 
-	// 场景4：指定从某个之后返回
+	// Case 4: Specify the marker
 	lor, err = bucket.ListObjects(oss.Marker("my-object-22"))
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("my objects marker :", getObjectsFormResponse(lor))
 
-	// 场景5：分页获取所有object，每次返回3个
+	// Case 5: List object with paging. each page has 3 objects
 	marker := oss.Marker("")
 	for {
 		lor, err = bucket.ListObjects(oss.MaxKeys(3), marker)
@@ -72,7 +72,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// 场景6：分页所有获取从某个之后的object，每次返回3个
+	// Case 6: List object with paging , marker and max keys; return 3 items each time.
 	marker = oss.Marker("my-object-22")
 	for {
 		lor, err = bucket.ListObjects(oss.MaxKeys(3), marker)
@@ -86,7 +86,7 @@ func ListObjectsSample() {
 		}
 	}
 
-	// 场景7：分页所有获取前缀的object，每次返回2个
+	// Case 7: List object with paging , with prefix and max keys; return 2 items each time.
 	pre := oss.Prefix("my-object-2")
 	marker = oss.Marker("")
 	for {
@@ -107,8 +107,8 @@ func ListObjectsSample() {
 		HandleError(err)
 	}
 
-	// 场景8：prefix和delimiter结合，完成分组功能，ListObjectsResponse.Objects表示不再组中，
-	// ListObjectsResponse.CommonPrefixes分组结果
+	// Case 8: Combine the prefix and delimiter for grouping. ListObjectsResponse.Objects is the objects returned.
+	// ListObjectsResponse.CommonPrefixes is the common prefixes returned.
 	myObjects = []Object{
 		{"fun/test.txt", ""},
 		{"fun/test.jpg", ""},
@@ -117,7 +117,7 @@ func ListObjectsSample() {
 		{"fun/music/001.mp3", ""},
 		{"fun/music/001.mp3", ""}}
 
-	// 创建object
+	// Create object
 	err = CreateObjects(bucket, myObjects)
 	if err != nil {
 		HandleError(err)
@@ -130,7 +130,7 @@ func ListObjectsSample() {
 	fmt.Println("my objects prefix :", getObjectsFormResponse(lor),
 		"common prefixes:", lor.CommonPrefixes)
 
-	// 删除object和bucket
+	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
 		HandleError(err)

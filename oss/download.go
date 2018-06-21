@@ -13,15 +13,14 @@ import (
 	"strconv"
 )
 
+// DownloadFile downloads files with multipart download.
 //
-// DownloadFile 分片下载文件
+// objectKey    the object key.
+// filePath    the local file to download from objectKey in OSS.
+// partSize    the part size in bytes.
+// options    object's constraints, check out GetObject for the reference.
 //
-// objectKey  object key。
-// filePath   本地文件。objectKey下载到文件。
-// partSize   本次上传文件片的大小，字节数。比如100 * 1024为每片100KB。
-// options    Object的属性限制项。详见GetObject。
-//
-// error 操作成功error为nil，非nil为错误信息。
+// error    it's nil when the call succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < 1 {
@@ -47,7 +46,7 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 	return bucket.downloadFile(objectKey, filePath, partSize, options, routines, uRange)
 }
 
-// 获取下载范围
+// getRangeConfig gets the download range from the options.
 func getRangeConfig(options []Option) (*unpackedRange, error) {
 	rangeOpt, err := findOption(options, HTTPHeaderRange, nil)
 	if err != nil || rangeOpt == nil {
@@ -56,9 +55,9 @@ func getRangeConfig(options []Option) (*unpackedRange, error) {
 	return parseRange(rangeOpt.(string))
 }
 
-// ----- 并发无断点的下载  -----
+// ----- concurrent download without checkpoint  -----
 
-// 工作协程参数
+// downloadWorkerArg is download worker's parameters
 type downloadWorkerArg struct {
 	bucket    *Bucket
 	key       string
@@ -68,7 +67,7 @@ type downloadWorkerArg struct {
 	enableCRC bool
 }
 
-// Hook用于测试
+// downloadPartHook is hook for test
 type downloadPartHook func(part downloadPart) error
 
 var downloadPartHooker downloadPartHook = defaultDownloadPartHook
@@ -77,15 +76,15 @@ func defaultDownloadPartHook(part downloadPart) error {
 	return nil
 }
 
-// 默认ProgressListener，屏蔽GetObject的Options中ProgressListener
+// defaultDownloadProgressListener defines default ProgressListener, shields the ProgressListener in options of GetObject. 
 type defaultDownloadProgressListener struct {
 }
 
-// ProgressChanged 静默处理
+// ProgressChanged no-ops
 func (listener *defaultDownloadProgressListener) ProgressChanged(event *ProgressEvent) {
 }
 
-// 工作协程
+// downloadWorker
 func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, results chan<- downloadPart, failed chan<- error, die <-chan bool) {
 	for part := range jobs {
 		if err := arg.hook(part); err != nil {
@@ -93,11 +92,11 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			break
 		}
 
-		// resolve options
+		// Resolve options
 		r := Range(part.Start, part.End)
 		p := Progress(&defaultDownloadProgressListener{})
 		opts := make([]Option, len(arg.options)+2)
-		// append orderly, can not be reversed!
+		// Append orderly, can not be reversed!
 		opts = append(opts, arg.options...)
 		opts = append(opts, r, p)
 
@@ -151,7 +150,7 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 	}
 }
 
-// 调度协程
+// downloadScheduler
 func downloadScheduler(jobs chan downloadPart, parts []downloadPart) {
 	for _, part := range parts {
 		jobs <- part
@@ -159,16 +158,16 @@ func downloadScheduler(jobs chan downloadPart, parts []downloadPart) {
 	close(jobs)
 }
 
-// 下载片
+// downloadPart defines download part
 type downloadPart struct {
-	Index  int    // 片序号，从0开始编号
-	Start  int64  // 片起始位置
-	End    int64  // 片结束位置
-	Offset int64  // 文件中的偏移位置
-	CRC64  uint64 // 片的校验值
+	Index  int    // Part number, starting from 0
+	Start  int64  // Start index
+	End    int64  // End index
+	Offset int64  // Offset
+	CRC64  uint64 // CRC check value of part
 }
 
-// 文件分片
+// getDownloadParts gets download parts
 func getDownloadParts(bucket *Bucket, objectKey string, partSize int64, uRange *unpackedRange) ([]downloadPart, bool, uint64, error) {
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
@@ -205,7 +204,7 @@ func getDownloadParts(bucket *Bucket, objectKey string, partSize int64, uRange *
 	return parts, enableCRC, crcVal, nil
 }
 
-// 文件大小
+// getObjectBytes gets object bytes length
 func getObjectBytes(parts []downloadPart) int64 {
 	var ob int64
 	for _, part := range parts {
@@ -214,7 +213,7 @@ func getObjectBytes(parts []downloadPart) int64 {
 	return ob
 }
 
-// 计算连续分片总的CRC
+// combineCRCInParts caculates the total CRC of continuous parts
 func combineCRCInParts(dps []downloadPart) uint64 {
 	if dps == nil || len(dps) == 0 {
 		return 0
@@ -228,19 +227,19 @@ func combineCRCInParts(dps []downloadPart) uint64 {
 	return crc
 }
 
-// 并发无断点续传的下载
+// downloadFile downloads file concurrently without checkpoint.
 func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, options []Option, routines int, uRange *unpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)
 
-	// 如果文件不存在则创建，存在不清空，下载分片会重写文件内容
+	// If the file does not exist, create one. If exists, the download will overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
 	if err != nil {
 		return err
 	}
 	fd.Close()
 
-	// 分割文件
+	// Get the parts of the file
 	parts, enableCRC, expectedCRC, err := getDownloadParts(&bucket, objectKey, partSize, uRange)
 	if err != nil {
 		return err
@@ -256,16 +255,16 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
 	publishProgress(listener, event)
 
-	// 启动工作协程
+	// Start the download workers
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
 
-	// 并发上传分片
+	// Download parts concurrently
 	go downloadScheduler(jobs, parts)
 
-	// 等待分片下载完成
+	// Waiting for parts download finished
 	completed := 0
 	for completed < len(parts) {
 		select {
@@ -301,33 +300,33 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	return os.Rename(tempFilePath, filePath)
 }
 
-// ----- 并发有断点的下载  -----
+// ----- Concurrent download with chcekpoint  -----
 
 const downloadCpMagic = "92611BED-89E2-46B6-89E5-72F273D4B0A3"
 
 type downloadCheckpoint struct {
-	Magic     string         // magic
-	MD5       string         // cp内容的MD5
-	FilePath  string         // 本地文件
-	Object    string         // key
-	ObjStat   objectStat     // 文件状态
-	Parts     []downloadPart // 全部分片
-	PartStat  []bool         // 分片下载是否完成
-	Start     int64          // 起点
-	End       int64          // 终点
-	enableCRC bool           // 是否有CRC校验
-	CRC       uint64         // CRC校验值
+	Magic     string         // Magic
+	MD5       string         // Checkpoint content MD5
+	FilePath  string         // Local file
+	Object    string         // Key
+	ObjStat   objectStat     // Object status
+	Parts     []downloadPart // All download parts
+	PartStat  []bool         // Parts' download status
+	Start     int64          // Start point of the file
+	End       int64          // End point of the file
+	enableCRC bool           // Whether has CRC check
+	CRC       uint64         // CRC check value
 }
 
 type objectStat struct {
-	Size         int64  // 大小
-	LastModified string // 最后修改时间
-	Etag         string // etag
+	Size         int64  // Object size
+	LastModified string // Last modified time
+	Etag         string // Etag
 }
 
-// CP数据是否有效，CP有效且Object没有更新时有效
+// isValid flags of checkpoint data is valid. It returns true when the data is valid and the checkpoint is valid and the object is not updated.
 func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *unpackedRange) (bool, error) {
-	// 比较CP的Magic及MD5
+	// Compare the CP's Magic and the MD5
 	cpb := cp
 	cpb.MD5 = ""
 	js, _ := json.Marshal(cpb)
@@ -338,7 +337,7 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 		return false, nil
 	}
 
-	// 确认object没有更新
+	// Ensure the object is not updated.
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return false, err
@@ -349,14 +348,14 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 		return false, err
 	}
 
-	// 比较Object的大小/最后修改时间/etag
+	// Compare the object size, last modified time and etag
 	if cp.ObjStat.Size != objectSize ||
 		cp.ObjStat.LastModified != meta.Get(HTTPHeaderLastModified) ||
 		cp.ObjStat.Etag != meta.Get(HTTPHeaderEtag) {
 		return false, nil
 	}
 
-	// 确认下载范围是否变化
+	// Check the download range
 	if uRange != nil {
 		start, end := adjustRange(uRange, objectSize)
 		if start != cp.Start || end != cp.End {
@@ -367,7 +366,7 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 	return true, nil
 }
 
-// 从文件中load
+// load checkpoint from local file
 func (cp *downloadCheckpoint) load(filePath string) error {
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -378,11 +377,11 @@ func (cp *downloadCheckpoint) load(filePath string) error {
 	return err
 }
 
-// dump到文件
+// dump funciton dumps to file
 func (cp *downloadCheckpoint) dump(filePath string) error {
 	bcp := *cp
 
-	// 计算MD5
+	// Calculate MD5
 	bcp.MD5 = ""
 	js, err := json.Marshal(bcp)
 	if err != nil {
@@ -392,17 +391,17 @@ func (cp *downloadCheckpoint) dump(filePath string) error {
 	b64 := base64.StdEncoding.EncodeToString(sum[:])
 	bcp.MD5 = b64
 
-	// 序列化
+	// Serialize
 	js, err = json.Marshal(bcp)
 	if err != nil {
 		return err
 	}
 
-	// dump
+	// Dump
 	return ioutil.WriteFile(filePath, js, FilePermMode)
 }
 
-// 未完成的分片
+// todoParts gets unfinished parts
 func (cp downloadCheckpoint) todoParts() []downloadPart {
 	dps := []downloadPart{}
 	for i, ps := range cp.PartStat {
@@ -413,7 +412,7 @@ func (cp downloadCheckpoint) todoParts() []downloadPart {
 	return dps
 }
 
-// 完成的字节数
+// getCompletedBytes gets completed size
 func (cp downloadCheckpoint) getCompletedBytes() int64 {
 	var completedBytes int64
 	for i, part := range cp.Parts {
@@ -424,14 +423,14 @@ func (cp downloadCheckpoint) getCompletedBytes() int64 {
 	return completedBytes
 }
 
-// 初始化下载任务
+// prepare initiates download tasks
 func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string, partSize int64, uRange *unpackedRange) error {
-	// cp
+	// CP
 	cp.Magic = downloadCpMagic
 	cp.FilePath = filePath
 	cp.Object = objectKey
 
-	// object
+	// Object
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		return err
@@ -446,7 +445,7 @@ func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string
 	cp.ObjStat.LastModified = meta.Get(HTTPHeaderLastModified)
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
-	// parts
+	// Parts
 	cp.Parts, cp.enableCRC, cp.CRC, err = getDownloadParts(bucket, objectKey, partSize, uRange)
 	if err != nil {
 		return err
@@ -464,19 +463,19 @@ func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
 	return os.Rename(downFilepath, cp.FilePath)
 }
 
-// 并发带断点的下载
+// downloadFileWithCp downloads files with checkpoint.
 func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int, uRange *unpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)
 
-	// LOAD CP数据
+	// Load checkpoint data.
 	dcp := downloadCheckpoint{}
 	err := dcp.load(cpFilePath)
 	if err != nil {
 		os.Remove(cpFilePath)
 	}
 
-	// LOAD出错或数据无效重新初始化下载
+	// Load error or data invalid. Re-initialize the download.
 	valid, err := dcp.isValid(&bucket, objectKey, uRange)
 	if err != nil || !valid {
 		if err = dcp.prepare(&bucket, objectKey, filePath, partSize, uRange); err != nil {
@@ -485,14 +484,14 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		os.Remove(cpFilePath)
 	}
 
-	// 如果文件不存在则创建，存在不清空，下载分片会重写文件内容
+	// Create the file if not exists. Otherwise the parts download will overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
 	if err != nil {
 		return err
 	}
 	fd.Close()
 
-	// 未完成的分片
+	// Unfinished parts
 	parts := dcp.todoParts()
 	jobs := make(chan downloadPart, len(parts))
 	results := make(chan downloadPart, len(parts))
@@ -503,16 +502,16 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	// 启动工作协程
+	// Start the download workers routine
 	arg := downloadWorkerArg{&bucket, objectKey, tempFilePath, options, downloadPartHooker, dcp.enableCRC}
 	for w := 1; w <= routines; w++ {
 		go downloadWorker(w, arg, jobs, results, failed, die)
 	}
 
-	// 并发下载分片
+	// Concurrently downloads parts
 	go downloadScheduler(jobs, parts)
 
-	// 等待分片下载完成
+	// Wait for the parts download finished
 	completed := 0
 	for completed < len(parts) {
 		select {
