@@ -15,7 +15,7 @@ type OssBucketLiveChannelSuite struct {
 
 var _ = Suite(&OssBucketLiveChannelSuite{})
 
-// Run once when the suite starts running
+// SetUpSuite Run once when the suite starts running
 func (s *OssBucketLiveChannelSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -32,7 +32,7 @@ func (s *OssBucketLiveChannelSuite) SetUpSuite(c *C) {
 	testLogger.Println("test livechannel started...")
 }
 
-// Run once after all tests or benckmarks have finished running
+// TearDownSuite Run once after all tests or benchmarks
 func (s *OssBucketLiveChannelSuite) TearDownSuite(c *C) {
 	marker := ""
 	for {
@@ -54,12 +54,12 @@ func (s *OssBucketLiveChannelSuite) TearDownSuite(c *C) {
 	testLogger.Println("test livechannel done...")
 }
 
-// Run after each test or benchmark runs
+// SetUpTest Run before each test or benchmark starts
 func (s *OssBucketLiveChannelSuite) SetUpTest(c *C) {
 
 }
 
-// Run once after all tests or benchmarks have finished running
+// TearDownTest	Run after each test or benchmark runs.
 func (s *OssBucketLiveChannelSuite) TearDownTest(c *C) {
 
 }
@@ -158,7 +158,7 @@ func (s *OssBucketLiveChannelSuite) TestGetLiveChannelInfo(c *C) {
 
 	getCfg, err := s.bucket.GetLiveChannelInfo(channelName)
 	c.Assert(err, IsNil)
-	c.Assert("enabled", Equals, getCfg.Status) //默认值为enabled
+	c.Assert("enabled", Equals, getCfg.Status) //The default value is enabled
 	c.Assert("HLS", Equals, getCfg.Target.Type)
 	c.Assert(10, Equals, getCfg.Target.FragDuration)
 	c.Assert(4, Equals, getCfg.Target.FragCount)
@@ -205,7 +205,7 @@ func (s *OssBucketLiveChannelSuite) TestPutLiveChannelStatus(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestGetLiveChannelHistory()
+// TestGetLiveChannelHistory
 func (s *OssBucketLiveChannelSuite) TestGetLiveChannelHistory(c *C) {
 	channelName := "test-get-channel-history"
 
@@ -332,7 +332,7 @@ func (s *OssBucketLiveChannelSuite) TestListLiveChannel(c *C) {
 	}
 }
 
-// TestPostVodPlaylist
+// TestSignRtmpURL
 func (s *OssBucketLiveChannelSuite) TestSignRtmpURL(c *C) {
 	channelName := "test-sign-rtmp-url"
 	playlistName := "test-sign-rtmp-url.m3u8"
@@ -363,7 +363,7 @@ func (s *OssBucketLiveChannelSuite) TestSignRtmpURL(c *C) {
 }
 
 // private
-// getPlayURL - 获取直播流频道的播放地址
+// getPlayURL Get the play url of the live channel
 func getPlayURL(bucketName, channelName, playlistName string) string {
 	host := ""
 	useHTTPS := false
@@ -382,7 +382,7 @@ func getPlayURL(bucketName, channelName, playlistName string) string {
 	return fmt.Sprintf("http://%s.%s/%s/%s", bucketName, host, channelName, playlistName)
 }
 
-// getPublistURL - 获取直播流频道的推流地址
+// getPublistURL Get the push url of the live stream channel
 func getPublishURL(bucketName, channelName string) string {
 	host := ""
 	if strings.Contains(endpoint, "https://") {

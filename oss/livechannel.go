@@ -10,13 +10,13 @@ import (
 )
 
 //
-// CreateLiveChannel 创建推流直播频道
+// CreateLiveChannel    create a live-channel
 //
-// channelName 直播流频道名称
-// config 直播流频的配置信息
+// channelName  the name of the channel
+// config       configuration of the channel
 //
-// CreateLiveChannelResult 创建直播流频请求的返回结果
-// error 操作无错误时返回nil，非nil为错误信息
+// CreateLiveChannelResult  the result of create live-channel
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) CreateLiveChannel(channelName string, config LiveChannelConfiguration) (CreateLiveChannelResult, error) {
 	var out CreateLiveChannelResult
@@ -42,12 +42,12 @@ func (bucket Bucket) CreateLiveChannel(channelName string, config LiveChannelCon
 }
 
 //
-// PutLiveChannelStatus 设置直播频道的状态，有两种状态可选：enabled和disabled
+// PutLiveChannelStatus Set the status of the live-channel: enabled/disabled
 //
-// channelName 直播流频道的名称
-// status 状态，有两种状态可选：enabled和disabled
+// channelName  the name of the channel
+// status       enabled/disabled
 //
-// error 操作无错误时返回nil, 非nil为错误信息
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) PutLiveChannelStatus(channelName, status string) error {
 	params := map[string]interface{}{}
@@ -63,14 +63,14 @@ func (bucket Bucket) PutLiveChannelStatus(channelName, status string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
-// PostVodPlaylist 根据指定的playlist name以及startTime和endTime生成一个点播的播放列表
+// PostVodPlaylist  create an playlist based on the specified playlist name, startTime and endTime
 //
-// channelName 直播流频道的名称
-// playlistName 指定生成的点播列表的名称，必须以”.m3u8“结尾
-// startTime 指定查询ts文件的起始时间
-// endTime 指定查询ts文件的终止时间
+// channelName  the name of the channel
+// playlistName the name of the playlist, must end with ".m3u8"
+// startTime    the start time of the playlist
+// endTime      the endtime of the playlist
 //
-// error 操作无错误是返回nil, 非nil为错误信息
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) PostVodPlaylist(channelName, playlistName string, startTime, endTime time.Time) error {
 	params := map[string]interface{}{}
@@ -89,12 +89,12 @@ func (bucket Bucket) PostVodPlaylist(channelName, playlistName string, startTime
 }
 
 //
-// GetLiveChannelStat 获取指定直播流频道当前推流的状态
+// GetLiveChannelStat   Get the state of the live-channel
 //
-// channelName 直播流频道的名称
+// channelName  the name of the channel
 //
-// LiveChannelStat 直播流频道当前推流状态信息
-// error 操作无错误是返回nil, 非nil为错误信息
+// LiveChannelStat  the state of the live-channel
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) GetLiveChannelStat(channelName string) (LiveChannelStat, error) {
 	var out LiveChannelStat
@@ -113,12 +113,12 @@ func (bucket Bucket) GetLiveChannelStat(channelName string) (LiveChannelStat, er
 }
 
 //
-// GetLiveChannelInfo 获取直播流频道的配置信息
+// GetLiveChannelInfo   Get the configuration info of the live-channel
 //
-// channelName 直播流频道的名称
+// channelName  the name of the channel
 //
-// LiveChannelConfiguration 直播流频道的配置信息
-// error 操作无错误返回nil, 非nil为错误信息
+// LiveChannelConfiguration the configuration info of the live-channel
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) GetLiveChannelInfo(channelName string) (LiveChannelConfiguration, error) {
 	var out LiveChannelConfiguration
@@ -136,12 +136,12 @@ func (bucket Bucket) GetLiveChannelInfo(channelName string) (LiveChannelConfigur
 }
 
 //
-// GetLiveChannelHistory 获取直播流频道的历史推流记录
+// GetLiveChannelHistory    Get push records of live-channel
 //
-// channelName 直播流频道名称
+// channelName  the name of the channel
 //
-// LiveChannelHistory 返回的直播流历史推流记录
-// error 操作无错误返回nil, 非nil为错误信息
+// LiveChannelHistory   push records
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) GetLiveChannelHistory(channelName string) (LiveChannelHistory, error) {
 	var out LiveChannelHistory
@@ -160,17 +160,18 @@ func (bucket Bucket) GetLiveChannelHistory(channelName string) (LiveChannelHisto
 }
 
 //
-// ListLiveChannel 获取直播流频道的信息列表
+// ListLiveChannel  list the live-channels
 //
-// options  筛选选项：Prefix指定的前缀、MaxKeys为返回的最大数目、Marker代表从哪个livechannel作为游标开始列表
+// options  Prefix: filter by the name start with the value of "Prefix"
+//          MaxKeys: the maximum count returned
+//          Marker: cursor from which starting list
 //
-// ListLiveChannelResult 返回的livechannel列表结果
-// error 操作无结果返回nil, 非nil为错误信息
+// ListLiveChannelResult    live-channel list
+// error    nil if success, otherwise error
 //
 func (bucket Bucket) ListLiveChannel(options ...Option) (ListLiveChannelResult, error) {
 	var out ListLiveChannelResult
 
-	//options = append(options, EncodingType("url"))
 	params, err := getRawParams(options)
 	if err != nil {
 		return out, err
@@ -189,11 +190,11 @@ func (bucket Bucket) ListLiveChannel(options ...Option) (ListLiveChannelResult, 
 }
 
 //
-// DeleteLiveChannel 删除指定的livechannel，当有客户端正在想livechannel推流时，删除请求回失败，本接口志辉删除livechannel本身，不会删除推流生成的文件
+// DeleteLiveChannel    Delete the live-channel. When a client trying to stream the live-channel, the operation will fail. it will only delete the live-channel itself and the object generated by the live-channel will not be deleted.
 //
-// channelName 直播流的频道名称
+// channelName  the name of the channel
 //
-// error 操作无错误返回nil, 非nil为错误信息
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) DeleteLiveChannel(channelName string) error {
 	params := map[string]interface{}{}
@@ -213,14 +214,14 @@ func (bucket Bucket) DeleteLiveChannel(channelName string) error {
 }
 
 //
-// SignRtmpURL 生成RTMP推流签名的URL, 常见的用法是生成加签的URL以供授信用户向OSS推RTMP流。
+// SignRtmpURL  Generate a RTMP push-stream signature URL for the trusted user to push the RTMP stream to the live-channel.
 //
-// channelName 直播流的频道名称
-// playlistName 播放列表名称，其值会覆盖LiveChannel中的配置，必须以“.m3u8”结尾
-// expires 过期时间（单位：秒），链接在当前时间再过expires秒后过期
+// channelName  the name of the channel
+// playlistName the name of the playlist, must end with ".m3u8"
+// expires      expiration (in seconds)
 //
-// string 返回的加签的rtmp推流地址
-// error 操作无错误返回nil, 非nil为错误信息
+// string       singed rtmp push stream url
+// error        nil if success, otherwise error
 //
 func (bucket Bucket) SignRtmpURL(channelName, playlistName string, expires int64) (string, error) {
 	if expires < 0 {

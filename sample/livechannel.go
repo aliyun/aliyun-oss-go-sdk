@@ -7,24 +7,24 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CreateLiveChannelSample - 创建livechannel的sample
+// CreateLiveChannelSample Samples for create a live-channel
 func CreateLiveChannelSample() {
 	channelName := "create-livechannel"
-	//创建bucket
+	//create bucket
 	bucket, err := GetTestBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景1 - 完整配置livechannel创建
+	// Case 1 - Create live-channel with Completely configure
 	config := oss.LiveChannelConfiguration{
-		Description: "sample-for-livechannel", //livechannel的描述信息，最长128字节，非必须
-		Status:      "enabled",                //指定livechannel的状态，非必须（默认值："enabled", 值只能是"enabled", "disabled"）
+		Description: "sample-for-livechannel", //description information, up to 128 bytes
+		Status:      "enabled",                //enabled or disabled
 		Target: oss.LiveChannelTarget{
-			Type:         "HLS",                          //指定转储的类型，只支持HLS, 必须
-			FragDuration: 10,                             //指定每个ts文件的时长（单位：秒），取值范围为【1，100】的整数, 非必须（默认值：5）
-			FragCount:    4,                              //指定m3u8文件中包含ts文件的个数，取值范围为【1，100】的整数，非必须（默认值：3）
-			PlaylistName: "test-get-channel-status.m3u8", //当Type为HLS时，指定生成m3u8文件的名称，必须以“.m3u8”结尾，长度范围为【6，128】，非必须（默认值：playlist.m3u8）
+			Type:         "HLS",                          //the type of object, only supports HLS, required
+			FragDuration: 10,                             //the length of each ts object (in seconds), in the range [1,100], default: 5
+			FragCount:    4,                              //the number of ts objects in the m3u8 object, in the range of [1,100], default: 3
+			PlaylistName: "test-get-channel-status.m3u8", //the name of m3u8 object, which must end with ".m3u8" and the length range is [6,128]，default: playlist.m3u8
 		},
 	}
 
@@ -37,7 +37,7 @@ func CreateLiveChannelSample() {
 	publishURL := result.PublishUrls[0]
 	fmt.Printf("create livechannel:%s  with config respones: playURL:%s, publishURL: %s\n", channelName, playURL, publishURL)
 
-	// 场景2 - 简单配置livechannel创建
+	// Case 2 - Create live-channel only specified type of target which is required
 	simpleCfg := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
 			Type: "HLS",
@@ -59,7 +59,7 @@ func CreateLiveChannelSample() {
 	fmt.Println("PutObjectSample completed")
 }
 
-// PutLiveChannelStatusSample - 设置直播频道的状态的sample，有两种状态可选：enabled和disabled
+// PutLiveChannelStatusSample Set the status of the live-channel sample: enabled/disabled
 func PutLiveChannelStatusSample() {
 	channelName := "put-livechannel-status"
 	bucket, err := GetTestBucket(bucketName)
@@ -69,7 +69,7 @@ func PutLiveChannelStatusSample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type: "HLS", //指定转储的类型，只支持HLS, 必须
+			Type: "HLS", //the type of object, only supports HLS, required
 		},
 	}
 
@@ -78,13 +78,13 @@ func PutLiveChannelStatusSample() {
 		HandleError(err)
 	}
 
-	// 场景1 - 设置livechannel的状态为disabled
+	// Case 1 - Set the status of live-channel to disabled
 	err = bucket.PutLiveChannelStatus(channelName, "disabled")
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 场景2 - 设置livechannel的状态为enalbed
+	// Case 2 - Set the status of live-channel to enabled
 	err = bucket.PutLiveChannelStatus(channelName, "enabled")
 	if err != nil {
 		HandleError(err)
@@ -98,7 +98,7 @@ func PutLiveChannelStatusSample() {
 	fmt.Println("PutLiveChannelStatusSample completed")
 }
 
-// PostVodPlayListSample - 生成点播列表的sample
+// PostVodPlayListSample Sample for generate playlist
 func PostVodPlayListSample() {
 	channelName := "post-vod-playlist"
 	playlistName := "playlist.m3u8"
@@ -109,7 +109,7 @@ func PostVodPlayListSample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type:         "HLS", //指定转储的类型，只支持HLS, 必须
+			Type:         "HLS", //the type of object, only supports HLS, required
 			PlaylistName: "playlist.m3u8",
 		},
 	}
@@ -119,7 +119,7 @@ func PostVodPlayListSample() {
 		HandleError(err)
 	}
 
-	//这个阶段可以推流了...
+	//This stage you can push live stream, and after that you could generator playlist
 
 	endTime := time.Now().Add(-1 * time.Minute)
 	startTime := endTime.Add(-60 * time.Minute)
@@ -136,7 +136,7 @@ func PostVodPlayListSample() {
 	fmt.Println("PostVodPlayListSampleSample completed")
 }
 
-// GetLiveChannelStatSample - 获取指定直播流频道当前推流的状态的sample
+// GetLiveChannelStatSample Sample for get the state of live-channel
 func GetLiveChannelStatSample() {
 	channelName := "get-livechannel-stat"
 	bucket, err := GetTestBucket(bucketName)
@@ -146,7 +146,7 @@ func GetLiveChannelStatSample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type: "HLS", //指定转储的类型，只支持HLS, 必须
+			Type: "HLS", //the type of object, only supports HLS, required
 		},
 	}
 
@@ -183,7 +183,7 @@ func GetLiveChannelStatSample() {
 	fmt.Println("GetLiveChannelStatSample completed")
 }
 
-// GetLiveChannelInfoSample - 获取直播流频道的配置信息的sample
+// GetLiveChannelInfoSample Sample for get the configuration infomation of live-channel
 func GetLiveChannelInfoSample() {
 	channelName := "get-livechannel-info"
 	bucket, err := GetTestBucket(bucketName)
@@ -193,7 +193,7 @@ func GetLiveChannelInfoSample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type: "HLS", //指定转储的类型，只支持HLS, 必须
+			Type: "HLS", //the type of object, only supports HLS, required
 		},
 	}
 
@@ -224,7 +224,7 @@ func GetLiveChannelInfoSample() {
 	fmt.Println("GetLiveChannelInfoSample completed")
 }
 
-// GetLiveChannelHistorySample - 获取直播流频道的历史推流记录的sample
+// GetLiveChannelHistorySample  Sample for get push records of live-channel
 func GetLiveChannelHistorySample() {
 	channelName := "get-livechannel-info"
 	bucket, err := GetTestBucket(bucketName)
@@ -234,7 +234,7 @@ func GetLiveChannelHistorySample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type: "HLS", //指定转储的类型，只支持HLS, 必须
+			Type: "HLS", //the type of object, only supports HLS, required
 		},
 	}
 
@@ -243,7 +243,7 @@ func GetLiveChannelHistorySample() {
 		HandleError(err)
 	}
 
-	//目前最多会返回指定LiveChannel最近的10次推流记录
+	//at most return up to lastest 10 push records
 	history, err := bucket.GetLiveChannelHistory(channelName)
 	for _, record := range history.Record {
 		remoteAddr := record.RemoteAddr
@@ -260,7 +260,7 @@ func GetLiveChannelHistorySample() {
 	fmt.Println("GetLiveChannelHistorySample completed")
 }
 
-// ListLiveChannelSample - 获取当前bucket下直播流频道的信息列表的sample
+// ListLiveChannelSample Samples for list live-channels with specified bucket name
 func ListLiveChannelSample() {
 	channelName := "list-livechannel"
 	bucket, err := GetTestBucket(bucketName)
@@ -270,7 +270,7 @@ func ListLiveChannelSample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type: "HLS", //指定转储的类型，只支持HLS, 必须
+			Type: "HLS", //the type of object, only supports HLS, required
 		},
 	}
 
@@ -279,10 +279,11 @@ func ListLiveChannelSample() {
 		HandleError(err)
 	}
 
-	// 场景1：列出当前bucket下所有的livechannel
+	// Case 1: list all the live-channels
 	marker := ""
 	for {
-		//设定marker值，第一次执行时为”“，后续执行时以返回结果的nextmarker的值作为marker的值
+		// Set the marker value, the first time is "", the value of NextMarker that returned should as the marker in the next time
+		// At most return up to lastest 100 live-channels if "max-keys" is not specified
 		result, err := bucket.ListLiveChannel(oss.Marker(marker))
 		if err != nil {
 			HandleError(err)
@@ -299,7 +300,8 @@ func ListLiveChannelSample() {
 		}
 	}
 
-	// 场景2：使用参数”max-keys“指定返回记录的最大个数, 但max-keys的值不能超过1000
+	// Case 2: Use the parameter "max-keys" to specify the maximum number of records returned, the value of max-keys cannot exceed 1000
+	// if "max-keys" the default value is 100
 	result, err := bucket.ListLiveChannel(oss.MaxKeys(10))
 	if err != nil {
 		HandleError(err)
@@ -308,8 +310,8 @@ func ListLiveChannelSample() {
 		fmt.Printf("list livechannel: (%v, %v, %v, %v, %v, %v)\n", channel.Name, channel.Status, channel.Description, channel.LastModified, channel.PlayUrls[0], channel.PublishUrls[0])
 	}
 
-	// 场景3；使用参数”prefix“过滤只列出包含”prefix“的值作为前缀的livechannel
-	// max-keys, prefix, maker参数可以组合使用
+	// Case 3: Only list the live-channels with the value of parameter "prefix" as prefix
+	// max-keys, prefix, maker parameters can be combined
 	result, err = bucket.ListLiveChannel(oss.MaxKeys(10), oss.Prefix("list-"))
 	if err != nil {
 		HandleError(err)
@@ -326,7 +328,7 @@ func ListLiveChannelSample() {
 	fmt.Println("ListLiveChannelSample completed")
 }
 
-// DeleteLiveChannelSample - 删除直播频道的信息列表的sample
+// DeleteLiveChannelSample Sample for delete live-channel
 func DeleteLiveChannelSample() {
 	channelName := "delete-livechannel"
 	bucket, err := GetTestBucket(bucketName)
@@ -336,7 +338,7 @@ func DeleteLiveChannelSample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type: "HLS", //指定转储的类型，只支持HLS, 必须
+			Type: "HLS", //the type of object, only supports HLS, required
 		},
 	}
 
@@ -358,7 +360,7 @@ func DeleteLiveChannelSample() {
 	fmt.Println("DeleteLiveChannelSample completed")
 }
 
-// SignRtmpURLSample - 创建签名推流地址的sample
+// SignRtmpURLSample Sample for generate a RTMP push-stream signature URL for the trusted user to push the RTMP stream to the live channel.
 func SignRtmpURLSample() {
 	channelName := "sign-rtmp-url"
 	playlistName := "playlist.m3u8"
@@ -369,7 +371,7 @@ func SignRtmpURLSample() {
 
 	config := oss.LiveChannelConfiguration{
 		Target: oss.LiveChannelTarget{
-			Type:         "HLS", //指定转储的类型，只支持HLS, 必须
+			Type:         "HLS", //the type of object, only supports HLS, required
 			PlaylistName: "playlist.m3u8",
 		},
 	}

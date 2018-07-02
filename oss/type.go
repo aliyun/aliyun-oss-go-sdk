@@ -449,101 +449,100 @@ type createBucketConfiguration struct {
 	StorageClass StorageClassType `xml:"StorageClass,omitempty"`
 }
 
-// LiveChannelConfiguration livechannel的配置信息
+// LiveChannelConfiguration defines the configuration for live-channel
 type LiveChannelConfiguration struct {
 	XMLName     xml.Name          `xml:"LiveChannelConfiguration"`
-	Description string            `xml:"Description,omitempty"` //livechannel的描述信息，最长128字节
-	Status      string            `xml:"Status,omitempty"`      //指定livechannel的状态
-	Target      LiveChannelTarget `xml:"Target"`                //保存转储配置的容器
-	//Snapshot    LiveChannelSnapshot `xml:"Snapshot,omitempty"` //保存高频截图操作Snapshot选项的容器
+	Description string            `xml:"Description,omitempty"` //Description of live-channel, up to 128 bytes
+	Status      string            `xml:"Status,omitempty"`      //Specify the status of livechannel
+	Target      LiveChannelTarget `xml:"Target"`                //target configuration of live-channel
+	// use point instead of struct to avoid omit empty snapshot
+	Snapshot *LiveChannelSnapshot `xml:"Snapshot,omitempty"` //snapshot configuration of live-channel
 }
 
-// LiveChannelTarget livechannel的转储配置信息
+// LiveChannelTarget target configuration of live-channel
 type LiveChannelTarget struct {
 	XMLName      xml.Name `xml:"Target"`
-	Type         string   `xml:"Type"`                   //指定转储的类型，只支持HLS
-	FragDuration int      `xml:"FragDuration,omitempty"` //当Type为HLS时，指定每个ts文件的时长（单位：秒），取值范围为【1，100】的整数
-	FragCount    int      `xml:"FragCount,omitempty"`    //当Type为HLS时，指定m3u8文件中包含ts文件的个数，取值范围为【1，100】的整数
-	PlaylistName string   `xml:"PlaylistName,omitempty"` //当Type为HLS时，指定生成m3u8文件的名称，必须以“.m3u8”结尾，长度范围为【6，128】
+	Type         string   `xml:"Type"`                   //the type of object, only supports HLS
+	FragDuration int      `xml:"FragDuration,omitempty"` //the length of each ts object (in seconds), in the range [1,100]
+	FragCount    int      `xml:"FragCount,omitempty"`    //the number of ts objects in the m3u8 object, in the range of [1,100]
+	PlaylistName string   `xml:"PlaylistName,omitempty"` //the name of m3u8 object, which must end with ".m3u8" and the length range is [6,128]
 }
 
-/*
-// LiveChannelSnapshot livechannel关于高频截图操作snapshot的配置信息
+// LiveChannelSnapshot snapshot configuration of live-channel
 type LiveChannelSnapshot struct {
 	XMLName     xml.Name `xml:"Snapshot"`
-	RoleName    string   `xml:"RoleName,omitempty"`    //高频截图操作的角色名称，要求有DestBucket的写权限和向NotifyTopic发消息的权限
-	DestBucket  string   `xml:"DestBucket,omitempty"`  //保存高频截图的目标Bucket，要求与当前Bucket是同一个Owner
-	NotifyTopic string   `xml:"NotifyTopic,omitempty"` //用于通知用户高频截图操作结果的MNS的Topic
-	Interval    int      `xml:"Interval,omitempty"`    //高频截图的间隔长度，单位为s，如果该段间隔时间内没有关键帧（I帧），那么该间隔时间不截图
+	RoleName    string   `xml:"RoleName,omitempty"`    //The role of snapshot operations, it sholud has write permission of DestBucket and the permission to send messages to the NotifyTopic.
+	DestBucket  string   `xml:"DestBucket,omitempty"`  //Bucket the snapshots will be written to. should be the same owner as the source bucket.
+	NotifyTopic string   `xml:"NotifyTopic,omitempty"` //Topics of MNS for notifying users of high frequency screenshot operation results
+	Interval    int      `xml:"Interval,omitempty"`    //interval of snapshots, threre is no snapshot if no I-frame during the interval time
 }
-*/
 
-// CreateLiveChannelResult 创建livechannel请求的返回结果
+// CreateLiveChannelResult the result of crete live-channel
 type CreateLiveChannelResult struct {
 	XMLName     xml.Name `xml:"CreateLiveChannelResult"`
-	PublishUrls []string `xml:"PublishUrls>Url"` //推流地址列表
-	PlayUrls    []string `xml:"PlayUrls>Url"`    //播放地址的列表
+	PublishUrls []string `xml:"PublishUrls>Url"` //push urls list
+	PlayUrls    []string `xml:"PlayUrls>Url"`    //play urls list
 }
 
-// LiveChannelStat 获取livechannel状态请求的返回结果
+// LiveChannelStat the result of get live-channel state
 type LiveChannelStat struct {
 	XMLName       xml.Name         `xml:"LiveChannelStat"`
-	Status        string           `xml:"Status"`        //livechannel当前推流的状态，Disabled, Live, Idle
-	ConnectedTime time.Time        `xml:"ConnectedTime"` //当Status为Live时，表示当前客户开始推流的时间，使用ISO8601格式表示
-	RemoteAddr    string           `xml:"RemoteAddr"`    //当Status为Live时，表示当前推流客户端的ip地址
-	Video         LiveChannelVideo `xml:"Video"`         //当Status为Live时，表示视频流的信息
-	Audio         LiveChannelAudio `xml:"Audio"`         //当Status为Live时, 表示音频流的信息
+	Status        string           `xml:"Status"`        //Current push status of live-channel: Disabled,Live,Idle
+	ConnectedTime time.Time        `xml:"ConnectedTime"` //The time when the client starts pushing, format: ISO8601
+	RemoteAddr    string           `xml:"RemoteAddr"`    //The ip address of the client
+	Video         LiveChannelVideo `xml:"Video"`         //Video stream information
+	Audio         LiveChannelAudio `xml:"Audio"`         //Audio stream information
 }
 
-// LiveChannelVideo 当livechannel的状态为live时，livechannel视频流的信息
+// LiveChannelVideo video stream information
 type LiveChannelVideo struct {
 	XMLName   xml.Name `xml:"Video"`
-	Width     int      `xml:"Width"`     //视频流的画面宽度（单位：像素）
-	Height    int      `xml:"Height"`    //视频流的画面高度（单位：像素）
-	FrameRate int      `xml:"FrameRate"` //视频流的帧率
-	Bandwidth int      `xml:"Bandwidth"` //视频流的码率（单位：B/s）
+	Width     int      `xml:"Width"`     //Width (unit: pixels)
+	Height    int      `xml:"Height"`    //Height (unit: pixels)
+	FrameRate int      `xml:"FrameRate"` //FramRate
+	Bandwidth int      `xml:"Bandwidth"` //Bandwidth (unit: B/s)
 }
 
-// LiveChannelAudio 当livechannel的状态为live时，livechannel音频流的信息
+// LiveChannelAudio audio stream information
 type LiveChannelAudio struct {
 	XMLName    xml.Name `xml:"Audio"`
-	SampleRate int      `xml:"SampleRate"` //音频流的采样率
-	Bandwidth  int      `xml:"Bandwidth"`  //音频流的码率（单位：B/s）
-	Codec      string   `xml:"Codec"`      //音频流的编码格式
+	SampleRate int      `xml:"SampleRate"` //SampleRate
+	Bandwidth  int      `xml:"Bandwidth"`  //Bandwidth (unit: B/s)
+	Codec      string   `xml:"Codec"`      //Encoding forma
 }
 
-// LiveChannelHistory - livechannel的历史所有推流记录，目前最多会返回指定livechannel最近10次的推流记录
+// LiveChannelHistory the result of GetLiveChannelHistory, at most return up to lastest 10 push records
 type LiveChannelHistory struct {
 	XMLName xml.Name     `xml:"LiveChannelHistory"`
-	Record  []LiveRecord `xml:"LiveRecord"` //单个推流记录
+	Record  []LiveRecord `xml:"LiveRecord"` //push records list
 }
 
-// LiveRecord - 单个推流记录
+// LiveRecord push recode
 type LiveRecord struct {
 	XMLName    xml.Name  `xml:"LiveRecord"`
-	StartTime  time.Time `xml:"StartTime"`  //推流开始时间，使用ISO8601格式表示
-	EndTime    time.Time `xml:"EndTime"`    //推流结束时间，使用ISO8601格式表示
-	RemoteAddr string    `xml:"RemoteAddr"` //推流客户端的ip地址
+	StartTime  time.Time `xml:"StartTime"`  //StartTime, format: ISO8601
+	EndTime    time.Time `xml:"EndTime"`    //EndTime, format: ISO8601
+	RemoteAddr string    `xml:"RemoteAddr"` //The ip address of remote client
 }
 
-// ListLiveChannelResult -
+// ListLiveChannelResult the result of ListLiveChannel
 type ListLiveChannelResult struct {
 	XMLName     xml.Name          `xml:"ListLiveChannelResult"`
-	Prefix      string            `xml:"Prefix"`      //返回以prifix作为前缀的livechannel，注意使用prifix查询时，返回的key中仍会包含prifix
-	Marker      string            `xml:"Marker"`      //以marker之后按字母排序的第一个livechanel开始返回
-	MaxKeys     int               `xml:"MaxKeys"`     //返回livechannel的最大数，如果不设定，默认为100，max-key的取值不能大于1000
-	IsTruncated bool              `xml:"IsTruncated"` //指明是否所有的结果都已经返回，“true”表示本次没有返回全部结果，“false”则表示已经返回了全部结果
-	NextMarker  string            `xml:"NextMarker"`  //如果本次没有返回全部结果，NextMarker用于表明下一请求的Marker值
-	LiveChannel []LiveChannelInfo `xml:"LiveChannel"` //livechannel的基本信息
+	Prefix      string            `xml:"Prefix"`      //Filter by the name start with the value of "Prefix"
+	Marker      string            `xml:"Marker"`      //cursor from which starting list
+	MaxKeys     int               `xml:"MaxKeys"`     //The maximum count returned. the default value is 100. it cannot be greater than 1000.
+	IsTruncated bool              `xml:"IsTruncated"` //Indicates whether all results have been returned, "true" indicates partial results returned while "false" indicates all results have been returned
+	NextMarker  string            `xml:"NextMarker"`  //NextMarker indicate the Marker value of the next request
+	LiveChannel []LiveChannelInfo `xml:"LiveChannel"` //The infomation of live-channel
 }
 
-// LiveChannelInfo -
+// LiveChannelInfo the infomation of live-channel
 type LiveChannelInfo struct {
 	XMLName      xml.Name  `xml:"LiveChannel"`
-	Name         string    `xml:"Name"`            //livechannel的名称
-	Description  string    `xml:"Description"`     //livechannel的描述信息
-	Status       string    `xml:"Status"`          //livechannel的状态，有效值：disabled, enabled
-	LastModified time.Time `xml:"LastModified"`    //livechannel的最后修改时间，使用ISO8601格式表示
-	PublishUrls  []string  `xml:"PublishUrls>Url"` //推流地址列表
-	PlayUrls     []string  `xml:"PlayUrls>Url"`    //播放地址列表
+	Name         string    `xml:"Name"`            //The name of live-channel
+	Description  string    `xml:"Description"`     //Description of live-channel
+	Status       string    `xml:"Status"`          //Status: disabled or enabled
+	LastModified time.Time `xml:"LastModified"`    //Last modification time, format: ISO8601
+	PublishUrls  []string  `xml:"PublishUrls>Url"` //push urls list
+	PlayUrls     []string  `xml:"PlayUrls>Url"`    //play urls list
 }
