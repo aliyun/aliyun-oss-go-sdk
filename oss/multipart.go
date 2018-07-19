@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -151,7 +152,7 @@ func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucke
 	var out UploadPartCopyResult
 	var part UploadPart
 
-	opts := []Option{CopySource(srcBucketName, srcObjectKey),
+	opts := []Option{CopySource(srcBucketName, url.QueryEscape(srcObjectKey)),
 		CopySourceRange(startPosition, partSize)}
 	opts = append(opts, options...)
 	params := map[string]interface{}{}

@@ -67,6 +67,16 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.Type, Equals, urlTypeIP)
 	c.Assert(um.Scheme, Equals, "https")
 	c.Assert(um.NetLoc, Equals, "127.0.0.1:8080")
+
+	um.Init("http://[2401:b180::dc]", false, false)
+	c.Assert(um.Type, Equals, urlTypeIP)
+	c.Assert(um.Scheme, Equals, "http")
+	c.Assert(um.NetLoc, Equals, "[2401:b180::dc]")
+
+	um.Init("https://[2401:b180::dc]:8080", false, false)
+	c.Assert(um.Type, Equals, urlTypeIP)
+	c.Assert(um.Scheme, Equals, "https")
+	c.Assert(um.NetLoc, Equals, "[2401:b180::dc]:8080")
 }
 
 func (s *OssConnSuite) TestAuth(c *C) {
