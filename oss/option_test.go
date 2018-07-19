@@ -127,6 +127,11 @@ var headerTestcases = []optionTestCase{
 		key:    "X-Oss-Object-Acl",
 		value:  "private",
 	},
+	{
+		option: ObjectStorageClass(StorageStandard),
+		key:    "X-Oss-Storage-Class",
+		value:  "Standard",
+	},
 }
 
 func (s *OssOptionSuite) TestHeaderOptions(c *C) {
