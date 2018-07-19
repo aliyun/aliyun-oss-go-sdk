@@ -175,7 +175,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	c.Assert(err, IsNil)
 	time.Sleep(5 * time.Second)
 
-  // CreateBucket creates with ACLPublicRead
+	// CreateBucket creates with ACLPublicRead
 	err = client.CreateBucket(bucketNameTest, ACL(ACLPublicRead))
 	c.Assert(err, IsNil)
 	time.Sleep(5 * time.Second)
