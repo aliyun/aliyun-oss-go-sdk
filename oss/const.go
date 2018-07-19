@@ -106,6 +106,7 @@ const (
 	HTTPHeaderOssRequestID                   = "X-Oss-Request-Id"
 	HTTPHeaderOssCRC64                       = "X-Oss-Hash-Crc64ecma"
 	HTTPHeaderOssSymlinkTarget               = "X-Oss-Symlink-Target"
+	HTTPHeaderOssStorageClass                = "X-Oss-Storage-Class"
 )
 
 // HTTP Param
@@ -123,10 +124,10 @@ const (
 
 	FilePermMode = os.FileMode(0664) // Default file permission
 
-	TempFilePrefix = "oss-go-temp-"  // Temp file prefix
-	TempFileSuffix = ".temp"         // Temp file suffix
+	TempFilePrefix = "oss-go-temp-" // Temp file prefix
+	TempFileSuffix = ".temp"        // Temp file suffix
 
-	CheckpointFileSuffix = ".cp"     // Checkpoint file suffix
+	CheckpointFileSuffix = ".cp" // Checkpoint file suffix
 
 	Version = "1.9.0" // Go SDK version
 )

@@ -172,6 +172,11 @@ func Origin(value string) Option {
 	return setHeader(HTTPHeaderOrigin, value)
 }
 
+// ObjectStorageClass is an option to set the storage class of object
+func ObjectStorageClass(storageClass StorageClassType) Option {
+	return setHeader(HTTPHeaderOssStorageClass, string(storageClass))
+}
+
 // Delimiter is an option to set delimiler parameter
 func Delimiter(value string) Option {
 	return addParam("delimiter", value)
