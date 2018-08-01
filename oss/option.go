@@ -11,9 +11,9 @@ import (
 type optionType string
 
 const (
-	optionParam optionType = "HTTPParameter" // URL参数
-	optionHTTP  optionType = "HTTPHeader"    // HTTP头
-	optionArg   optionType = "FuncArgument"  // 函数参数
+	optionParam optionType = "HTTPParameter" // URL parameter
+	optionHTTP  optionType = "HTTPHeader"    // HTTP header
+	optionArg   optionType = "FuncArgument"  // Function argument
 )
 
 const (
@@ -31,7 +31,7 @@ type (
 		Type  optionType
 	}
 
-	// Option http option
+	// Option HTTP option
 	Option func(map[string]optionValue) error
 )
 
@@ -212,33 +212,33 @@ func UploadIDMarker(value string) Option {
 	return addParam("upload-id-marker", value)
 }
 
-// DeleteObjectsQuiet DeleteObjects详细(verbose)模式或简单(quiet)模式，默认详细模式。
+// DeleteObjectsQuiet false:DeleteObjects in verbose mode; true:DeleteObjects in quite mode. Default is false.
 func DeleteObjectsQuiet(isQuiet bool) Option {
 	return addArg(deleteObjectsQuiet, isQuiet)
 }
 
-// StorageClass bucket的存储方式
+// StorageClass bucket storage class
 func StorageClass(value StorageClassType) Option {
 	return addArg(storageClass, value)
 }
 
-// 断点续传配置，包括是否启用、cp文件
+// Checkpoint configuration
 type cpConfig struct {
 	IsEnable bool
 	FilePath string
 }
 
-// Checkpoint DownloadFile/UploadFile是否开启checkpoint及checkpoint文件路径
+// Checkpoint sets the isEnable flag and checkpoint file path for DownloadFile/UploadFile.
 func Checkpoint(isEnable bool, filePath string) Option {
 	return addArg(checkpointConfig, &cpConfig{isEnable, filePath})
 }
 
-// Routines DownloadFile/UploadFile并发数
+// Routines DownloadFile/UploadFile routine count
 func Routines(n int) Option {
 	return addArg(routineNum, n)
 }
 
-// InitCRC AppendObject CRC的校验的初始值
+// InitCRC Init AppendObject CRC
 func InitCRC(initCRC uint64) Option {
 	return addArg(initCRC64, initCRC)
 }
@@ -331,7 +331,7 @@ func handleOptions(headers map[string]string, options []Option) error {
 }
 
 func getRawParams(options []Option) (map[string]interface{}, error) {
-	// option
+	// Option
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
@@ -342,7 +342,7 @@ func getRawParams(options []Option) (map[string]interface{}, error) {
 	}
 
 	paramsm := map[string]interface{}{}
-	// serialize
+	// Serialize
 	for k, v := range params {
 		if v.Type == optionParam {
 			vs := params[k]

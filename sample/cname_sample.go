@@ -8,35 +8,35 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// CnameSample 展示了Cname的用法
+// CnameSample shows the cname usage
 func CnameSample() {
-	// NewClient
+	// New client
 	client, err := oss.New(endpoint4Cname, accessID4Cname, accessKey4Cname,
 		oss.UseCname(true))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// CreateBucket
+	// Create bucket
 	err = client.CreateBucket(bucketName4Cname)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// SetBucketACL
+	// Set bucket ACL
 	err = client.SetBucketACL(bucketName4Cname, oss.ACLPrivate)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// 查看Bucket ACL
+	// Look up bucket ACL
 	gbar, err := client.GetBucketACL(bucketName4Cname)
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("Bucket ACL:", gbar.ACL)
 
-	// ListBuckets， cname用户不能使用该操作
+	// List buckets, the list operation could not be done by cname's endpoint
 	_, err = client.ListBuckets()
 	if err == nil {
 		HandleError(err)
@@ -47,15 +47,15 @@ func CnameSample() {
 		HandleError(err)
 	}
 
-	objectValue := "长忆观潮，满郭人争江上望。来疑沧海尽成空，万面鼓声中。弄潮儿向涛头立，手把红旗旗不湿。别来几向梦中看，梦觉尚心寒。"
+	objectValue := "长忆观潮, 满郭人争江上望。来疑沧海尽成空, 万面鼓声中。弄潮儿向涛头立, 手把红旗旗不湿。别来几向梦中看, 梦觉尚心寒。"
 
-	// PutObject
+	// Put object
 	err = bucket.PutObject(objectKey, strings.NewReader(objectValue))
 	if err != nil {
 		HandleError(err)
 	}
 
-	// GetObject
+	// Get object
 	body, err := bucket.GetObject(objectKey)
 	if err != nil {
 		HandleError(err)
@@ -67,26 +67,26 @@ func CnameSample() {
 	}
 	fmt.Println(objectKey, ":", string(data))
 
-	// PutObjectFromFile
+	// Put object from file
 	err = bucket.PutObjectFromFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// GetObjectToFile
+	// Get object to file
 	err = bucket.GetObjectToFile(objectKey, newPicName)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// ListObjects
+	// List objects
 	lor, err := bucket.ListObjects()
 	if err != nil {
 		HandleError(err)
 	}
 	fmt.Println("objects:", lor.Objects)
 
-	// DeleteObject
+	// Delete object
 	err = bucket.DeleteObject(objectKey)
 	if err != nil {
 		HandleError(err)

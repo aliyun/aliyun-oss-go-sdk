@@ -13,7 +13,7 @@
 > - With this SDK, you can upload, download and manage data on any app anytime and anywhere conveniently. 
 
 ## Version
-> - Current version: 1.8.0. 
+> - Current version: 1.9.0. 
 
 ## Running Environment
 > - Go 1.5 or above. 
@@ -161,7 +161,6 @@ and copy the sample directory and sample.go to the src directory of your test pr
 
 ## Author
 > - Yubin Bai.
-> - Hǎiliàng Wáng.
 
 ## License
 > - Apache License 2.0.
