@@ -278,9 +278,9 @@ func ResponseContentEncoding(value string) Option {
 	return addParam("response-content-encoding", value)
 }
 
-// Process is an option to set X-Oss-Process param
+// Process is an option to set x-oss-process param
 func Process(value string) Option {
-	return addParam("X-Oss-Process", value)
+	return addParam("x-oss-process", value)
 }
 func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
