@@ -40,7 +40,7 @@ func BucketRefererSample() {
 	}
 
 	// Get bucket referer configuration
-	gbr, err := client.GetBucketReferqer(bucketName)
+	gbr, err := client.GetBucketReferer(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
