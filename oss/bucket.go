@@ -185,7 +185,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*GetObjectResult, error) {
-	params := map[string]interface{}{}
+	params, _ := getRawParams(options)
 	resp, err := bucket.do("GET", request.ObjectKey, params, options, nil, nil)
 	if err != nil {
 		return nil, err
