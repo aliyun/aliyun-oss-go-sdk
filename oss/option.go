@@ -217,6 +217,16 @@ func UploadIDMarker(value string) Option {
 	return addParam("upload-id-marker", value)
 }
 
+// MaxParts is an option to set max-parts parameter
+func MaxParts(value int) Option {
+	return addParam("max-parts", strconv.Itoa(value))
+}
+
+// PartNumberMarker is an option to set part-number-marker parameter
+func PartNumberMarker(value int) Option {
+	return addParam("part-number-marker", strconv.Itoa(value))
+}
+
 // DeleteObjectsQuiet false:DeleteObjects in verbose mode; true:DeleteObjects in quite mode. Default is false.
 func DeleteObjectsQuiet(isQuiet bool) Option {
 	return addArg(deleteObjectsQuiet, isQuiet)
@@ -283,10 +293,11 @@ func ResponseContentEncoding(value string) Option {
 	return addParam("response-content-encoding", value)
 }
 
-// Process is an option to set X-Oss-Process param
+// Process is an option to set x-oss-process param
 func Process(value string) Option {
-	return addParam("X-Oss-Process", value)
+	return addParam("x-oss-process", value)
 }
+
 func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == nil {

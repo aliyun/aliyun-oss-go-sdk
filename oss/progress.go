@@ -105,8 +105,7 @@ func (t *teeReader) Read(p []byte) (n int, err error) {
 }
 
 func (t *teeReader) Close() error {
-	rc, ok := t.reader.(io.ReadCloser)
-	if ok {
+	if rc, ok := t.reader.(io.ReadCloser); ok {
 		return rc.Close()
 	}
 	return nil

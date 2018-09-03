@@ -409,6 +409,16 @@ func decodeListObjectsResult(result *ListObjectsResult) error {
 	return nil
 }
 
+// decodeListUploadedPartsResult decodes
+func decodeListUploadedPartsResult(result *ListUploadedPartsResult) error {
+	var err error
+	result.Key, err = url.QueryUnescape(result.Key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // decodeListMultipartUploadResult decodes list multipart upload result in URL encoding
 func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 	var err error

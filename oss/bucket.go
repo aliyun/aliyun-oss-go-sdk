@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -127,6 +128,7 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 	if err != nil {
 		return nil, err
 	}
+
 	return result.Response.Body, nil
 }
 
@@ -884,6 +886,31 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 	resp.Body = TeeReader(resp.Body, crcCalc, contentLen, listener, nil)
 
 	return result, nil
+}
+
+//
+// ProcessObject apply process on the specified image file.
+//
+// The supported process includes resize, rotate, crop, watermark, format,
+// udf, customized style, etc.
+//
+//
+// objectKey	object key to restore.
+// process	process string, such as "image/resize,w_100|sys/saveas,o_dGVzdC5qcGc,b_dGVzdA"
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (bucket Bucket) ProcessObject(objectKey string, process string) error {
+	params := map[string]interface{}{}
+	params["x-oss-process"] = nil
+	processData := fmt.Sprintf("%v=%v", "x-oss-process", process)
+	data := strings.NewReader(processData)
+	resp, err := bucket.do("POST", objectKey, params, nil, data, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // Private
