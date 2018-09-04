@@ -177,6 +177,16 @@ func ObjectStorageClass(storageClass StorageClassType) Option {
 	return setHeader(HTTPHeaderOssStorageClass, string(storageClass))
 }
 
+// Callback is an option to set callback values
+func Callback(callback string) Option {
+	return setHeader(HTTPHeaderOssCallback, callback)
+}
+
+// CallbackVar is an option to set callback user defined values
+func CallbackVar(callbackVar string) Option {
+	return setHeader(HTTPHeaderOssCallbackVar, callbackVar)
+}
+
 // Delimiter is an option to set delimiler parameter
 func Delimiter(value string) Option {
 	return addParam("delimiter", value)

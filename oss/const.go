@@ -107,6 +107,8 @@ const (
 	HTTPHeaderOssCRC64                       = "X-Oss-Hash-Crc64ecma"
 	HTTPHeaderOssSymlinkTarget               = "X-Oss-Symlink-Target"
 	HTTPHeaderOssStorageClass                = "X-Oss-Storage-Class"
+	HTTPHeaderOssCallback                    = "X-Oss-Callback"
+	HTTPHeaderOssCallbackVar                 = "X-Oss-Callback-Var"
 )
 
 // HTTP Param
