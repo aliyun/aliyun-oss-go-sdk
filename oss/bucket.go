@@ -129,7 +129,7 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 		return nil, err
 	}
 
-	return result.Response.Body, nil
+	return result.Response, nil
 }
 
 // GetObjectToFile downloads the data to a local file.
@@ -148,7 +148,7 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	if err != nil {
 		return err
 	}
-	defer result.Response.Body.Close()
+	defer result.Response.Close()
 
 	// If the local file does not exist, create a new one. If it exists, overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
@@ -803,7 +803,7 @@ func (bucket Bucket) GetObjectWithURL(signedURL string, options ...Option) (io.R
 	if err != nil {
 		return nil, err
 	}
-	return result.Response.Body, nil
+	return result.Response, nil
 }
 
 // GetObjectToFileWithURL downloads the object into a local file with the signed URL.
@@ -822,7 +822,7 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 	if err != nil {
 		return err
 	}
-	defer result.Response.Body.Close()
+	defer result.Response.Close()
 
 	// If the file does not exist, create one. If exists, then overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, FilePermMode)
