@@ -132,6 +132,16 @@ var headerTestcases = []optionTestCase{
 		key:    "X-Oss-Storage-Class",
 		value:  "Standard",
 	},
+	{
+		option: Callback("JTdCJTIyY2FsbGJhY2tVcmwlMjIlM0ElMjJleGFtcGxlLmNvbS9pbmRleC5odG1sJTIyJTdE"),
+		key:    "X-Oss-Callback",
+		value:  "JTdCJTIyY2FsbGJhY2tVcmwlMjIlM0ElMjJleGFtcGxlLmNvbS9pbmRleC5odG1sJTIyJTdE",
+	},
+	{
+		option: CallbackVar("JTdCJTIyeCUzQXZhcjElMjIlM0ElMjJ2YWx1ZTElMjIlMkMlMjJ4JTNBdmFyMiUyMiUzQSUyMnZhbHVlMiUyMiU3RA=="),
+		key:    "X-Oss-Callback-Var",
+		value:  "JTdCJTIyeCUzQXZhcjElMjIlM0ElMjJ2YWx1ZTElMjIlMkMlMjJ4JTNBdmFyMiUyMiUzQSUyMnZhbHVlMiUyMiU3RA==",
+	},
 }
 
 func (s *OssOptionSuite) TestHeaderOptions(c *C) {

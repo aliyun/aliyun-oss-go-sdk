@@ -895,7 +895,7 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 // udf, customized style, etc.
 //
 //
-// objectKey	object key to restore.
+// objectKey	object key to process.
 // process	process string, such as "image/resize,w_100|sys/saveas,o_dGVzdC5qcGc,b_dGVzdA"
 //
 // error    it's nil if no error, otherwise it's an error object.

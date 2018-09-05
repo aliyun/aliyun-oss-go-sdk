@@ -4,6 +4,7 @@ package oss
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -133,7 +134,7 @@ func (s *OssBucketSuite) TestPutObject(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	// Put bytes 
+	// Put bytes
 	err = s.bucket.PutObject(objectName, bytes.NewReader([]byte(objectValue)))
 	c.Assert(err, IsNil)
 
@@ -2046,6 +2047,33 @@ func (s *OssBucketSuite) TestRestoreObject(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(meta.Get("X-Oss-Restore"), Equals, "ongoing-request=\"true\"")
 	c.Assert(meta.Get("X-Oss-Storage-Class"), Equals, "Archive")
+}
+
+// TestProcessObject
+func (s *OssBucketSuite) TestProcessObject(c *C) {
+	objectName := objectNamePrefix + "_process_src.jpg"
+	err := s.bucket.PutObjectFromFile(objectName, "../sample/BingWallpaper-2015-11-07.jpg")
+	c.Assert(err, IsNil)
+
+	// If bucket-name not specified, it is saved to the current bucket by default.
+	destObjName := objectNamePrefix + "_process_dest_1.jpg"
+	process := fmt.Sprintf("image/resize,w_100|sys/saveas,o_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)))
+	err = s.bucket.ProcessObject(objectName, process)
+	c.Assert(err, IsNil)
+	exist, _ := s.bucket.IsObjectExist(destObjName)
+	c.Assert(exist, Equals, true)
+
+	destObjName = objectNamePrefix + "_process_dest_1.jpg"
+	process = fmt.Sprintf("image/resize,w_100|sys/saveas,o_%v,b_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)), base64.URLEncoding.EncodeToString([]byte(s.bucket.BucketName)))
+	err = s.bucket.ProcessObject(objectName, process)
+	c.Assert(err, IsNil)
+	exist, _ = s.bucket.IsObjectExist(destObjName)
+	c.Assert(exist, Equals, true)
+
+	//no support process
+	process = fmt.Sprintf("image/resize,w_100|saveas,o_%v,b_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)), base64.URLEncoding.EncodeToString([]byte(s.bucket.BucketName)))
+	err = s.bucket.ProcessObject(objectName, process)
+	c.Assert(err, NotNil)
 }
 
 // Private
