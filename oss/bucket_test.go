@@ -353,6 +353,13 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
 	c.Assert(body, IsNil)
 
+	err = s.bucket.PutObjectFromFile(objectName, "../sample/The Go Programming Language.html")
+	c.Assert(err, IsNil)
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 3600, AcceptEncoding("gzip"))
+	c.Assert(err, IsNil)
+	s.bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, IsNil)
+
 	os.Remove(filePath)
 	os.Remove(newFile)
 
@@ -964,6 +971,12 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 	os.Remove(newFile)
+
+	// Accept-Encoding:gzip
+	err = s.bucket.PutObjectFromFile(objectName, "../sample/The Go Programming Language.html")
+	c.Assert(err, IsNil)
+	err = s.bucket.GetObjectToFile(objectName, newFile, AcceptEncoding("gzip"))
+	c.Assert(err, IsNil)
 
 	// If-None-Match
 	err = s.bucket.GetObjectToFile(objectName, newFile, IfNoneMatch(meta.Get("Etag")))

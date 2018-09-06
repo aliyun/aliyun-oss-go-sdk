@@ -165,7 +165,12 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 
 	// Compares the CRC value
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
-	if bucket.getConfig().IsEnableCRC && !hasRange {
+	encodeOpt, _ := findOption(options, HTTPHeaderAcceptEncoding, nil)
+	acceptEncoding := ""
+	if encodeOpt != nil {
+		acceptEncoding = encodeOpt.(string)
+	}
+	if bucket.getConfig().IsEnableCRC && !hasRange && acceptEncoding != "gzip" {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
 		err = checkCRC(result.Response, "GetObjectToFile")
 		if err != nil {
@@ -839,7 +844,13 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 
 	// Compare the CRC value. If CRC values do not match, return error.
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
-	if bucket.getConfig().IsEnableCRC && !hasRange {
+	encodeOpt, _ := findOption(options, HTTPHeaderAcceptEncoding, nil)
+	acceptEncoding := ""
+	if encodeOpt != nil {
+		acceptEncoding = encodeOpt.(string)
+	}
+
+	if bucket.getConfig().IsEnableCRC && !hasRange && acceptEncoding != "gzip" {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
 		err = checkCRC(result.Response, "GetObjectToFileWithURL")
 		if err != nil {
