@@ -622,7 +622,7 @@ func (s *OssBucketMultipartSuite) TestMultipartNegative(c *C) {
 	imur, err := s.bucket.InitiateMultipartUpload(string(data))
 	c.Assert(err, NotNil)
 
-	// Invalid imur 
+	// Invalid imur
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	fd, err := os.Open(fileName)
 	c.Assert(err, IsNil)
@@ -668,7 +668,7 @@ func (s *OssBucketMultipartSuite) TestMultipartNegative(c *C) {
 	err = s.bucket.AbortMultipartUpload(imur)
 	c.Assert(err, IsNil)
 
-	// Invalid option 
+	// Invalid option
 	_, err = s.bucket.InitiateMultipartUpload(objectName, IfModifiedSince(futureDate))
 	c.Assert(err, IsNil)
 }

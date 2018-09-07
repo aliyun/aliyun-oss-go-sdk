@@ -864,6 +864,12 @@ func (s *OssBucketSuite) TestGetObject(c *C) {
 	_, err = s.bucket.GetObject(objectName, IfNoneMatch(meta.Get("Etag")))
 	c.Assert(err, NotNil)
 
+	// process
+	err = s.bucket.PutObjectFromFile(objectName, "../sample/BingWallpaper-2015-11-07.jpg")
+	c.Assert(err, IsNil)
+	_, err = s.bucket.GetObject(objectName, Process("image/format,png"))
+	c.Assert(err, IsNil)
+
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 }
@@ -970,7 +976,10 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 	eq, err = compareFileData(newFile, val)
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
-	os.Remove(newFile)
+
+	// If-None-Match
+	err = s.bucket.GetObjectToFile(objectName, newFile, IfNoneMatch(meta.Get("Etag")))
+	c.Assert(err, NotNil)
 
 	// Accept-Encoding:gzip
 	err = s.bucket.PutObjectFromFile(objectName, "../sample/The Go Programming Language.html")
@@ -978,10 +987,7 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 	err = s.bucket.GetObjectToFile(objectName, newFile, AcceptEncoding("gzip"))
 	c.Assert(err, IsNil)
 
-	// If-None-Match
-	err = s.bucket.GetObjectToFile(objectName, newFile, IfNoneMatch(meta.Get("Etag")))
-	c.Assert(err, NotNil)
-
+	os.Remove(newFile)
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 }

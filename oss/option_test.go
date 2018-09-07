@@ -196,6 +196,21 @@ var paramTestCases = []optionTestCase{
 		key:    "upload-id-marker",
 		value:  "xyz",
 	},
+	{
+		option: MaxParts(1000),
+		key:    "max-parts",
+		value:  "1000",
+	},
+	{
+		option: PartNumberMarker(1),
+		key:    "part-number-marker",
+		value:  "1",
+	},
+	{
+		option: Process("image/format,png"),
+		key:    "x-oss-process",
+		value:  "image/format,png",
+	},
 }
 
 func (s *OssOptionSuite) TestParamOptions(c *C) {
@@ -246,7 +261,7 @@ func (s *OssOptionSuite) TestHandleParams(c *C) {
 	c.Assert(err, IsNil)
 
 	out := client.Conn.getURLParams(params)
-	c.Assert(len(out), Equals, 120)
+	c.Assert(len(out), Equals, 191)
 
 	options = []Option{KeyMarker(""), nil}
 
