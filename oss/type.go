@@ -2,6 +2,7 @@ package oss
 
 import (
 	"encoding/xml"
+	"fmt"
 	"net/url"
 	"time"
 )
@@ -42,20 +43,43 @@ type LifecycleConfiguration struct {
 
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
-	XMLName    xml.Name            `xml:"Rule"`
-	ID         string              `xml:"ID"`         // The rule ID
-	Prefix     string              `xml:"Prefix"`     // The object key prefix
-	Status     string              `xml:"Status"`     // The rule status (enabled or not)
-	Expiration LifecycleExpiration `xml:"Expiration"` // The expiration property
+	XMLName              xml.Name                       `xml:"Rule"`
+	ID                   string                         `xml:"ID"`                           // The rule ID
+	Prefix               string                         `xml:"Prefix"`                       // The object key prefix
+	Status               string                         `xml:"Status"`                       // The rule status (enabled or not)
+	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`         // The expiration property
+	Transition           *LifecycleTransition           `xml:"Transition,omitempty"`         // The transition property
+	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:AbortMultipartUpload,omitempty` // The AbortMultipartUpload property
 }
 
 // LifecycleExpiration defines the rule's expiration property
 type LifecycleExpiration struct {
-	XMLName xml.Name  `xml:"Expiration"`
-	Days    int       `xml:"Days,omitempty"` // Relative expiration time: The expiration time in days after the last modified time
-	Date    time.Time `xml:"Date,omitempty"` // Absolute expiration time: The expiration time in date.
+	XMLName xml.Name `xml:"Expiration"`
+	Days    int      `xml:"Days,omitempty"` // Relative expiration time: The expiration time in days after the last modified time
+	//Date              *time.Time `xml:"Date,omitempty"`              // Absolute expiration time: The expiration time in date.
+	//CreatedBeforeDate *time.Time `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
+	Date              string `xml:"Date,omitempty"`              // Absolute expiration time: The expiration time in date.
+	CreatedBeforeDate string `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
 }
 
+// LifecycleTransition defines the rule's transition propery
+type LifecycleTransition struct {
+	XMLName xml.Name `xml:"Transition"`
+	Days    int      `xml:"Days,omitempty"` // Relative transition time: The transition time in days after the last modified time
+	//CreatedBeforeDate *time.Time `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be restored
+	CreatedBeforeDate string           `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
+	StorageClass      StorageClassType `xml:"StorageClass,omitempty"`      // Specifies the target storage type
+}
+
+// LifecycleAbortMultipartUpload defines the rule's abort multipart upload propery
+type LifecycleAbortMultipartUpload struct {
+	XMLName xml.Name `xml:"AbortMultipartUpload"`
+	Days    int      `xml:"Days,omitempty"` // Relative expiration time: The expiration time in days after the last modified time
+	//CreatedBeforeDate *time.Time `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
+	CreatedBeforeDate string `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
+}
+
+/*
 type lifecycleXML struct {
 	XMLName xml.Name        `xml:"LifecycleConfiguration"`
 	Rules   []lifecycleRule `xml:"Rule"`
@@ -93,26 +117,79 @@ func convLifecycleRule(rules []LifecycleRule) []lifecycleRule {
 	}
 	return rs
 }
+*/
 
-// BuildLifecycleRuleByDays builds a lifecycle rule with specified expiration days
+const iso8601DateFormat = "2006-01-02T15:04:05.000Z"
+
+// BuildLifecycleRuleByDays builds a lifecycle rule objects will expiration in days after the last modified time
 func BuildLifecycleRuleByDays(id, prefix string, status bool, days int) LifecycleRule {
 	var statusStr = "Enabled"
 	if !status {
 		statusStr = "Disabled"
 	}
 	return LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
-		Expiration: LifecycleExpiration{Days: days}}
+		Expiration: &LifecycleExpiration{Days: days}}
 }
 
-// BuildLifecycleRuleByDate builds a lifecycle rule with specified expiration time.
+// BuildLifecycleRuleByDate builds a lifecycle rule objects will expiration in specified date
 func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day int) LifecycleRule {
 	var statusStr = "Enabled"
 	if !status {
 		statusStr = "Disabled"
 	}
-	date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC).Format(iso8601DateFormat)
 	return LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
-		Expiration: LifecycleExpiration{Date: date}}
+		Expiration: &LifecycleExpiration{Date: date}}
+}
+
+// NewLifecleRuleByDays builds a lifecycle rule objects will expiration in days after the last modified time
+func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt LifecycleRuleType, sc StorageClassType) (*LifecycleRule, error) {
+	var statusStr = "Enabled"
+	if !status {
+		statusStr = "Disabled"
+	}
+	switch lrt {
+	case LRTExpriration:
+		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
+			Expiration: &LifecycleExpiration{Days: days}}, nil
+	case LRTTransition:
+		if sc != StorageIA && sc != StorageArchive {
+			return nil, fmt.Errorf("invalid storage class of transition lifecycle rule,  storage class: %v", sc)
+		}
+		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
+			Transition: &LifecycleTransition{Days: days, StorageClass: sc}}, nil
+	case LRTAbortMultiPartUpload:
+		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
+			AbortMultipartUpload: &LifecycleAbortMultipartUpload{Days: days}}, nil
+	default:
+		return nil, fmt.Errorf("invalid type of lifecycle rule: %v", lrt)
+	}
+}
+
+// NewLifecycleRuleByCreateBeforeDate builds a lifecycle rule objects created before the date will be expired.
+func NewLifecycleRuleByCreateBeforeDate(id, prefix string, status bool, year, month, day int, lrt LifecycleRuleType, sc StorageClassType) (*LifecycleRule, error) {
+	var statusStr = "Enabled"
+	if !status {
+		statusStr = "Disabled"
+	}
+
+	date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC).Format(iso8601DateFormat)
+	switch lrt {
+	case LRTExpriration:
+		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
+			Expiration: &LifecycleExpiration{CreatedBeforeDate: date}}, nil
+	case LRTTransition:
+		if sc != StorageIA && sc != StorageArchive {
+			return nil, fmt.Errorf("invalid storage class of transition lifecycle rule,  storage class: %v", sc)
+		}
+		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
+			Transition: &LifecycleTransition{CreatedBeforeDate: date, StorageClass: sc}}, nil
+	case LRTAbortMultiPartUpload:
+		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
+			AbortMultipartUpload: &LifecycleAbortMultipartUpload{CreatedBeforeDate: date}}, nil
+	default:
+		return nil, fmt.Errorf("invalid type of lifecycle rule: %v", lrt)
+	}
 }
 
 // GetBucketLifecycleResult defines GetBucketLifecycle's result object

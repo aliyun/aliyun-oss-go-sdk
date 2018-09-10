@@ -72,6 +72,18 @@ const (
 	HTTPDelete HTTPMethod = "DELETE"
 )
 
+// LifecycleRuleType rule type of lifecycle
+type LifecycleRuleType string
+
+const (
+	// LRTExpriration Expriation
+	LRTExpriration LifecycleRuleType = "Expriation"
+	// LRTTransition Transition
+	LRTTransition LifecycleRuleType = "Transition"
+	// LRTAbortMultiPartUpload AbortMultiPartUpload
+	LRTAbortMultiPartUpload LifecycleRuleType = "AbortMultiPartUpload"
+)
+
 // HTTP headers
 const (
 	HTTPHeaderAcceptEncoding     string = "Accept-Encoding"
