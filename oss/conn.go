@@ -55,7 +55,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 	urlParams := conn.getURLParams(params)
 	subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
-	resource := conn.url.getResource(bucketName, objectName, subResource)
+	resource := conn.getResource(bucketName, objectName, subResource)
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
@@ -138,7 +138,7 @@ func (conn Conn) getURLParams(params map[string]interface{}) string {
 		}
 		buf.WriteString(url.QueryEscape(k))
 		if params[k] != nil {
-			buf.WriteString("=" + url.QueryEscape(params[k].(string)))
+			buf.WriteString("=" + strings.Replace(url.QueryEscape(params[k].(string)), "+", "%20", -1))
 		}
 	}
 
@@ -148,9 +148,20 @@ func (conn Conn) getURLParams(params map[string]interface{}) string {
 func (conn Conn) getSubResource(params map[string]interface{}) string {
 	// Sort
 	keys := make([]string, 0, len(params))
+	signParams := make(map[string]string)
+
 	for k := range params {
-		if conn.isParamSign(k) {
+		if conn.config.AuthVersion == AuthV2 {
+			encodedKey := url.QueryEscape(k)
+			keys = append(keys, encodedKey)
+			if params[k] != nil {
+				signParams[encodedKey] = strings.Replace(url.QueryEscape(params[k].(string)), "+", "%20", -1)
+			}
+		} else if conn.isParamSign(k) {
 			keys = append(keys, k)
+			if params[k] != nil {
+				signParams[k] = params[k].(string)
+			}
 		}
 	}
 	sort.Strings(keys)
@@ -162,8 +173,8 @@ func (conn Conn) getSubResource(params map[string]interface{}) string {
 			buf.WriteByte('&')
 		}
 		buf.WriteString(k)
-		if params[k] != nil {
-			buf.WriteString("=" + params[k].(string))
+		if _, ok := signParams[k]; ok {
+			buf.WriteString("=" + signParams[k])
 		}
 	}
 
@@ -246,8 +257,15 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	if conn.config.SecurityToken != "" {
 		params[HTTPParamSecurityToken] = conn.config.SecurityToken
 	}
+
+	if conn.config.AuthVersion == AuthV2 {
+		params[HTTPParamSignatureVersion] = "OSS2"
+		params[HTTPParamExpiresV2] = strconv.FormatInt(expiration, 10)
+		params[HTTPParamAccessKeyIDV2] = conn.config.AccessKeyID
+	}
+
 	subResource := conn.getSubResource(params)
-	canonicalizedResource := conn.url.getResource(bucketName, objectName, subResource)
+	canonicalizedResource := conn.getResource(bucketName, objectName, subResource)
 
 	m := strings.ToUpper(string(method))
 	req := &http.Request{
@@ -273,9 +291,23 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 
 	signedStr := conn.getSignedStr(req, canonicalizedResource)
 
-	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
-	params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
-	params[HTTPParamSignature] = signedStr
+	if conn.config.AuthVersion == AuthV2 {
+		params[HTTPParamSignatureV2] = signedStr
+
+		additionalHeaders := ""
+		additionalHeaderKeys := conn.getAdditionalHeaderKeys(req)
+		for _, additionalHeaderKey := range additionalHeaderKeys {
+			additionalHeaders = additionalHeaderKey + ";"
+		}
+
+		if additionalHeaders != "" {
+			params[HTTPParamAdditionalHeadersV2] = additionalHeaders
+		}
+	} else {
+		params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
+		params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
+		params[HTTPParamSignature] = signedStr
+	}
 
 	urlParams := conn.getURLParams(params)
 	return conn.url.getSignURL(bucketName, objectName, urlParams)
@@ -591,13 +623,19 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	return host, path
 }
 
-// getResource gets canonicalized resource
-func (um urlMaker) getResource(bucketName, objectName, subResource string) string {
+func (conn Conn) getResource(bucketName, objectName, subResource string) string {
 	if subResource != "" {
 		subResource = "?" + subResource
 	}
+
 	if bucketName == "" {
-		return fmt.Sprintf("/%s%s", bucketName, subResource)
+		if conn.config.AuthVersion == AuthV2 {
+			return url.QueryEscape("/") + subResource
+		}
+		return "/" + subResource
 	}
-	return fmt.Sprintf("/%s/%s%s", bucketName, objectName, subResource)
+	if conn.config.AuthVersion == AuthV2 {
+		return url.QueryEscape("/"+bucketName+"/") + strings.Replace(url.QueryEscape(objectName), "+", "%20", -1) + subResource
+	}
+	return "/" + bucketName + "/" + objectName + subResource
 }

@@ -699,7 +699,7 @@ func (bucket Bucket) RestoreObject(objectKey string) error {
 //
 func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec int64, options ...Option) (string, error) {
 	if expiredInSec < 0 {
-		return "", fmt.Errorf("invalid expires: %d, expires must bigger than 0", expiredInSec)
+		return "", fmt.Errorf("invalid expires: %d, expires must greater than 0", expiredInSec)
 	}
 	expiration := time.Now().Unix() + expiredInSec
 

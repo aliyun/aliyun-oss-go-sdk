@@ -213,9 +213,16 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	// Sign URL for put
 	str, err := s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if s.bucket.getConfig().AuthVersion == AuthV2 {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	}
 
 	// Error put object with URL
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue), ContentType("image/tiff"))
@@ -243,9 +250,16 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	// Sign URL for function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if s.bucket.getConfig().AuthVersion == AuthV2 {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	}
 
 	// Get object with URL
 	body, err := s.bucket.GetObjectWithURL(str)
@@ -263,9 +277,6 @@ func (s *OssBucketSuite) TestSignURL(c *C) {
 	}
 	str, err = s.bucket.SignURL(objectName, HTTPPut, 60, options...)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Put object with URL from file
 	// Without option, error
@@ -389,9 +400,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Sign URL for function PutObjectWithURL
 	str, err := s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Put object with URL
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
@@ -400,9 +408,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Sign URL for function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Get object with URL
 	body, err := s.bucket.GetObjectWithURL(str)
@@ -417,9 +422,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Sign URL for funciton PutObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Put object with URL
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
@@ -428,9 +430,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Sign URL for function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Get object with URL
 	body, err = s.bucket.GetObjectWithURL(str)
@@ -445,9 +444,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Sign URL for function PutObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Put object with URL
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
@@ -456,9 +452,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	// Sign URL for get function GetObjectWithURL
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Get object with URL
 	body, err = s.bucket.GetObjectWithURL(str)
@@ -517,9 +510,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKeyAndPorxy(c *C) {
 	// Sign URL for put
 	str, err := bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Put object with URL
 	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
@@ -528,9 +518,6 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKeyAndPorxy(c *C) {
 	// Sign URL for function GetObjectWithURL
 	str, err = bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
 
 	// Get object with URL
 	body, err := bucket.GetObjectWithURL(str)
@@ -1828,6 +1815,7 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 	// Put with URL
 	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
 	c.Assert(err, IsNil)
+	fmt.Printf("the value of signedURL is %v", signedURL)
 
 	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
 	c.Assert(err, IsNil)

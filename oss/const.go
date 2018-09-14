@@ -129,6 +129,12 @@ const (
 	HTTPParamAccessKeyID   = "OSSAccessKeyId"
 	HTTPParamSignature     = "Signature"
 	HTTPParamSecurityToken = "security-token"
+
+	HTTPParamSignatureVersion    = "x-oss-signature-version"
+	HTTPParamExpiresV2           = "x-oss-expires"
+	HTTPParamAccessKeyIDV2       = "x-oss-access-key-id"
+	HTTPParamSignatureV2         = "x-oss-signature"
+	HTTPParamAdditionalHeadersV2 = "x-oss-additional-headers"
 )
 
 // Other constants
@@ -144,4 +150,14 @@ const (
 	CheckpointFileSuffix = ".cp" // Checkpoint file suffix
 
 	Version = "1.9.0" // Go SDK version
+)
+
+// AuthVersion the version of auth
+type AuthVersionType string
+
+const (
+	// AuthV1 v1
+	AuthV1 AuthVersionType = "v1"
+	// AuthV2 v2
+	AuthV2 AuthVersionType = "v2"
 )

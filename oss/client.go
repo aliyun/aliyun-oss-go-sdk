@@ -5,6 +5,7 @@ package oss
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -58,6 +59,10 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	// Client options parse
 	for _, option := range options {
 		option(client)
+	}
+
+	if config.AuthVersion != AuthV1 && config.AuthVersion != AuthV2 {
+		return nil, fmt.Errorf("Init client Error, invalid Auth version: %v", config.AuthVersion)
 	}
 
 	// Create HTTP connection
@@ -754,6 +759,18 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 		client.Config.ProxyUser = proxyUser
 		client.Config.ProxyPassword = proxyPassword
 		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
+	}
+}
+
+func AuthVersion(authVersion AuthVersionType) ClientOption {
+	return func(client *Client) {
+		client.Config.AuthVersion = authVersion
+	}
+}
+
+func AdditionalHeaders(headers []string) ClientOption {
+	return func(client *Client) {
+		client.Config.AdditionalHeaders = headers
 	}
 }
 

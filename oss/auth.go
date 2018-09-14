@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"hash"
 	"io"
 	"net/http"
@@ -18,10 +20,34 @@ type headerSorter struct {
 	Vals []string
 }
 
+func (conn Conn) getAdditionalHeaderKeys(req *http.Request) []string {
+	var additionalHeaderKeys []string
+	for _, key := range conn.config.AdditionalHeaders {
+		if _, ok := req.Header[key]; ok {
+			additionalHeaderKeys = append(additionalHeaderKeys, key)
+		}
+	}
+
+	return additionalHeaderKeys
+}
+
 // signHeader signs the header and sets it as the authorization header.
 func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 	// Get the final authorization string
-	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
+	authorizationStr := ""
+	if conn.config.AuthVersion == AuthV2 {
+		additionalHeaderKeys := conn.getAdditionalHeaderKeys(req)
+		if len(additionalHeaderKeys) > 0 {
+			authorizationFmt := "OSS2 AccessKeyId:%v,AdditionalHeaders:%v,Signature:%v"
+			additionnalHeadersStr := strings.Join(additionalHeaderKeys, ";")
+			authorizationStr = fmt.Sprintf(authorizationFmt, conn.config.AccessKeyID, additionnalHeadersStr, conn.getSignedStr(req, canonicalizedResource))
+		} else {
+			authorizationFmt := "OSS2 AccessKeyId:%v,Signature:%v"
+			authorizationStr = fmt.Sprintf(authorizationFmt, conn.config.AccessKeyID, conn.getSignedStr(req, canonicalizedResource))
+		}
+	} else {
+		authorizationStr = "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
+	}
 
 	// Give the parameter "Authorization" value
 	req.Header.Set(HTTPHeaderAuthorization, authorizationStr)
@@ -29,16 +55,32 @@ func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 
 func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) string {
 	// Find out the "x-oss-"'s address in header of the request
-	temp := make(map[string]string)
-
+	ossHeadersMap := make(map[string]string)
 	for k, v := range req.Header {
 		if strings.HasPrefix(strings.ToLower(k), "x-oss-") {
-			temp[strings.ToLower(k)] = v[0]
+			ossHeadersMap[strings.ToLower(k)] = v[0]
 		}
 	}
-	hs := newHeaderSorter(temp)
+	hs := newHeaderSorter(ossHeadersMap)
 
-	// Sort the temp by the ascending order
+	additionnalHeadersMap := make(map[string]string)
+	additionalHeaders := ""
+	if conn.config.AuthVersion == AuthV2 {
+		additionalHeaderKeys := conn.getAdditionalHeaderKeys(req)
+		for _, additionalHeaderKey := range additionalHeaderKeys {
+			additionalHeaderValue := req.Header[additionalHeaderKey]
+			hs.Keys = append(hs.Keys, strings.ToLower(additionalHeaderKey))
+			hs.Vals = append(hs.Vals, additionalHeaderValue[0])
+			additionnalHeadersMap[strings.ToLower(additionalHeaderKey)] = additionalHeaderValue[0]
+		}
+		ahs := newHeaderSorter(additionnalHeadersMap)
+		ahs.Sort()
+		for i := range ahs.Keys {
+			additionalHeaders += ahs.Keys[i] + ":" + ahs.Vals[i] + ";"
+		}
+	}
+
+	// Sort the headers by the ascending order
 	hs.Sort()
 
 	// Get the canonicalizedOSSHeaders
@@ -55,6 +97,13 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 
 	signStr := req.Method + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedOSSHeaders + canonicalizedResource
 	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.AccessKeySecret))
+
+	if conn.config.AuthVersion == AuthV2 {
+		signStr = req.Method + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedOSSHeaders + additionalHeaders + "\n" + canonicalizedResource
+		h = hmac.New(func() hash.Hash { return sha256.New() }, []byte(conn.config.AccessKeySecret))
+	}
+
+	fmt.Printf("the value of signStr is %v", signStr)
 	io.WriteString(h, signStr)
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
