@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"hash"
@@ -438,6 +439,14 @@ func xmlUnmarshal(body io.Reader, v interface{}) error {
 		return err
 	}
 	return xml.Unmarshal(data, v)
+}
+
+func jsonUnmarshal(body io.Reader, v interface{}) error {
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
 }
 
 // timeoutConn handles HTTP timeout

@@ -2077,21 +2077,25 @@ func (s *OssBucketSuite) TestProcessObject(c *C) {
 	// If bucket-name not specified, it is saved to the current bucket by default.
 	destObjName := objectNamePrefix + "_process_dest_1.jpg"
 	process := fmt.Sprintf("image/resize,w_100|sys/saveas,o_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)))
-	err = s.bucket.ProcessObject(objectName, process)
+	result, err := s.bucket.ProcessObject(objectName, process)
 	c.Assert(err, IsNil)
 	exist, _ := s.bucket.IsObjectExist(destObjName)
 	c.Assert(exist, Equals, true)
+	c.Assert(result.Bucket, Equals, "")
+	c.Assert(result.Object, Equals, destObjName)
 
 	destObjName = objectNamePrefix + "_process_dest_1.jpg"
 	process = fmt.Sprintf("image/resize,w_100|sys/saveas,o_%v,b_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)), base64.URLEncoding.EncodeToString([]byte(s.bucket.BucketName)))
-	err = s.bucket.ProcessObject(objectName, process)
+	result, err = s.bucket.ProcessObject(objectName, process)
 	c.Assert(err, IsNil)
 	exist, _ = s.bucket.IsObjectExist(destObjName)
 	c.Assert(exist, Equals, true)
+	c.Assert(result.Bucket, Equals, s.bucket.BucketName)
+	c.Assert(result.Object, Equals, destObjName)
 
 	//no support process
 	process = fmt.Sprintf("image/resize,w_100|saveas,o_%v,b_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)), base64.URLEncoding.EncodeToString([]byte(s.bucket.BucketName)))
-	err = s.bucket.ProcessObject(objectName, process)
+	result, err = s.bucket.ProcessObject(objectName, process)
 	c.Assert(err, NotNil)
 }
 

@@ -911,17 +911,20 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (bucket Bucket) ProcessObject(objectKey string, process string) error {
+func (bucket Bucket) ProcessObject(objectKey string, process string) (ProcessObjectResut, error) {
+	var out ProcessObjectResut
 	params := map[string]interface{}{}
 	params["x-oss-process"] = nil
 	processData := fmt.Sprintf("%v=%v", "x-oss-process", process)
 	data := strings.NewReader(processData)
 	resp, err := bucket.do("POST", objectKey, params, nil, data, nil)
 	if err != nil {
-		return err
+		return out, err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+
+	err = jsonUnmarshal(resp.Body, &out)
+	return out, err
 }
 
 // Private
