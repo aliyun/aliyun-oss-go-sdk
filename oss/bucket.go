@@ -911,8 +911,8 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (bucket Bucket) ProcessObject(objectKey string, process string) (ProcessObjectResut, error) {
-	var out ProcessObjectResut
+func (bucket Bucket) ProcessObject(objectKey string, process string) (ProcessObjectResult, error) {
+	var out ProcessObjectResult
 	params := map[string]interface{}{}
 	params["x-oss-process"] = nil
 	processData := fmt.Sprintf("%v=%v", "x-oss-process", process)
