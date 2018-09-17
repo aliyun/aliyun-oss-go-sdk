@@ -138,7 +138,7 @@ func (s *OssConnSuite) TestConnToolFunc(c *C) {
 	fd, err := os.Open("../sample/BingWallpaper-2015-11-07.jpg")
 	c.Assert(err, IsNil)
 	fd.Close()
-	var out ProcessObjectResut
+	var out ProcessObjectResult
 	err = jsonUnmarshal(fd, &out)
 	c.Assert(err, NotNil)
 }
