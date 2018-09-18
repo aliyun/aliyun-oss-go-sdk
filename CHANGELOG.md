@@ -1,4 +1,16 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：1.9.1 日期：2018-09-17
+### 变更内容
+ - 变更：支持ipv6
+ - 变更：支持修改对象的存储类型
+ - 修复：修改sample中GetBucketReferer方法名拼写错误
+ - 修复：修复NopCloser在close的时候并不释放内存的内存泄漏问题
+ - 变更：增加ProcessObject接口
+ - 修复：修改图片处理接口参数拼写错误导致无法处理的bug
+ - 修复：增加ListUploadedParts接口的options选项
+ - 修复：增加Callback&CallbackVal选项，支持回调使用
+ - 修复：GetObject接口返回Response，支持用户读取crc等返回值
+ - 修复：当以压缩格式返回数据时，GetObject接口不校验crc
 
 ## 版本号：1.9.0 日期：2018-06-15
 ### 变更内容
