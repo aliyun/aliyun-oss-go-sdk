@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hash"
 	"hash/crc64"
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -27,20 +29,20 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 		return errors.New("oss: part size smaller than 1")
 	}
 
-	cpConf, err := getCpConfig(options, filePath)
-	if err != nil {
-		return err
-	}
-
 	uRange, err := getRangeConfig(options)
 	if err != nil {
 		return err
 	}
 
+	cpConf := getCpConfig(options)
 	routines := getRoutines(options)
 
-	if cpConf.IsEnable {
-		return bucket.downloadFileWithCp(objectKey, filePath, partSize, options, cpConf.FilePath, routines, uRange)
+	if cpConf != nil && cpConf.IsEnable && cpConf.cpDir != "" {
+		src := fmt.Sprintf("oss://%v/%v", bucket.BucketName, objectKey)
+		absPath, _ := filepath.Abs(filePath)
+		cpFileName := getCpFileName(src, absPath)
+		cpFilePath := cpConf.cpDir + string(os.PathSeparator) + cpFileName
+		return bucket.downloadFileWithCp(objectKey, filePath, partSize, options, cpFilePath, routines, uRange)
 	}
 
 	return bucket.downloadFile(objectKey, filePath, partSize, options, routines, uRange)
@@ -76,7 +78,7 @@ func defaultDownloadPartHook(part downloadPart) error {
 	return nil
 }
 
-// defaultDownloadProgressListener defines default ProgressListener, shields the ProgressListener in options of GetObject. 
+// defaultDownloadProgressListener defines default ProgressListener, shields the ProgressListener in options of GetObject.
 type defaultDownloadProgressListener struct {
 }
 

@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strconv"
 )
 
@@ -27,16 +27,16 @@ func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string,
 		return errors.New("oss: part size invalid range (1024KB, 5GB]")
 	}
 
-	cpConf, err := getCpConfig(options, filepath.Base(destObjectKey))
-	if err != nil {
-		return err
-	}
-
+	cpConf := getCpConfig(options)
 	routines := getRoutines(options)
 
-	if cpConf.IsEnable {
+	if cpConf != nil && cpConf.IsEnable && cpConf.cpDir != "" {
+		src := fmt.Sprintf("oss://%v/%v", srcBucketName, srcObjectKey)
+		dest := fmt.Sprintf("oss://%v/%v", bucket.BucketName, destObjectKey)
+		cpFileName := getCpFileName(src, dest)
+		cpFilePath := cpConf.cpDir + string(os.PathSeparator) + cpFileName
 		return bucket.copyFileWithCp(srcBucketName, srcObjectKey, destBucketName, destObjectKey,
-			partSize, options, cpConf.FilePath, routines)
+			partSize, options, cpFilePath, routines)
 	}
 
 	return bucket.copyFile(srcBucketName, srcObjectKey, destBucketName, destObjectKey,

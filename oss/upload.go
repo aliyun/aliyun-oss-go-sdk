@@ -3,10 +3,13 @@ package oss
 import (
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -24,15 +27,15 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 		return errors.New("oss: part size invalid range (1024KB, 5GB]")
 	}
 
-	cpConf, err := getCpConfig(options, filePath)
-	if err != nil {
-		return err
-	}
-
+	cpConf := getCpConfig(options)
 	routines := getRoutines(options)
 
-	if cpConf.IsEnable {
-		return bucket.uploadFileWithCp(objectKey, filePath, partSize, options, cpConf.FilePath, routines)
+	if cpConf != nil && cpConf.IsEnable && cpConf.cpDir != "" {
+		dest := fmt.Sprintf("oss://%v/%v", bucket.BucketName, objectKey)
+		absPath, _ := filepath.Abs(filePath)
+		cpFileName := getCpFileName(absPath, dest)
+		cpFilePath := cpConf.cpDir + string(os.PathSeparator) + cpFileName
+		return bucket.uploadFileWithCp(objectKey, filePath, partSize, options, cpFilePath, routines)
 	}
 
 	return bucket.uploadFile(objectKey, filePath, partSize, options, routines)
@@ -41,19 +44,26 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 // ----- concurrent upload without checkpoint  -----
 
 // getCpConfig gets checkpoint configuration
-func getCpConfig(options []Option, filePath string) (*cpConfig, error) {
-	cpc := &cpConfig{}
+func getCpConfig(options []Option) *cpConfig {
 	cpcOpt, err := findOption(options, checkpointConfig, nil)
 	if err != nil || cpcOpt == nil {
-		return cpc, err
+		return nil
 	}
 
-	cpc = cpcOpt.(*cpConfig)
-	if cpc.IsEnable && cpc.FilePath == "" {
-		cpc.FilePath = filePath + CheckpointFileSuffix
-	}
+	return cpcOpt.(*cpConfig)
+}
 
-	return cpc, nil
+// getCpFileName return the name of the checkpoint file
+func getCpFileName(src, dest string) string {
+	md5Ctx := md5.New()
+	md5Ctx.Write([]byte(src))
+	srcCheckSum := hex.EncodeToString(md5Ctx.Sum(nil))
+
+	md5Ctx.Reset()
+	md5Ctx.Write([]byte(dest))
+	destCheckSum := hex.EncodeToString(md5Ctx.Sum(nil))
+
+	return fmt.Sprintf("%v-%v.cp", srcCheckSum, destCheckSum)
 }
 
 // getRoutines gets the routine count. by default it's 1.
