@@ -44,6 +44,16 @@ const (
 	StorageArchive StorageClassType = "Archive"
 )
 
+// PayerType the type of request payer
+type PayerType string
+
+const (
+	// BucketOwner the owner of the bucket
+	BucketOwner PayerType = "BucketOwner"
+	// Requester the requester who send the request
+	Requester PayerType = "Requester"
+)
+
 // HTTPMethod HTTP request method
 type HTTPMethod string
 
@@ -109,6 +119,7 @@ const (
 	HTTPHeaderOssStorageClass                = "X-Oss-Storage-Class"
 	HTTPHeaderOssCallback                    = "X-Oss-Callback"
 	HTTPHeaderOssCallbackVar                 = "X-Oss-Callback-Var"
+	HTTPHeaderOSSRequester                   = "x-oss-request-payer"
 )
 
 // HTTP Param
