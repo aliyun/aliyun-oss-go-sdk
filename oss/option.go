@@ -189,7 +189,7 @@ func CallbackVar(callbackVar string) Option {
 
 // RequestPayer is an option to set payer who pay for the request
 func RequestPayer(payerType PayerType) Option {
-	return setHeader(HTTPHeaderOSSRequester, payerType)
+	return setHeader(HTTPHeaderOSSRequester, string(payerType))
 }
 
 // Delimiter is an option to set delimiler parameter
