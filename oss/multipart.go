@@ -275,7 +275,7 @@ func (bucket Bucket) ListMultipartUploads(options ...Option) (ListMultipartUploa
 	}
 	params["uploads"] = nil
 
-	resp, err := bucket.do("GET", "", params, nil, nil, nil)
+	resp, err := bucket.do("GET", "", params, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
