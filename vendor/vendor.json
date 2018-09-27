@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "kaYqfJH0zNcdLgEvDeEfv5IGu1Q=",
+			"path": "github.com/baiyubin/aliyun-sts-go-sdk/sts",
+			"revision": "0bbcb57019a9e7716ffd9921c01afe3f291f7192",
+			"revisionTime": "2017-09-20T14:32:50Z"
+		},
+		{
+			"checksumSHA1": "eDQ6f1EsNf+frcRO/9XukSEchm8=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "36e9d2ebbde5e3f13ab2e25625fd453271d6522e",
+			"revisionTime": "2018-01-03T17:44:51Z"
+		},
+		{
+			"checksumSHA1": "CEFTYXtWmgSh+3Ik1NmDaJcz4E0=",
+			"path": "gopkg.in/check.v1",
+			"revision": "20d25e2804050c1cd24a7eea1e7a6447dd0e74ec",
+			"revisionTime": "2016-12-08T18:13:25Z"
+		}
+	],
+	"rootPath": "github.com/aliyun/aliyun-oss-go-sdk"
+}
