@@ -103,18 +103,8 @@ type copyPart struct {
 }
 
 // getCopyParts calculates copy parts
-func getCopyParts(bucket *Bucket, objectKey string, partSize int64) ([]copyPart, error) {
-	meta, err := bucket.GetObjectDetailedMeta(objectKey)
-	if err != nil {
-		return nil, err
-	}
-
+func getCopyParts(objectSize, partSize int64) []copyPart {
 	parts := []copyPart{}
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
-	if err != nil {
-		return nil, err
-	}
-
 	part := copyPart{}
 	i := 0
 	for offset := int64(0); offset < objectSize; offset += partSize {
@@ -124,7 +114,7 @@ func getCopyParts(bucket *Bucket, objectKey string, partSize int64) ([]copyPart,
 		parts = append(parts, part)
 		i++
 	}
-	return parts, nil
+	return parts
 }
 
 // getSrcObjectBytes gets the source file size
@@ -143,12 +133,18 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
 	listener := getProgressListener(options)
 
-	// Get copy parts
-	parts, err := getCopyParts(srcBucket, srcObjectKey, partSize)
+	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, options...)
 	if err != nil {
 		return err
 	}
 
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	if err != nil {
+		return err
+	}
+
+	// Get copy parts
+	parts := getCopyParts(objectSize, partSize)
 	// Initialize the multipart upload
 	imur, err := descBucket.InitiateMultipartUpload(destObjectKey, options...)
 	if err != nil {
@@ -187,7 +183,7 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
-			descBucket.AbortMultipartUpload(imur)
+			descBucket.AbortMultipartUpload(imur, options...)
 			event = newProgressEvent(TransferFailedEvent, completedBytes, totalBytes)
 			publishProgress(listener, event)
 			return err
@@ -202,9 +198,9 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	publishProgress(listener, event)
 
 	// Complete the multipart upload
-	_, err = descBucket.CompleteMultipartUpload(imur, ups)
+	_, err = descBucket.CompleteMultipartUpload(imur, ups, options...)
 	if err != nil {
-		bucket.AbortMultipartUpload(imur)
+		bucket.AbortMultipartUpload(imur, options...)
 		return err
 	}
 	return nil
@@ -336,7 +332,7 @@ func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBu
 	cp.DestObjectKey = destObjectKey
 
 	// Object
-	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey)
+	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, options...)
 	if err != nil {
 		return err
 	}
@@ -351,10 +347,7 @@ func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBu
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
 	// Parts
-	cp.Parts, err = getCopyParts(srcBucket, srcObjectKey, partSize)
-	if err != nil {
-		return err
-	}
+	cp.Parts = getCopyParts(objectSize, partSize)
 	cp.PartStat = make([]bool, len(cp.Parts))
 	for i := range cp.PartStat {
 		cp.PartStat[i] = false
@@ -371,10 +364,10 @@ func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBu
 	return nil
 }
 
-func (cp *copyCheckpoint) complete(bucket *Bucket, parts []UploadPart, cpFilePath string) error {
+func (cp *copyCheckpoint) complete(bucket *Bucket, parts []UploadPart, cpFilePath string, options []Option) error {
 	imur := InitiateMultipartUploadResult{Bucket: cp.DestBucketName,
 		Key: cp.DestObjectKey, UploadID: cp.CopyID}
-	_, err := bucket.CompleteMultipartUpload(imur, parts)
+	_, err := bucket.CompleteMultipartUpload(imur, parts, options...)
 	if err != nil {
 		return err
 	}
@@ -456,5 +449,5 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	event = newProgressEvent(TransferCompletedEvent, completedBytes, ccp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	return ccp.complete(descBucket, ccp.CopyParts, cpFilePath)
+	return ccp.complete(descBucket, ccp.CopyParts, cpFilePath, options)
 }
