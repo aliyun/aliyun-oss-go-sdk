@@ -107,11 +107,11 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 //
 func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) (*UploadPartResult, error) {
 	listener := getProgressListener(options)
-	opts := []Option{ContentLength(request.PartSize)}
+	options = append(options, ContentLength(request.PartSize))
 	params := map[string]interface{}{}
 	params["partNumber"] = strconv.Itoa(request.PartNumber)
 	params["uploadId"] = request.InitResult.UploadID
-	resp, err := bucket.do("PUT", request.InitResult.Key, params, opts,
+	resp, err := bucket.do("PUT", request.InitResult.Key, params, options,
 		&io.LimitedReader{R: request.Reader, N: request.PartSize}, listener)
 	if err != nil {
 		return &UploadPartResult{}, err

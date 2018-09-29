@@ -10,6 +10,7 @@ import (
 	"hash/crc64"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -215,6 +216,12 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)
 
+	payerOptions := []Option{}
+	payer := getPayer(options)
+	if payer != "" {
+		payerOptions = append(payerOptions, RequestPayer(PayerType(payer)))
+	}
+
 	// If the file does not exist, create one. If exists, the download will overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
 	if err != nil {
@@ -222,7 +229,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 	}
 	fd.Close()
 
-	meta, err := bucket.GetObjectDetailedMeta(objectKey, options...)
+	meta, err := bucket.GetObjectDetailedMeta(objectKey, payerOptions...)
 	if err != nil {
 		return err
 	}
@@ -323,7 +330,7 @@ type objectStat struct {
 }
 
 // isValid flags of checkpoint data is valid. It returns true when the data is valid and the checkpoint is valid and the object is not updated.
-func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *unpackedRange, options []Option) (bool, error) {
+func (cp downloadCheckpoint) isValid(meta http.Header, uRange *unpackedRange) (bool, error) {
 	// Compare the CP's Magic and the MD5
 	cpb := cp
 	cpb.MD5 = ""
@@ -333,12 +340,6 @@ func (cp downloadCheckpoint) isValid(bucket *Bucket, objectKey string, uRange *u
 
 	if cp.Magic != downloadCpMagic || b64 != cp.MD5 {
 		return false, nil
-	}
-
-	// Ensure the object is not updated.
-	meta, err := bucket.GetObjectDetailedMeta(objectKey, options...)
-	if err != nil {
-		return false, err
 	}
 
 	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
@@ -422,17 +423,11 @@ func (cp downloadCheckpoint) getCompletedBytes() int64 {
 }
 
 // prepare initiates download tasks
-func (cp *downloadCheckpoint) prepare(bucket *Bucket, objectKey, filePath string, partSize int64, uRange *unpackedRange, options []Option) error {
+func (cp *downloadCheckpoint) prepare(meta http.Header, bucket *Bucket, objectKey, filePath string, partSize int64, uRange *unpackedRange) error {
 	// CP
 	cp.Magic = downloadCpMagic
 	cp.FilePath = filePath
 	cp.Object = objectKey
-
-	// Object
-	meta, err := bucket.GetObjectDetailedMeta(objectKey, options...)
-	if err != nil {
-		return err
-	}
 
 	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
 	if err != nil {
@@ -470,6 +465,12 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	tempFilePath := filePath + TempFileSuffix
 	listener := getProgressListener(options)
 
+	payerOptions := []Option{}
+	payer := getPayer(options)
+	if payer != "" {
+		payerOptions = append(payerOptions, RequestPayer(PayerType(payer)))
+	}
+
 	// Load checkpoint data.
 	dcp := downloadCheckpoint{}
 	err := dcp.load(cpFilePath)
@@ -477,10 +478,16 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		os.Remove(cpFilePath)
 	}
 
+	// Get the object detailed meta.
+	meta, err := bucket.GetObjectDetailedMeta(objectKey, payerOptions...)
+	if err != nil {
+		return err
+	}
+
 	// Load error or data invalid. Re-initialize the download.
-	valid, err := dcp.isValid(&bucket, objectKey, uRange, options)
+	valid, err := dcp.isValid(meta, uRange)
 	if err != nil || !valid {
-		if err = dcp.prepare(&bucket, objectKey, filePath, partSize, uRange, options); err != nil {
+		if err = dcp.prepare(meta, &bucket, objectKey, filePath, partSize, uRange); err != nil {
 			return err
 		}
 		os.Remove(cpFilePath)

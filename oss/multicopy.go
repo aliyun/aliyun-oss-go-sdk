@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 )
@@ -133,7 +134,13 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
 	listener := getProgressListener(options)
 
-	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, options...)
+	payerOptions := []Option{}
+	payer := getPayer(options)
+	if payer != "" {
+		payerOptions = append(payerOptions, RequestPayer(PayerType(payer)))
+	}
+
+	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, payerOptions...)
 	if err != nil {
 		return err
 	}
@@ -162,7 +169,7 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	publishProgress(listener, event)
 
 	// Start to copy workers
-	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
+	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, payerOptions, copyPartHooker}
 	for w := 1; w <= routines; w++ {
 		go copyWorker(w, arg, jobs, results, failed, die)
 	}
@@ -183,7 +190,7 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
-			descBucket.AbortMultipartUpload(imur, options...)
+			descBucket.AbortMultipartUpload(imur, payerOptions...)
 			event = newProgressEvent(TransferFailedEvent, completedBytes, totalBytes)
 			publishProgress(listener, event)
 			return err
@@ -198,9 +205,9 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	publishProgress(listener, event)
 
 	// Complete the multipart upload
-	_, err = descBucket.CompleteMultipartUpload(imur, ups, options...)
+	_, err = descBucket.CompleteMultipartUpload(imur, ups, payerOptions...)
 	if err != nil {
-		bucket.AbortMultipartUpload(imur, options...)
+		bucket.AbortMultipartUpload(imur, payerOptions...)
 		return err
 	}
 	return nil
@@ -225,7 +232,7 @@ type copyCheckpoint struct {
 }
 
 // isValid checks if the data is valid which means CP is valid and object is not updated.
-func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error) {
+func (cp copyCheckpoint) isValid(meta http.Header) (bool, error) {
 	// Compare CP's magic number and the MD5.
 	cpb := cp
 	cpb.MD5 = ""
@@ -235,12 +242,6 @@ func (cp copyCheckpoint) isValid(bucket *Bucket, objectKey string) (bool, error)
 
 	if cp.Magic != downloadCpMagic || b64 != cp.MD5 {
 		return false, nil
-	}
-
-	// Make sure the object is not updated.
-	meta, err := bucket.GetObjectDetailedMeta(objectKey)
-	if err != nil {
-		return false, err
 	}
 
 	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
@@ -322,7 +323,7 @@ func (cp copyCheckpoint) getCompletedBytes() int64 {
 }
 
 // prepare initializes the multipart upload
-func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBucket *Bucket, destObjectKey string,
+func (cp *copyCheckpoint) prepare(meta http.Header, srcBucket *Bucket, srcObjectKey string, destBucket *Bucket, destObjectKey string,
 	partSize int64, options []Option) error {
 	// CP
 	cp.Magic = copyCpMagic
@@ -330,12 +331,6 @@ func (cp *copyCheckpoint) prepare(srcBucket *Bucket, srcObjectKey string, destBu
 	cp.SrcObjectKey = srcObjectKey
 	cp.DestBucketName = destBucket.BucketName
 	cp.DestObjectKey = destObjectKey
-
-	// Object
-	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, options...)
-	if err != nil {
-		return err
-	}
 
 	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
 	if err != nil {
@@ -382,6 +377,12 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
 	listener := getProgressListener(options)
 
+	payerOptions := []Option{}
+	payer := getPayer(options)
+	if payer != "" {
+		payerOptions = append(payerOptions, RequestPayer(PayerType(payer)))
+	}
+
 	// Load CP data
 	ccp := copyCheckpoint{}
 	err = ccp.load(cpFilePath)
@@ -389,10 +390,16 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 		os.Remove(cpFilePath)
 	}
 
+	// Make sure the object is not updated.
+	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, payerOptions...)
+	if err != nil {
+		return err
+	}
+
 	// Load error or the CP data is invalid---reinitialize
-	valid, err := ccp.isValid(srcBucket, srcObjectKey)
+	valid, err := ccp.isValid(meta)
 	if err != nil || !valid {
-		if err = ccp.prepare(srcBucket, srcObjectKey, descBucket, destObjectKey, partSize, options); err != nil {
+		if err = ccp.prepare(meta, srcBucket, srcObjectKey, descBucket, destObjectKey, partSize, options); err != nil {
 			return err
 		}
 		os.Remove(cpFilePath)
@@ -415,7 +422,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	publishProgress(listener, event)
 
 	// Start the worker coroutines
-	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
+	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, payerOptions, copyPartHooker}
 	for w := 1; w <= routines; w++ {
 		go copyWorker(w, arg, jobs, results, failed, die)
 	}
@@ -449,5 +456,5 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	event = newProgressEvent(TransferCompletedEvent, completedBytes, ccp.ObjStat.Size)
 	publishProgress(listener, event)
 
-	return ccp.complete(descBucket, ccp.CopyParts, cpFilePath, options)
+	return ccp.complete(descBucket, ccp.CopyParts, cpFilePath, payerOptions)
 }
