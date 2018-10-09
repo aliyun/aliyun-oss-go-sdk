@@ -31,17 +31,25 @@ func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string,
 	cpConf := getCpConfig(options)
 	routines := getRoutines(options)
 
-	if cpConf != nil && cpConf.IsEnable && cpConf.cpDir != "" {
-		src := fmt.Sprintf("oss://%v/%v", srcBucketName, srcObjectKey)
-		dest := fmt.Sprintf("oss://%v/%v", bucket.BucketName, destObjectKey)
-		cpFileName := getCpFileName(src, dest)
-		cpFilePath := cpConf.cpDir + string(os.PathSeparator) + cpFileName
-		return bucket.copyFileWithCp(srcBucketName, srcObjectKey, destBucketName, destObjectKey,
-			partSize, options, cpFilePath, routines)
+	if cpConf != nil && cpConf.IsEnable {
+		cpFilePath := getCopyCpFilePath(cpConf, srcBucketName, srcObjectKey, destBucketName, destObjectKey)
+		if cpFilePath != "" {
+			return bucket.copyFileWithCp(srcBucketName, srcObjectKey, destBucketName, destObjectKey, partSize, options, cpFilePath, routines)
+		}
 	}
 
 	return bucket.copyFile(srcBucketName, srcObjectKey, destBucketName, destObjectKey,
 		partSize, options, routines)
+}
+
+func getCopyCpFilePath(cpConf *cpConfig, srcBucket, srcObject, destBucket, destObject string) string {
+	if cpConf.FilePath == "" && cpConf.DirPath != "" {
+		dest := fmt.Sprintf("oss://%v/%v", destBucket, destObject)
+		src := fmt.Sprintf("oss://%v/%v", srcBucket, srcObject)
+		cpFileName := getCpFileName(src, dest)
+		cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
+	}
+	return cpConf.FilePath
 }
 
 // ----- Concurrently copy without checkpoint ---------

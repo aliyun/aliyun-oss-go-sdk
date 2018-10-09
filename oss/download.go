@@ -38,15 +38,24 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 	cpConf := getCpConfig(options)
 	routines := getRoutines(options)
 
-	if cpConf != nil && cpConf.IsEnable && cpConf.cpDir != "" {
-		src := fmt.Sprintf("oss://%v/%v", bucket.BucketName, objectKey)
-		absPath, _ := filepath.Abs(filePath)
-		cpFileName := getCpFileName(src, absPath)
-		cpFilePath := cpConf.cpDir + string(os.PathSeparator) + cpFileName
-		return bucket.downloadFileWithCp(objectKey, filePath, partSize, options, cpFilePath, routines, uRange)
+	if cpConf != nil && cpConf.IsEnable {
+		cpFilePath := getDownloadCpFilePath(cpConf, bucket.BucketName, objectKey, filePath)
+		if cpFilePath != "" {
+			return bucket.downloadFileWithCp(objectKey, filePath, partSize, options, cpFilePath, routines, uRange)
+		}
 	}
 
 	return bucket.downloadFile(objectKey, filePath, partSize, options, routines, uRange)
+}
+
+func getDownloadCpFilePath(cpConf *cpConfig, srcBucket, srcObject, destFile string) string {
+	if cpConf.FilePath == "" && cpConf.DirPath != "" {
+		src := fmt.Sprintf("oss://%v/%v", srcBucket, srcObject)
+		absPath, _ := filepath.Abs(destFile)
+		cpFileName := getCpFileName(src, absPath)
+		cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
+	}
+	return cpConf.FilePath
 }
 
 // getRangeConfig gets the download range from the options.

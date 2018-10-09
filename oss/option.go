@@ -255,12 +255,18 @@ func StorageClass(value StorageClassType) Option {
 // Checkpoint configuration
 type cpConfig struct {
 	IsEnable bool
-	cpDir    string
+	FilePath string
+	DirPath  string
 }
 
 // Checkpoint sets the isEnable flag and checkpoint file path for DownloadFile/UploadFile.
-func Checkpoint(isEnable bool, cpDir string) Option {
-	return addArg(checkpointConfig, &cpConfig{isEnable, cpDir})
+func Checkpoint(isEnable bool, filePath string) Option {
+	return addArg(checkpointConfig, &cpConfig{IsEnable: isEnable, FilePath: filePath})
+}
+
+// CheckpointDir sets the isEnable flag and checkpoint dir path for DownloadFile/UploadFile.
+func CheckpointDir(isEnable bool, dirPath string) Option {
+	return addArg(checkpointConfig, &cpConfig{IsEnable: isEnable, DirPath: dirPath})
 }
 
 // Routines DownloadFile/UploadFile routine count

@@ -146,7 +146,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 	// Download a file with default checkpoint
 	downloadPartHooker = DownErrorHooker
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, newFile+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	downloadPartHooker = defaultDownloadPartHook
@@ -165,9 +165,9 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(len(dcp.Parts), Equals, 5)
 	c.Assert(len(dcp.todoParts()), Equals, 1)
 
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, newFile+".cp"))
 	c.Assert(err, IsNil)
-
+	//download success, checkpoint file has been deleted
 	err = dcp.load(newFile + ".cp")
 	c.Assert(err, NotNil)
 
@@ -175,17 +175,30 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 
-	// Resumable download with checkpoint
+	// Resumable download with empty checkpoint file path
+	downloadPartHooker = DownErrorHooker
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	downloadPartHooker = defaultDownloadPartHook
+
+	dcp = downloadCheckpoint{}
+	err = dcp.load(newFile + ".cp")
+	c.Assert(err, NotNil)
+
+	// Resumable download with checkpoint dir
 	os.Remove(newFile)
 	downloadPartHooker = DownErrorHooker
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, objectName+".cp"))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, CheckpointDir(true, "./"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	downloadPartHooker = defaultDownloadPartHook
 
 	// Check
 	dcp = downloadCheckpoint{}
-	err = dcp.load(objectName + ".cp")
+	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
+	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, newFile)
+	err = dcp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(dcp.Magic, Equals, downloadCpMagic)
 	c.Assert(len(dcp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
@@ -197,10 +210,10 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(len(dcp.Parts), Equals, 5)
 	c.Assert(len(dcp.todoParts()), Equals, 1)
 
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, objectName+".cp"))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, CheckpointDir(true, "./"))
 	c.Assert(err, IsNil)
-
-	err = dcp.load(objectName + ".cp")
+	//download success, checkpoint file has been deleted
+	err = dcp.load(cpFilePath)
 	c.Assert(err, NotNil)
 
 	eq, err = compareFiles(fileName, newFile)
@@ -209,7 +222,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 	// Resumable download with checkpoint at a time. No error is expected in the download procedure.
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, newFile+".cp"))
 	c.Assert(err, IsNil)
 
 	err = dcp.load(newFile + ".cp")
@@ -221,7 +234,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 	// Resumable download with checkpoint at a time. No error is expected in the download procedure.
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(10), Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(10), Checkpoint(true, newFile+".cp"))
 	c.Assert(err, IsNil)
 
 	err = dcp.load(newFile + ".cp")
@@ -263,7 +276,7 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 	c.Assert(err, NotNil)
 
 	// IfMatch
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, ""), IfMatch(meta.Get("Etag")))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), IfMatch(meta.Get("Etag")))
 	c.Assert(err, IsNil)
 
 	eq, err = compareFiles(fileName, newFile)
@@ -271,7 +284,7 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 	c.Assert(eq, Equals, true)
 
 	// IfNoneMatch
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, ""), IfNoneMatch(meta.Get("Etag")))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), IfNoneMatch(meta.Get("Etag")))
 	c.Assert(err, NotNil)
 }
 
@@ -287,7 +300,7 @@ func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 
 	// Download with default checkpoint
 	downloadPartHooker = DownErrorHooker
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, newFile+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	downloadPartHooker = defaultDownloadPartHook
@@ -295,7 +308,7 @@ func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, newFile+".cp"))
 	c.Assert(err, IsNil)
 
 	eq, err := compareFiles(fileName, newFile)
@@ -335,23 +348,23 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	c.Assert(err, IsNil)
 
 	// Local file does not exist
-	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024)
 	c.Assert(err, NotNil)
 
-	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 
 	// Invalid part size
-	err = s.bucket.DownloadFile(objectName, newFile, -1, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, -1)
 	c.Assert(err, NotNil)
 
-	err = s.bucket.DownloadFile(objectName, newFile, 0, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 0, Routines(2))
 	c.Assert(err, NotNil)
 
-	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024*1024*100, Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024*1024*100)
 	c.Assert(err, NotNil)
 
-	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024*1024*100, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024*1024*100, Routines(2))
 	c.Assert(err, NotNil)
 }
 
@@ -457,7 +470,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 	newFileGet := "down-new-file-tdwcr-2.jpg"
 
 	// Upload a file
-	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
+	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, fileName+".cp"))
 	c.Assert(err, IsNil)
 
 	fileSize, err := getFileSize(fileName)
@@ -465,7 +478,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 
 	// Download with range, from 1024 to 4096
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, ""), Range(1024, 4095))
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(3), Checkpoint(true, newFile+".cp"), Range(1024, 4095))
 	c.Assert(err, IsNil)
 
 	// Check
@@ -484,7 +497,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 
 	// Download with range, from 1024 to 4096
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("1024-4095"))
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, newFile+".cp"), NormalizedRange("1024-4095"))
 	c.Assert(err, IsNil)
 
 	// Check
@@ -503,7 +516,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 
 	// Download with range, from 2048 to the end
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), Checkpoint(true, ""), NormalizedRange("2048-"))
+	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), Checkpoint(true, newFile+".cp"), NormalizedRange("2048-"))
 	c.Assert(err, IsNil)
 
 	// Check
@@ -522,7 +535,7 @@ func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
 
 	// Download with range, the last 4096 bytes
 	os.Remove(newFile)
-	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, ""), NormalizedRange("-4096"))
+	err = s.bucket.DownloadFile(objectName, newFile, 1024, Routines(3), Checkpoint(true, newFile+".cp"), NormalizedRange("-4096"))
 	c.Assert(err, IsNil)
 
 	// Check

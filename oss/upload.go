@@ -30,15 +30,24 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 	cpConf := getCpConfig(options)
 	routines := getRoutines(options)
 
-	if cpConf != nil && cpConf.IsEnable && cpConf.cpDir != "" {
-		dest := fmt.Sprintf("oss://%v/%v", bucket.BucketName, objectKey)
-		absPath, _ := filepath.Abs(filePath)
-		cpFileName := getCpFileName(absPath, dest)
-		cpFilePath := cpConf.cpDir + string(os.PathSeparator) + cpFileName
-		return bucket.uploadFileWithCp(objectKey, filePath, partSize, options, cpFilePath, routines)
+	if cpConf != nil && cpConf.IsEnable {
+		cpFilePath := getUploadCpFilePath(cpConf, filePath, bucket.BucketName, objectKey)
+		if cpFilePath != "" {
+			return bucket.uploadFileWithCp(objectKey, filePath, partSize, options, cpFilePath, routines)
+		}
 	}
 
 	return bucket.uploadFile(objectKey, filePath, partSize, options, routines)
+}
+
+func getUploadCpFilePath(cpConf *cpConfig, srcFile, destBucket, destObject string) string {
+	if cpConf.FilePath == "" && cpConf.DirPath != "" {
+		dest := fmt.Sprintf("oss://%v/%v", destBucket, destObject)
+		absPath, _ := filepath.Abs(srcFile)
+		cpFileName := getCpFileName(absPath, dest)
+		cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
+	}
+	return cpConf.FilePath
 }
 
 // ----- concurrent upload without checkpoint  -----
