@@ -65,6 +65,11 @@ func ContentEncoding(value string) Option {
 	return setHeader(HTTPHeaderContentEncoding, value)
 }
 
+// ContentLanguage is an option to set Content-Language header
+func ContentLanguage(value string) Option {
+	return setHeader(HTTPHeaderContentLanguage, value)
+}
+
 // ContentMD5 is an option to set Content-MD5 header
 func ContentMD5(value string) Option {
 	return setHeader(HTTPHeaderContentMD5, value)
