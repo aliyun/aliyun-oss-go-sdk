@@ -48,8 +48,6 @@ const (
 type PayerType string
 
 const (
-	// BucketOwner the owner of the bucket
-	BucketOwner PayerType = "bucketowner"
 	// Requester the requester who send the request
 	Requester PayerType = "requester"
 )
