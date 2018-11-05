@@ -117,7 +117,7 @@ const (
 	HTTPHeaderOssStorageClass                = "X-Oss-Storage-Class"
 	HTTPHeaderOssCallback                    = "X-Oss-Callback"
 	HTTPHeaderOssCallbackVar                 = "X-Oss-Callback-Var"
-	HTTPHeaderOSSRequester                   = "x-oss-request-payer"
+	HTTPHeaderOSSRequester                   = "X-Oss-Request-Payer"
 )
 
 // HTTP Param
