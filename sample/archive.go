@@ -50,7 +50,7 @@ func ArchiveSample() {
 		meta, err = archiveBucket.GetObjectDetailedMeta(objectKey)
 		for meta.Get("X-Oss-Restore") == "ongoing-request=\"true\"" {
 			fmt.Println("x-oss-restore:" + meta.Get("X-Oss-Restore"))
-			time.Sleep(1000 * time.Second)
+			time.Sleep(time.Second)
 			meta, err = archiveBucket.GetObjectDetailedMeta(objectKey)
 		}
 	}
