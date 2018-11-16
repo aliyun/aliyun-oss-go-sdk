@@ -1,4 +1,15 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：1.9.2 日期：2018-11-16
+### 变更内容
+- 变更：添加支持设置request Payer的option
+- 变更：添加支持设置checkpoint目录的option
+- 变更：getobjectmeta接口增加options参数，可以支持传入option选项
+- 变更：listobjecs接口增加options参数，可以支持传入option选项
+- 变更：listmultipartuploads接口增加options参数, 可以支持传入option选项
+- 修复：解决调用接口返回出错时，且返回的http body为空时，打印错误消息不包含"request_id"的问题
+- 变更：abortmultipartupload接口增加options参数, 可以支持传入option选项
+- 变更：completemultipartupload接口增加options参数, 可以支持传入option选项
+
 ## 版本号：1.9.1 日期：2018-09-17
 ### 变更内容
  - 变更：支持ipv6
