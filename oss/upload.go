@@ -24,7 +24,7 @@ import (
 //
 func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, options ...Option) error {
 	if partSize < MinPartSize || partSize > MaxPartSize {
-		return errors.New("oss: part size invalid range (1024KB, 5GB]")
+		return errors.New("oss: part size invalid range (100KB, 5GB]")
 	}
 
 	cpConf := getCpConfig(options)
