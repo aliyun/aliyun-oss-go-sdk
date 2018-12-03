@@ -44,8 +44,8 @@ func getDefaultOssConfig() *Config {
 	config.AccessKeySecret = ""
 	config.RetryTimes = 5
 	config.IsDebug = false
-	config.UserAgent = userAgent
-	config.Timeout = 60  // Seconds
+	config.UserAgent = userAgent()
+	config.Timeout = 60 // Seconds
 	config.SecurityToken = ""
 	config.IsCname = false
 
