@@ -277,6 +277,30 @@ func (s *OssBucketLiveChannelSuite) TestPostVodPlaylist(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestPostVodPlaylist
+func (s *OssBucketLiveChannelSuite) TestGetVodPlaylist(c *C) {
+	channelName := "test-get-vod-playlist"
+
+	config := LiveChannelConfiguration{
+		Target: LiveChannelTarget{
+			Type: "HLS",
+		},
+	}
+
+	_, err := s.bucket.CreateLiveChannel(channelName, config)
+	c.Assert(err, IsNil)
+
+	endTime := time.Now().Add(-1 * time.Minute)
+	startTime := endTime.Add(-60 * time.Minute)
+
+	body, err := s.bucket.GetVodPlaylist(channelName, startTime, endTime)
+	c.Assert(err, NotNil)
+	defer body.Close()
+
+	err = s.bucket.DeleteLiveChannel(channelName)
+	c.Assert(err, IsNil)
+}
+
 // TestListLiveChannel
 func (s *OssBucketLiveChannelSuite) TestListLiveChannel(c *C) {
 	result, err := s.bucket.ListLiveChannel()
