@@ -2,6 +2,7 @@ package sample
 
 import (
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -127,6 +128,50 @@ func PostVodPlayListSample() {
 	if err != nil {
 		HandleError(err)
 	}
+
+	err = DeleteTestBucketAndLiveChannel(bucketName)
+	if err != nil {
+		HandleError(err)
+	}
+
+	fmt.Println("PostVodPlayListSampleSample completed")
+}
+
+// GetVodPlayListSample Sample for generate playlist and return the content of the playlist
+func GetVodPlayListSample() {
+	channelName := "get-vod-playlist"
+	bucket, err := GetTestBucket(bucketName)
+	if err != nil {
+		HandleError(err)
+	}
+
+	config := oss.LiveChannelConfiguration{
+		Target: oss.LiveChannelTarget{
+			Type:         "HLS", //the type of object, only supports HLS, required
+			PlaylistName: "playlist.m3u8",
+		},
+	}
+
+	_, err = bucket.CreateLiveChannel(channelName, config)
+	if err != nil {
+		HandleError(err)
+	}
+
+	//This stage you can push live stream, and after that you could generator playlist
+
+	endTime := time.Now().Add(-1 * time.Minute)
+	startTime := endTime.Add(-60 * time.Minute)
+	body, err := bucket.GetVodPlaylist(channelName, startTime, endTime)
+	if err != nil {
+		HandleError(err)
+	}
+	defer body.Close()
+
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		HandleError(err)
+	}
+	fmt.Printf("content of playlist is:%v\n", string(data))
 
 	err = DeleteTestBucketAndLiveChannel(bucketName)
 	if err != nil {
@@ -396,5 +441,5 @@ func SignRtmpURLSample() {
 		HandleError(err)
 	}
 
-	fmt.Println("PutObjectSample completed")
+	fmt.Println("SignRtmpURLSample completed")
 }

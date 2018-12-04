@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -86,6 +87,29 @@ func (bucket Bucket) PostVodPlaylist(channelName, playlistName string, startTime
 	defer resp.Body.Close()
 
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetVodPlaylist  get the playlist based on the specified channelName, startTime and endTime
+//
+// channelName  the name of the channel
+// startTime    the start time of the playlist
+// endTime      the endtime of the playlist
+//
+// io.ReadCloser reader instance for reading data from response. It must be called close() after the usage and only valid when error is nil.
+// error        nil if success, otherwise error
+//
+func (bucket Bucket) GetVodPlaylist(channelName string, startTime, endTime time.Time) (io.ReadCloser, error) {
+	params := map[string]interface{}{}
+	params["vod"] = nil
+	params["startTime"] = strconv.FormatInt(startTime.Unix(), 10)
+	params["endTime"] = strconv.FormatInt(endTime.Unix(), 10)
+
+	resp, err := bucket.do("GET", channelName, params, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, nil
 }
 
 //
