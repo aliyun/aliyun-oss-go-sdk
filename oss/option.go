@@ -162,6 +162,11 @@ func ServerSideEncryption(value string) Option {
 	return setHeader(HTTPHeaderOssServerSideEncryption, value)
 }
 
+// ServerSideEncryptionKeyID is an option to set X-Oss-Server-Side-Encryption-Key-Id header
+func ServerSideEncryptionKeyID(value string) Option {
+	return setHeader(HTTPHeaderOssServerSideEncryptionKeyID, value)
+}
+
 // ObjectACL is an option to set X-Oss-Object-Acl header
 func ObjectACL(acl ACLType) Option {
 	return setHeader(HTTPHeaderOssObjectACL, string(acl))
