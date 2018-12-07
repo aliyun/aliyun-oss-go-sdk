@@ -19,7 +19,6 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 			}
 			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
 		},
-		MaxIdleConns:          httpMaxConns.MaxIdleConns,
 		MaxIdleConnsPerHost:   httpMaxConns.MaxIdleConnsPerHost,
 		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
 	}
