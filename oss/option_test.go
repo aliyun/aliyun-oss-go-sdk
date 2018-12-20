@@ -147,6 +147,11 @@ var headerTestcases = []optionTestCase{
 		key:    "Content-Language",
 		value:  "zh-CN",
 	},
+	{
+		option: ServerSideEncryptionKeyID("xossekid"),
+		key:    "X-Oss-Server-Side-Encryption-Key-Id",
+		value:  "xossekid",
+	},
 }
 
 func (s *OssOptionSuite) TestHeaderOptions(c *C) {
