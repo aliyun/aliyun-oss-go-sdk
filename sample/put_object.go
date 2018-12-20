@@ -60,6 +60,11 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
+	err = bucket.PutObject(objectKey, strings.NewReader(val), oss.ServerSideEncryption("KMS"), oss.ServerSideEncryptionKeyID(kmsID))
+	if err != nil {
+		HandleError(err)
+	}
+
 	props, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
 		HandleError(err)
@@ -85,7 +90,7 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// Specify the local file path for checkpoint files. 
+	// Specify the local file path for checkpoint files.
 	// the 2nd parameter of Checkpoint can specify the file path, when the file path is empty, it will upload the directory.
 	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.Checkpoint(true, localFile+".cp"))
 	if err != nil {

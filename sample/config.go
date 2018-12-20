@@ -6,6 +6,7 @@ const (
 	accessID   string = "<AccessKeyId>"
 	accessKey  string = "<AccessKeySecret>"
 	bucketName string = "<my-bucket>"
+	kmsID      string = "<KmsID>"
 
 	// The cname endpoint
 	// These information are required to run sample/cname_sample
