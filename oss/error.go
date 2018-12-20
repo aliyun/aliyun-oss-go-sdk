@@ -22,10 +22,10 @@ type ServiceError struct {
 // Error implements interface error
 func (e ServiceError) Error() string {
 	if e.Endpoint == "" {
-		return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=%s, RequestId=%s",
+		return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=\"%s\", RequestId=%s",
 			e.StatusCode, e.Code, e.Message, e.RequestID)
 	}
-	return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=%s, RequestId=%s, Endpoint=%s",
+	return fmt.Sprintf("oss: service returned error: StatusCode=%d, ErrorCode=%s, ErrorMessage=\"%s\", RequestId=%s, Endpoint=%s",
 		e.StatusCode, e.Code, e.Message, e.RequestID, e.Endpoint)
 }
 
