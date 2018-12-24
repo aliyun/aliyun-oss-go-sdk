@@ -19,15 +19,18 @@ type headerSorter struct {
 }
 
 // signHeader signs the header and sets it as the authorization header.
-func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
+func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) string {
+	signStr, signedStr := conn.getSignedStr(req, canonicalizedResource)
+
 	// Get the final authorization string
-	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
+	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + signedStr
 
 	// Give the parameter "Authorization" value
 	req.Header.Set(HTTPHeaderAuthorization, authorizationStr)
+	return signStr
 }
 
-func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) string {
+func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) (string, string) {
 	// Find out the "x-oss-"'s address in header of the request
 	temp := make(map[string]string)
 
@@ -58,7 +61,7 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 	io.WriteString(h, signStr)
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
-	return signedStr
+	return signStr, signedStr
 }
 
 // newHeaderSorter is an additional function for function SignHeader.

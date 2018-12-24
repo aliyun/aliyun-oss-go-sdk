@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 // Conn defines OSS Conn
@@ -222,13 +224,26 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		}
 	}
 
-	conn.signHeader(req, canonicalizedResource)
+	signStr := conn.signHeader(req, canonicalizedResource)
 
 	// Transfer started
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
 	publishProgress(listener, event)
 
+	startT := time.Now()
+	uuidValue, _ := uuid.NewV4()
+	reqID := uuidValue.String()
+	if conn.config.IsHTTPDebug {
+		PrintHTTPReq(req, startT, reqID, signStr)
+	}
+
 	resp, err := conn.client.Do(req)
+
+	if conn.config.IsHTTPDebug {
+		//print out http resp
+		PrintHTTPResp(resp, startT, reqID)
+	}
+
 	if err != nil {
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
@@ -272,7 +287,7 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 		}
 	}
 
-	signedStr := conn.getSignedStr(req, canonicalizedResource)
+	_, signedStr := conn.getSignedStr(req, canonicalizedResource)
 
 	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
 	params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
@@ -450,6 +465,82 @@ func jsonUnmarshal(body io.Reader, v interface{}) error {
 		return err
 	}
 	return json.Unmarshal(data, v)
+}
+
+func PrintHTTPReq(req *http.Request, startT time.Time, reqID string, signStr string) {
+	signSlice := make([]byte, 0)
+	for i := 0; i < len(signStr); i++ {
+		if signStr[i] == '\n' {
+			signSlice = append(signSlice, '\\')
+			signSlice = append(signSlice, 'n')
+		} else {
+			signSlice = append(signSlice, signStr[i])
+		}
+	}
+
+	nowS := time.Unix(startT.Unix(), 0).Format("2006-01-02 15:04:05")
+
+	var logBuffer bytes.Buffer
+	logBuffer.WriteString(fmt.Sprintf("\n[%s]http req,trace id:%s\n", nowS, reqID))
+	logBuffer.WriteString(fmt.Sprintf("[%s]sign string:%s\n", nowS, string(signSlice)))
+	logBuffer.WriteString(fmt.Sprintf("[%s]Method:%s\n", nowS, req.Method))
+	logBuffer.WriteString(fmt.Sprintf("[%s]Host:%s\n", nowS, req.URL.Host))
+	logBuffer.WriteString(fmt.Sprintf("[%s]Path:%s\n", nowS, req.URL.Path))
+	logBuffer.WriteString(fmt.Sprintf("[%s]Query:%s\n", nowS, req.URL.RawQuery))
+
+	for k, v := range req.Header {
+		var valueBuffer bytes.Buffer
+		for j := 0; j < len(v); j++ {
+			if j > 0 {
+				valueBuffer.WriteString(" ")
+			}
+			valueBuffer.WriteString(v[j])
+		}
+		logBuffer.WriteString(fmt.Sprintf("[%s]header %s:%s\n", nowS, k, valueBuffer.String()))
+	}
+
+	fmt.Println(logBuffer.String())
+}
+
+func PrintHTTPResp(resp *http.Response, startT time.Time, reqID string) {
+	endT := time.Now()
+	nowS := time.Unix(endT.Unix(), 0).Format("2006-01-02 15:04:05")
+	cost := endT.UnixNano()/1000/1000 - startT.UnixNano()/1000/1000
+
+	var logBuffer bytes.Buffer
+	logBuffer.WriteString(fmt.Sprintf("\n[%s]http resp,trace id:%s,cost:%d(ms)\n", nowS, reqID, cost))
+	logBuffer.WriteString(fmt.Sprintf("[%s]StatusCode:%d\n", nowS, resp.StatusCode))
+
+	for k, v := range resp.Header {
+		var valueBuffer bytes.Buffer
+		for j := 0; j < len(v); j++ {
+			if j > 0 {
+				valueBuffer.WriteString(" ")
+			}
+			valueBuffer.WriteString(v[j])
+		}
+		logBuffer.WriteString(fmt.Sprintf("[%s]header %s:%s\n", nowS, k, valueBuffer.String()))
+	}
+
+	statusCode := resp.StatusCode
+	if statusCode >= 400 && statusCode <= 505 {
+		// 4xx and 5xx indicate that the operation has error occurred
+		var respBody []byte
+		respBody, err := readResponseBody(resp)
+		if err != nil {
+			return
+		}
+
+		if len(respBody) == 0 {
+			// No error in response body
+		} else {
+			// Response contains storage service error object, unmarshal
+			logBuffer.WriteString(fmt.Sprintf("[%s]%s\n", nowS, string(respBody)))
+		}
+	} else if statusCode >= 300 && statusCode <= 307 {
+		// OSS use 3xx, but response has no body
+	}
+	fmt.Println(logBuffer.String())
 }
 
 // timeoutConn handles HTTP timeout
