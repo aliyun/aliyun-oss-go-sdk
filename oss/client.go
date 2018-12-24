@@ -149,7 +149,7 @@ func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 // IsBucketExist checks if the bucket exists
 //
 // bucketName    the bucket name.
-// 
+//
 // bool    true if it exists, and it's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -184,7 +184,7 @@ func (client Client) DeleteBucket(bucketName string) error {
 
 // GetBucketLocation gets the bucket location.
 //
-// Checks out the following link for more information : 
+// Checks out the following link for more information :
 // https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/endpoint.html
 //
 // bucketName    the bucket name
@@ -253,7 +253,7 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 // bucketName    the bucket name.
 // rules    the lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in days and day/month/year respectively.
 //          Check out sample/bucket_lifecycle.go for more details.
-// 
+//
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule) error {
@@ -300,7 +300,7 @@ func (client Client) DeleteBucketLifecycle(bucketName string) error {
 // GetBucketLifecycle gets the bucket's lifecycle settings.
 //
 // bucketName    the bucket name.
-// 
+//
 // GetBucketLifecycleResponse    the result object upon successful request. It's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -754,6 +754,21 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 		client.Config.ProxyUser = proxyUser
 		client.Config.ProxyPassword = proxyPassword
 		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
+	}
+}
+
+// EnableHTTPDebug:enables print http info on screen. Default is not print.
+// httpDebug: true: output http info; false: not output
+func EnableHTTPDebug(httpDebug bool) ClientOption {
+	return func(client *Client) {
+		client.Config.IsHTTPDebug = httpDebug
+	}
+}
+
+// HTTPDebugWriter: set http debug info writer
+func HTTPDebugWriter(debugWriter io.Writer) ClientOption {
+	return func(client *Client) {
+		client.Config.HTTPDebugWriter = debugWriter
 	}
 }
 

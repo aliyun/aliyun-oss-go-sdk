@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"io"
 	"time"
 )
 
@@ -33,6 +34,8 @@ type Config struct {
 	IsEnableMD5     bool        // Flag of enabling MD5 for upload.
 	MD5Threshold    int64       // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
 	IsEnableCRC     bool        // Flag of enabling CRC for upload.
+	IsHTTPDebug     bool        // Flag of enabling print http info
+	HTTPDebugWriter io.Writer   // For http info output
 }
 
 // getDefaultOssConfig gets the default configuration.
@@ -45,7 +48,7 @@ func getDefaultOssConfig() *Config {
 	config.RetryTimes = 5
 	config.IsDebug = false
 	config.UserAgent = userAgent
-	config.Timeout = 60  // Seconds
+	config.Timeout = 60 // Seconds
 	config.SecurityToken = ""
 	config.IsCname = false
 
@@ -64,6 +67,7 @@ func getDefaultOssConfig() *Config {
 	config.MD5Threshold = 16 * 1024 * 1024 // 16MB
 	config.IsEnableMD5 = false
 	config.IsEnableCRC = true
-
+	config.IsHTTPDebug = false
+	config.HTTPDebugWriter = nil
 	return &config
 }
