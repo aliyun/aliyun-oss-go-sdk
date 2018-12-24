@@ -81,12 +81,16 @@ func PutObjectSample() {
 	callbackMap["callbackBody"] = "filename=${object}&size=${size}&mimeType=${mimeType}"
 	callbackMap["callbackBodyType"] = "application/x-www-form-urlencoded"
 
-	callbackValJSON, err := json.Marshal(callbackMap)
+	callbackBuffer := bytes.NewBuffer([]byte{})
+	callbackEncoder := json.NewEncoder(callbackBuffer)
+	//do not encode '&' to "\u0026"
+	callbackEncoder.SetEscapeHTML(false)
+	err = callbackEncoder.Encode(callbackMap)
 	if err != nil {
 		HandleError(err)
 	}
 
-	callbackVal := base64.StdEncoding.EncodeToString(callbackValJSON)
+	callbackVal := base64.StdEncoding.EncodeToString(callbackBuffer.Bytes())
 	err = bucket.PutObject(objectKey, strings.NewReader(val), oss.Callback(callbackVal))
 	if err != nil {
 		HandleError(err)
