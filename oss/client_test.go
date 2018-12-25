@@ -5,6 +5,8 @@
 package oss
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
@@ -1496,4 +1498,38 @@ func (s *OssClientSuite) getBucket(buckets []BucketProperties, bucket string) (b
 		}
 	}
 	return false, BucketProperties{}
+}
+
+func (s *OssClientSuite) TestHttpDebug(c *C) {
+	logName := "." + string(os.PathSeparator) + "test-go-sdk-httpdebug.log"
+	f, err := os.OpenFile(logName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
+	c.Assert(err, IsNil)
+
+	client, err := New(endpoint, accessID, accessKey)
+	client.Config.IsHTTPDebug = true
+	client.Config.HTTPDebugWriter = f
+
+	var testBucketName = bucketNamePrefix + "-http-debug"
+
+	// CreateBucket
+	err = client.CreateBucket(testBucketName)
+	c.Assert(err, IsNil)
+	f.Close()
+
+	// read log file,get http info
+	contents, err := ioutil.ReadFile(logName)
+	c.Assert(err, IsNil)
+
+	httpContent := string(contents)
+	fmt.Println(httpContent)
+
+	c.Assert(strings.Contains(httpContent, "http req,trace id"), Equals, true)
+	c.Assert(strings.Contains(httpContent, "http resp,trace id:"), Equals, true)
+	c.Assert(strings.Contains(httpContent, "sign string:"), Equals, true)
+	c.Assert(strings.Contains(httpContent, "Method:"), Equals, true)
+
+	// delete test bucket and log
+	//err = os.Remove(logName)
+	err = client.DeleteBucket(testBucketName)
+	c.Assert(err, IsNil)
 }
