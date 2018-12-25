@@ -757,8 +757,7 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 	}
 }
 
-// EnableHTTPDebug:enables print http info on screen. Default is not print.
-// httpDebug: true: output http info; false: not output
+// EnableHTTPDebug: true: output http info; false: not output
 func EnableHTTPDebug(httpDebug bool) ClientOption {
 	return func(client *Client) {
 		client.Config.IsHTTPDebug = httpDebug
