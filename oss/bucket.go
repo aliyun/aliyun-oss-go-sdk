@@ -457,7 +457,7 @@ func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
 
 	switch err.(type) {
 	case ServiceError:
-		if err.(ServiceError).StatusCode == 404 && err.(ServiceError).Code == "NoSuchKey" {
+		if err.(ServiceError).StatusCode == 404 {
 			return false, nil
 		}
 	}

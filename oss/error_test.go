@@ -107,5 +107,5 @@ func (s *OssErrorSuite) TestServiceErrorEndPoint(c *C) {
 	</Error>`
 	serverError, _ = serviceErrFromXML([]byte(xmlBodyWithEndPoint), 406, "5C1B595ED51820B569C6A12F")
 	errMsg = serverError.Error()
-	c.Assert(strings.Contains(errMsg, "Endpoint=oss-cn-shenzhen.aliyuncs.com"), Equals, false)
+	c.Assert(strings.Contains(errMsg, "Endpoint=oss-cn-shenzhen.aliyuncs.com"), Equals, true)
 }
