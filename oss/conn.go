@@ -350,8 +350,10 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		}
 
 		if len(respBody) == 0 {
-			// No error in response body
-			err = fmt.Errorf("oss: service returned empty response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+			err = ServiceError{
+				StatusCode: statusCode,
+				RequestID:  resp.Header.Get(HTTPHeaderOssRequestID),
+			}
 		} else {
 			// Response contains storage service error object, unmarshal
 			srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
