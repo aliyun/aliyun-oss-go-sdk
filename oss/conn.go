@@ -111,12 +111,21 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
 	publishProgress(listener, event)
 
+	if conn.config.LogLevel >= Debug {
+		conn.LoggerHttpReq(req)
+	}
+
 	resp, err := conn.client.Do(req)
 	if err != nil {
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
 		publishProgress(listener, event)
 		return nil, err
+	}
+
+	if conn.config.LogLevel >= Debug {
+		//print out http resp
+		conn.LoggerHttpResp(req, resp)
 	}
 
 	// Transfer completed
@@ -231,12 +240,22 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
 	publishProgress(listener, event)
 
+	if conn.config.LogLevel >= Debug {
+		conn.LoggerHttpReq(req)
+	}
+
 	resp, err := conn.client.Do(req)
+
 	if err != nil {
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
 		publishProgress(listener, event)
 		return nil, err
+	}
+
+	if conn.config.LogLevel >= Debug {
+		//print out http resp
+		conn.LoggerHttpResp(req, resp)
 	}
 
 	// Transfer completed
@@ -393,6 +412,63 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		ClientCRC:  cliCRC,
 		ServerCRC:  srvCRC,
 	}, nil
+}
+
+func (conn Conn) LoggerHttpReq(req *http.Request) {
+	var logBuffer bytes.Buffer
+	logBuffer.WriteString(fmt.Sprintf("[Req:%p]Method:%s,", req, req.Method))
+	logBuffer.WriteString(fmt.Sprintf("Host:%s,", req.URL.Host))
+	logBuffer.WriteString(fmt.Sprintf("Path:%s,", req.URL.Path))
+	logBuffer.WriteString(fmt.Sprintf("Query:%s,", req.URL.RawQuery))
+	logBuffer.WriteString(fmt.Sprintf("Header info:"))
+
+	for k, v := range req.Header {
+		var valueBuffer bytes.Buffer
+		for j := 0; j < len(v); j++ {
+			if j > 0 {
+				valueBuffer.WriteString(" ")
+			}
+			valueBuffer.WriteString(v[j])
+		}
+		logBuffer.WriteString(fmt.Sprintf("%s:%s,", k, valueBuffer.String()))
+	}
+	conn.config.WriteLog(Debug, "%s.\n", logBuffer.String())
+}
+
+func (conn Conn) LoggerHttpResp(req *http.Request, resp *http.Response) {
+	var logBuffer bytes.Buffer
+	logBuffer.WriteString(fmt.Sprintf("[Resp:%p]StatusCode:%d,", req, resp.StatusCode))
+	logBuffer.WriteString(fmt.Sprintf("Header info:"))
+	for k, v := range resp.Header {
+		var valueBuffer bytes.Buffer
+		for j := 0; j < len(v); j++ {
+			if j > 0 {
+				valueBuffer.WriteString(" ")
+			}
+			valueBuffer.WriteString(v[j])
+		}
+		logBuffer.WriteString(fmt.Sprintf("%s:%s,", k, valueBuffer.String()))
+	}
+
+	statusCode := resp.StatusCode
+	if statusCode >= 400 && statusCode <= 505 {
+		// 4xx and 5xx indicate that the operation has error occurred
+		var respBody []byte
+		respBody, err := readResponseBody(resp)
+		if err != nil {
+			return
+		}
+
+		if len(respBody) == 0 {
+			// No error in response body
+		} else {
+			// Response contains storage service error object, unmarshal
+			logBuffer.WriteString(fmt.Sprintf("Body:%s", string(respBody)))
+		}
+	} else if statusCode >= 300 && statusCode <= 307 {
+		// OSS use 3xx, but response has no body
+	}
+	conn.config.WriteLog(Debug, "%s.\n", logBuffer.String())
 }
 
 func calcMD5(body io.Reader, contentLen, md5Threshold int64) (reader io.Reader, b64 string, tempFile *os.File, err error) {

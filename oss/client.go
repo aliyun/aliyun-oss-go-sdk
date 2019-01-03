@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -764,6 +765,24 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 func HTTPClient(HTTPClient *http.Client) ClientOption {
 	return func(client *Client) {
 		client.HTTPClient = HTTPClient
+	}
+}
+
+//
+// SetLogLevel sets the oss sdk log level
+//
+func SetLogLevel(LogLevel int) ClientOption {
+	return func(client *Client) {
+		client.Config.LogLevel = LogLevel
+	}
+}
+
+//
+// SetLogLevel sets the oss sdk log level
+//
+func SetLogger(Logger *log.Logger) ClientOption {
+	return func(client *Client) {
+		client.Config.Logger = Logger
 	}
 }
 
