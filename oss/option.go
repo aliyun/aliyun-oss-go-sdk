@@ -65,6 +65,11 @@ func ContentEncoding(value string) Option {
 	return setHeader(HTTPHeaderContentEncoding, value)
 }
 
+// ContentLanguage is an option to set Content-Language header
+func ContentLanguage(value string) Option {
+	return setHeader(HTTPHeaderContentLanguage, value)
+}
+
 // ContentMD5 is an option to set Content-MD5 header
 func ContentMD5(value string) Option {
 	return setHeader(HTTPHeaderContentMD5, value)
@@ -155,6 +160,11 @@ func MetadataDirective(directive MetadataDirectiveType) Option {
 // ServerSideEncryption is an option to set X-Oss-Server-Side-Encryption header
 func ServerSideEncryption(value string) Option {
 	return setHeader(HTTPHeaderOssServerSideEncryption, value)
+}
+
+// ServerSideEncryptionKeyID is an option to set X-Oss-Server-Side-Encryption-Key-Id header
+func ServerSideEncryptionKeyID(value string) Option {
+	return setHeader(HTTPHeaderOssServerSideEncryptionKeyID, value)
 }
 
 // ObjectACL is an option to set X-Oss-Object-Acl header

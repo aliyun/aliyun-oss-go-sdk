@@ -457,7 +457,7 @@ func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
 
 	switch err.(type) {
 	case ServiceError:
-		if err.(ServiceError).StatusCode == 404 && err.(ServiceError).Code == "NoSuchKey" {
+		if err.(ServiceError).StatusCode == 404 {
 			return false, nil
 		}
 	}
@@ -557,7 +557,7 @@ func (bucket Bucket) GetObjectMeta(objectKey string, options ...Option) (http.He
 	params := map[string]interface{}{}
 	params["objectMeta"] = nil
 	//resp, err := bucket.do("GET", objectKey, "?objectMeta", "", nil, nil, nil)
-	resp, err := bucket.do("GET", objectKey, params, options, nil, nil)
+	resp, err := bucket.do("HEAD", objectKey, params, options, nil, nil)
 	if err != nil {
 		return nil, err
 	}
