@@ -1,8 +1,22 @@
 package oss
 
 import (
+	"bytes"
+	"fmt"
+	"log"
+	"os"
 	"time"
 )
+
+const (
+	LogOff = iota
+	Error
+	Warn
+	Info
+	Debug
+)
+
+var LogTag = []string{"[error]", "[warn]", "[info]", "[debug]"}
 
 // HTTPTimeout defines HTTP timeout.
 type HTTPTimeout struct {
@@ -11,6 +25,11 @@ type HTTPTimeout struct {
 	HeaderTimeout    time.Duration
 	LongTimeout      time.Duration
 	IdleConnTimeout  time.Duration
+}
+
+type HTTPMaxConns struct {
+	MaxIdleConns        int
+	MaxIdleConnsPerHost int
 }
 
 // Config defines oss configuration
@@ -35,6 +54,20 @@ type Config struct {
 	IsEnableCRC       bool        // Flag of enabling CRC for upload.
 	AuthVersion       AuthVersionType
 	AdditionalHeaders []string
+	LogLevel        int          // log level
+        Logger          *log.Logger  // For write log
+}
+
+// WriteLog
+func (config *Config) WriteLog(LogLevel int, format string, a ...interface{}) {
+	if config.LogLevel < LogLevel || config.Logger == nil {
+		return
+	}
+
+	var logBuffer bytes.Buffer
+	logBuffer.WriteString(LogTag[LogLevel-1])
+	logBuffer.WriteString(fmt.Sprintf(format, a...))
+	config.Logger.Printf("%s", logBuffer.String())
 }
 
 // getDefaultOssConfig gets the default configuration.
@@ -46,7 +79,7 @@ func getDefaultOssConfig() *Config {
 	config.AccessKeySecret = ""
 	config.RetryTimes = 5
 	config.IsDebug = false
-	config.UserAgent = userAgent
+	config.UserAgent = userAgent()
 	config.Timeout = 60 // Seconds
 	config.SecurityToken = ""
 	config.IsCname = false
@@ -56,6 +89,8 @@ func getDefaultOssConfig() *Config {
 	config.HTTPTimeout.HeaderTimeout = time.Second * 60    // 60s
 	config.HTTPTimeout.LongTimeout = time.Second * 300     // 300s
 	config.HTTPTimeout.IdleConnTimeout = time.Second * 50  // 50s
+	config.HTTPMaxConns.MaxIdleConns = 100
+	config.HTTPMaxConns.MaxIdleConnsPerHost = 100
 
 	config.IsUseProxy = false
 	config.ProxyHost = ""
@@ -67,6 +102,9 @@ func getDefaultOssConfig() *Config {
 	config.IsEnableMD5 = false
 	config.IsEnableCRC = true
 	config.AuthVersion = AuthV1
+
+	config.LogLevel = LogOff
+	config.Logger = log.New(os.Stdout, "", log.LstdFlags)
 
 	return &config
 }

@@ -457,7 +457,7 @@ func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
 
 	switch err.(type) {
 	case ServiceError:
-		if err.(ServiceError).StatusCode == 404 && err.(ServiceError).Code == "NoSuchKey" {
+		if err.(ServiceError).StatusCode == 404 {
 			return false, nil
 		}
 	}
@@ -494,7 +494,7 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 		return out, err
 	}
 
-	resp, err := bucket.do("GET", "", params, nil, nil, nil)
+	resp, err := bucket.do("GET", "", params, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -553,11 +553,11 @@ func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) 
 // http.Header    the object's metadata, valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (bucket Bucket) GetObjectMeta(objectKey string) (http.Header, error) {
+func (bucket Bucket) GetObjectMeta(objectKey string, options ...Option) (http.Header, error) {
 	params := map[string]interface{}{}
 	params["objectMeta"] = nil
 	//resp, err := bucket.do("GET", objectKey, "?objectMeta", "", nil, nil, nil)
-	resp, err := bucket.do("GET", objectKey, params, nil, nil, nil)
+	resp, err := bucket.do("HEAD", objectKey, params, options, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -911,17 +911,20 @@ func (bucket Bucket) DoGetObjectWithURL(signedURL string, options []Option) (*Ge
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (bucket Bucket) ProcessObject(objectKey string, process string) error {
+func (bucket Bucket) ProcessObject(objectKey string, process string) (ProcessObjectResult, error) {
+	var out ProcessObjectResult
 	params := map[string]interface{}{}
 	params["x-oss-process"] = nil
 	processData := fmt.Sprintf("%v=%v", "x-oss-process", process)
 	data := strings.NewReader(processData)
 	resp, err := bucket.do("POST", objectKey, params, nil, data, nil)
 	if err != nil {
-		return err
+		return out, err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+
+	err = jsonUnmarshal(resp.Body, &out)
+	return out, err
 }
 
 // Private

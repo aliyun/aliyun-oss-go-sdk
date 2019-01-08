@@ -254,7 +254,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	// Copy object with checkpoint enabled, single runtine.
 	// Copy 4 parts---the CopyErrorHooker makes sure the copy of part 5 will fail.
 	copyPartHooker = CopyErrorHooker
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	copyPartHooker = defaultCopyPartHook
@@ -278,7 +278,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(ccp.PartStat[4], Equals, false)
 
 	// Second copy, finish the last part
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, IsNil)
 
 	err = s.bucket.GetObjectToFile(destObjectName, newFile)
@@ -295,16 +295,28 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	err = ccp.load(fileName + ".cp")
 	c.Assert(err, NotNil)
 
-	// Specify Routine and CP's path
+	//multicopy with empty checkpoint path
 	copyPartHooker = CopyErrorHooker
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(2), Checkpoint(true, srcObjectName+".cp"))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Checkpoint(true, ""))
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	copyPartHooker = defaultCopyPartHook
+	ccp = copyCheckpoint{}
+	err = ccp.load(destObjectName + ".cp")
+	c.Assert(err, NotNil)
+
+	//multi copy with checkpoint dir
+	copyPartHooker = CopyErrorHooker
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(2), CheckpointDir(true, "./"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	copyPartHooker = defaultCopyPartHook
 
 	// Check CP
 	ccp = copyCheckpoint{}
-	err = ccp.load(srcObjectName + ".cp")
+	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
+	cpFilePath := getCopyCpFilePath(&cpConf, bucketName, srcObjectName, s.bucket.BucketName, destObjectName)
+	err = ccp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(ccp.Magic, Equals, copyCpMagic)
 	c.Assert(len(ccp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
@@ -321,7 +333,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(ccp.PartStat[4], Equals, false)
 
 	// Second copy, finish the last part.
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(2), Checkpoint(true, srcObjectName+".cp"))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(2), CheckpointDir(true, "./"))
 	c.Assert(err, IsNil)
 
 	err = s.bucket.GetObjectToFile(destObjectName, newFile)
@@ -339,7 +351,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	c.Assert(err, NotNil)
 
 	// First copy without error.
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(3), Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(3), Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, IsNil)
 
 	err = s.bucket.GetObjectToFile(destObjectName, newFile)
@@ -354,7 +366,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	os.Remove(newFile)
 
 	// Copy with multiple coroutines, no errors.
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(10), Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(10), Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, IsNil)
 
 	err = s.bucket.GetObjectToFile(destObjectName, newFile)
@@ -369,7 +381,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	os.Remove(newFile)
 
 	// Option
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(5), Checkpoint(true, ""), Meta("myprop", "mypropval"))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(5), Checkpoint(true, destObjectName+".cp"), Meta("myprop", "mypropval"))
 	c.Assert(err, IsNil)
 
 	meta, err := s.bucket.GetObjectDetailedMeta(destObjectName)
@@ -398,19 +410,19 @@ func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 	destObjectName := srcObjectName + "-copy"
 
 	// Source bucket does not exist
-	err := s.bucket.CopyFile("NotExist", srcObjectName, destObjectName, 100*1024, Checkpoint(true, ""))
+	err := s.bucket.CopyFile("NotExist", srcObjectName, destObjectName, 100*1024, Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err, NotNil)
 
 	// Source object does not exist
-	err = s.bucket.CopyFile(bucketName, "NotExist", destObjectName, 100*1024, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, "NotExist", destObjectName, 100*1024, Routines(2), Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, NotNil)
 
 	// Specify part size is invalid.
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024, Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024, Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, NotNil)
 
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*1024*1024*100, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*1024*1024*100, Routines(2), Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, NotNil)
 }
 
@@ -434,7 +446,7 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	os.Remove(newFile)
 
 	// Copy files
-	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(5), Checkpoint(true, ""))
+	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(5), Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, IsNil)
 
 	err = destBucket.GetObjectToFile(destObjectName, newFile)

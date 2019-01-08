@@ -2,6 +2,8 @@ package sample
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -66,7 +68,35 @@ func PutObjectSample() {
 	}
 	fmt.Println("Object Meta:", props)
 
-	// Case 6: Big file's multipart upload. It supports concurrent upload with resumable upload.
+	// Case 6: Upload an object with sever side encrpytion kms and kms id specified
+	err = bucket.PutObject(objectKey, strings.NewReader(val), oss.ServerSideEncryption("KMS"), oss.ServerSideEncryptionKeyID(kmsID))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// Case 7: Upload an object with callback
+	callbackMap := map[string]string{}
+	callbackMap["callbackUrl"] = "http://oss-demo.aliyuncs.com:23450"
+	callbackMap["callbackHost"] = "oss-cn-hangzhou.aliyuncs.com"
+	callbackMap["callbackBody"] = "filename=${object}&size=${size}&mimeType=${mimeType}"
+	callbackMap["callbackBodyType"] = "application/x-www-form-urlencoded"
+
+	callbackBuffer := bytes.NewBuffer([]byte{})
+	callbackEncoder := json.NewEncoder(callbackBuffer)
+	//do not encode '&' to "\u0026"
+	callbackEncoder.SetEscapeHTML(false)
+	err = callbackEncoder.Encode(callbackMap)
+	if err != nil {
+		HandleError(err)
+	}
+
+	callbackVal := base64.StdEncoding.EncodeToString(callbackBuffer.Bytes())
+	err = bucket.PutObject(objectKey, strings.NewReader(val), oss.Callback(callbackVal))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// Case 8: Big file's multipart upload. It supports concurrent upload with resumable upload.
 	// multipart upload with 100K as part size. By default 1 coroutine is used and no checkpoint is used.
 	err = bucket.UploadFile(objectKey, localFile, 100*1024)
 	if err != nil {
@@ -85,7 +115,7 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
-	// Specify the local file path for checkpoint files. 
+	// Specify the local file path for checkpoint files.
 	// the 2nd parameter of Checkpoint can specify the file path, when the file path is empty, it will upload the directory.
 	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.Checkpoint(true, localFile+".cp"))
 	if err != nil {

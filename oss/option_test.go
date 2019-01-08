@@ -142,6 +142,16 @@ var headerTestcases = []optionTestCase{
 		key:    "X-Oss-Callback-Var",
 		value:  "JTdCJTIyeCUzQXZhcjElMjIlM0ElMjJ2YWx1ZTElMjIlMkMlMjJ4JTNBdmFyMiUyMiUzQSUyMnZhbHVlMiUyMiU3RA==",
 	},
+	{
+		option: ContentLanguage("zh-CN"),
+		key:    "Content-Language",
+		value:  "zh-CN",
+	},
+	{
+		option: ServerSideEncryptionKeyID("xossekid"),
+		key:    "X-Oss-Server-Side-Encryption-Key-Id",
+		value:  "xossekid",
+	},
 }
 
 func (s *OssOptionSuite) TestHeaderOptions(c *C) {

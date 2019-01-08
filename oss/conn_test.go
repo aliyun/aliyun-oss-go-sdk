@@ -2,6 +2,7 @@ package oss
 
 import (
 	"net/http"
+	"os"
 
 	. "gopkg.in/check.v1"
 )
@@ -133,4 +134,11 @@ func (s *OssConnSuite) TestConnToolFunc(c *C) {
 	unexpect := UnexpectedStatusCodeError{[]int{200}, 202}
 	c.Assert(len(unexpect.Error()) > 0, Equals, true)
 	c.Assert(unexpect.Got(), Equals, 202)
+
+	fd, err := os.Open("../sample/BingWallpaper-2015-11-07.jpg")
+	c.Assert(err, IsNil)
+	fd.Close()
+	var out ProcessObjectResult
+	err = jsonUnmarshal(fd, &out)
+	c.Assert(err, NotNil)
 }

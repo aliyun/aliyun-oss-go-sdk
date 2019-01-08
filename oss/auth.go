@@ -96,6 +96,9 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 	contentMd5 := req.Header.Get(HTTPHeaderContentMD5)
 
 	signStr := req.Method + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedOSSHeaders + canonicalizedResource
+
+	conn.config.WriteLog(Debug, "[Req:%p]signStr:%s.\n", req, signStr)
+
 	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.AccessKeySecret))
 
 	if conn.config.AuthVersion == AuthV2 {

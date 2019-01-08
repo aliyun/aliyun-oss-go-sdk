@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -19,8 +20,9 @@ import (
 type (
 	// Client OSS client
 	Client struct {
-		Config *Config // OSS client configuration
-		Conn   *Conn   // Send HTTP request
+		Config     *Config      // OSS client configuration
+		Conn       *Conn        // Send HTTP request
+		HTTPClient *http.Client //http.Client to use - if nil will make its own
 	}
 
 	// ClientOption client option such as UseCname, Timeout, SecurityToken.
@@ -52,8 +54,8 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 	// OSS client
 	client := &Client{
-		config,
-		conn,
+		Config: config,
+		Conn:   conn,
 	}
 
 	// Client options parse
@@ -66,7 +68,7 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	}
 
 	// Create HTTP connection
-	err := conn.init(config, url)
+	err := conn.init(config, url, client.HTTPClient)
 
 	return client, err
 }
@@ -771,6 +773,32 @@ func AuthVersion(authVersion AuthVersionType) ClientOption {
 func AdditionalHeaders(headers []string) ClientOption {
 	return func(client *Client) {
 		client.Config.AdditionalHeaders = headers
+	}
+}
+//
+// HTTPClient sets the http.Client in use to the one passed in
+//
+func HTTPClient(HTTPClient *http.Client) ClientOption {
+	return func(client *Client) {
+		client.HTTPClient = HTTPClient
+	}
+}
+
+//
+// SetLogLevel sets the oss sdk log level
+//
+func SetLogLevel(LogLevel int) ClientOption {
+	return func(client *Client) {
+		client.Config.LogLevel = LogLevel
+	}
+}
+
+//
+// SetLogLevel sets the oss sdk log level
+//
+func SetLogger(Logger *log.Logger) ClientOption {
+	return func(client *Client) {
+		client.Config.Logger = Logger
 	}
 }
 
