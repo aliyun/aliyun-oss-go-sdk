@@ -5,6 +5,7 @@
 package oss
 
 import (
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -1504,4 +1505,84 @@ func (s *OssClientSuite) getBucket(buckets []BucketProperties, bucket string) (b
 		}
 	}
 	return false, BucketProperties{}
+}
+
+func (s *OssClientSuite) TestHttpLogNotSignUrl(c *C) {
+	logName := "." + string(os.PathSeparator) + "test-go-sdk-httpdebug.log" + randStr(5)
+	f, err := os.OpenFile(logName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
+	c.Assert(err, IsNil)
+
+	client, err := New(endpoint, accessID, accessKey)
+	client.Config.LogLevel = Debug
+
+	client.Config.Logger = log.New(f, "", log.LstdFlags)
+
+	var testBucketName = bucketNamePrefix + strings.ToLower(randStr(5))
+
+	// CreateBucket
+	err = client.CreateBucket(testBucketName)
+	f.Close()
+
+	// read log file,get http info
+	contents, err := ioutil.ReadFile(logName)
+	c.Assert(err, IsNil)
+
+	httpContent := string(contents)
+	//fmt.Println(httpContent)
+
+	c.Assert(strings.Contains(httpContent, "signStr"), Equals, true)
+	c.Assert(strings.Contains(httpContent, "Method:"), Equals, true)
+
+	// delete test bucket and log
+	os.Remove(logName)
+	client.DeleteBucket(testBucketName)
+}
+
+func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
+	logName := "." + string(os.PathSeparator) + "test-go-sdk-httpdebug-signurl.log" + randStr(5)
+	f, err := os.OpenFile(logName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
+	c.Assert(err, IsNil)
+
+	client, err := New(endpoint, accessID, accessKey)
+	client.Config.LogLevel = Debug
+	client.Config.Logger = log.New(f, "", log.LstdFlags)
+
+	var testBucketName = bucketNamePrefix + strings.ToLower(randStr(5))
+
+	// CreateBucket
+	err = client.CreateBucket(testBucketName)
+	f.Close()
+
+	// clear log
+	f, err = os.OpenFile(logName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
+	client.Config.Logger = log.New(f, "", log.LstdFlags)
+
+	bucket, _ := client.Bucket(testBucketName)
+	objectName := objectNamePrefix + randStr(5)
+	objectValue := randStr(20)
+
+	// Sign URL for put
+	str, err := bucket.SignURL(objectName, HTTPPut, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+
+	// Error put object with URL
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue), ContentType("image/tiff"))
+	f.Close()
+
+	// read log file,get http info
+	contents, err := ioutil.ReadFile(logName)
+	c.Assert(err, IsNil)
+
+	httpContent := string(contents)
+	//fmt.Println(httpContent)
+
+	c.Assert(strings.Contains(httpContent, "signStr"), Equals, true)
+	c.Assert(strings.Contains(httpContent, "Method:"), Equals, true)
+
+	// delete test bucket and log
+	os.Remove(logName)
+	client.DeleteBucket(testBucketName)
 }
