@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"hash"
@@ -26,25 +27,28 @@ type Conn struct {
 	client *http.Client
 }
 
-var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore"}
+var signKeyList = []string{"acl", "uploads", "location", "cors", "logging", "website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta", "uploadId", "partNumber", "security-token", "position", "img", "style", "styleName", "replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo", "comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink", "x-oss-process", "response-content-type", "response-content-language", "response-expires", "response-cache-control", "response-content-disposition", "response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc", "udfApplication", "comp", "udfApplicationLog", "restore", "callback", "callback-var"}
 
 // init initializes Conn
-func (conn *Conn) init(config *Config, urlMaker *urlMaker) error {
-	// New transport
-	transport := newTransport(conn, config)
+func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) error {
+	if client == nil {
+		// New transport
+		transport := newTransport(conn, config)
 
-	// Proxy
-	if conn.config.IsUseProxy {
-		proxyURL, err := url.Parse(config.ProxyHost)
-		if err != nil {
-			return err
+		// Proxy
+		if conn.config.IsUseProxy {
+			proxyURL, err := url.Parse(config.ProxyHost)
+			if err != nil {
+				return err
+			}
+			transport.Proxy = http.ProxyURL(proxyURL)
 		}
-		transport.Proxy = http.ProxyURL(proxyURL)
+		client = &http.Client{Transport: transport}
 	}
 
 	conn.config = config
 	conn.url = urlMaker
-	conn.client = &http.Client{Transport: transport}
+	conn.client = client
 
 	return nil
 }
@@ -107,12 +111,21 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
 	publishProgress(listener, event)
 
+	if conn.config.LogLevel >= Debug {
+		conn.LoggerHttpReq(req)
+	}
+
 	resp, err := conn.client.Do(req)
 	if err != nil {
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
 		publishProgress(listener, event)
 		return nil, err
+	}
+
+	if conn.config.LogLevel >= Debug {
+		//print out http resp
+		conn.LoggerHttpResp(req, resp)
 	}
 
 	// Transfer completed
@@ -227,12 +240,22 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
 	publishProgress(listener, event)
 
+	if conn.config.LogLevel >= Debug {
+		conn.LoggerHttpReq(req)
+	}
+
 	resp, err := conn.client.Do(req)
+
 	if err != nil {
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
 		publishProgress(listener, event)
 		return nil, err
+	}
+
+	if conn.config.LogLevel >= Debug {
+		//print out http resp
+		conn.LoggerHttpResp(req, resp)
 	}
 
 	// Transfer completed
@@ -367,16 +390,19 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		}
 
 		if len(respBody) == 0 {
-			// No error in response body
-			err = fmt.Errorf("oss: service returned without a response body (%s)", resp.Status)
+			err = ServiceError{
+				StatusCode: statusCode,
+				RequestID:  resp.Header.Get(HTTPHeaderOssRequestID),
+			}
 		} else {
 			// Response contains storage service error object, unmarshal
 			srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
 				resp.Header.Get(HTTPHeaderOssRequestID))
-			if err != nil { // error unmarshaling the error response
-				err = errIn
+			if errIn != nil { // error unmarshaling the error response
+				err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+			} else {
+				err = srvErr
 			}
-			err = srvErr
 		}
 
 		return &Response{
@@ -407,6 +433,63 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		ClientCRC:  cliCRC,
 		ServerCRC:  srvCRC,
 	}, nil
+}
+
+func (conn Conn) LoggerHttpReq(req *http.Request) {
+	var logBuffer bytes.Buffer
+	logBuffer.WriteString(fmt.Sprintf("[Req:%p]Method:%s,", req, req.Method))
+	logBuffer.WriteString(fmt.Sprintf("Host:%s,", req.URL.Host))
+	logBuffer.WriteString(fmt.Sprintf("Path:%s,", req.URL.Path))
+	logBuffer.WriteString(fmt.Sprintf("Query:%s,", req.URL.RawQuery))
+	logBuffer.WriteString(fmt.Sprintf("Header info:"))
+
+	for k, v := range req.Header {
+		var valueBuffer bytes.Buffer
+		for j := 0; j < len(v); j++ {
+			if j > 0 {
+				valueBuffer.WriteString(" ")
+			}
+			valueBuffer.WriteString(v[j])
+		}
+		logBuffer.WriteString(fmt.Sprintf("%s:%s,", k, valueBuffer.String()))
+	}
+	conn.config.WriteLog(Debug, "%s.\n", logBuffer.String())
+}
+
+func (conn Conn) LoggerHttpResp(req *http.Request, resp *http.Response) {
+	var logBuffer bytes.Buffer
+	logBuffer.WriteString(fmt.Sprintf("[Resp:%p]StatusCode:%d,", req, resp.StatusCode))
+	logBuffer.WriteString(fmt.Sprintf("Header info:"))
+	for k, v := range resp.Header {
+		var valueBuffer bytes.Buffer
+		for j := 0; j < len(v); j++ {
+			if j > 0 {
+				valueBuffer.WriteString(" ")
+			}
+			valueBuffer.WriteString(v[j])
+		}
+		logBuffer.WriteString(fmt.Sprintf("%s:%s,", k, valueBuffer.String()))
+	}
+
+	statusCode := resp.StatusCode
+	if statusCode >= 400 && statusCode <= 505 {
+		// 4xx and 5xx indicate that the operation has error occurred
+		var respBody []byte
+		respBody, err := readResponseBody(resp)
+		if err != nil {
+			return
+		}
+
+		if len(respBody) == 0 {
+			// No error in response body
+		} else {
+			// Response contains storage service error object, unmarshal
+			logBuffer.WriteString(fmt.Sprintf("Body:%s", string(respBody)))
+		}
+	} else if statusCode >= 300 && statusCode <= 307 {
+		// OSS use 3xx, but response has no body
+	}
+	conn.config.WriteLog(Debug, "%s.\n", logBuffer.String())
 }
 
 func calcMD5(body io.Reader, contentLen, md5Threshold int64) (reader io.Reader, b64 string, tempFile *os.File, err error) {
@@ -444,9 +527,11 @@ func readResponseBody(resp *http.Response) ([]byte, error) {
 
 func serviceErrFromXML(body []byte, statusCode int, requestID string) (ServiceError, error) {
 	var storageErr ServiceError
+
 	if err := xml.Unmarshal(body, &storageErr); err != nil {
 		return storageErr, err
 	}
+
 	storageErr.StatusCode = statusCode
 	storageErr.RequestID = requestID
 	storageErr.RawMessage = string(body)
@@ -459,6 +544,14 @@ func xmlUnmarshal(body io.Reader, v interface{}) error {
 		return err
 	}
 	return xml.Unmarshal(data, v)
+}
+
+func jsonUnmarshal(body io.Reader, v interface{}) error {
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
 }
 
 // timeoutConn handles HTTP timeout
@@ -545,7 +638,11 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 	host, _, err := net.SplitHostPort(um.NetLoc)
 	if err != nil {
 		host = um.NetLoc
+		if host[0] == '[' && host[len(host)-1] == ']' {
+			host = host[1 : len(host)-1]
+		}
 	}
+
 	ip := net.ParseIP(host)
 	if ip != nil {
 		um.Type = urlTypeIP
@@ -618,7 +715,7 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	return host, path
 }
 
-// getResource gets canonicalized resource 
+// getResource gets canonicalized resource
 func (um urlMaker) getResource(bucketName, objectName, subResource string) string {
 	if subResource != "" {
 		subResource = "?" + subResource

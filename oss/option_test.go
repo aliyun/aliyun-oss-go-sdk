@@ -127,6 +127,31 @@ var headerTestcases = []optionTestCase{
 		key:    "X-Oss-Object-Acl",
 		value:  "private",
 	},
+	{
+		option: ObjectStorageClass(StorageStandard),
+		key:    "X-Oss-Storage-Class",
+		value:  "Standard",
+	},
+	{
+		option: Callback("JTdCJTIyY2FsbGJhY2tVcmwlMjIlM0ElMjJleGFtcGxlLmNvbS9pbmRleC5odG1sJTIyJTdE"),
+		key:    "X-Oss-Callback",
+		value:  "JTdCJTIyY2FsbGJhY2tVcmwlMjIlM0ElMjJleGFtcGxlLmNvbS9pbmRleC5odG1sJTIyJTdE",
+	},
+	{
+		option: CallbackVar("JTdCJTIyeCUzQXZhcjElMjIlM0ElMjJ2YWx1ZTElMjIlMkMlMjJ4JTNBdmFyMiUyMiUzQSUyMnZhbHVlMiUyMiU3RA=="),
+		key:    "X-Oss-Callback-Var",
+		value:  "JTdCJTIyeCUzQXZhcjElMjIlM0ElMjJ2YWx1ZTElMjIlMkMlMjJ4JTNBdmFyMiUyMiUzQSUyMnZhbHVlMiUyMiU3RA==",
+	},
+	{
+		option: ContentLanguage("zh-CN"),
+		key:    "Content-Language",
+		value:  "zh-CN",
+	},
+	{
+		option: ServerSideEncryptionKeyID("xossekid"),
+		key:    "X-Oss-Server-Side-Encryption-Key-Id",
+		value:  "xossekid",
+	},
 }
 
 func (s *OssOptionSuite) TestHeaderOptions(c *C) {
@@ -181,6 +206,21 @@ var paramTestCases = []optionTestCase{
 		key:    "upload-id-marker",
 		value:  "xyz",
 	},
+	{
+		option: MaxParts(1000),
+		key:    "max-parts",
+		value:  "1000",
+	},
+	{
+		option: PartNumberMarker(1),
+		key:    "part-number-marker",
+		value:  "1",
+	},
+	{
+		option: Process("image/format,png"),
+		key:    "x-oss-process",
+		value:  "image/format,png",
+	},
 }
 
 func (s *OssOptionSuite) TestParamOptions(c *C) {
@@ -231,7 +271,7 @@ func (s *OssOptionSuite) TestHandleParams(c *C) {
 	c.Assert(err, IsNil)
 
 	out := client.Conn.getURLParams(params)
-	c.Assert(len(out), Equals, 120)
+	c.Assert(len(out), Equals, 191)
 
 	options = []Option{KeyMarker(""), nil}
 

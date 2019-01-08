@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -18,8 +19,9 @@ import (
 type (
 	// Client OSS client
 	Client struct {
-		Config *Config // OSS client configuration
-		Conn   *Conn   // Send HTTP request
+		Config     *Config      // OSS client configuration
+		Conn       *Conn        // Send HTTP request
+		HTTPClient *http.Client //http.Client to use - if nil will make its own
 	}
 
 	// ClientOption client option such as UseCname, Timeout, SecurityToken.
@@ -51,8 +53,8 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 	// OSS client
 	client := &Client{
-		config,
-		conn,
+		Config: config,
+		Conn:   conn,
 	}
 
 	// Client options parse
@@ -61,7 +63,7 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	}
 
 	// Create HTTP connection
-	err := conn.init(config, url)
+	err := conn.init(config, url, client.HTTPClient)
 
 	return client, err
 }
@@ -149,7 +151,7 @@ func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 // IsBucketExist checks if the bucket exists
 //
 // bucketName    the bucket name.
-// 
+//
 // bool    true if it exists, and it's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -184,7 +186,7 @@ func (client Client) DeleteBucket(bucketName string) error {
 
 // GetBucketLocation gets the bucket location.
 //
-// Checks out the following link for more information : 
+// Checks out the following link for more information :
 // https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/endpoint.html
 //
 // bucketName    the bucket name
@@ -253,7 +255,7 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 // bucketName    the bucket name.
 // rules    the lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in days and day/month/year respectively.
 //          Check out sample/bucket_lifecycle.go for more details.
-// 
+//
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule) error {
@@ -300,7 +302,7 @@ func (client Client) DeleteBucketLifecycle(bucketName string) error {
 // GetBucketLifecycle gets the bucket's lifecycle settings.
 //
 // bucketName    the bucket name.
-// 
+//
 // GetBucketLifecycleResponse    the result object upon successful request. It's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -754,6 +756,33 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 		client.Config.ProxyUser = proxyUser
 		client.Config.ProxyPassword = proxyPassword
 		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
+	}
+}
+
+//
+// HTTPClient sets the http.Client in use to the one passed in
+//
+func HTTPClient(HTTPClient *http.Client) ClientOption {
+	return func(client *Client) {
+		client.HTTPClient = HTTPClient
+	}
+}
+
+//
+// SetLogLevel sets the oss sdk log level
+//
+func SetLogLevel(LogLevel int) ClientOption {
+	return func(client *Client) {
+		client.Config.LogLevel = LogLevel
+	}
+}
+
+//
+// SetLogLevel sets the oss sdk log level
+//
+func SetLogger(Logger *log.Logger) ClientOption {
+	return func(client *Client) {
+		client.Config.Logger = Logger
 	}
 }
 

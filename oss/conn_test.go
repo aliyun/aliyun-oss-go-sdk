@@ -69,6 +69,16 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.Type, Equals, urlTypeIP)
 	c.Assert(um.Scheme, Equals, "https")
 	c.Assert(um.NetLoc, Equals, "127.0.0.1:8080")
+
+	um.Init("http://[2401:b180::dc]", false, false)
+	c.Assert(um.Type, Equals, urlTypeIP)
+	c.Assert(um.Scheme, Equals, "http")
+	c.Assert(um.NetLoc, Equals, "[2401:b180::dc]")
+
+	um.Init("https://[2401:b180::dc]:8080", false, false)
+	c.Assert(um.Type, Equals, urlTypeIP)
+	c.Assert(um.Scheme, Equals, "https")
+	c.Assert(um.NetLoc, Equals, "[2401:b180::dc]:8080")
 }
 
 func (s *OssConnSuite) TestAuth(c *C) {
@@ -125,6 +135,13 @@ func (s *OssConnSuite) TestConnToolFunc(c *C) {
 	unexpect := UnexpectedStatusCodeError{[]int{200}, 202}
 	c.Assert(len(unexpect.Error()) > 0, Equals, true)
 	c.Assert(unexpect.Got(), Equals, 202)
+
+	fd, err := os.Open("../sample/BingWallpaper-2015-11-07.jpg")
+	c.Assert(err, IsNil)
+	fd.Close()
+	var out ProcessObjectResult
+	err = jsonUnmarshal(fd, &out)
+	c.Assert(err, NotNil)
 }
 
 func (s *OssConnSuite) TestSignRtmpURL(c *C) {

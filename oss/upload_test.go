@@ -237,7 +237,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	// Use default routines and default CP file path (fileName+.cp)
 	// First upload for 4 parts
 	uploadPartHooker = ErrorHooker
-	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
+	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, fileName+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
@@ -259,7 +259,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(len(ucp.allParts()), Equals, 5)
 
 	// Second upload, finish the remaining part
-	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, fileName+".cp"))
 	c.Assert(err, IsNil)
 
 	os.Remove(newFile)
@@ -276,16 +276,28 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = ucp.load(fileName + ".cp")
 	c.Assert(err, NotNil)
 
-	// Specify routines and CP
+	// Resumable upload with empty checkpoint path
 	uploadPartHooker = ErrorHooker
-	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(2), Checkpoint(true, objectName+".cp"))
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), CheckpointDir(true, ""))
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	uploadPartHooker = defaultUploadPart
+	ucp = uploadCheckpoint{}
+	err = ucp.load(fileName + ".cp")
+	c.Assert(err, NotNil)
+
+	// Resumable upload with checkpoint dir
+	uploadPartHooker = ErrorHooker
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), CheckpointDir(true, "./"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
 
 	// Check CP
 	ucp = uploadCheckpoint{}
-	err = ucp.load(objectName + ".cp")
+	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
+	cpFilePath := getUploadCpFilePath(&cpConf, fileName, s.bucket.BucketName, objectName)
+	err = ucp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(ucp.Magic, Equals, uploadCpMagic)
 	c.Assert(len(ucp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
@@ -299,6 +311,24 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(len(ucp.todoParts()), Equals, 1)
 	c.Assert(len(ucp.allParts()), Equals, 5)
 
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), CheckpointDir(true, "./"))
+	c.Assert(err, IsNil)
+
+	os.Remove(newFile)
+	err = s.bucket.GetObjectToFile(objectName, newFile)
+	c.Assert(err, IsNil)
+
+	eq, err = compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	err = ucp.load(cpFilePath)
+	c.Assert(err, NotNil)
+
+	// Upload all 5 parts without error
 	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, objectName+".cp"))
 	c.Assert(err, IsNil)
 
@@ -313,26 +343,8 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 
-	err = ucp.load(objectName + ".cp")
-	c.Assert(err, NotNil)
-
-	// Upload all 5 parts without error
-	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, ""))
-	c.Assert(err, IsNil)
-
-	os.Remove(newFile)
-	err = s.bucket.GetObjectToFile(objectName, newFile)
-	c.Assert(err, IsNil)
-
-	eq, err = compareFiles(fileName, newFile)
-	c.Assert(err, IsNil)
-	c.Assert(eq, Equals, true)
-
-	err = s.bucket.DeleteObject(objectName)
-	c.Assert(err, IsNil)
-
 	// Upload all 5 parts with 10 routines without error
-	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10), Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(10), Checkpoint(true, objectName+".cp"))
 	c.Assert(err, IsNil)
 
 	os.Remove(newFile)
@@ -347,7 +359,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 
 	// Option
-	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, ""), Meta("myprop", "mypropval"))
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, objectName+".cp"), Meta("myprop", "mypropval"))
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
@@ -371,23 +383,23 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// The local file does not exist
-	err := s.bucket.UploadFile(objectName, "NotExist", 100*1024, Checkpoint(true, ""))
+	err := s.bucket.UploadFile(objectName, "NotExist", 100*1024, Checkpoint(true, "NotExist.cp"))
 	c.Assert(err, NotNil)
 
-	err = s.bucket.UploadFile(objectName, "NotExist", 100*1024, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, "NotExist", 100*1024, Routines(2), Checkpoint(true, "NotExist.cp"))
 	c.Assert(err, NotNil)
 
 	// Specified part size is invalid
-	err = s.bucket.UploadFile(objectName, fileName, 1024, Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, fileName, 1024, Checkpoint(true, fileName+".cp"))
 	c.Assert(err, NotNil)
 
-	err = s.bucket.UploadFile(objectName, fileName, 1024, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, fileName, 1024, Routines(2), Checkpoint(true, fileName+".cp"))
 	c.Assert(err, NotNil)
 
-	err = s.bucket.UploadFile(objectName, fileName, 1024*1024*1024*100, Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, fileName, 1024*1024*1024*100, Checkpoint(true, fileName+".cp"))
 	c.Assert(err, NotNil)
 
-	err = s.bucket.UploadFile(objectName, fileName, 1024*1024*1024*100, Routines(2), Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, fileName, 1024*1024*1024*100, Routines(2), Checkpoint(true, fileName+".cp"))
 	c.Assert(err, NotNil)
 }
 
@@ -404,7 +416,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 
 	// First upload for 4 parts
 	uploadPartHooker = ErrorHooker
-	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, localFile+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
 	uploadPartHooker = defaultUploadPart
@@ -414,7 +426,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	c.Assert(err, IsNil)
 
 	// Updating the file. The second upload will re-upload all 5 parts.
-	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, ""))
+	err = s.bucket.UploadFile(objectName, localFile, 100*1024, Checkpoint(true, localFile+".cp"))
 	c.Assert(err, IsNil)
 
 	os.Remove(newFile)
