@@ -293,9 +293,8 @@ func (s *OssBucketLiveChannelSuite) TestGetVodPlaylist(c *C) {
 	endTime := time.Now().Add(-1 * time.Minute)
 	startTime := endTime.Add(-60 * time.Minute)
 
-	body, err := s.bucket.GetVodPlaylist(channelName, startTime, endTime)
+	_, err = s.bucket.GetVodPlaylist(channelName, startTime, endTime)
 	c.Assert(err, NotNil)
-	defer body.Close()
 
 	err = s.bucket.DeleteLiveChannel(channelName)
 	c.Assert(err, IsNil)
