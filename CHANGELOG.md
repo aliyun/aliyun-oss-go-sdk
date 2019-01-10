@@ -1,4 +1,14 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：1.9.3 日期：2019-01-10
+### 变更内容
+- 修复：分片上传时传入partSize值不对是的提示信息不准确的问题
+- 修复：仅仅在使用userAgent的时候初始化它的值
+- 变更：添加ContentLanguage选项
+- 变更：支持设置最大的空闲连接个数
+- 变更：当配置的endpoint不对时，输出的错误信息将会打印出正确的endpoint
+- 变更：支持ServerSideEncryptionKeyID选项，允许用户传入kms-id
+- 变更：添加日志模块，支持设置日志级别
+
 ## 版本号：1.9.2 日期：2018-11-16
 ### 变更内容
 - 变更：添加支持设置request Payer的option

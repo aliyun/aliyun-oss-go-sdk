@@ -13,7 +13,7 @@
 > - 使用此SDK，用户可以方便地在任何应用、任何时间、任何地点上传，下载和管理数据。
 
 ## 版本
-> - 当前版本：1.9.2
+> - 当前版本：1.9.3
 
 ## 运行环境
 > - Go 1.5及以上。
@@ -161,7 +161,8 @@
 > - 阿里云官方技术支持：[提交工单](https://workorder.console.aliyun.com/#/ticket/createIndex)
 
 ## 作者
-> - Yubin Bai
+> - [Yubin Bai](https://github.com/baiyubin)
+> - [Guozhong Han](https://github.com/hangzws)
 
 ## License
 > - Apache License 2.0
