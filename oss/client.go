@@ -218,6 +218,7 @@ func (client Client) GetBucketLocation(bucketName string) (string, error) {
 func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 	headers := map[string]string{HTTPHeaderOssACL: string(bucketACL)}
 	params := map[string]interface{}{}
+	params["acl"] = nil
 	resp, err := client.do("PUT", bucketName, params, headers, nil)
 	if err != nil {
 		return err
