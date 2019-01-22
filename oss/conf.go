@@ -34,27 +34,47 @@ type HTTPMaxConns struct {
 
 // Config defines oss configuration
 type Config struct {
-	Endpoint        string       // OSS endpoint
-	AccessKeyID     string       // AccessId
-	AccessKeySecret string       // AccessKey
-	RetryTimes      uint         // Retry count by default it's 5.
-	UserAgent       string       // SDK name/version/system information
-	IsDebug         bool         // Enable debug mode. Default is false.
-	Timeout         uint         // Timeout in seconds. By default it's 60.
-	SecurityToken   string       // STS Token
-	IsCname         bool         // If cname is in the endpoint.
-	HTTPTimeout     HTTPTimeout  // HTTP timeout
-	HTTPMaxConns    HTTPMaxConns // Http max connections
-	IsUseProxy      bool         // Flag of using proxy.
-	ProxyHost       string       // Flag of using proxy host.
-	IsAuthProxy     bool         // Flag of needing authentication.
-	ProxyUser       string       // Proxy user
-	ProxyPassword   string       // Proxy password
-	IsEnableMD5     bool         // Flag of enabling MD5 for upload.
-	MD5Threshold    int64        // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
-	IsEnableCRC     bool         // Flag of enabling CRC for upload.
-	LogLevel        int          // log level
-	Logger          *log.Logger  // For write log
+	Endpoint         string       // OSS endpoint
+	AccessKeyID      string       // AccessId
+	AccessKeySecret  string       // AccessKey
+	RetryTimes       uint         // Retry count by default it's 5.
+	UserAgent        string       // SDK name/version/system information
+	IsDebug          bool         // Enable debug mode. Default is false.
+	Timeout          uint         // Timeout in seconds. By default it's 60.
+	SecurityToken    string       // STS Token
+	IsCname          bool         // If cname is in the endpoint.
+	HTTPTimeout      HTTPTimeout  // HTTP timeout
+	HTTPMaxConns     HTTPMaxConns // Http max connections
+	IsUseProxy       bool         // Flag of using proxy.
+	ProxyHost        string       // Flag of using proxy host.
+	IsAuthProxy      bool         // Flag of needing authentication.
+	ProxyUser        string       // Proxy user
+	ProxyPassword    string       // Proxy password
+	IsEnableMD5      bool         // Flag of enabling MD5 for upload.
+	MD5Threshold     int64        // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
+	IsEnableCRC      bool         // Flag of enabling CRC for upload.
+	UploadLimitSpeed int          // Upload limit speed:KB/s, 0 is unlimited
+	UploadLimiter    *OssLimiter  // Band limit reader for upload
+	LogLevel         int          // Log level
+	Logger           *log.Logger  // For write log
+}
+
+// LimitUploadSpeed, upSpeed:KB/s, 0 is unlimited,default is 0
+func (config *Config) LimitUploadSpeed(upSpeed int) error {
+	if upSpeed < 0 {
+		return fmt.Errorf("erro,speed is less than 0")
+	} else if upSpeed == 0 {
+		config.UploadLimitSpeed = 0
+		config.UploadLimiter = nil
+		return nil
+	}
+
+	var err error
+	config.UploadLimiter, err = GetOssLimiter(upSpeed)
+	if err == nil {
+		config.UploadLimitSpeed = upSpeed
+	}
+	return err
 }
 
 // WriteLog

@@ -5,6 +5,7 @@ package oss
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -647,6 +648,16 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 
 	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
+}
+
+// LimitUploadSpeed: set upload band limit speed,default is 0,unlimited
+// upSpeed: KB/s, 0 is unlimited,default is 0
+// error:it's nil if success, otherwise failure
+func (client Client) LimitUploadSpeed(upSpeed int) error {
+	if client.Config == nil {
+		return fmt.Errorf("client config is nil")
+	}
+	return client.Config.LimitUploadSpeed(upSpeed)
 }
 
 // UseCname sets the flag of using CName. By default it's false.
