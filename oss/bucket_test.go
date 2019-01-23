@@ -80,6 +80,9 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 			err = bucket.DeleteObject(object.Key)
 			c.Assert(err, IsNil)
 		}
+		// Delete bucket
+		err = s.client.DeleteBucket(bucket.BucketName)
+		c.Assert(err, IsNil)
 	}
 
 	testLogger.Println("test bucket completed")
