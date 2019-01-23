@@ -103,7 +103,7 @@ func (s *OssClientSuite) SetUpSuite(c *C) {
 	for _, bucket := range lbr.Buckets {
 		s.deleteBucket(client, bucket.Name, c)
 	}
-	
+
 	testLogger.Println("test client started")
 }
 
