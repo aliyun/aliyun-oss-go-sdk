@@ -59,6 +59,10 @@ func (s *OssCrcSuite) TearDownSuite(c *C) {
 		c.Assert(err, IsNil)
 	}
 
+	// Delete bucket
+	err = s.client.DeleteBucket(s.bucket.BucketName)
+	c.Assert(err, IsNil)
+
 	testLogger.Println("test crc completed")
 }
 
