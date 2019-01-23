@@ -45,12 +45,12 @@ var (
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
 )
 
-var (
+const (
 	// prefix of bucket name for bucket ops test
-	bucketNamePrefix = "go-sdk-test-bucket-abcx-" + randLowStr(6) + "-"
+	bucketNamePrefix = "go-sdk-test-bucket-abcx-"
 	// bucket name for object ops test
-	bucketName        = "go-sdk-test-bucket-abcx-for-object-" + randLowStr(6)
-	archiveBucketName = "go-sdk-test-bucket-abcx-for-archive-" + randLowStr(6)
+	bucketName        = "go-sdk-test-bucket-abcx-for-object"
+	archiveBucketName = "go-sdk-test-bucket-abcx-for-archive"
 	// object name for object ops test
 	objectNamePrefix = "go-sdk-test-object-abcx-"
 	// sts region is one and only hangzhou
@@ -94,6 +94,16 @@ func getUuid() string {
 
 // SetUpSuite runs once when the suite starts running
 func (s *OssClientSuite) SetUpSuite(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	lbr, err := client.ListBuckets(Prefix(bucketNamePrefix), MaxKeys(1000))
+	c.Assert(err, IsNil)
+
+	for _, bucket := range lbr.Buckets {
+		s.deleteBucket(client, bucket.Name, c)
+	}
+	
 	testLogger.Println("test client started")
 }
 
