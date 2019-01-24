@@ -127,6 +127,7 @@ const (
 	HTTPParamAccessKeyID   = "OSSAccessKeyId"
 	HTTPParamSignature     = "Signature"
 	HTTPParamSecurityToken = "security-token"
+	HTTPParamPlaylistName  = "playlistName"
 )
 
 // Other constants

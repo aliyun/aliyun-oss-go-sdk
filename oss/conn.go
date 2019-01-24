@@ -304,6 +304,27 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	return conn.url.getSignURL(bucketName, objectName, urlParams)
 }
 
+func (conn Conn) signRtmpURL(bucketName, channelName, playlistName string, expiration int64) string {
+	params := map[string]interface{}{}
+	if playlistName != "" {
+		params[HTTPParamPlaylistName] = playlistName
+	}
+	expireStr := strconv.FormatInt(expiration, 10)
+	params[HTTPParamExpires] = expireStr
+
+	if conn.config.AccessKeyID != "" {
+		params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
+		if conn.config.SecurityToken != "" {
+			params[HTTPParamSecurityToken] = conn.config.SecurityToken
+		}
+		signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, params)
+		params[HTTPParamSignature] = signedStr
+	}
+
+	urlParams := conn.getURLParams(params)
+	return conn.url.getSignRtmpURL(bucketName, channelName, urlParams)
+}
+
 // handleBody handles request body
 func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 	listener ProgressListener, tracker *readerTracker) (*os.File, hash.Hash64) {
@@ -631,6 +652,16 @@ func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 func (um urlMaker) getSignURL(bucket, object, params string) string {
 	host, path := um.buildURL(bucket, object)
 	return fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
+}
+
+// getSignRtmpURL Build Sign Rtmp URL
+func (um urlMaker) getSignRtmpURL(bucket, channelName, params string) string {
+	host, path := um.buildURL(bucket, "live")
+
+	channelName = url.QueryEscape(channelName)
+	channelName = strings.Replace(channelName, "+", "%20", -1)
+
+	return fmt.Sprintf("rtmp://%s%s/%s?%s", host, path, channelName, params)
 }
 
 // buildURL builds URL
