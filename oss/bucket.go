@@ -142,6 +142,8 @@ func (bucket Bucket) GetObject(objectKey string, options ...Option) (io.ReadClos
 //
 func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Option) error {
 	tempFilePath := filePath + TempFileSuffix
+	var written int64
+	listener := getProgressListener(options)
 
 	// Calls the API to actually download the object. Returns the result instance.
 	result, err := bucket.DoGetObject(&GetObjectRequest{objectKey}, options)
@@ -156,12 +158,21 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 		return err
 	}
 
+	// Transfer started
+	contentLen, _ := strconv.ParseInt(result.Response.Headers.Get(HTTPHeaderContentLength), 10, 64)
+	event := newProgressEvent(TransferStartedEvent, 0, contentLen)
+	publishProgress(listener, event)
+
 	// Copy the data to the local file path.
-	_, err = io.Copy(fd, result.Response.Body)
+	written, err = io.Copy(fd, result.Response.Body)
 	fd.Close()
 	if err != nil {
 		return err
 	}
+
+	// Transfer completed
+	event = newProgressEvent(TransferCompletedEvent, written, contentLen)
+	publishProgress(listener, event)
 
 	// Compares the CRC value
 	hasRange, _, _ := isOptionSet(options, HTTPHeaderRange)
