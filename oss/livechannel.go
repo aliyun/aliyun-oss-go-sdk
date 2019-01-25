@@ -248,7 +248,7 @@ func (bucket Bucket) DeleteLiveChannel(channelName string) error {
 // error        nil if success, otherwise error
 //
 func (bucket Bucket) SignRtmpURL(channelName, playlistName string, expires int64) (string, error) {
-	if expires < 0 {
+	if expires <= 0 {
 		return "", fmt.Errorf("invalid argument: %d, expires must greater than 0", expires)
 	}
 	expiration := time.Now().Unix() + expires
