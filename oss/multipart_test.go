@@ -54,7 +54,7 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 		}
 		marker = Marker(lor.NextMarker)
 		if !lor.IsTruncated {
-				break
+			break
 		}
 	}
 
@@ -85,7 +85,7 @@ func (s *OssBucketMultipartSuite) TearDownSuite(c *C) {
 		}
 		marker = Marker(lor.NextMarker)
 		if !lor.IsTruncated {
-				break
+			break
 		}
 	}
 

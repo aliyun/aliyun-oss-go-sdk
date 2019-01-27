@@ -60,7 +60,7 @@ func (s *OssProgressSuite) TearDownSuite(c *C) {
 		}
 		marker = Marker(lor.NextMarker)
 		if !lor.IsTruncated {
-				break
+			break
 		}
 	}
 

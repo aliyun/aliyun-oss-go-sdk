@@ -71,7 +71,7 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 			err = bucket.AbortMultipartUpload(imur)
 			c.Assert(err, IsNil)
 		}
-		
+
 		// Delete objects
 		marker := Marker("")
 		for{
@@ -83,7 +83,7 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 			}
 			marker = Marker(lor.NextMarker)
 			if !lor.IsTruncated {
-					break
+				break
 			}
 		}
 
