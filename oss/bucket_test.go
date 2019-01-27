@@ -71,14 +71,20 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 			err = bucket.AbortMultipartUpload(imur)
 			c.Assert(err, IsNil)
 		}
-
+		
 		// Delete objects
-		lor, err := bucket.ListObjects()
-		c.Assert(err, IsNil)
-
-		for _, object := range lor.Objects {
-			err = bucket.DeleteObject(object.Key)
+		marker := Marker("")
+		for{
+			lor, err := bucket.ListObjects(marker)
 			c.Assert(err, IsNil)
+			for _, object := range lor.Objects {
+				err = bucket.DeleteObject(object.Key)
+				c.Assert(err, IsNil)
+			}
+			marker = Marker(lor.NextMarker)
+			if !lor.IsTruncated {
+					break
+			}
 		}
 
 		// Delete bucket

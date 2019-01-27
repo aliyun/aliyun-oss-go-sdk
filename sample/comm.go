@@ -117,15 +117,21 @@ func DeleteTestBucketAndObject(bucketName string) error {
 	}
 
 	// Delete objects
-	lor, err := bucket.ListObjects()
-	if err != nil {
-		return err
-	}
-
-	for _, object := range lor.Objects {
-		err = bucket.DeleteObject(object.Key)
+	marker := oss.Marker("")
+	for {
+		lor, err := bucket.ListObjects(marker)
 		if err != nil {
 			return err
+		}
+		for _, object := range lor.Objects {
+			err = bucket.DeleteObject(object.Key)
+			if err != nil {
+				return err
+			}
+		}
+		marker = oss.Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
 		}
 	}
 

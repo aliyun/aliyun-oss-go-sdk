@@ -15,6 +15,7 @@ import (
 type OssProgressSuite struct {
 	client *Client
 	bucket *Bucket
+
 }
 
 var _ = Suite(&OssProgressSuite{})
@@ -48,12 +49,18 @@ func (s *OssProgressSuite) TearDownSuite(c *C) {
 	}
 
 	// Delete objects
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
-
-	for _, object := range lor.Objects {
-		err = s.bucket.DeleteObject(object.Key)
+	marker := Marker("")
+	for{
+		lor, err := s.bucket.ListObjects(marker)
 		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = s.bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+				break
+		}
 	}
 
 	// Delete bucket
