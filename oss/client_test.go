@@ -45,7 +45,7 @@ var (
 
 var (
 	// prefix of bucket name for bucket ops test
-	basePrefix = "go-sdk-test-bucket-abcx-"
+	basePrefix       = "go-sdk-test-bucket-abcx-"
 	bucketNamePrefix = "go-sdk-test-bucket-abcx-" + randLowStr(6) + "-"
 	// bucket name for object ops test
 	bucketName        = "go-sdk-test-bucket-abcx-for-object-" + randLowStr(6)
@@ -119,12 +119,18 @@ func (s *OssClientSuite) deleteBucket(client *Client, bucketName string, c *C) {
 	c.Assert(err, IsNil)
 
 	// Delete Object
-	lor, err := bucket.ListObjects()
-	c.Assert(err, IsNil)
-
-	for _, object := range lor.Objects {
-		err = bucket.DeleteObject(object.Key)
+	marker := Marker("")
+	for {
+		lor, err := bucket.ListObjects(marker)
 		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
+		}
 	}
 
 	// Delete Part
