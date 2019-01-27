@@ -56,7 +56,7 @@ func (s *OssDownloadSuite) TearDownSuite(c *C) {
 		}
 		marker = Marker(lor.NextMarker)
 		if !lor.IsTruncated {
-				break
+			break
 		}
 	}
 
