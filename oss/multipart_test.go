@@ -568,12 +568,12 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploads(c *C) {
 	c.Assert(len(lmpu.Uploads), Equals, 18)
 	c.Assert(len(lmpu.CommonPrefixes), Equals, 2)
 
-	// Upload-id-marker
-	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker(objectName+"12"), UploadIDMarker("EEE"))
+	upLoadIDStr := randStr(3)
+	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker(objectName+"12"), UploadIDMarker(upLoadIDStr))
 	c.Assert(err, IsNil)
 	checkNum := 15
 	for _, im := range imurs {
-		if im.Key == objectName+"12" && im.UploadID > "EEE" {
+		if im.Key == objectName+"12" && im.UploadID > "upLoadIDStr" {
 			checkNum = 16
 			break
 		}
