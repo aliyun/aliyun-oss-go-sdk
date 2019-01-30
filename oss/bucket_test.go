@@ -46,7 +46,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	err = s.client.CreateBucket(archiveBucketName, StorageClass(StorageArchive))
 	c.Assert(err, IsNil)
 
-	time.Sleep(5 * time.Second)
+	// time.Sleep(timeoutInOperation)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -587,7 +587,7 @@ func (s *OssBucketSuite) TestPutObjectType(c *C) {
 	c.Assert(err, IsNil)
 
 	// Check
-	time.Sleep(time.Second)
+	// time.Sleep(timeoutInOperation)
 	body, err := s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
