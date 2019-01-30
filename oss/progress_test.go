@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"os"
 	"strings"
-	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -27,7 +26,7 @@ func (s *OssProgressSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	time.Sleep(5 * time.Second)
+	// time.Sleep(timeoutInOperation)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
