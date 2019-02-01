@@ -102,17 +102,25 @@ func DeleteTestBucketAndObject(bucketName string) error {
 	}
 
 	// Delete part
-	lmur, err := bucket.ListMultipartUploads()
-	if err != nil {
-		return err
-	}
-
-	for _, upload := range lmur.Uploads {
-		var imur = oss.InitiateMultipartUploadResult{Bucket: bucket.BucketName,
-			Key: upload.Key, UploadID: upload.UploadID}
-		err = bucket.AbortMultipartUpload(imur)
+	keyMarker := oss.KeyMarker("")
+	uploadIdMarker := oss.UploadIDMarker("")
+	for {
+		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
 		if err != nil {
 			return err
+		}
+		for _, upload := range lmur.Uploads {
+			var imur = oss.InitiateMultipartUploadResult{Bucket: bucket.BucketName,
+				Key: upload.Key, UploadID: upload.UploadID}
+			err = bucket.AbortMultipartUpload(imur)
+			if err != nil {
+				return err
+			}
+		}
+		keyMarker = oss.KeyMarker(lmur.NextKeyMarker)
+		uploadIdMarker = oss.UploadIDMarker(lmur.NextUploadIDMarker)
+		if !lmur.IsTruncated {
+			break
 		}
 	}
 
