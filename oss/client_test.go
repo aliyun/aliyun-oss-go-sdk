@@ -134,14 +134,22 @@ func (s *OssClientSuite) deleteBucket(client *Client, bucketName string, c *C) {
 	}
 
 	// Delete Part
-	lmur, err := bucket.ListMultipartUploads()
-	c.Assert(err, IsNil)
-
-	for _, upload := range lmur.Uploads {
-		var imur = InitiateMultipartUploadResult{Bucket: bucketName,
-			Key: upload.Key, UploadID: upload.UploadID}
-		err = bucket.AbortMultipartUpload(imur)
+	keyMarker := KeyMarker("")
+	uploadIdMarker := UploadIDMarker("")
+	for {
+		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
 		c.Assert(err, IsNil)
+		for _, upload := range lmur.Uploads {
+			var imur = InitiateMultipartUploadResult{Bucket: bucketName,
+				Key: upload.Key, UploadID: upload.UploadID}
+			err = bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
+		keyMarker = KeyMarker(lmur.NextKeyMarker)
+		uploadIdMarker = UploadIDMarker(lmur.NextUploadIDMarker)
+		if !lmur.IsTruncated {
+			break
+		}
 	}
 
 	// Delete Bucket
@@ -780,7 +788,7 @@ func (s *OssClientSuite) TestBucketRefererNegative(c *C) {
 
 // TestSetBucketLogging
 func (s *OssClientSuite) TestSetBucketLogging(c *C) {
-	var bucketNameTest = bucketNamePrefix + randLowStr(6) 
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
 	var bucketNameTarget = bucketNamePrefix + randLowStr(6)
 
 	client, err := New(endpoint, accessID, accessKey)

@@ -59,22 +59,31 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	testLogger.Println("test bucket started")
 }
 
+
 // TearDownSuite runs before each test or benchmark starts running.
 func (s *OssBucketSuite) TearDownSuite(c *C) {
 	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
 		// Delete multipart
-		lmu, err := bucket.ListMultipartUploads()
-		c.Assert(err, IsNil)
-
-		for _, upload := range lmu.Uploads {
-			imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
-			err = bucket.AbortMultipartUpload(imur)
+		keyMarker := KeyMarker("")
+		uploadIdMarker := UploadIDMarker("")
+		for {
+			lmu, err := bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
 			c.Assert(err, IsNil)
+			for _, upload := range lmu.Uploads {
+				imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
+				err = bucket.AbortMultipartUpload(imur)
+				c.Assert(err, IsNil)
+			}
+			keyMarker = KeyMarker(lmu.NextKeyMarker)
+			uploadIdMarker = UploadIDMarker(lmu.NextUploadIDMarker)
+			if !lmu.IsTruncated {
+				break
+			}
 		}
 
 		// Delete objects
 		marker := Marker("")
-		for{
+		for {
 			lor, err := bucket.ListObjects(marker)
 			c.Assert(err, IsNil)
 			for _, object := range lor.Objects {
@@ -88,7 +97,7 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 		}
 
 		// Delete bucket
-		err = s.client.DeleteBucket(bucket.BucketName)
+		err := s.client.DeleteBucket(bucket.BucketName)
 		c.Assert(err, IsNil)
 	}
 
