@@ -53,26 +53,26 @@ type Config struct {
 	IsEnableMD5      bool         // Flag of enabling MD5 for upload.
 	MD5Threshold     int64        // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
 	IsEnableCRC      bool         // Flag of enabling CRC for upload.
-	UploadLimitSpeed int          // Upload limit speed:KB/s, 0 is unlimited
-	UploadLimiter    *OssLimiter  // Band limit reader for upload
 	LogLevel         int          // Log level
 	Logger           *log.Logger  // For write log
+	UploadLimitSpeed int          // Upload limit speed:KB/s, 0 is unlimited
+	UploadLimiter    *OssLimiter  // Bandwidth limit reader for upload
 }
 
-// LimitUploadSpeed, upSpeed:KB/s, 0 is unlimited,default is 0
-func (config *Config) LimitUploadSpeed(upSpeed int) error {
-	if upSpeed < 0 {
+// LimitUploadSpeed, uploadSpeed:KB/s, 0 is unlimited,default is 0
+func (config *Config) LimitUploadSpeed(uploadSpeed int) error {
+	if uploadSpeed < 0 {
 		return fmt.Errorf("erro,speed is less than 0")
-	} else if upSpeed == 0 {
+	} else if uploadSpeed == 0 {
 		config.UploadLimitSpeed = 0
 		config.UploadLimiter = nil
 		return nil
 	}
 
 	var err error
-	config.UploadLimiter, err = GetOssLimiter(upSpeed)
+	config.UploadLimiter, err = GetOssLimiter(uploadSpeed)
 	if err == nil {
-		config.UploadLimitSpeed = upSpeed
+		config.UploadLimitSpeed = uploadSpeed
 	}
 	return err
 }

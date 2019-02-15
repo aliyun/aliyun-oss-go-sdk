@@ -1595,7 +1595,7 @@ func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
 	client.DeleteBucket(testBucketName)
 }
 
-func (s *OssClientSuite) TestLimitUploadSpeed(c *C) {
+func (s *OssClientSuite) TestSetLimitUploadSpeed(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 

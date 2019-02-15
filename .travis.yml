@@ -10,6 +10,9 @@ install:
 - go get gopkg.in/check.v1
 - go get github.com/satori/go.uuid
 - go get github.com/baiyubin/aliyun-sts-go-sdk/sts
+
+- if [[ $TRAVIS_GO_VERSION = '1.7' || $TRAVIS_GO_VERSION > '1.7' ]]; then go get golang.org/x/time/rate ; fi
+ 
 script:
 - cd oss
 - travis_wait 30 go test -v -covermode=count -coverprofile=coverage.out -timeout=30m

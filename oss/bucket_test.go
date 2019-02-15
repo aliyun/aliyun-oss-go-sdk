@@ -43,7 +43,6 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 
 	s.client.CreateBucket(bucketName)
 
-	archiveBucketName := bucketName + "-archive"
 	err = s.client.CreateBucket(archiveBucketName, StorageClass(StorageArchive))
 	c.Assert(err, IsNil)
 
@@ -59,7 +58,6 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 
 	testLogger.Println("test bucket started")
 }
-
 
 // TearDownSuite runs before each test or benchmark starts running.
 func (s *OssBucketSuite) TearDownSuite(c *C) {
@@ -2289,7 +2287,7 @@ func (s *OssBucketSuite) detectUploadSpeed(bucket *Bucket, c *C) (upSpeed int) {
 
 	// byte/s
 	upSpeed = len(textBuffer) * 1000 / int(endT.UnixNano()/1000/1000-startT.UnixNano()/1000/1000)
-	return
+	return upSpeed
 }
 
 func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
@@ -2319,15 +2317,15 @@ func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 
 	var limitSpeed = 0
-	if detectSpeed <= perTokenBandSize*2 {
-		limitSpeed = perTokenBandSize
+	if detectSpeed <= perTokenBandwidthSize*2 {
+		limitSpeed = perTokenBandwidthSize
 	} else {
 		//this situation, the test works better
 		limitSpeed = detectSpeed / 2
 	}
 
 	// KB/s
-	err = client.LimitUploadSpeed(limitSpeed / perTokenBandSize)
+	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
 	objectName := objectNamePrefix + getUuid()
@@ -2346,8 +2344,8 @@ func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
 
 	c.Assert(float64(realSpeed) < float64(limitSpeed)*1.1, Equals, true)
 
-	if detectSpeed > perTokenBandSize {
-		// the minimum uploas limit speed is perTokenBandSize(1024 byte/s)
+	if detectSpeed > perTokenBandwidthSize {
+		// the minimum uploas limit speed is perTokenBandwidthSize(1024 byte/s)
 		c.Assert(float64(realSpeed) > float64(limitSpeed)*0.9, Equals, true)
 	}
 
@@ -2401,14 +2399,14 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 	//detect speed:byte/s
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 	var limitSpeed = 0
-	if detectSpeed <= perTokenBandSize*2 {
-		limitSpeed = perTokenBandSize
+	if detectSpeed <= perTokenBandwidthSize*2 {
+		limitSpeed = perTokenBandwidthSize
 	} else {
 		limitSpeed = detectSpeed / 2
 	}
 
 	// KB/s
-	err = client.LimitUploadSpeed(limitSpeed / perTokenBandSize)
+	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
 	// object1
@@ -2437,8 +2435,8 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 	realSpeed := len(textBuffer) * 2 * 1000 / int(endT.UnixNano()/1000/1000-startT.UnixNano()/1000/1000)
 	c.Assert(float64(realSpeed) < float64(limitSpeed)*1.1, Equals, true)
 
-	if detectSpeed > perTokenBandSize {
-		// the minimum uploas limit speed is perTokenBandSize(1024 byte/s)
+	if detectSpeed > perTokenBandwidthSize {
+		// the minimum uploas limit speed is perTokenBandwidthSize(1024 byte/s)
 		c.Assert(float64(realSpeed) > float64(limitSpeed)*0.9, Equals, true)
 	}
 	c.Assert(sum, Equals, 2)
@@ -2493,15 +2491,15 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 
 	var limitSpeed = 0
-	if detectSpeed <= perTokenBandSize*2 {
-		limitSpeed = perTokenBandSize
+	if detectSpeed <= perTokenBandwidthSize*2 {
+		limitSpeed = perTokenBandwidthSize
 	} else {
 		//this situation, the test works better
 		limitSpeed = detectSpeed / 2
 	}
 
 	// KB/s
-	err = client.LimitUploadSpeed(limitSpeed / perTokenBandSize)
+	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
 	objectName := objectNamePrefix + getUuid()
@@ -2510,7 +2508,7 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 	// 1M byte
 	fileSize := 0
 	textBuffer := randStr(1024 * 1024)
-	if detectSpeed < perTokenBandSize {
+	if detectSpeed < perTokenBandwidthSize {
 		ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
 		f, err := os.Stat(fileName)
 		c.Assert(err, IsNil)
@@ -2545,8 +2543,8 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 	realSpeed := fileSize * 1000 / int(endT.UnixNano()/1000/1000-startT.UnixNano()/1000/1000)
 	c.Assert(float64(realSpeed) < float64(limitSpeed)*1.1, Equals, true)
 
-	if detectSpeed > perTokenBandSize {
-		// the minimum uploas limit speed is perTokenBandSize(1024 byte/s)
+	if detectSpeed > perTokenBandwidthSize {
+		// the minimum uploas limit speed is perTokenBandwidthSize(1024 byte/s)
 		c.Assert(float64(realSpeed) > float64(limitSpeed)*0.9, Equals, true)
 	}
 
@@ -2596,15 +2594,15 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 
 	var limitSpeed = 0
-	if detectSpeed <= perTokenBandSize*2 {
-		limitSpeed = perTokenBandSize
+	if detectSpeed <= perTokenBandwidthSize*2 {
+		limitSpeed = perTokenBandwidthSize
 	} else {
 		//this situation, the test works better
 		limitSpeed = detectSpeed / 2
 	}
 
 	// KB/s
-	err = client.LimitUploadSpeed(limitSpeed / perTokenBandSize)
+	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
 	objectName := objectNamePrefix + getUuid()
@@ -2613,7 +2611,7 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	// 1M byte
 	fileSize := 0
 	textBuffer := randStr(1024 * 1024)
-	if detectSpeed < perTokenBandSize {
+	if detectSpeed < perTokenBandwidthSize {
 		ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
 		f, err := os.Stat(fileName)
 		c.Assert(err, IsNil)
@@ -2648,8 +2646,8 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	realSpeed := fileSize * 1000 / int(endT.UnixNano()/1000/1000-startT.UnixNano()/1000/1000)
 	c.Assert(float64(realSpeed) < float64(limitSpeed)*1.1, Equals, true)
 
-	if detectSpeed > perTokenBandSize {
-		// the minimum uploas limit speed is perTokenBandSize(1024 byte/s)
+	if detectSpeed > perTokenBandwidthSize {
+		// the minimum uploas limit speed is perTokenBandwidthSize(1024 byte/s)
 		c.Assert(float64(realSpeed) > float64(limitSpeed)*0.9, Equals, true)
 	}
 
@@ -2671,4 +2669,73 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	fmt.Printf("detect speed:%d,limit speed:%d,real speed:%d.\n", detectSpeed, limitSpeed, realSpeed)
 
 	return
+}
+
+// upload speed limit parameters will not affect download speed
+func (s *OssBucketSuite) TestUploadObjectLimitSpeed(c *C) {
+	// create limit client and bucket
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	tokenCount := 1
+	err = client.LimitUploadSpeed(tokenCount)
+	if err != nil {
+		// go version is less than go1.7,not support limit upload speed
+		// doesn't run this test
+		return
+	} else {
+		// set unlimited
+		client.LimitUploadSpeed(0)
+	}
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	//first:upload a object
+	textBuffer := randStr(1024 * 100)
+	objectName := objectNamePrefix + getUuid()
+	err = bucket.PutObject(objectName, strings.NewReader(textBuffer))
+	c.Assert(err, IsNil)
+
+	// limit upload speed
+	err = client.LimitUploadSpeed(tokenCount)
+	c.Assert(err, IsNil)
+
+	// then download the object
+	startT := time.Now()
+	body, err := bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	endT := time.Now()
+
+	c.Assert(str, Equals, textBuffer)
+
+	// byte/s
+	downloadSpeed := len(textBuffer) * 1000 / int(endT.UnixNano()/1000/1000-startT.UnixNano()/1000/1000)
+
+	// upload speed limit parameters will not affect download speed
+	c.Assert(downloadSpeed > 2*tokenCount*perTokenBandwidthSize, Equals, true)
+
+	bucket.DeleteObject(objectName)
+	client.DeleteBucket(bucketName)
+}
+
+// test LimitUploadSpeed failure
+func (s *OssBucketSuite) TestLimitUploadSpeedFail(c *C) {
+	// create limit client and bucket
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.LimitUploadSpeed(-1)
+	c.Assert(err, NotNil)
+
+	client.Config = nil
+	err = client.LimitUploadSpeed(100)
+	c.Assert(err, NotNil)
 }

@@ -650,7 +650,7 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 	return out, err
 }
 
-// LimitUploadSpeed: set upload band limit speed,default is 0,unlimited
+// LimitUploadSpeed: set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed: KB/s, 0 is unlimited,default is 0
 // error:it's nil if success, otherwise failure
 func (client Client) LimitUploadSpeed(upSpeed int) error {
