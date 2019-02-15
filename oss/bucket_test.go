@@ -60,6 +60,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	testLogger.Println("test bucket started")
 }
 
+
 // TearDownSuite runs before each test or benchmark starts running.
 func (s *OssBucketSuite) TearDownSuite(c *C) {
 	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
