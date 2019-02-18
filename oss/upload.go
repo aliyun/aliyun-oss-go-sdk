@@ -230,7 +230,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 		}
 	}
 
-	event = newProgressEvent(TransferStartedEvent, completedBytes, totalBytes)
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, totalBytes)
 	publishProgress(listener, event)
 
 	// Complete the multpart upload
