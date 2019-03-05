@@ -10,10 +10,12 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	uuid "github.com/satori/go.uuid"
 	. "gopkg.in/check.v1"
 )
 
@@ -43,12 +45,12 @@ var (
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
 )
 
-const (
+var (
 	// prefix of bucket name for bucket ops test
 	bucketNamePrefix = "go-sdk-test-bucket-abcx-"
 	// bucket name for object ops test
-	bucketName        = "go-sdk-test-bucket-abcx-for-object"
-	archiveBucketName = "go-sdk-test-bucket-abcx-for-archive"
+	bucketName        = "go-sdk-test-bucket-abcx-for-object" + randLowStr(5)
+	archiveBucketName = "go-sdk-test-bucket-abcx-for-archive" + randLowStr(5)
 	// object name for object ops test
 	objectNamePrefix = "go-sdk-test-object-abcx-"
 	// sts region is one and only hangzhou
@@ -81,6 +83,12 @@ func createFile(fileName, content string, c *C) {
 
 func randLowStr(n int) string {
 	return strings.ToLower(randStr(n))
+}
+
+func getUuid() string {
+	uniqId, _ := uuid.NewV4()
+	uniqKey := uniqId.String()
+	return uniqKey
 }
 
 // SetUpSuite runs once when the suite starts running
@@ -1585,4 +1593,27 @@ func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
 	// delete test bucket and log
 	os.Remove(logName)
 	client.DeleteBucket(testBucketName)
+}
+
+func (s *OssClientSuite) TestSetLimitUploadSpeed(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.LimitUploadSpeed(100)
+
+	goVersion := runtime.Version()
+	pSlice := strings.Split(strings.ToLower(goVersion), ".")
+
+	// compare with go1.7
+	if len(pSlice) >= 2 {
+		if pSlice[0] > "go1" {
+			c.Assert(err, IsNil)
+		} else if pSlice[0] == "go1" && pSlice[1] >= "7" {
+			c.Assert(err, IsNil)
+		} else {
+			c.Assert(err, NotNil)
+		}
+	} else {
+		c.Assert(err, NotNil)
+	}
 }

@@ -365,9 +365,31 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 	if !ok && reader != nil {
 		rc = ioutil.NopCloser(reader)
 	}
-	req.Body = rc
 
+	if conn.isUploadLimitReq(req) {
+		limitReader := &LimitSpeedReader{
+			reader:     rc,
+			ossLimiter: conn.config.UploadLimiter,
+		}
+		req.Body = limitReader
+	} else {
+		req.Body = rc
+	}
 	return file, crc
+}
+
+// isUploadLimitReq: judge limit upload speed or not
+func (conn Conn) isUploadLimitReq(req *http.Request) bool {
+	if conn.config.UploadLimitSpeed == 0 || conn.config.UploadLimiter == nil {
+		return false
+	}
+
+	if req.Method != "GET" && req.Method != "DELETE" && req.Method != "HEAD" {
+		if req.ContentLength > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func tryGetFileSize(f *os.File) int64 {
