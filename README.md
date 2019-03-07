@@ -13,7 +13,7 @@
 > - With this SDK, you can upload, download and manage data on any app anytime and anywhere conveniently. 
 
 ## Version
-> - Current version: 1.9.4
+> - Current version: 1.9.5
 
 ## Running Environment
 > - Go 1.5 or above. 
