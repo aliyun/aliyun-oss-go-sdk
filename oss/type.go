@@ -44,12 +44,12 @@ type LifecycleConfiguration struct {
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
 	XMLName              xml.Name                       `xml:"Rule"`
-	ID                   string                         `xml:"ID"`                           // The rule ID
-	Prefix               string                         `xml:"Prefix"`                       // The object key prefix
-	Status               string                         `xml:"Status"`                       // The rule status (enabled or not)
-	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`         // The expiration property
-	Transition           *LifecycleTransition           `xml:"Transition,omitempty"`         // The transition property
-	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:AbortMultipartUpload,omitempty` // The AbortMultipartUpload property
+	ID                   string                         `xml:"ID"`                             // The rule ID
+	Prefix               string                         `xml:"Prefix"`                         // The object key prefix
+	Status               string                         `xml:"Status"`                         // The rule status (enabled or not)
+	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
+	Transition           *LifecycleTransition           `xml:"Transition,omitempty"`           // The transition property
+	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
 }
 
 // LifecycleExpiration defines the rule's expiration property

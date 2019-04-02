@@ -18,6 +18,7 @@ var (
 	chnURLStr = url.QueryEscape(chnStr)
 )
 
+/*
 func (s *OssTypeSuite) TestConvLifecycleRule(c *C) {
 	r1 := BuildLifecycleRuleByDate("id1", "one", true, 2015, 11, 11)
 	r2 := BuildLifecycleRuleByDays("id2", "two", false, 3)
@@ -36,6 +37,7 @@ func (s *OssTypeSuite) TestConvLifecycleRule(c *C) {
 	c.Assert(rs[0].Expiration.Date, Equals, "")
 	c.Assert(rs[0].Expiration.Days, Equals, 3)
 }
+*/
 
 func (s *OssTypeSuite) TestDecodeDeleteObjectsResult(c *C) {
 	var res DeleteObjectsResult
