@@ -79,46 +79,6 @@ type LifecycleAbortMultipartUpload struct {
 	CreatedBeforeDate string `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
 }
 
-/*
-type lifecycleXML struct {
-	XMLName xml.Name        `xml:"LifecycleConfiguration"`
-	Rules   []lifecycleRule `xml:"Rule"`
-}
-
-type lifecycleRule struct {
-	XMLName    xml.Name            `xml:"Rule"`
-	ID         string              `xml:"ID"`
-	Prefix     string              `xml:"Prefix"`
-	Status     string              `xml:"Status"`
-	Expiration lifecycleExpiration `xml:"Expiration"`
-}
-
-type lifecycleExpiration struct {
-	XMLName xml.Name `xml:"Expiration"`
-	Days    int      `xml:"Days,omitempty"`
-	Date    string   `xml:"Date,omitempty"`
-}
-
-const expirationDateFormat = "2006-01-02T15:04:05.000Z"
-
-func convLifecycleRule(rules []LifecycleRule) []lifecycleRule {
-	rs := []lifecycleRule{}
-	for _, rule := range rules {
-		r := lifecycleRule{}
-		r.ID = rule.ID
-		r.Prefix = rule.Prefix
-		r.Status = rule.Status
-		if rule.Expiration.Date.IsZero() {
-			r.Expiration.Days = rule.Expiration.Days
-		} else {
-			r.Expiration.Date = rule.Expiration.Date.Format(expirationDateFormat)
-		}
-		rs = append(rs, r)
-	}
-	return rs
-}
-*/
-
 const iso8601DateFormat = "2006-01-02T15:04:05.000Z"
 
 // BuildLifecycleRuleByDays builds a lifecycle rule objects will expiration in days after the last modified time
@@ -143,7 +103,11 @@ func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day i
 }
 
 // NewLifecleRuleByDays builds a lifecycle rule objects will expiration in days after the last modified time
-func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt LifecycleRuleType, sc StorageClassType) (*LifecycleRule, error) {
+func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt LifecycleRuleType, sc ...StorageClassType) (*LifecycleRule, error) {
+	if len(sc) > 1 {
+		return nil, fmt.Errorf("invalid count of storage class type, the cound should be 0 or 1")
+	}
+
 	var statusStr = "Enabled"
 	if !status {
 		statusStr = "Disabled"
@@ -153,11 +117,14 @@ func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt Lifecycl
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			Expiration: &LifecycleExpiration{Days: days}}, nil
 	case LRTTransition:
-		if sc != StorageIA && sc != StorageArchive {
+		if len(sc) == 0 {
+			return nil, fmt.Errorf("miss storage class of transition lifecycle rule")
+		}
+		if sc[0] != StorageIA && sc[0] != StorageArchive {
 			return nil, fmt.Errorf("invalid storage class of transition lifecycle rule,  storage class: %v", sc)
 		}
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
-			Transition: &LifecycleTransition{Days: days, StorageClass: sc}}, nil
+			Transition: &LifecycleTransition{Days: days, StorageClass: sc[0]}}, nil
 	case LRTAbortMultiPartUpload:
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			AbortMultipartUpload: &LifecycleAbortMultipartUpload{Days: days}}, nil
@@ -167,7 +134,11 @@ func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt Lifecycl
 }
 
 // NewLifecycleRuleByCreateBeforeDate builds a lifecycle rule objects created before the date will be expired.
-func NewLifecycleRuleByCreateBeforeDate(id, prefix string, status bool, year, month, day int, lrt LifecycleRuleType, sc StorageClassType) (*LifecycleRule, error) {
+func NewLifecycleRuleByCreateBeforeDate(id, prefix string, status bool, year, month, day int, lrt LifecycleRuleType, sc ...StorageClassType) (*LifecycleRule, error) {
+	if len(sc) > 1 {
+		return nil, fmt.Errorf("invalid count of storage class type, the cound should be 0 or 1")
+	}
+
 	var statusStr = "Enabled"
 	if !status {
 		statusStr = "Disabled"
@@ -179,11 +150,14 @@ func NewLifecycleRuleByCreateBeforeDate(id, prefix string, status bool, year, mo
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			Expiration: &LifecycleExpiration{CreatedBeforeDate: date}}, nil
 	case LRTTransition:
-		if sc != StorageIA && sc != StorageArchive {
+		if len(sc) == 0 {
+			return nil, fmt.Errorf("miss storage class of transition lifecycle rule")
+		}
+		if sc[0] != StorageIA && sc[0] != StorageArchive {
 			return nil, fmt.Errorf("invalid storage class of transition lifecycle rule,  storage class: %v", sc)
 		}
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
-			Transition: &LifecycleTransition{CreatedBeforeDate: date, StorageClass: sc}}, nil
+			Transition: &LifecycleTransition{CreatedBeforeDate: date, StorageClass: sc[0]}}, nil
 	case LRTAbortMultiPartUpload:
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			AbortMultipartUpload: &LifecycleAbortMultipartUpload{CreatedBeforeDate: date}}, nil
