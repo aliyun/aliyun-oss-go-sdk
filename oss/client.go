@@ -650,9 +650,9 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 	return out, err
 }
 
-// LimitUploadSpeed: set upload bandwidth limit speed,default is 0,unlimited
-// upSpeed: KB/s, 0 is unlimited,default is 0
-// error:it's nil if success, otherwise failure
+// LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
+// upSpeed KB/s, 0 is unlimited,default is 0
+// error it's nil if success, otherwise failure
 func (client Client) LimitUploadSpeed(upSpeed int) error {
 	if client.Config == nil {
 		return fmt.Errorf("client config is nil")
@@ -789,7 +789,7 @@ func SetLogLevel(LogLevel int) ClientOption {
 }
 
 //
-// SetLogLevel sets the oss sdk log level
+// SetLogger sets the oss sdk logger
 //
 func SetLogger(Logger *log.Logger) ClientOption {
 	return func(client *Client) {

@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
 	. "gopkg.in/check.v1"
 )
 
@@ -47,12 +46,12 @@ var (
 
 var (
 	// prefix of bucket name for bucket ops test
-	bucketNamePrefix = "go-sdk-test-bucket-abcx-"
+	bucketNamePrefix = "go-sdk-test-bucket-"
 	// bucket name for object ops test
-	bucketName        = bucketNamePrefix + "for-object-" + randLowStr(6)
-	archiveBucketName = bucketNamePrefix + "for-archive-" + randLowStr(6)
+	bucketName        = bucketNamePrefix + randLowStr(6)
+	archiveBucketName = bucketNamePrefix + "arch-" + randLowStr(6)
 	// object name for object ops test
-	objectNamePrefix = "go-sdk-test-object-abcx-"
+	objectNamePrefix = "go-sdk-test-object-"
 	// sts region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
 )
@@ -65,10 +64,11 @@ var (
 	timeoutInOperation = 3 * time.Second
 )
 
-var randMarker = rand.New(rand.NewSource(time.Now().UnixNano()))
+//var randMarker = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func randStr(n int) string {
 	b := make([]rune, n)
+	randMarker := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := range b {
 		b[i] = letters[randMarker.Intn(len(letters))]
 	}
@@ -85,12 +85,6 @@ func createFile(fileName, content string, c *C) {
 
 func randLowStr(n int) string {
 	return strings.ToLower(randStr(n))
-}
-
-func getUuid() string {
-	uniqId, _ := uuid.NewV4()
-	uniqKey := uniqId.String()
-	return uniqKey
 }
 
 // SetUpSuite runs once when the suite starts running
@@ -144,9 +138,9 @@ func (s *OssClientSuite) deleteBucket(client *Client, bucketName string, c *C) {
 
 	// Delete Part
 	keyMarker := KeyMarker("")
-	uploadIdMarker := UploadIDMarker("")
+	uploadIDMarker := UploadIDMarker("")
 	for {
-		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
+		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
 		for _, upload := range lmur.Uploads {
 			var imur = InitiateMultipartUploadResult{Bucket: bucketName,
@@ -155,7 +149,7 @@ func (s *OssClientSuite) deleteBucket(client *Client, bucketName string, c *C) {
 			c.Assert(err, IsNil)
 		}
 		keyMarker = KeyMarker(lmur.NextKeyMarker)
-		uploadIdMarker = UploadIDMarker(lmur.NextUploadIDMarker)
+		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
 		if !lmur.IsTruncated {
 			break
 		}
@@ -242,7 +236,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 
 	// Create bucket with configuration and test GetBucketInfo
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
-		bucketNameTest := bucketNamePrefix + randLowStr(5)
+		bucketNameTest := bucketNamePrefix + randLowStr(6)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage), ACL(ACLPublicRead))
 		c.Assert(err, IsNil)
 		time.Sleep(timeoutInOperation)
@@ -264,7 +258,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 
 	// Create bucket with configuration and test ListBuckets
 	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
-		bucketNameTest := bucketNamePrefix + randLowStr(5)
+		bucketNameTest := bucketNamePrefix + randLowStr(6)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage))
 		c.Assert(err, IsNil)
 		time.Sleep(timeoutInOperation)
@@ -298,7 +292,7 @@ func (s *OssClientSuite) TestCreateBucketNegative(c *C) {
 	testLogger.Println(err)
 
 	// ACL invalid
-	err = client.CreateBucket(bucketNamePrefix + randLowStr(6), ACL("InvaldAcl"))
+	err = client.CreateBucket(bucketNamePrefix+randLowStr(6), ACL("InvaldAcl"))
 	c.Assert(err, NotNil)
 	testLogger.Println(err)
 }
@@ -1556,7 +1550,7 @@ func (s *OssClientSuite) TestHttpLogNotSignUrl(c *C) {
 
 	client.Config.Logger = log.New(f, "", log.LstdFlags)
 
-	var testBucketName = bucketNamePrefix + strings.ToLower(randStr(5))
+	var testBucketName = bucketNamePrefix + randLowStr(6)
 
 	// CreateBucket
 	err = client.CreateBucket(testBucketName)
@@ -1586,7 +1580,7 @@ func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
 	client.Config.LogLevel = Debug
 	client.Config.Logger = log.New(f, "", log.LstdFlags)
 
-	var testBucketName = bucketNamePrefix + strings.ToLower(randStr(5))
+	var testBucketName = bucketNamePrefix + randLowStr(6)
 
 	// CreateBucket
 	err = client.CreateBucket(testBucketName)

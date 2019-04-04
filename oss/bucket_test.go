@@ -59,15 +59,14 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	testLogger.Println("test bucket started")
 }
 
-
 // TearDownSuite runs before each test or benchmark starts running.
 func (s *OssBucketSuite) TearDownSuite(c *C) {
 	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
 		// Delete multipart
 		keyMarker := KeyMarker("")
-		uploadIdMarker := UploadIDMarker("")
+		uploadIDMarker := UploadIDMarker("")
 		for {
-			lmu, err := bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
+			lmu, err := bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 			c.Assert(err, IsNil)
 			for _, upload := range lmu.Uploads {
 				imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
@@ -75,7 +74,7 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 				c.Assert(err, IsNil)
 			}
 			keyMarker = KeyMarker(lmu.NextKeyMarker)
-			uploadIdMarker = UploadIDMarker(lmu.NextUploadIDMarker)
+			uploadIDMarker = UploadIDMarker(lmu.NextUploadIDMarker)
 			if !lmu.IsTruncated {
 				break
 			}
@@ -2290,7 +2289,7 @@ func (s *OssBucketSuite) getObject(objects []ObjectProperties, object string) (b
 }
 
 func (s *OssBucketSuite) detectUploadSpeed(bucket *Bucket, c *C) (upSpeed int) {
-	objectName := objectNamePrefix + getUuid()
+	objectName := objectNamePrefix + randStr(8)
 
 	// 1M byte
 	textBuffer := randStr(1024 * 1024)
@@ -2320,12 +2319,11 @@ func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
 		// go version is less than go1.7,not support limit upload speed
 		// doesn't run this test
 		return
-	} else {
-		// set unlimited again
-		client.LimitUploadSpeed(0)
 	}
+	// set unlimited again
+	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(5)
+	bucketName := bucketNamePrefix + randLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2347,7 +2345,7 @@ func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
 	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
-	objectName := objectNamePrefix + getUuid()
+	objectName := objectNamePrefix + randStr(8)
 
 	// 1M byte
 	textBuffer := randStr(1024 * 1024)
@@ -2403,12 +2401,11 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 		// go version is less than go1.7,not support limit upload speed
 		// doesn't run this test
 		return
-	} else {
-		// set unlimited
-		client.LimitUploadSpeed(0)
 	}
+	// set unlimited
+	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(5)
+	bucketName := bucketNamePrefix + randLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2429,8 +2426,8 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 	c.Assert(err, IsNil)
 
 	// object1
-	objectNameFirst := objectNamePrefix + getUuid()
-	objectNameSecond := objectNamePrefix + getUuid()
+	objectNameFirst := objectNamePrefix + randStr(8)
+	objectNameSecond := objectNamePrefix + randStr(8)
 
 	// 1M byte
 	textBuffer := randStr(1024 * 1024)
@@ -2494,12 +2491,11 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 		// go version is less than go1.7,not support limit upload speed
 		// doesn't run this test
 		return
-	} else {
-		// set unlimited
-		client.LimitUploadSpeed(0)
 	}
+	// set unlimited
+	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(5)
+	bucketName := bucketNamePrefix + randLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2521,7 +2517,7 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
-	objectName := objectNamePrefix + getUuid()
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "." + string(os.PathSeparator) + objectName
 
 	// 1M byte
@@ -2597,12 +2593,11 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 		// go version is less than go1.7,not support limit upload speed
 		// doesn't run this test
 		return
-	} else {
-		// set unlimited
-		client.LimitUploadSpeed(0)
 	}
+	// set unlimited
+	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(5)
+	bucketName := bucketNamePrefix + randLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2624,7 +2619,7 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
-	objectName := objectNamePrefix + getUuid()
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "." + string(os.PathSeparator) + objectName
 
 	// 1M byte
@@ -2702,12 +2697,11 @@ func (s *OssBucketSuite) TestUploadObjectLimitSpeed(c *C) {
 		// go version is less than go1.7,not support limit upload speed
 		// doesn't run this test
 		return
-	} else {
-		// set unlimited
-		client.LimitUploadSpeed(0)
 	}
+	// set unlimited
+	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(5)
+	bucketName := bucketNamePrefix + randLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2716,7 +2710,7 @@ func (s *OssBucketSuite) TestUploadObjectLimitSpeed(c *C) {
 
 	//first:upload a object
 	textBuffer := randStr(1024 * 100)
-	objectName := objectNamePrefix + getUuid()
+	objectName := objectNamePrefix + randStr(8)
 	err = bucket.PutObject(objectName, strings.NewReader(textBuffer))
 	c.Assert(err, IsNil)
 

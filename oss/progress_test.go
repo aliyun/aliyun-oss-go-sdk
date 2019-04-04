@@ -15,7 +15,6 @@ import (
 type OssProgressSuite struct {
 	client *Client
 	bucket *Bucket
-
 }
 
 var _ = Suite(&OssProgressSuite{})
@@ -40,9 +39,9 @@ func (s *OssProgressSuite) SetUpSuite(c *C) {
 func (s *OssProgressSuite) TearDownSuite(c *C) {
 	// Abort multipart uploads
 	keyMarker := KeyMarker("")
-	uploadIdMarker := UploadIDMarker("")
+	uploadIDMarker := UploadIDMarker("")
 	for {
-		lmu, err := s.bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
+		lmu, err := s.bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
 		for _, upload := range lmu.Uploads {
 			imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
@@ -50,12 +49,12 @@ func (s *OssProgressSuite) TearDownSuite(c *C) {
 			c.Assert(err, IsNil)
 		}
 		keyMarker = KeyMarker(lmu.NextKeyMarker)
-		uploadIdMarker = UploadIDMarker(lmu.NextUploadIDMarker)
+		uploadIDMarker = UploadIDMarker(lmu.NextUploadIDMarker)
 		if !lmu.IsTruncated {
 			break
 		}
 	}
-	
+
 	// Delete objects
 	marker := Marker("")
 	for {

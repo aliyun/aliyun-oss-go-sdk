@@ -40,9 +40,9 @@ func (s *OssCrcSuite) SetUpSuite(c *C) {
 func (s *OssCrcSuite) TearDownSuite(c *C) {
 	// Delete part
 	keyMarker := KeyMarker("")
-	uploadIdMarker := UploadIDMarker("")
+	uploadIDMarker := UploadIDMarker("")
 	for {
-		lmur, err := s.bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
+		lmur, err := s.bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
 		for _, upload := range lmur.Uploads {
 			var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
@@ -51,7 +51,7 @@ func (s *OssCrcSuite) TearDownSuite(c *C) {
 			c.Assert(err, IsNil)
 		}
 		keyMarker = KeyMarker(lmur.NextKeyMarker)
-		uploadIdMarker = UploadIDMarker(lmur.NextUploadIDMarker)
+		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
 		if !lmur.IsTruncated {
 			break
 		}
