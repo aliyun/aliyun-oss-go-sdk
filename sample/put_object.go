@@ -122,6 +122,37 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
+	// Case 9: Set the storage classes.OSS provides three storage classes: Standard, Infrequent Access, and Archive.
+	// Supported APIs: PutObject, CopyObject, UploadFile, AppendObject...
+	err = bucket.PutObject(objectKey, strings.NewReader(val), oss.ObjectStorageClass("IA"))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// Copy a object in the same bucket, and set object's storage-class to Archive.
+	_, rr := bucket.CopyObject(objectKey, objectKey+"DestArchive", oss.ObjectStorageClass("Archive"))
+	if rr != nil {
+		HandleError(err)
+	}
+
+	// Upload a local file, and set the object's storage-class to 'Archive'.
+	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.ObjectStorageClass("Archive"))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// Upload a strings, and you can append some strings in the behind of object. but the object is 'Archive' storange class.
+	// An object created with the AppendObject operation is an appendable object. set the object storange-class to 'Archive'.
+	var nextPos int64
+	nextPos, err = bucket.AppendObject(objectAppendKey, strings.NewReader("昨夜雨疏风骤，浓睡不消残酒。试问卷帘人，"), nextPos, oss.ObjectStorageClass("Archive"))
+	if err != nil {
+		HandleError(err)
+	}
+	nextPos, err = bucket.AppendObject(objectAppendKey, strings.NewReader("却道海棠依旧。知否？知否？应是绿肥红瘦。"), nextPos)
+	if err != nil {
+		HandleError(err)
+	}
+
 	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
