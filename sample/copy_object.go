@@ -104,6 +104,13 @@ func CopyObjectSample() {
 		HandleError(err)
 	}
 
+	// Case 7: Set the storage classes.OSS provides three storage classes: Standard, Infrequent Access, and Archive.
+	// Copy a object in the same bucket, and set object's storage-class to Archive.
+	_, rr := bucket.CopyObject(objectKey, objectKey+"DestArchive", oss.ObjectStorageClass("Archive"))
+	if rr != nil {
+		HandleError(err)
+	}
+
 	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {
