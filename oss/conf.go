@@ -90,7 +90,7 @@ func (config *Config) WriteLog(LogLevel int, format string, a ...interface{}) {
 }
 
 // getDefaultOssConfig gets the default configuration.
-func getDefaultOssConfig() *Config {
+func GetDefaultOssConfig() *Config {
 	config := Config{}
 
 	config.Endpoint = ""

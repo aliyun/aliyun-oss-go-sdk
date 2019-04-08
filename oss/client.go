@@ -40,7 +40,50 @@ type (
 //
 func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption) (*Client, error) {
 	// Configuration
-	config := getDefaultOssConfig()
+	config := GetDefaultOssConfig()
+	config.Endpoint = endpoint
+	config.AccessKeyID = accessKeyID
+	config.AccessKeySecret = accessKeySecret
+
+	// URL parse
+	url := &urlMaker{}
+	url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
+
+	// HTTP connect
+	conn := &Conn{config: config, url: url}
+
+	// OSS client
+	client := &Client{
+		Config: config,
+		Conn:   conn,
+	}
+
+	// Client options parse
+	for _, option := range options {
+		option(client)
+	}
+
+	// Create HTTP connection
+	err := conn.init(config, url, client.HTTPClient)
+
+	return client, err
+}
+
+// New creates a new client.
+//
+// endpoint    the OSS datacenter endpoint such as http://oss-cn-hangzhou.aliyuncs.com .
+// accessKeyId    access key Id.
+// accessKeySecret    access key secret.
+// config    Configuration
+//
+// Client    creates the new client instance, the returned value is valid when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func Newconf(endpoint, accessKeyID, accessKeySecret string, config *Config, options ...ClientOption) (*Client, error) {
+	// Configuration
+	if config == nil {
+		config = GetDefaultOssConfig()
+	}
 	config.Endpoint = endpoint
 	config.AccessKeyID = accessKeyID
 	config.AccessKeySecret = accessKeySecret
