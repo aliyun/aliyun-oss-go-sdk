@@ -21,8 +21,8 @@ var (
 const (
 
 	// The object name in the sample code
-	objectKey       string = "my-object"
-	objectAppendKey string = "my-object-append"
+	objectKey              string = "my-object"
+	archiveObjectAppendKey string = "my-object-append"
 
 	// The local files to run sample code.
 	localFile     string = "src/sample/BingWallpaper-2015-11-07.jpg"
