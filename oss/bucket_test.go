@@ -2748,3 +2748,36 @@ func (s *OssBucketSuite) TestLimitUploadSpeedFail(c *C) {
 	err = client.LimitUploadSpeed(100)
 	c.Assert(err, NotNil)
 }
+
+// upload webp object
+func (s *OssBucketSuite) TestUploadObjectWithWebpFormat(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// create webp file
+	textBuffer := randStr(1024)
+	objectName := objectNamePrefix + getUuid()
+	fileName := "." + string(os.PathSeparator) + objectName + ".webp"
+	ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
+	_, err = os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectFromFile(objectName, fileName)
+	c.Assert(err, IsNil)
+
+	// check object content-type
+	props, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(props["Content-Type"][0], Equals, "image/webp")
+
+	os.Remove(fileName)
+	bucket.DeleteObject(objectName)
+	client.DeleteBucket(bucketName)
+}
