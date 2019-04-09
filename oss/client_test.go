@@ -17,9 +17,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	. "gopkg.in/check.v1"
-
-    "encoding/json"
-    "bytes"
 )
 
 // Test hooks up gocheck into the "go test" runner.
