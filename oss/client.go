@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-    "io/ioutil"
 )
 
 // Client SDK's entry point. It's for bucket related options such as create/delete/set bucket (such as set/get ACL/lifecycle/referer/logging/website).
@@ -803,19 +802,4 @@ func (client Client) do(method, bucketName string, params map[string]interface{}
 	headers map[string]string, data io.Reader) (*Response, error) {
 	return client.Conn.Do(method, bucketName, "", params,
 		headers, data, 0, nil)
-}
-
-func (client Client) Do(method string, bucketName string, params map[string]interface{},
-    headers map[string]string, data io.Reader) ([]byte, error){
-
-    resp, err := client.do(method, bucketName, params, headers, data)
-
-    if err != nil {
-        return []byte(""), err
-    }
-
-    defer resp.Body.Close()
-
-    rawResp, err := ioutil.ReadAll(resp.Body)
-    return rawResp,err
 }
