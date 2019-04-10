@@ -707,8 +707,8 @@ func (s *OssBucketMultipartSuite) TestMultipartNegative(c *C) {
 
 func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileBigFile(c *C) {
 	objectName := objectNamePrefix + "tmuffbf"
-	bigFile := "D:\\tmp\\bigfile.zip"
-	newFile := "D:\\tmp\\newbigfile.zip"
+	bigFile := "../../tmp/bigfile.zip"
+	newFile := "../../tmp/newbigfile.zip"
 
 	exist, err := isFileExist(bigFile)
 	c.Assert(err, IsNil)
