@@ -11,21 +11,16 @@ var (
 	kmsID      = os.Getenv("OSS_TEST_KMS_ID")
 
 	// The cname endpoint
-	// These information are required to run sample/cname_sample
-	endpoint4Cname   = os.Getenv("OSS_TEST_ENDPOINT")
-	accessID4Cname   = os.Getenv("OSS_TEST_ACCESS_KEY_ID")
-	accessKey4Cname  = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
-	bucketName4Cname = os.Getenv("OSS_TEST_CNAME_BUCKET")
+	endpoint4Cname = os.Getenv("OSS_TEST_CNAME_ENDPOINT")
 )
 
 const (
 
 	// The object name in the sample code
-	objectKey              string = "my-object"
-	archiveObjectAppendKey string = "my-object-append"
+	objectKey       string = "my-object"
+	appendObjectKey string = "my-object-append"
 
 	// The local files to run sample code.
-	localFile     string = "src/sample/BingWallpaper-2015-11-07.jpg"
-	htmlLocalFile string = "src/sample/The Go Programming Language.html"
-	newPicName    string = "src/sample/NewBingWallpaper-2015-11-07.jpg"
+	localFile     string = "sample/BingWallpaper-2015-11-07.jpg"
+	htmlLocalFile string = "sample/The Go Programming Language.html"
 )

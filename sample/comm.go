@@ -103,9 +103,9 @@ func DeleteTestBucketAndObject(bucketName string) error {
 
 	// Delete part
 	keyMarker := oss.KeyMarker("")
-	uploadIdMarker := oss.UploadIDMarker("")
+	uploadIDMarker := oss.UploadIDMarker("")
 	for {
-		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIdMarker)
+		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		if err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func DeleteTestBucketAndObject(bucketName string) error {
 			}
 		}
 		keyMarker = oss.KeyMarker(lmur.NextKeyMarker)
-		uploadIdMarker = oss.UploadIDMarker(lmur.NextUploadIDMarker)
+		uploadIDMarker = oss.UploadIDMarker(lmur.NextUploadIDMarker)
 		if !lmur.IsTruncated {
 			break
 		}
