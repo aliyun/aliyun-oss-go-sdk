@@ -1591,7 +1591,7 @@ func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
 	client.Config.Logger = log.New(f, "", log.LstdFlags)
 
 	bucket, _ := client.Bucket(testBucketName)
-	objectName := objectNamePrefix + randStr(5)
+	objectName := objectNamePrefix + randStr(8)
 	objectValue := randStr(20)
 
 	// Sign URL for put

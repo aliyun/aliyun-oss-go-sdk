@@ -223,7 +223,7 @@ func (s *OssCrcSuite) TestCRCRandomCombine(c *C) {
 
 // TestEnableCRCAndMD5 tests MD5 and CRC check
 func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
-	objectName := objectNamePrefix + "tecam"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-2.jpg"
 	objectValue := "空山新雨后，天气晚来秋。明月松间照，清泉石上流。竹喧归浣女，莲动下渔舟。随意春芳歇，王孙自可留。"
@@ -320,7 +320,7 @@ func (s *OssCrcSuite) TestEnableCRCAndMD5(c *C) {
 
 // TestDisableCRCAndMD5 disables MD5 and CRC
 func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
-	objectName := objectNamePrefix + "tdcam"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFileName := "BingWallpaper-2015-11-07-3.jpg"
 	objectValue := "中岁颇好道，晚家南山陲。兴来每独往，胜事空自知。行到水穷处，坐看云起时。偶然值林叟，谈笑无还期。"
@@ -416,7 +416,7 @@ func (s *OssCrcSuite) TestDisableCRCAndMD5(c *C) {
 
 // TestSpecifyContentMD5 specifies MD5
 func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
-	objectName := objectNamePrefix + "tdcam"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	objectValue := "积雨空林烟火迟，蒸藜炊黍饷东菑。漠漠水田飞白鹭，阴阴夏木啭黄鹂。山中习静观朝槿，松下清斋折露葵。野老与人争席罢，海鸥何事更相疑。"
 
@@ -481,7 +481,7 @@ func (s *OssCrcSuite) TestSpecifyContentMD5(c *C) {
 
 // TestAppendObjectNegative
 func (s *OssCrcSuite) TestAppendObjectNegative(c *C) {
-	objectName := objectNamePrefix + "taoncrc"
+	objectName := objectNamePrefix + randStr(8)
 	objectValue := "空山不见人，但闻人语响。返影入深林，复照青苔上。"
 
 	nextPos, err := s.bucket.AppendObject(objectName, strings.NewReader(objectValue), 0, InitCRC(0))

@@ -89,9 +89,9 @@ func (s *OssUploadSuite) TearDownTest(c *C) {
 
 // TestUploadRoutineWithoutRecovery tests multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
-	objectName := objectNamePrefix + "turwr"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "upload-new-file.jpg"
+	newFile := randStr(8) + ".jpg"
 
 	// Routines is not specified, by default single routine
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
@@ -224,7 +224,7 @@ func ErrorHooker(id int, chunk FileChunk) error {
 
 // TestUploadRoutineWithoutRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
-	objectName := objectNamePrefix + "turwrn"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	uploadPartHooker = ErrorHooker
@@ -248,7 +248,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 
 // TestUploadRoutineWithRecovery is multi-routine upload with resumable recovery
 func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
-	objectName := objectNamePrefix + "turtr"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file-2.jpg"
 
@@ -397,7 +397,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 
 // TestUploadRoutineWithRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
-	objectName := objectNamePrefix + "turrn"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// The local file does not exist
@@ -423,10 +423,10 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 
 // TestUploadLocalFileChange tests the file is updated while being uploaded
 func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
-	objectName := objectNamePrefix + "tulfc"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	localFile := "BingWallpaper-2015-11-07.jpg"
-	newFile := "upload-new-file-3.jpg"
+	localFile := randStr(8) + ".jpg"
+	newFile := randStr(8) + ".jpg"
 
 	os.Remove(localFile)
 	err := copyFile(fileName, localFile)
