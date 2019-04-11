@@ -102,10 +102,10 @@ func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day i
 		Expiration: &LifecycleExpiration{Date: date}}
 }
 
-// NewLifecleRuleByDays builds a lifecycle rule objects will expiration in days after the last modified time
-func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt LifecycleRuleType, sc ...StorageClassType) (*LifecycleRule, error) {
+// NewLifecycleRuleByDays builds a lifecycle rule objects will expiration in days after the last modified time
+func NewLifecycleRuleByDays(id, prefix string, status bool, days int, lrt LifecycleRuleType, sc ...StorageClassType) (*LifecycleRule, error) {
 	if len(sc) > 1 {
-		return nil, fmt.Errorf("invalid count of storage class type, the cound should be 0 or 1")
+		return nil, fmt.Errorf("invalid count of storage class type, the count should be 0 or 1")
 	}
 
 	var statusStr = "Enabled"
@@ -114,6 +114,9 @@ func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt Lifecycl
 	}
 	switch lrt {
 	case LRTExpriration:
+		if len(sc) == 1 {
+			return nil, fmt.Errorf("the count of storage class type should be 0")
+		}
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			Expiration: &LifecycleExpiration{Days: days}}, nil
 	case LRTTransition:
@@ -126,6 +129,9 @@ func NewLifecleRuleByDays(id, prefix string, status bool, days int, lrt Lifecycl
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			Transition: &LifecycleTransition{Days: days, StorageClass: sc[0]}}, nil
 	case LRTAbortMultiPartUpload:
+		if len(sc) == 1 {
+			return nil, fmt.Errorf("the count of storage class type should be 0")
+		}
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			AbortMultipartUpload: &LifecycleAbortMultipartUpload{Days: days}}, nil
 	default:
@@ -147,6 +153,9 @@ func NewLifecycleRuleByCreateBeforeDate(id, prefix string, status bool, year, mo
 	date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC).Format(iso8601DateFormat)
 	switch lrt {
 	case LRTExpriration:
+		if len(sc) == 1 {
+			return nil, fmt.Errorf("the count of storage class type should be 0")
+		}
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			Expiration: &LifecycleExpiration{CreatedBeforeDate: date}}, nil
 	case LRTTransition:
@@ -159,6 +168,9 @@ func NewLifecycleRuleByCreateBeforeDate(id, prefix string, status bool, year, mo
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			Transition: &LifecycleTransition{CreatedBeforeDate: date, StorageClass: sc[0]}}, nil
 	case LRTAbortMultiPartUpload:
+		if len(sc) == 1 {
+			return nil, fmt.Errorf("the count of storage class type should be 0")
+		}
 		return &LifecycleRule{ID: id, Prefix: prefix, Status: statusStr,
 			AbortMultipartUpload: &LifecycleAbortMultipartUpload{CreatedBeforeDate: date}}, nil
 	default:

@@ -179,7 +179,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	client.DeleteBucket(bucketNameTest)
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
-	//sleep 5 seconds after create bucket
+	//sleep 3 seconds after create bucket
 	time.Sleep(timeoutInOperation)
 
 	// verify bucket is exist
@@ -501,8 +501,6 @@ func (s *OssClientSuite) TestSetBucketAcl(c *C) {
 	// Set ACL_PUBLIC_RW
 	err = client.SetBucketACL(bucketNameTest, ACLPrivate)
 	c.Assert(err, IsNil)
-	err = client.SetBucketACL(bucketNameTest, ACLPrivate)
-	c.Assert(err, IsNil)
 	time.Sleep(timeoutInOperation)
 
 	res, err = client.GetBucketACL(bucketNameTest)
@@ -614,15 +612,14 @@ func (s *OssClientSuite) TestGetBucketLocationNegative(c *C) {
 // TestSetBucketLifecycle
 func (s *OssClientSuite) TestSetBucketLifecycle(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
-	var rule1 = BuildLifecycleRuleByDate("idone", "one", true, 2015, 11, 11)
-	var rule2 = BuildLifecycleRuleByDays("idtwo", "two", true, 3)
+	var rule1 = BuildLifecycleRuleByDate("rule1", "one", true, 2015, 11, 11)
+	var rule2 = BuildLifecycleRuleByDays("rule2", "two", true, 3)
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
-	time.Sleep(timeoutInOperation)
 
 	// Set single rule
 	var rules = []LifecycleRule{rule1}
@@ -635,7 +632,7 @@ func (s *OssClientSuite) TestSetBucketLifecycle(c *C) {
 	res, err := client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(len(res.Rules), Equals, 1)
-	c.Assert(res.Rules[0].ID, Equals, "idone")
+	c.Assert(res.Rules[0].ID, Equals, "rule1")
 
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -651,8 +648,63 @@ func (s *OssClientSuite) TestSetBucketLifecycle(c *C) {
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(len(res.Rules), Equals, 2)
-	c.Assert(res.Rules[0].ID, Equals, "idone")
-	c.Assert(res.Rules[1].ID, Equals, "idtwo")
+	c.Assert(res.Rules[0].ID, Equals, "rule1")
+	c.Assert(res.Rules[1].ID, Equals, "rule2")
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestSetBucketLifecycle
+func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+	rule1, err := NewLifecycleRuleByCreateBeforeDate("rule1", "one", true, 2015, 11, 11, LRTExpriration)
+	c.Assert(err, IsNil)
+	rule2, err := NewLifecycleRuleByDays("rule2", "two", true, 3, LRTAbortMultiPartUpload)
+	c.Assert(err, IsNil)
+	rule3, err := NewLifecycleRuleByDays("rule3", "three", true, 3, LRTTransition, StorageIA)
+	c.Assert(err, IsNil)
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Set single rule
+	var rules = []LifecycleRule{*rule1}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+	// Double set rule
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	res, err := client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(res.Rules), Equals, 1)
+	c.Assert(res.Rules[0].ID, Equals, "rule1")
+	c.Assert(res.Rules[0].Expiration, NotNil)
+
+	err = client.DeleteBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Set two rules
+	rules = []LifecycleRule{*rule1, *rule2, *rule3}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	// Eliminate effect of cache
+	time.Sleep(timeoutInOperation)
+
+	res, err = client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(res.Rules), Equals, 3)
+	c.Assert(res.Rules[0].ID, Equals, "rule1")
+	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[1].ID, Equals, "rule2")
+	c.Assert(res.Rules[1].AbortMultipartUpload, NotNil)
+	c.Assert(res.Rules[2].ID, Equals, "rule3")
+	c.Assert(res.Rules[2].Transition, NotNil)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -662,8 +714,8 @@ func (s *OssClientSuite) TestSetBucketLifecycle(c *C) {
 func (s *OssClientSuite) TestDeleteBucketLifecycle(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
 
-	var rule1 = BuildLifecycleRuleByDate("idone", "one", true, 2015, 11, 11)
-	var rule2 = BuildLifecycleRuleByDays("idtwo", "two", true, 3)
+	var rule1 = BuildLifecycleRuleByDate("rule1", "one", true, 2015, 11, 11)
+	var rule2 = BuildLifecycleRuleByDays("rule2", "two", true, 3)
 	var rules = []LifecycleRule{rule1, rule2}
 
 	client, err := New(endpoint, accessID, accessKey)

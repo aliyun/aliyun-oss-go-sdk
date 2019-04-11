@@ -46,8 +46,6 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 	err = s.client.CreateBucket(archiveBucketName, StorageClass(StorageArchive))
 	c.Assert(err, IsNil)
 
-	// time.Sleep(timeoutInOperation)
-
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 	s.bucket = bucket
@@ -605,7 +603,6 @@ func (s *OssBucketSuite) TestPutObjectType(c *C) {
 	c.Assert(err, IsNil)
 
 	// Check
-	// time.Sleep(timeoutInOperation)
 	body, err := s.bucket.GetObject(objectName)
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
@@ -2754,7 +2751,7 @@ func (s *OssBucketSuite) TestUploadObjectWithWebpFormat(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(5)
+	bucketName := bucketNamePrefix + randLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2763,7 +2760,7 @@ func (s *OssBucketSuite) TestUploadObjectWithWebpFormat(c *C) {
 
 	// create webp file
 	textBuffer := randStr(1024)
-	objectName := objectNamePrefix + getUuid()
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "." + string(os.PathSeparator) + objectName + ".webp"
 	ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
 	_, err = os.Stat(fileName)

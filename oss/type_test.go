@@ -18,27 +18,6 @@ var (
 	chnURLStr = url.QueryEscape(chnStr)
 )
 
-/*
-func (s *OssTypeSuite) TestConvLifecycleRule(c *C) {
-	r1 := BuildLifecycleRuleByDate("id1", "one", true, 2015, 11, 11)
-	r2 := BuildLifecycleRuleByDays("id2", "two", false, 3)
-
-	rs := convLifecycleRule([]LifecycleRule{r1})
-	c.Assert(rs[0].ID, Equals, "id1")
-	c.Assert(rs[0].Prefix, Equals, "one")
-	c.Assert(rs[0].Status, Equals, "Enabled")
-	c.Assert(rs[0].Expiration.Date, Equals, "2015-11-11T00:00:00.000Z")
-	c.Assert(rs[0].Expiration.Days, Equals, 0)
-
-	rs = convLifecycleRule([]LifecycleRule{r2})
-	c.Assert(rs[0].ID, Equals, "id2")
-	c.Assert(rs[0].Prefix, Equals, "two")
-	c.Assert(rs[0].Status, Equals, "Disabled")
-	c.Assert(rs[0].Expiration.Date, Equals, "")
-	c.Assert(rs[0].Expiration.Days, Equals, 3)
-}
-*/
-
 func (s *OssTypeSuite) TestDecodeDeleteObjectsResult(c *C) {
 	var res DeleteObjectsResult
 	err := decodeDeleteObjectsResult(&res)
@@ -126,4 +105,72 @@ func (s *OssTypeSuite) TestSortUploadPart(c *C) {
 	c.Assert(parts[3].ETag, Equals, "E4")
 	c.Assert(parts[4].PartNumber, Equals, 5)
 	c.Assert(parts[4].ETag, Equals, "E5")
+}
+
+func (s *OssTypeSuite) TestNewLifecleRuleByDays(c *C) {
+	_, err := NewLifecycleRuleByDays("rule1", "one", true, 30, LRTExpriration)
+	c.Assert(err, IsNil)
+
+	_, err = NewLifecycleRuleByDays("rule2", "two", true, 30, LRTAbortMultiPartUpload)
+	c.Assert(err, IsNil)
+
+	_, err = NewLifecycleRuleByDays("rule3", "three", true, 30, LRTTransition, StorageIA)
+	c.Assert(err, IsNil)
+
+	_, err = NewLifecycleRuleByDays("rule4", "four", true, 30, LRTTransition, StorageArchive)
+	c.Assert(err, IsNil)
+
+	// expiration lifecycle type, set storage class type
+	_, err = NewLifecycleRuleByDays("rule5", "five", true, 30, LRTExpriration, StorageIA)
+	c.Assert(err, NotNil)
+
+	// abort multipart upload lifecycle type, set storage class type
+	_, err = NewLifecycleRuleByDays("rule6", "six", true, 30, LRTAbortMultiPartUpload, StorageIA)
+	c.Assert(err, NotNil)
+
+	// transition lifecycle type, the value of storage class type is StorageStandard
+	_, err = NewLifecycleRuleByDays("rule7", "seven", true, 30, LRTTransition, StorageStandard)
+	c.Assert(err, NotNil)
+
+	// transition lifecycle type, do not set storage class type
+	_, err = NewLifecycleRuleByDays("rule8", "eight", true, 30, LRTTransition)
+	c.Assert(err, NotNil)
+
+	// transition lifecycle type，set two storage class type
+	_, err = NewLifecycleRuleByDays("rule9", "nine", true, 30, LRTTransition, StorageIA, StorageArchive)
+	c.Assert(err, NotNil)
+}
+
+func (s *OssTypeSuite) TestNewLifecycleRuleByCreateBeforeDate(c *C) {
+	_, err := NewLifecycleRuleByCreateBeforeDate("rule1", "one", true, 2019, 3, 30, LRTExpriration)
+	c.Assert(err, IsNil)
+
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule2", "two", true, 2019, 3, 30, LRTAbortMultiPartUpload)
+	c.Assert(err, IsNil)
+
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule3", "three", true, 2019, 3, 30, LRTTransition, StorageIA)
+	c.Assert(err, IsNil)
+
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule4", "four", true, 2019, 3, 30, LRTTransition, StorageArchive)
+	c.Assert(err, IsNil)
+
+	// expiration lifecycle type, set storage class type
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule5", "five", true, 2019, 3, 30, LRTExpriration, StorageIA)
+	c.Assert(err, NotNil)
+
+	// abort multipart upload lifecycle type, set storage class type
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule6", "six", true, 2019, 3, 30, LRTAbortMultiPartUpload, StorageIA)
+	c.Assert(err, NotNil)
+
+	// transition lifecycle type, the value of storage class type is StorageStandard
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule7", "seven", true, 2019, 3, 30, LRTTransition, StorageStandard)
+	c.Assert(err, NotNil)
+
+	// transition lifecycle type, do not set storage class type
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule8", "eight", true, 2019, 3, 30, LRTTransition)
+	c.Assert(err, NotNil)
+
+	// transition lifecycle type，set two storage class type
+	_, err = NewLifecycleRuleByCreateBeforeDate("rule9", "nine", true, 2019, 3, 30, LRTTransition, StorageIA, StorageArchive)
+	c.Assert(err, NotNil)
 }

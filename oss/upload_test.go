@@ -23,7 +23,6 @@ func (s *OssUploadSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	// time.Sleep(timeoutInOperation)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)

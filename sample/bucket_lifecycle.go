@@ -34,7 +34,7 @@ func BucketLifecycleSample() {
 
 	// Case 2: Set the lifecycle, The rule ID is id2 and the applied objects' prefix is two and the expired time is three days after the object created.
 	//var rule2 = oss.BuildLifecycleRuleByDays("id2", "two", true, 3)
-	rule2, err := oss.NewLifecleRuleByDays("id2", "two", true, 3, oss.LRTTransition, oss.StorageIA)
+	rule2, err := oss.NewLifecycleRuleByDays("id2", "two", true, 3, oss.LRTTransition, oss.StorageIA)
 	if err != nil {
 		HandleError(err)
 	}
@@ -51,7 +51,7 @@ func BucketLifecycleSample() {
 	}
 	fmt.Println("Bucket Lifecycle:", lc.Rules)
 
-	rule3, err := oss.NewLifecleRuleByDays("id3", "three", true, 3, oss.LRTAbortMultiPartUpload)
+	rule3, err := oss.NewLifecycleRuleByDays("id3", "three", true, 3, oss.LRTAbortMultiPartUpload)
 	if err != nil {
 		HandleError(err)
 	}

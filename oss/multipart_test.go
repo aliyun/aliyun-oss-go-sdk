@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -26,7 +25,6 @@ func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	time.Sleep(timeoutInOperation)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -220,7 +218,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFile(c *C) {
 // TestUploadPartCopy
 func (s *OssBucketMultipartSuite) TestUploadPartCopy(c *C) {
 	objectSrc := objectNamePrefix + randStr(8) + "-src"
-	objectDest := objectNamePrefix + randStr(8) + "-desc"
+	objectDest := objectNamePrefix + randStr(8) + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -265,7 +263,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopy(c *C) {
 func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 	objectName := objectNamePrefix + randStr(8)
 	objectSrc := objectName + "-src"
-	objectDesc := objectName + "-desc"
+	objectDest := objectName + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartSize(fileName, 100*1024)
@@ -285,7 +283,7 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 	}
 
 	// Copy
-	imurCopy, err := s.bucket.InitiateMultipartUpload(objectDesc)
+	imurCopy, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var partsCopy []UploadPart
 	for _, chunk := range chunks {
 		part, err := s.bucket.UploadPartCopy(imurCopy, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
@@ -315,14 +313,14 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 	c.Assert(err, IsNil)
 
 	// Download
-	err = s.bucket.GetObjectToFile(objectDesc, "newpic3.jpg")
+	err = s.bucket.GetObjectToFile(objectDest, "newpic3.jpg")
 	c.Assert(err, IsNil)
 	err = s.bucket.GetObjectToFile(objectName, "newpic4.jpg")
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
-	err = s.bucket.DeleteObject(objectDesc)
+	err = s.bucket.DeleteObject(objectDest)
 	c.Assert(err, IsNil)
 	err = s.bucket.DeleteObject(objectSrc)
 	c.Assert(err, IsNil)
@@ -331,7 +329,7 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 	objectName := objectNamePrefix + randStr(8)
 	objectSrc := objectName + "-src"
-	objectDesc := objectName + "-desc"
+	objectDest := objectName + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartSize(fileName, 100*1024)
@@ -351,7 +349,7 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 	}
 
 	// Copy
-	imurCopy, err := s.bucket.InitiateMultipartUpload(objectDesc)
+	imurCopy, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var partsCopy []UploadPart
 	for _, chunk := range chunks {
 		part, err := s.bucket.UploadPartCopy(imurCopy, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
@@ -387,7 +385,7 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 	c.Assert(len(lmur.Uploads), Equals, 0)
 
 	// Download
-	err = s.bucket.GetObjectToFile(objectDesc, "newpic3.jpg")
+	err = s.bucket.GetObjectToFile(objectDest, "newpic3.jpg")
 	c.Assert(err, NotNil)
 	err = s.bucket.GetObjectToFile(objectName, "newpic4.jpg")
 	c.Assert(err, NotNil)
@@ -396,7 +394,7 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 // TestUploadPartCopyWithConstraints
 func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 	objectSrc := objectNamePrefix + randStr(8) + "-src"
-	objectDesc := objectNamePrefix + randStr(8) + "-desc"
+	objectDest := objectNamePrefix + randStr(8) + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -406,7 +404,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 	err = s.bucket.PutObjectFromFile(objectSrc, fileName)
 	c.Assert(err, IsNil)
 
-	imur, err := s.bucket.InitiateMultipartUpload(objectDesc)
+	imur, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var parts []UploadPart
 	for _, chunk := range chunks {
 		_, err = s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
@@ -441,12 +439,12 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 	c.Assert(err, IsNil)
 	testLogger.Println("cmur:", cmur)
 
-	err = s.bucket.GetObjectToFile(objectDesc, "newpic5.jpg")
+	err = s.bucket.GetObjectToFile(objectDest, "newpic5.jpg")
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectSrc)
 	c.Assert(err, IsNil)
-	err = s.bucket.DeleteObject(objectDesc)
+	err = s.bucket.DeleteObject(objectDest)
 	c.Assert(err, IsNil)
 }
 
@@ -487,7 +485,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileOutofOrder(c *C) {
 // TestUploadPartCopyOutofOrder
 func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 	objectSrc := objectNamePrefix + randStr(8) + "-src"
-	objectDesc := objectNamePrefix + randStr(8) + "-desc"
+	objectDest := objectNamePrefix + randStr(8) + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartSize(fileName, 1024*100)
@@ -498,7 +496,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 	err = s.bucket.PutObjectFromFile(objectSrc, fileName)
 	c.Assert(err, IsNil)
 
-	imur, err := s.bucket.InitiateMultipartUpload(objectDesc)
+	imur, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var parts []UploadPart
 	for _, chunk := range chunks {
 		_, err := s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
@@ -515,12 +513,12 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 	c.Assert(err, IsNil)
 	testLogger.Println("cmur:", cmur)
 
-	err = s.bucket.GetObjectToFile(objectDesc, "newpic7.jpg")
+	err = s.bucket.GetObjectToFile(objectDest, "newpic7.jpg")
 	c.Assert(err, IsNil)
 
 	err = s.bucket.DeleteObject(objectSrc)
 	c.Assert(err, IsNil)
-	err = s.bucket.DeleteObject(objectDesc)
+	err = s.bucket.DeleteObject(objectDest)
 	c.Assert(err, IsNil)
 }
 
