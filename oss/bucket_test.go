@@ -1906,8 +1906,8 @@ func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
 
 func (s *OssBucketSuite) TestUploadBigFile(c *C) {
 	objectName := objectNamePrefix + "tubf"
-	bigFile := "D:\\tmp\\bigfile.zip"
-	newFile := "D:\\tmp\\newbigfile.zip"
+	bigFile := "../../tmp/bigfile.zip"
+	newFile := "../../tmp/newbigfile.zip"
 
 	exist, err := isFileExist(bigFile)
 	c.Assert(err, IsNil)
