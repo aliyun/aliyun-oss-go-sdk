@@ -107,70 +107,143 @@ func (s *OssTypeSuite) TestSortUploadPart(c *C) {
 	c.Assert(parts[4].ETag, Equals, "E5")
 }
 
-func (s *OssTypeSuite) TestNewLifecleRuleByDays(c *C) {
-	_, err := NewLifecycleRuleByDays("rule1", "one", true, 30, LRTExpriration)
+func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
+	expiration := LifecycleExpiration{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	_, err := NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
+	c.Assert(err, NotNil)
+
+	expiration = LifecycleExpiration{
+		Days:              0,
+		CreatedBeforeDate: "",
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
+	c.Assert(err, NotNil)
+
+	abortMPU := LifecycleAbortMultipartUpload{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
+	c.Assert(err, NotNil)
+
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days:              0,
+		CreatedBeforeDate: "",
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
+	c.Assert(err, NotNil)
+
+	transition := LifecycleTransition{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+		StorageClass:      StorageIA,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	c.Assert(err, NotNil)
+
+	transition = LifecycleTransition{
+		Days:              0,
+		CreatedBeforeDate: "",
+		StorageClass:      StorageIA,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	c.Assert(err, NotNil)
+
+	transition = LifecycleTransition{
+		Days:         30,
+		StorageClass: StorageStandard,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	c.Assert(err, NotNil)
+
+	transition = LifecycleTransition{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+		StorageClass:      StorageStandard,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	c.Assert(err, NotNil)
+
+	transition1 := LifecycleTransition{
+		Days:         30,
+		StorageClass: StorageIA,
+	}
+	transition2 := LifecycleTransition{
+		Days:         60,
+		StorageClass: StorageArchive,
+	}
+	transition3 := LifecycleTransition{
+		Days:         100,
+		StorageClass: StorageArchive,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition1, &transition2, &transition3)
+	c.Assert(err, NotNil)
+
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil)
+	c.Assert(err, NotNil)
+
+	expiration = LifecycleExpiration{
+		Days: 30,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
 	c.Assert(err, IsNil)
 
-	_, err = NewLifecycleRuleByDays("rule2", "two", true, 30, LRTAbortMultiPartUpload)
+	expiration = LifecycleExpiration{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
 	c.Assert(err, IsNil)
 
-	_, err = NewLifecycleRuleByDays("rule3", "three", true, 30, LRTTransition, StorageIA)
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days: 30,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
 	c.Assert(err, IsNil)
 
-	_, err = NewLifecycleRuleByDays("rule4", "four", true, 30, LRTTransition, StorageArchive)
+	abortMPU = LifecycleAbortMultipartUpload{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
 	c.Assert(err, IsNil)
 
-	// expiration lifecycle type, set storage class type
-	_, err = NewLifecycleRuleByDays("rule5", "five", true, 30, LRTExpriration, StorageIA)
-	c.Assert(err, NotNil)
-
-	// abort multipart upload lifecycle type, set storage class type
-	_, err = NewLifecycleRuleByDays("rule6", "six", true, 30, LRTAbortMultiPartUpload, StorageIA)
-	c.Assert(err, NotNil)
-
-	// transition lifecycle type, the value of storage class type is StorageStandard
-	_, err = NewLifecycleRuleByDays("rule7", "seven", true, 30, LRTTransition, StorageStandard)
-	c.Assert(err, NotNil)
-
-	// transition lifecycle type, do not set storage class type
-	_, err = NewLifecycleRuleByDays("rule8", "eight", true, 30, LRTTransition)
-	c.Assert(err, NotNil)
-
-	// transition lifecycle type，set two storage class type
-	_, err = NewLifecycleRuleByDays("rule9", "nine", true, 30, LRTTransition, StorageIA, StorageArchive)
-	c.Assert(err, NotNil)
-}
-
-func (s *OssTypeSuite) TestNewLifecycleRuleByCreateBeforeDate(c *C) {
-	_, err := NewLifecycleRuleByCreateBeforeDate("rule1", "one", true, 2019, 3, 30, LRTExpriration)
+	expiration = LifecycleExpiration{
+		Days: 30,
+	}
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days: 30,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, &abortMPU)
 	c.Assert(err, IsNil)
 
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule2", "two", true, 2019, 3, 30, LRTAbortMultiPartUpload)
+	expiration = LifecycleExpiration{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days: 30,
+	}
+	transition = LifecycleTransition{
+		Days:         30,
+		StorageClass: StorageIA,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, &abortMPU)
 	c.Assert(err, IsNil)
 
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule3", "three", true, 2019, 3, 30, LRTTransition, StorageIA)
+	expiration = LifecycleExpiration{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days: 30,
+	}
+	transition1 = LifecycleTransition{
+		Days:         30,
+		StorageClass: StorageIA,
+	}
+	transition2 = LifecycleTransition{
+		Days:         60,
+		StorageClass: StorageArchive,
+	}
+	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, &abortMPU, &transition1, &transition2)
 	c.Assert(err, IsNil)
-
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule4", "four", true, 2019, 3, 30, LRTTransition, StorageArchive)
-	c.Assert(err, IsNil)
-
-	// expiration lifecycle type, set storage class type
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule5", "five", true, 2019, 3, 30, LRTExpriration, StorageIA)
-	c.Assert(err, NotNil)
-
-	// abort multipart upload lifecycle type, set storage class type
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule6", "six", true, 2019, 3, 30, LRTAbortMultiPartUpload, StorageIA)
-	c.Assert(err, NotNil)
-
-	// transition lifecycle type, the value of storage class type is StorageStandard
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule7", "seven", true, 2019, 3, 30, LRTTransition, StorageStandard)
-	c.Assert(err, NotNil)
-
-	// transition lifecycle type, do not set storage class type
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule8", "eight", true, 2019, 3, 30, LRTTransition)
-	c.Assert(err, NotNil)
-
-	// transition lifecycle type，set two storage class type
-	_, err = NewLifecycleRuleByCreateBeforeDate("rule9", "nine", true, 2019, 3, 30, LRTTransition, StorageIA, StorageArchive)
-	c.Assert(err, NotNil)
 }

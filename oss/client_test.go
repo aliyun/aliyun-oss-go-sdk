@@ -655,15 +655,9 @@ func (s *OssClientSuite) TestSetBucketLifecycle(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSetBucketLifecycle
+// TestSetBucketLifecycleNew
 func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
-	rule1, err := NewLifecycleRuleByCreateBeforeDate("rule1", "one", true, 2015, 11, 11, LRTExpriration)
-	c.Assert(err, IsNil)
-	rule2, err := NewLifecycleRuleByDays("rule2", "two", true, 3, LRTAbortMultiPartUpload)
-	c.Assert(err, IsNil)
-	rule3, err := NewLifecycleRuleByDays("rule3", "three", true, 3, LRTTransition, StorageIA)
-	c.Assert(err, IsNil)
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -671,11 +665,48 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	// Set single rule
-	var rules = []LifecycleRule{*rule1}
-	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	expiration := LifecycleExpiration{
+		CreatedBeforeDate: randStr(10),
+	}
+	rule, err := NewLifecycleRule("rule1", "one", true, &expiration, nil)
 	c.Assert(err, IsNil)
-	// Double set rule
+	rules := []LifecycleRule{*rule}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, NotNil)
+
+	abortMPU := LifecycleAbortMultipartUpload{
+		Days: -30,
+	}
+	rule, err = NewLifecycleRule("rule2", "two", true, nil, &abortMPU)
+	c.Assert(err, IsNil)
+	rules = []LifecycleRule{*rule}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, NotNil)
+
+	expiration = LifecycleExpiration{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	rule1, err := NewLifecycleRule("rule1", "one", true, &expiration, nil)
+	c.Assert(err, IsNil)
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days: 30,
+	}
+	rule2, err := NewLifecycleRule("rule2", "two", true, &expiration, &abortMPU)
+	c.Assert(err, IsNil)
+
+	transition1 := LifecycleTransition{
+		Days:         3,
+		StorageClass: StorageIA,
+	}
+	transition2 := LifecycleTransition{
+		Days:         30,
+		StorageClass: StorageArchive,
+	}
+	rule3, err := NewLifecycleRule("rule3", "three", true, nil, &abortMPU, &transition1, &transition2)
+	c.Assert(err, IsNil)
+
+	// Set single rule
+	rules = []LifecycleRule{*rule1}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
 
@@ -684,27 +715,35 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	c.Assert(len(res.Rules), Equals, 1)
 	c.Assert(res.Rules[0].ID, Equals, "rule1")
 	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[0].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
 
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	// Set two rules
+	// Set three rules
 	rules = []LifecycleRule{*rule1, *rule2, *rule3}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
-
-	// Eliminate effect of cache
-	time.Sleep(timeoutInOperation)
 
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(len(res.Rules), Equals, 3)
 	c.Assert(res.Rules[0].ID, Equals, "rule1")
 	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[0].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
 	c.Assert(res.Rules[1].ID, Equals, "rule2")
+	c.Assert(res.Rules[1].Expiration, NotNil)
+	c.Assert(res.Rules[1].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
 	c.Assert(res.Rules[1].AbortMultipartUpload, NotNil)
+	c.Assert(res.Rules[1].AbortMultipartUpload.Days, Equals, 30)
 	c.Assert(res.Rules[2].ID, Equals, "rule3")
+	c.Assert(res.Rules[2].AbortMultipartUpload, NotNil)
+	c.Assert(res.Rules[2].AbortMultipartUpload.Days, Equals, 30)
 	c.Assert(res.Rules[2].Transition, NotNil)
+	c.Assert(res.Rules[2].Transition[0].StorageClass, Equals, StorageIA)
+	c.Assert(res.Rules[2].Transition[0].Days, Equals, 3)
+	c.Assert(res.Rules[2].Transition[1].StorageClass, Equals, StorageArchive)
+	c.Assert(res.Rules[2].Transition[1].Days, Equals, 30)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -723,14 +762,14 @@ func (s *OssClientSuite) TestDeleteBucketLifecycle(c *C) {
 
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
-	time.Sleep(timeoutInOperation)
+	//time.Sleep(timeoutInOperation)
 
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
-	time.Sleep(timeoutInOperation)
+	//time.Sleep(timeoutInOperation)
 
 	res, err := client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -740,12 +779,12 @@ func (s *OssClientSuite) TestDeleteBucketLifecycle(c *C) {
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	time.Sleep(timeoutInOperation)
+	//time.Sleep(timeoutInOperation)
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, NotNil)
 
 	// Eliminate effect of cache
-	time.Sleep(timeoutInOperation)
+	//time.Sleep(timeoutInOperation)
 
 	// Delete when not set
 	err = client.DeleteBucketLifecycle(bucketNameTest)
