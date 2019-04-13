@@ -15,7 +15,7 @@ install:
  
 script:
 - cd oss
-- travis_wait 30 go test -v -covermode=count -coverprofile=coverage.out -timeout=30m
+- travis_wait 50 go test -v -covermode=count -coverprofile=coverage.out -timeout=50m
 - "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
 env:
   global:

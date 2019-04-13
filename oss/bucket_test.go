@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
 	"time"
 
 	"github.com/baiyubin/aliyun-sts-go-sdk/sts"
@@ -2738,4 +2739,73 @@ func (s *OssBucketSuite) TestLimitUploadSpeedFail(c *C) {
 	client.Config = nil
 	err = client.LimitUploadSpeed(100)
 	c.Assert(err, NotNil)
+}
+
+// test for checking mp4 crc on process action
+func (s *OssBucketSuite) TestCheckProcessMp4Crc(c *C) {
+	// create bucket
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// upload mp4 file to oss
+	objectName := objectNamePrefix + randLowStr(5)
+	mp4FileName := ".." + string(os.PathSeparator) + "sample" + string(os.PathSeparator) + "test_crc.mp4"
+	srcFileInfo, err := os.Stat(mp4FileName)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectFromFile(objectName, mp4FileName)
+	c.Assert(err, IsNil)
+
+	style := "video/snapshot,t_5000,f_jpg,w_800,h_600"
+	localFileName := randLowStr(10) + ".jpg"
+
+	// GetObjectToFile success with process
+	err = bucket.GetObjectToFile(objectName, localFileName, Process(style))
+	c.Assert(err, IsNil)
+	fileInfo, err := os.Stat(localFileName)
+	c.Assert(err, IsNil)
+	c.Assert(fileInfo.Size() < srcFileInfo.Size(), Equals, true)
+
+	// GetObjectToFile success without process
+	err = bucket.GetObjectToFile(objectName, localFileName)
+	c.Assert(err, IsNil)
+	fileInfo, err = os.Stat(localFileName)
+	c.Assert(err, IsNil)
+	c.Assert(fileInfo.Size(), Equals, srcFileInfo.Size())
+
+	// GetObjectWithUrl success with process
+	signObject, err := bucket.SignURL(objectName, "GET", 60, Process(style))
+	body, err := bucket.GetObjectWithURL(signObject)
+	c.Assert(err, IsNil)
+
+	mp4Text, err := ioutil.ReadAll(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(len(mp4Text) < int(srcFileInfo.Size()), Equals, true)
+
+	// GetObjectToFileWithUrl success with process
+	err = bucket.GetObjectToFileWithURL(signObject, localFileName)
+	c.Assert(err, IsNil)
+	fileInfo, err = os.Stat(localFileName)
+	c.Assert(err, IsNil)
+	c.Assert(fileInfo.Size() < srcFileInfo.Size(), Equals, true)
+
+	// GetObjectToFileWithUrl success without process
+	signObject, err = bucket.SignURL(objectName, "GET", 60)
+	err = bucket.GetObjectToFileWithURL(signObject, localFileName)
+	c.Assert(err, IsNil)
+	fileInfo, err = os.Stat(localFileName)
+	c.Assert(err, IsNil)
+	c.Assert(fileInfo.Size(), Equals, srcFileInfo.Size())
+
+	os.Remove(localFileName)
+	bucket.DeleteObject(objectName)
+	client.DeleteBucket(bucketName)
 }

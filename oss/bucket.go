@@ -170,7 +170,9 @@ func (bucket Bucket) GetObjectToFile(objectKey, filePath string, options ...Opti
 	if encodeOpt != nil {
 		acceptEncoding = encodeOpt.(string)
 	}
-	if bucket.getConfig().IsEnableCRC && !hasRange && acceptEncoding != "gzip" {
+
+	isProcessSet, _, _ := isOptionSet(options, "x-oss-process")
+	if bucket.getConfig().IsEnableCRC && !hasRange && acceptEncoding != "gzip" && !isProcessSet {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
 		err = checkCRC(result.Response, "GetObjectToFile")
 		if err != nil {
@@ -850,7 +852,8 @@ func (bucket Bucket) GetObjectToFileWithURL(signedURL, filePath string, options 
 		acceptEncoding = encodeOpt.(string)
 	}
 
-	if bucket.getConfig().IsEnableCRC && !hasRange && acceptEncoding != "gzip" {
+	isProcessSet := hasProcessParameter(signedURL)
+	if bucket.getConfig().IsEnableCRC && !hasRange && acceptEncoding != "gzip" && !isProcessSet {
 		result.Response.ClientCRC = result.ClientCRC.Sum64()
 		err = checkCRC(result.Response, "GetObjectToFileWithURL")
 		if err != nil {
@@ -970,4 +973,11 @@ func addContentType(options []Option, keys ...string) []Option {
 	opts = append(opts, options...)
 
 	return opts
+}
+
+func hasProcessParameter(signedUrl string) bool {
+	if urlValues, err := url.ParseRequestURI(signedUrl); err == nil {
+		return strings.Contains(urlValues.RawQuery, "x-oss-process")
+	}
+	return false
 }

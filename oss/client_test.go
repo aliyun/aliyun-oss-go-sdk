@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1608,12 +1609,15 @@ func (s *OssClientSuite) TestSetLimitUploadSpeed(c *C) {
 	if len(pSlice) >= 2 {
 		if pSlice[0] > "go1" {
 			c.Assert(err, IsNil)
-		} else if pSlice[0] == "go1" && pSlice[1] >= "7" {
-			c.Assert(err, IsNil)
+		} else if pSlice[0] == "go1" {
+			subVersion, _ := strconv.Atoi(pSlice[1])
+			if subVersion >= 7 {
+				c.Assert(err, IsNil)
+			} else {
+				c.Assert(err, NotNil)
+			}
 		} else {
 			c.Assert(err, NotNil)
 		}
-	} else {
-		c.Assert(err, NotNil)
 	}
 }
