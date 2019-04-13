@@ -199,7 +199,17 @@ func CallbackVar(callbackVar string) Option {
 
 // RequestPayer is an option to set payer who pay for the request
 func RequestPayer(payerType PayerType) Option {
-	return setHeader(HTTPHeaderOSSRequester, string(payerType))
+	return setHeader(HTTPHeaderOssRequester, string(payerType))
+}
+
+// Tagging is an option to set object tagging, notice: the value is url.QueryEscape(TagA)=url.QueryEscape(A) & url.QueryEscape(TagB)=url.QueryEscape(B)...
+func Tagging(value string) Option {
+	return setHeader(HTTPHeaderOssTagging, value)
+}
+
+// TaggingDirective is an option to set X-Oss-Metadata-Directive header
+func TaggingDirective(directive TaggingDirectiveType) Option {
+	return setHeader(HTTPHeaderOssTaggingDirective, string(directive))
 }
 
 // Delimiter is an option to set delimiler parameter

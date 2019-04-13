@@ -94,7 +94,7 @@ func getRoutines(options []Option) int {
 
 // getPayer return the payer of the request
 func getPayer(options []Option) string {
-	payerOpt, err := findOption(options, HTTPHeaderOSSRequester, nil)
+	payerOpt, err := findOption(options, HTTPHeaderOssRequester, nil)
 	if err != nil || payerOpt == nil {
 		return ""
 	}

@@ -600,3 +600,16 @@ type LiveChannelInfo struct {
 	PublishUrls  []string  `xml:"PublishUrls>Url"` //push urls list
 	PlayUrls     []string  `xml:"PlayUrls>Url"`    //play urls list
 }
+
+// Tag a tag for the object
+type Tag struct {
+	XMLName xml.Name `xml:"Tag"`
+	Key     string   `xml:"Key"`
+	Value   string   `xml:"Value"`
+}
+
+// ObjectTagging tagset for the object
+type ObjectTagging struct {
+	XMLName xml.Name `xml:"Tagging"`
+	tags    []Tag    `xml:"TagSet>Tag,omitempty"`
+}
