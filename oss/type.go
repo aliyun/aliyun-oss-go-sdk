@@ -100,6 +100,9 @@ func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day i
 
 // ValidateLifecycleRule Determine if a lifecycle rule is valid, if it is invalid, it will return an error.
 func verifyLifecycleRules(rules []LifecycleRule) error {
+	if len(rules) == 0 {
+		return fmt.Errorf("invalid rules, the length of rules is zero")
+	}
 	for _, rule := range rules {
 		if rule.Status != "Enabled" && rule.Status != "Disabled" {
 			return fmt.Errorf("invalid rule, the value of status must be Enabled or Disabled")
