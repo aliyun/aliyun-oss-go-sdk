@@ -62,11 +62,11 @@ func main() {
 	fmt.Println("All samples completed")
 =======
 	var name string
-	flag.StringVar(&name, "name", "", "the sample name")
+	flag.StringVar(&name, "name", "", "Waiting for a sample of execution")
 	flag.Parse()
 
 	if len(name) <= 0 {
-		fmt.Println("please enter your sample's name\n like '-name CreateBucketSample'")
+		fmt.Println("please enter your sample's name. like '-name CreateBucketSample'")
 		os.Exit(-1)
 	} else {
 		if sampleMap[name] == nil {
