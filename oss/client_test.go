@@ -64,8 +64,6 @@ var (
 	timeoutInOperation = 3 * time.Second
 )
 
-//var randMarker = rand.New(rand.NewSource(time.Now().UnixNano()))
-
 func randStr(n int) string {
 	b := make([]rune, n)
 	randMarker := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -756,6 +754,74 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	c.Assert(res.Rules[0].ID, Equals, "rule1")
 	c.Assert(res.Rules[0].Expiration, NotNil)
 	c.Assert(res.Rules[0].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
+
+	err = client.DeleteBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Set two rule: rule1 and rule2
+	rules = []LifecycleRule{rule1, rule2}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(res.Rules), Equals, 2)
+	c.Assert(res.Rules[0].ID, Equals, "rule1")
+	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[0].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
+	c.Assert(res.Rules[1].ID, Equals, "rule2")
+	c.Assert(res.Rules[1].Expiration, NotNil)
+	c.Assert(res.Rules[1].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
+	c.Assert(res.Rules[1].AbortMultipartUpload, NotNil)
+	c.Assert(res.Rules[1].AbortMultipartUpload.Days, Equals, 30)
+
+	err = client.DeleteBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Set two rule: rule2 and rule3
+	rules = []LifecycleRule{rule2, rule3}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(res.Rules), Equals, 2)
+	c.Assert(res.Rules[0].ID, Equals, "rule2")
+	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[0].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
+	c.Assert(res.Rules[0].AbortMultipartUpload, NotNil)
+	c.Assert(res.Rules[0].AbortMultipartUpload.Days, Equals, 30)
+	c.Assert(res.Rules[1].ID, Equals, "rule3")
+	c.Assert(res.Rules[1].AbortMultipartUpload, NotNil)
+	c.Assert(res.Rules[1].AbortMultipartUpload.Days, Equals, 30)
+	c.Assert(len(res.Rules[1].Transitions), Equals, 2)
+	c.Assert(res.Rules[1].Transitions[0].StorageClass, Equals, StorageIA)
+	c.Assert(res.Rules[1].Transitions[0].Days, Equals, 3)
+	c.Assert(res.Rules[1].Transitions[1].StorageClass, Equals, StorageArchive)
+	c.Assert(res.Rules[1].Transitions[1].Days, Equals, 30)
+
+	err = client.DeleteBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Set two rule: rule1 and rule3
+	rules = []LifecycleRule{rule1, rule3}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(res.Rules), Equals, 2)
+	c.Assert(res.Rules[0].ID, Equals, "rule1")
+	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[0].Expiration.CreatedBeforeDate, Equals, "2015-11-11T00:00:00.000Z")
+	c.Assert(res.Rules[1].ID, Equals, "rule3")
+	c.Assert(res.Rules[1].AbortMultipartUpload, NotNil)
+	c.Assert(res.Rules[1].AbortMultipartUpload.Days, Equals, 30)
+	c.Assert(len(res.Rules[1].Transitions), Equals, 2)
+	c.Assert(res.Rules[1].Transitions[0].StorageClass, Equals, StorageIA)
+	c.Assert(res.Rules[1].Transitions[0].Days, Equals, 3)
+	c.Assert(res.Rules[1].Transitions[1].StorageClass, Equals, StorageArchive)
+	c.Assert(res.Rules[1].Transitions[1].Days, Equals, 30)
 
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)

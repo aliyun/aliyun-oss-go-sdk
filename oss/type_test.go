@@ -268,6 +268,10 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
+	rules = []LifecycleRule{}
+	err1 := verifyLifecycleRules(rules)
+	c.Assert(err1, NotNil)
+
 	expiration = LifecycleExpiration{
 		Days: 30,
 	}
