@@ -665,18 +665,31 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	//invalid value of CreatedBeforeDate
+	//invalid status of lifecyclerule
 	expiration := LifecycleExpiration{
-		CreatedBeforeDate: randStr(10),
+		Days: 30,
 	}
 	rule := LifecycleRule{
+		ID:         "rule1",
+		Prefix:     "one",
+		Status:     "Invalid",
+		Expiration: &expiration,
+	}
+	rules := []LifecycleRule{rule}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, NotNil)
+
+	//invalid value of CreatedBeforeDate
+	expiration = LifecycleExpiration{
+		CreatedBeforeDate: randStr(10),
+	}
+	rule = LifecycleRule{
 		ID:         "rule1",
 		Prefix:     "one",
 		Status:     "Enabled",
 		Expiration: &expiration,
 	}
-	c.Assert(err, IsNil)
-	rules := []LifecycleRule{rule}
+	rules = []LifecycleRule{rule}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, NotNil)
 
