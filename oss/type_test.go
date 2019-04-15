@@ -107,33 +107,76 @@ func (s *OssTypeSuite) TestSortUploadPart(c *C) {
 	c.Assert(parts[4].ETag, Equals, "E5")
 }
 
-func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
+func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	expiration := LifecycleExpiration{
 		Days:              30,
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
-	_, err := NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
+	rule := LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+	rules := []LifecycleRule{rule}
+	err := verifyLifecycleRules(rules)
+	c.Assert(err, NotNil)
+
+	expiration = LifecycleExpiration{
+		Date:              "2015-11-11T00:00:00.000Z",
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	expiration = LifecycleExpiration{
 		Days:              0,
 		CreatedBeforeDate: "",
+		Date:              "",
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	abortMPU := LifecycleAbortMultipartUpload{
 		Days:              30,
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	abortMPU = LifecycleAbortMultipartUpload{
 		Days:              0,
 		CreatedBeforeDate: "",
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	transition := LifecycleTransition{
@@ -141,7 +184,14 @@ func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 		StorageClass:      StorageIA,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	rule = LifecycleRule{
+		ID:          "ruleID",
+		Prefix:      "prefix",
+		Status:      "Enabled",
+		Transitions: []LifecycleTransition{transition},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	transition = LifecycleTransition{
@@ -149,21 +199,42 @@ func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
 		CreatedBeforeDate: "",
 		StorageClass:      StorageIA,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	rule = LifecycleRule{
+		ID:          "ruleID",
+		Prefix:      "prefix",
+		Status:      "Enabled",
+		Transitions: []LifecycleTransition{transition},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	transition = LifecycleTransition{
 		Days:         30,
 		StorageClass: StorageStandard,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	rule = LifecycleRule{
+		ID:          "ruleID",
+		Prefix:      "prefix",
+		Status:      "Enabled",
+		Transitions: []LifecycleTransition{transition},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	transition = LifecycleTransition{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 		StorageClass:      StorageStandard,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition)
+	rule = LifecycleRule{
+		ID:          "ruleID",
+		Prefix:      "prefix",
+		Status:      "Enabled",
+		Transitions: []LifecycleTransition{transition},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	transition1 := LifecycleTransition{
@@ -178,34 +249,75 @@ func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
 		Days:         100,
 		StorageClass: StorageArchive,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil, &transition1, &transition2, &transition3)
+	rule = LifecycleRule{
+		ID:          "ruleID",
+		Prefix:      "prefix",
+		Status:      "Enabled",
+		Transitions: []LifecycleTransition{transition1, transition2, transition3},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, nil)
+	rule = LifecycleRule{
+		ID:     "ruleID",
+		Prefix: "prefix",
+		Status: "Enabled",
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, NotNil)
 
 	expiration = LifecycleExpiration{
 		Days: 30,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 
 	expiration = LifecycleExpiration{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, nil)
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 
 	abortMPU = LifecycleAbortMultipartUpload{
 		Days: 30,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 
 	abortMPU = LifecycleAbortMultipartUpload{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, nil, &abortMPU)
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 
 	expiration = LifecycleExpiration{
@@ -214,7 +326,15 @@ func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
 	abortMPU = LifecycleAbortMultipartUpload{
 		Days: 30,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, &abortMPU)
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 
 	expiration = LifecycleExpiration{
@@ -227,7 +347,16 @@ func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
 		Days:         30,
 		StorageClass: StorageIA,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, &abortMPU)
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		Transitions:          []LifecycleTransition{transition},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 
 	expiration = LifecycleExpiration{
@@ -244,6 +373,15 @@ func (s *OssTypeSuite) TestNewLifecleRule(c *C) {
 		Days:         60,
 		StorageClass: StorageArchive,
 	}
-	_, err = NewLifecycleRule("ruleID", "prefix", true, &expiration, &abortMPU, &transition1, &transition2)
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		Transitions:          []LifecycleTransition{transition1, transition2},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 }
