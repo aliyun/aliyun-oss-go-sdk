@@ -260,6 +260,10 @@ func (client Client) GetBucketACL(bucketName string) (GetBucketACLResult, error)
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule) error {
+	err := verifyLifecycleRules(rules)
+	if err != nil {
+		return err
+	}
 	lifecycleCfg := LifecycleConfiguration{Rules: rules}
 	bs, err := xml.Marshal(lifecycleCfg)
 	if err != nil {

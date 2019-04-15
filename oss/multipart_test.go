@@ -603,7 +603,7 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploads(c *C) {
 	c.Assert(err, IsNil)
 	checkNum := 15
 	for _, im := range imurs {
-		if im.Key == objectName+"12" && im.UploadID > "upLoadIDStr" {
+		if im.Key == objectName+"12" && im.UploadID > upLoadIDStr {
 			checkNum = 16
 			break
 		}

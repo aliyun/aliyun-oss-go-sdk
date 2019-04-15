@@ -44,11 +44,11 @@ type LifecycleConfiguration struct {
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
 	XMLName              xml.Name                       `xml:"Rule"`
-	ID                   string                         `xml:"ID"`                             // The rule ID
+	ID                   string                         `xml:"ID,omitempty"`                   // The rule ID
 	Prefix               string                         `xml:"Prefix"`                         // The object key prefix
 	Status               string                         `xml:"Status"`                         // The rule status (enabled or not)
 	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
-	Transition           []*LifecycleTransition         `xml:"Transition,omitempty"`           // The transition property
+	Transitions          []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
 	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
 }
 
@@ -98,57 +98,47 @@ func BuildLifecycleRuleByDate(id, prefix string, status bool, year, month, day i
 		Expiration: &LifecycleExpiration{Date: date}}
 }
 
-// NewLifecycleRule build a lifecycle rule
-func NewLifecycleRule(id, prefix string, status bool, expiration *LifecycleExpiration, abortMPU *LifecycleAbortMultipartUpload, transitions ...*LifecycleTransition) (*LifecycleRule, error) {
-	statusStr := "Enabled"
-	if !status {
-		statusStr = "Disabled"
-	}
-	rule := LifecycleRule{
-		ID:     id,
-		Prefix: prefix,
-		Status: statusStr,
-	}
-
-	if expiration != nil {
-		if (expiration.Days != 0 && expiration.CreatedBeforeDate != "") || (expiration.Days == 0 && expiration.CreatedBeforeDate == "") {
-			return nil, fmt.Errorf("invalid expiration lifecycle, must be set one of CreatedBeforeDate and Days")
-		}
-		rule.Expiration = expiration
-	}
-
-	if abortMPU != nil {
-		if (abortMPU.Days != 0 && abortMPU.CreatedBeforeDate != "") || (abortMPU.Days == 0 && abortMPU.CreatedBeforeDate == "") {
-			return nil, fmt.Errorf("invalid abort multipart upload lifecycle, must be set one of CreatedBeforeDate and Days")
-		}
-		rule.AbortMultipartUpload = abortMPU
-	}
-
-	if len(transitions) > 0 {
-		if len(transitions) > 2 {
-			return nil, fmt.Errorf("invalid count of transition lifecycles, the count must than less than 3")
+// ValidateLifecycleRule Determine if a lifecycle rule is valid, if it is invalid, it will return an error.
+func verifyLifecycleRules(rules []LifecycleRule) error {
+	for _, rule := range rules {
+		if rule.Status != "Enabled" && rule.Status != "Disabled" {
+			return fmt.Errorf("invalid rule, the value of status must be Enabled or Disabled")
 		}
 
-		for _, transition := range transitions {
-			if transition == nil {
-				return nil, fmt.Errorf("invalid transitions, there is a transition not be initiated")
-			}
-			if (transition.Days != 0 && transition.CreatedBeforeDate != "") || (transition.Days == 0 && transition.CreatedBeforeDate == "") {
-				return nil, fmt.Errorf("invalid transition lifecycle, must be set one of CreatedBeforeDate and Days")
-			}
-			if transition.StorageClass != StorageIA && transition.StorageClass != StorageArchive {
-				return nil, fmt.Errorf("invalid transition lifecylce, the value of storage class must be IA or Archive")
+		expiration := rule.Expiration
+		if expiration != nil {
+			if (expiration.Days != 0 && expiration.CreatedBeforeDate != "") || (expiration.Days != 0 && expiration.Date != "") || (expiration.CreatedBeforeDate != "" && expiration.Date != "") || (expiration.Days == 0 && expiration.CreatedBeforeDate == "" && expiration.Date == "") {
+				return fmt.Errorf("invalid expiration lifecycle, must be set one of CreatedBeforeDate, Days and Date")
 			}
 		}
 
-		rule.Transition = transitions
+		abortMPU := rule.AbortMultipartUpload
+		if abortMPU != nil {
+			if (abortMPU.Days != 0 && abortMPU.CreatedBeforeDate != "") || (abortMPU.Days == 0 && abortMPU.CreatedBeforeDate == "") {
+				return fmt.Errorf("invalid abort multipart upload lifecycle, must be set one of CreatedBeforeDate and Days")
+			}
+		}
+
+		transitions := rule.Transitions
+		if len(transitions) > 0 {
+			if len(transitions) > 2 {
+				return fmt.Errorf("invalid count of transition lifecycles, the count must than less than 3")
+			}
+
+			for _, transition := range transitions {
+				if (transition.Days != 0 && transition.CreatedBeforeDate != "") || (transition.Days == 0 && transition.CreatedBeforeDate == "") {
+					return fmt.Errorf("invalid transition lifecycle, must be set one of CreatedBeforeDate and Days")
+				}
+				if transition.StorageClass != StorageIA && transition.StorageClass != StorageArchive {
+					return fmt.Errorf("invalid transition lifecylce, the value of storage class must be IA or Archive")
+				}
+			}
+		} else if expiration == nil && abortMPU == nil {
+			return fmt.Errorf("invalid rule, must set one of Expiration, AbortMultipartUplaod and Transitions")
+		}
 	}
 
-	if rule.Expiration == nil && rule.AbortMultipartUpload == nil && len(rule.Transition) == 0 {
-		return nil, fmt.Errorf("invalid lifecycle rule, must be set one of Expiration, AbortMultipartUpload and Transition")
-	}
-
-	return &rule, nil
+	return nil
 }
 
 // GetBucketLifecycleResult defines GetBucketLifecycle's result object

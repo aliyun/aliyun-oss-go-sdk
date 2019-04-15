@@ -24,11 +24,13 @@ func BucketLifecycleSample() {
 	expriation := oss.LifecycleExpiration{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
-	rule1, err := oss.NewLifecycleRule("rule1", "one", true, &expriation, nil)
-	if err != nil {
-		HandleError(err)
+	rule1 := oss.LifecycleRule{
+		ID:         "rule1",
+		Prefix:     "one",
+		Status:     "Enabled",
+		Expiration: &expriation,
 	}
-	var rules = []oss.LifecycleRule{*rule1}
+	var rules = []oss.LifecycleRule{rule1}
 	err = client.SetBucketLifecycle(bucketName, rules)
 	if err != nil {
 		HandleError(err)
@@ -50,11 +52,13 @@ func BucketLifecycleSample() {
 		Days:         30,
 		StorageClass: oss.StorageArchive,
 	}
-	rule2, err := oss.NewLifecycleRule("rule2", "two", true, nil, nil, &transitionIA, &transitionArch)
-	if err != nil {
-		HandleError(err)
+	rule2 := oss.LifecycleRule{
+		ID:          "rule2",
+		Prefix:      "two",
+		Status:      "Enabled",
+		Transitions: []oss.LifecycleTransition{transitionIA, transitionArch},
 	}
-	rules = []oss.LifecycleRule{*rule2}
+	rules = []oss.LifecycleRule{rule2}
 	err = client.SetBucketLifecycle(bucketName, rules)
 	if err != nil {
 		HandleError(err)
@@ -65,16 +69,18 @@ func BucketLifecycleSample() {
 	if err != nil {
 		HandleError(err)
 	}
-	fmt.Printf("Bucket Lifecycle:%v, %v, %v\n", lc.Rules, *lc.Rules[0].Transition[0], *lc.Rules[0].Transition[1])
+	fmt.Printf("Bucket Lifecycle:%v\n", lc.Rules)
 
 	abortMPU := oss.LifecycleAbortMultipartUpload{
 		Days: 3,
 	}
-	rule3, err := oss.NewLifecycleRule("rule3", "three", true, nil, &abortMPU)
-	if err != nil {
-		HandleError(err)
+	rule3 := oss.LifecycleRule{
+		ID:                   "rule3",
+		Prefix:               "three",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
 	}
-	rules = append(lc.Rules, *rule3)
+	rules = append(lc.Rules, rule3)
 	err = client.SetBucketLifecycle(bucketName, rules)
 	if err != nil {
 		HandleError(err)
@@ -85,7 +91,7 @@ func BucketLifecycleSample() {
 	if err != nil {
 		HandleError(err)
 	}
-	fmt.Printf("Bucket Lifecycle:%v, %v, %v, %v\n", lc.Rules, *lc.Rules[0].Transition[0], *lc.Rules[0].Transition[1], *lc.Rules[1].AbortMultipartUpload)
+	fmt.Printf("Bucket Lifecycle:%v, %v\n", lc.Rules, *lc.Rules[1].AbortMultipartUpload)
 
 	// Delete bucket's Lifecycle
 	err = client.DeleteBucketLifecycle(bucketName)

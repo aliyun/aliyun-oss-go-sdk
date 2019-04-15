@@ -665,34 +665,55 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
+	//invalid value of CreatedBeforeDate
 	expiration := LifecycleExpiration{
 		CreatedBeforeDate: randStr(10),
 	}
-	rule, err := NewLifecycleRule("rule1", "one", true, &expiration, nil)
+	rule := LifecycleRule{
+		ID:         "rule1",
+		Prefix:     "one",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
 	c.Assert(err, IsNil)
-	rules := []LifecycleRule{*rule}
+	rules := []LifecycleRule{rule}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, NotNil)
 
+	//invalid value of Days
 	abortMPU := LifecycleAbortMultipartUpload{
 		Days: -30,
 	}
-	rule, err = NewLifecycleRule("rule2", "two", true, nil, &abortMPU)
-	c.Assert(err, IsNil)
-	rules = []LifecycleRule{*rule}
+	rule = LifecycleRule{
+		ID:                   "rule1",
+		Prefix:               "one",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+	}
+	rules = []LifecycleRule{rule}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, NotNil)
 
 	expiration = LifecycleExpiration{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
-	rule1, err := NewLifecycleRule("rule1", "one", true, &expiration, nil)
-	c.Assert(err, IsNil)
+	rule1 := LifecycleRule{
+		ID:         "rule1",
+		Prefix:     "one",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+
 	abortMPU = LifecycleAbortMultipartUpload{
 		Days: 30,
 	}
-	rule2, err := NewLifecycleRule("rule2", "two", true, &expiration, &abortMPU)
-	c.Assert(err, IsNil)
+	rule2 := LifecycleRule{
+		ID:                   "rule2",
+		Prefix:               "two",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+	}
 
 	transition1 := LifecycleTransition{
 		Days:         3,
@@ -702,11 +723,17 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 		Days:         30,
 		StorageClass: StorageArchive,
 	}
-	rule3, err := NewLifecycleRule("rule3", "three", true, nil, &abortMPU, &transition1, &transition2)
-	c.Assert(err, IsNil)
+	transitions := []LifecycleTransition{transition1, transition2}
+	rule3 := LifecycleRule{
+		ID:                   "rule3",
+		Prefix:               "three",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+		Transitions:          transitions,
+	}
 
 	// Set single rule
-	rules = []LifecycleRule{*rule1}
+	rules = []LifecycleRule{rule1}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
 
@@ -721,7 +748,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	c.Assert(err, IsNil)
 
 	// Set three rules
-	rules = []LifecycleRule{*rule1, *rule2, *rule3}
+	rules = []LifecycleRule{rule1, rule2, rule3}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
 
@@ -739,11 +766,11 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	c.Assert(res.Rules[2].ID, Equals, "rule3")
 	c.Assert(res.Rules[2].AbortMultipartUpload, NotNil)
 	c.Assert(res.Rules[2].AbortMultipartUpload.Days, Equals, 30)
-	c.Assert(res.Rules[2].Transition, NotNil)
-	c.Assert(res.Rules[2].Transition[0].StorageClass, Equals, StorageIA)
-	c.Assert(res.Rules[2].Transition[0].Days, Equals, 3)
-	c.Assert(res.Rules[2].Transition[1].StorageClass, Equals, StorageArchive)
-	c.Assert(res.Rules[2].Transition[1].Days, Equals, 30)
+	c.Assert(len(res.Rules[2].Transitions), Equals, 2)
+	c.Assert(res.Rules[2].Transitions[0].StorageClass, Equals, StorageIA)
+	c.Assert(res.Rules[2].Transitions[0].Days, Equals, 3)
+	c.Assert(res.Rules[2].Transitions[1].StorageClass, Equals, StorageArchive)
+	c.Assert(res.Rules[2].Transitions[1].Days, Equals, 30)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
