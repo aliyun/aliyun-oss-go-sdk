@@ -146,6 +146,14 @@ func AppendObjectSample() {
 	}
 	fmt.Println("Object ACL:", goar.ACL)
 
+	// Case 6: Set the storage classes.OSS provides three storage classes: Standard, Infrequent Access, and Archive.
+	// Upload a strings, and you can append some strings in the behind of object. but the object is 'Archive' storange class.
+	// An object created with the AppendObject operation is an appendable object. set the object storange-class to 'Archive'.
+	nextPos, err = bucket.AppendObject(appendObjectKey, strings.NewReader("昨夜雨疏风骤，浓睡不消残酒。试问卷帘人，"), nextPos, oss.ObjectStorageClass("Archive"))
+	if err != nil {
+		HandleError(err)
+	}
+
 	// Delete the object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {

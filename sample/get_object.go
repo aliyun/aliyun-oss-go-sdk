@@ -10,7 +10,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-// GetObjectSample shows the streaming download, range download and resumable download. 
+// GetObjectSample shows the streaming download, range download and resumable download.
 func GetObjectSample() {
 	// Create bucket
 	bucket, err := GetTestBucket(bucketName)
@@ -29,12 +29,13 @@ func GetObjectSample() {
 	if err != nil {
 		HandleError(err)
 	}
+
 	data, err := ioutil.ReadAll(body)
 	body.Close()
 	if err != nil {
 		HandleError(err)
 	}
-	data = data // use data
+	fmt.Println("size of data is: ", len(data))
 
 	// Case 2: Download the object to byte array. This is for small object.
 	buf := new(bytes.Buffer)
@@ -72,11 +73,13 @@ func GetObjectSample() {
 		HandleError(err)
 	}
 	body.Close()
+
 	// Last modified time contraint is not met, do not download the file
-	_, err = bucket.GetObject(objectKey, oss.IfUnmodifiedSince(pastDate))
+	body, err = bucket.GetObject(objectKey, oss.IfUnmodifiedSince(pastDate))
 	if err == nil {
 		HandleError(err)
 	}
+	body.Close()
 
 	meta, err := bucket.GetObjectDetailedMeta(objectKey)
 	if err != nil {
@@ -95,6 +98,7 @@ func GetObjectSample() {
 	if err == nil {
 		HandleError(err)
 	}
+	body.Close()
 
 	// Case 6: Big file's multipart download, concurrent and resumable download is supported.
 	// multipart download with part size 100KB. By default single coroutine is used and no checkpoint
@@ -114,8 +118,8 @@ func GetObjectSample() {
 	if err != nil {
 		HandleError(err)
 	}
-	
-	// Specify the checkpoint file path to record which parts have been downloaded. 
+
+	// Specify the checkpoint file path to record which parts have been downloaded.
 	// This file path can be specified by the 2nd parameter of Checkpoint, it will be the download directory if the file path is empty.
 	err = bucket.DownloadFile(objectKey, "mynewfile-3.jpg", 100*1024, oss.Checkpoint(true, "mynewfile.cp"))
 	if err != nil {

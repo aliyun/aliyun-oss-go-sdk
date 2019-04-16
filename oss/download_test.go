@@ -23,7 +23,6 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -35,24 +34,42 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssDownloadSuite) TearDownSuite(c *C) {
 	// Delete part
-	lmur, err := s.bucket.ListMultipartUploads()
-	c.Assert(err, IsNil)
-
-	for _, upload := range lmur.Uploads {
-		var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
-			Key: upload.Key, UploadID: upload.UploadID}
-		err = s.bucket.AbortMultipartUpload(imur)
+	keyMarker := KeyMarker("")
+	uploadIDMarker := UploadIDMarker("")
+	for {
+		lmur, err := s.bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
+		for _, upload := range lmur.Uploads {
+			var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
+				Key: upload.Key, UploadID: upload.UploadID}
+			err = s.bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
+		keyMarker = KeyMarker(lmur.NextKeyMarker)
+		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
+		if !lmur.IsTruncated {
+			break
+		}
 	}
 
 	// Delete objects
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
-
-	for _, object := range lor.Objects {
-		err = s.bucket.DeleteObject(object.Key)
+	marker := Marker("")
+	for {
+		lor, err := s.bucket.ListObjects(marker)
 		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = s.bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
+		}
 	}
+
+	// Delete bucket
+	err := s.client.DeleteBucket(s.bucket.BucketName)
+	c.Assert(err, IsNil)
 
 	testLogger.Println("test download completed")
 }
@@ -74,9 +91,9 @@ func (s *OssDownloadSuite) TearDownTest(c *C) {
 
 // TestDownloadRoutineWithoutRecovery multipart downloads without checkpoint
 func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
-	objectName := objectNamePrefix + "tdrwr"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file.jpg"
+	newFile := randStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -136,9 +153,9 @@ func DownErrorHooker(part downloadPart) error {
 
 // TestDownloadRoutineWithRecovery multi-routine resumable download
 func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
-	objectName := objectNamePrefix + "tdrtr"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-2.jpg"
+	newFile := randStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -250,9 +267,9 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 // TestDownloadOption options
 func (s *OssDownloadSuite) TestDownloadOption(c *C) {
-	objectName := objectNamePrefix + "tdmo"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-3.jpg"
+	newFile := randStr(8) + ".jpg"
 
 	// Upload the file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -290,9 +307,9 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 
 // TestDownloadObjectChange tests the file is updated during the upload
 func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
-	objectName := objectNamePrefix + "tdloc"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-4.jpg"
+	newFile := randStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -318,9 +335,9 @@ func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 
 // TestDownloadNegative tests downloading negative
 func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
-	objectName := objectNamePrefix + "tdn"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-3.jpg"
+	newFile := randStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -370,10 +387,10 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 
 // TestDownloadWithRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
-	objectName := objectNamePrefix + "tdwr"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-tdwr.jpg"
-	newFileGet := "down-new-file-tdwr-2.jpg"
+	newFile := randStr(8) + ".jpg"
+	newFileGet := randStr(8) + "-.jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -464,10 +481,10 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 
 // TestDownloadWithCheckoutAndRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
-	objectName := objectNamePrefix + "tdwcr"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-tdwcr.jpg"
-	newFileGet := "down-new-file-tdwcr-2.jpg"
+	newFile := randStr(8) + ".jpg"
+	newFileGet := randStr(8) + "-get.jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, fileName+".cp"))

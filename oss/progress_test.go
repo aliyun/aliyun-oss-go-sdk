@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"os"
 	"strings"
-	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -27,7 +26,6 @@ func (s *OssProgressSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -39,23 +37,41 @@ func (s *OssProgressSuite) SetUpSuite(c *C) {
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssProgressSuite) TearDownSuite(c *C) {
 	// Abort multipart uploads
-	lmu, err := s.bucket.ListMultipartUploads()
-	c.Assert(err, IsNil)
-
-	for _, upload := range lmu.Uploads {
-		imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
-		err = s.bucket.AbortMultipartUpload(imur)
+	keyMarker := KeyMarker("")
+	uploadIDMarker := UploadIDMarker("")
+	for {
+		lmu, err := s.bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
+		for _, upload := range lmu.Uploads {
+			imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
+			err = s.bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
+		keyMarker = KeyMarker(lmu.NextKeyMarker)
+		uploadIDMarker = UploadIDMarker(lmu.NextUploadIDMarker)
+		if !lmu.IsTruncated {
+			break
+		}
 	}
 
 	// Delete objects
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
-
-	for _, object := range lor.Objects {
-		err = s.bucket.DeleteObject(object.Key)
+	marker := Marker("")
+	for {
+		lor, err := s.bucket.ListObjects(marker)
 		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = s.bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
+		}
 	}
+
+	// Delete bucket
+	err := s.client.DeleteBucket(s.bucket.BucketName)
+	c.Assert(err, IsNil)
 
 	testLogger.Println("test progress completed")
 }
@@ -109,7 +125,7 @@ func (listener *OssProgressListener) ProgressChanged(event *ProgressEvent) {
 
 // TestPutObject
 func (s *OssProgressSuite) TestPutObject(c *C) {
-	objectName := objectNamePrefix + "tpo.html"
+	objectName := randStr(8) + ".jpg"
 	localFile := "../sample/The Go Programming Language.html"
 
 	// PutObject
@@ -147,7 +163,7 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 
 // TestSignURL
 func (s *OssProgressSuite) TestSignURL(c *C) {
-	objectName := objectNamePrefix + randStr(5)
+	objectName := objectNamePrefix + randStr(8)
 	filePath := randLowStr(10)
 	content := randStr(20)
 	createFile(filePath, content, c)
@@ -215,7 +231,7 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 }
 
 func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
-	objectName := objectNamePrefix + "tpon.html"
+	objectName := objectNamePrefix + randStr(8)
 	localFile := "../sample/The Go Programming Language.html"
 
 	// Invalid endpoint
@@ -234,7 +250,7 @@ func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
 
 // TestAppendObject
 func (s *OssProgressSuite) TestAppendObject(c *C) {
-	objectName := objectNamePrefix + "tao"
+	objectName := objectNamePrefix + randStr(8)
 	objectValue := "昨夜雨疏风骤，浓睡不消残酒。试问卷帘人，却道海棠依旧。知否？知否？应是绿肥红瘦。"
 	var val = []byte(objectValue)
 	var nextPos int64
@@ -259,7 +275,7 @@ func (s *OssProgressSuite) TestAppendObject(c *C) {
 
 // TestMultipartUpload
 func (s *OssProgressSuite) TestMultipartUpload(c *C) {
-	objectName := objectNamePrefix + "tmu.jpg"
+	objectName := objectNamePrefix + randStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -295,7 +311,7 @@ func (s *OssProgressSuite) TestMultipartUpload(c *C) {
 
 // TestMultipartUploadFromFile
 func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
-	objectName := objectNamePrefix + "tmuff.jpg"
+	objectName := objectNamePrefix + randStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -325,7 +341,7 @@ func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
 
 // TestGetObject
 func (s *OssProgressSuite) TestGetObject(c *C) {
-	objectName := objectNamePrefix + "tgo.jpg"
+	objectName := objectNamePrefix + randStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "newpic-progress-1.jpg"
 
@@ -376,7 +392,7 @@ func (s *OssProgressSuite) TestGetObject(c *C) {
 
 // TestGetObjectNegative
 func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
-	objectName := objectNamePrefix + "tgon.jpg"
+	objectName := objectNamePrefix + randStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// PutObject
@@ -406,7 +422,7 @@ func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
 
 // TestUploadFile
 func (s *OssProgressSuite) TestUploadFile(c *C) {
-	objectName := objectNamePrefix + "tuf.jpg"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(5), Progress(&OssProgressListener{}))
@@ -420,7 +436,7 @@ func (s *OssProgressSuite) TestUploadFile(c *C) {
 
 // TestDownloadFile
 func (s *OssProgressSuite) TestDownloadFile(c *C) {
-	objectName := objectNamePrefix + "tdf.jpg"
+	objectName := objectNamePrefix + randStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-progress-2.jpg"
 
@@ -442,7 +458,7 @@ func (s *OssProgressSuite) TestDownloadFile(c *C) {
 
 // TestCopyFile
 func (s *OssProgressSuite) TestCopyFile(c *C) {
-	srcObjectName := objectNamePrefix + "tcf.jpg"
+	srcObjectName := objectNamePrefix + randStr(8)
 	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
