@@ -604,5 +604,5 @@ type Tag struct {
 // ObjectTagging tagset for the object
 type ObjectTagging struct {
 	XMLName xml.Name `xml:"Tagging"`
-	tags    []Tag    `xml:"TagSet>Tag,omitempty"`
+	Tags    []Tag    `xml:"TagSet>Tag,omitempty"`
 }
