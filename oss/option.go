@@ -3,6 +3,7 @@ package oss
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -202,9 +203,20 @@ func RequestPayer(payerType PayerType) Option {
 	return setHeader(HTTPHeaderOssRequester, string(payerType))
 }
 
-// Tagging is an option to set object tagging, notice: the value is url.QueryEscape(TagA)=url.QueryEscape(A) & url.QueryEscape(TagB)=url.QueryEscape(B)...
-func Tagging(value string) Option {
-	return setHeader(HTTPHeaderOssTagging, value)
+// Tagging is an option to set object tagging
+func Tagging(tagging ObjectTagging) Option {
+	if len(tagging.Tags) == 0 {
+		return nil
+	}
+
+	taggingValue := ""
+	for index, tag := range tagging.Tags {
+		if index != 0 {
+			taggingValue += "&"
+		}
+		taggingValue += url.QueryEscape(tag.Key) + "=" + url.QueryEscape(tag.Value)
+	}
+	return setHeader(HTTPHeaderOssTagging, taggingValue)
 }
 
 // TaggingDirective is an option to set X-Oss-Metadata-Directive header

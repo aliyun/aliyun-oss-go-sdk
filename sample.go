@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-    
+
 	"github.com/aliyun/aliyun-oss-go-sdk/sample"
 )
 
@@ -31,6 +31,7 @@ func main() {
 	sample.SignURLSample()
 
 	sample.ArchiveSample()
+	sample.ObjectTaggingSample()
 
 	fmt.Println("All samples completed")
 }

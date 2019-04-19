@@ -47,6 +47,7 @@ type LifecycleRule struct {
 	ID                   string                         `xml:"ID,omitempty"`                   // The rule ID
 	Prefix               string                         `xml:"Prefix"`                         // The object key prefix
 	Status               string                         `xml:"Status"`                         // The rule status (enabled or not)
+	Tags                 []Tag                          `xml:"Tag,omitempty"`                  // the tags property
 	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
 	Transitions          []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
 	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property

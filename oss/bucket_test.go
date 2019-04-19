@@ -2778,3 +2778,195 @@ func (s *OssBucketSuite) TestUploadObjectWithWebpFormat(c *C) {
 	bucket.DeleteObject(objectName)
 	client.DeleteBucket(bucketName)
 }
+
+func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
+	// put object with tagging
+	objectName := objectNamePrefix + randStr(8)
+	tag1 := Tag{
+		Key:   randStr(8),
+		Value: randStr(16),
+	}
+	tag2 := Tag{
+		Key:   randStr(8),
+		Value: randStr(16),
+	}
+	tagging := ObjectTagging{
+		Tags: []Tag{tag1, tag2},
+	}
+	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), Tagging(tagging))
+	c.Assert(err, IsNil)
+
+	headers, err := s.bucket.GetObjectDetailedMeta(objectName)
+	taggingCount, err := strconv.Atoi(headers["x-oss-tagging-count"][0])
+	c.Assert(err, IsNil)
+	c.Assert(taggingCount, Equals, 2)
+
+	// put tagging
+	tag := Tag{
+		Key:   randStr(8),
+		Value: randStr(16),
+	}
+	tagging.Tags = []Tag{tag}
+	err = s.bucket.PutObjectTagging(objectName, tagging)
+	c.Assert(err, IsNil)
+
+	tagging, err = s.bucket.GetObjectTagging(objectName)
+	c.Assert(len(tagging.Tags), Equals, 1)
+	c.Assert(tagging.Tags[0].Key, Equals, tag.Key)
+	c.Assert(tagging.Tags[0].Value, Equals, tag.Value)
+
+	//put tagging, the length of the key exceeds 128
+	tag = Tag{
+		Key:   randStr(129),
+		Value: randStr(16),
+	}
+	tagging.Tags = []Tag{tag}
+	err = s.bucket.PutObjectTagging(objectName, tagging)
+	c.Assert(err, NotNil)
+
+	//put tagging, the length of the value exceeds 256
+	tag = Tag{
+		Key:   randStr(8),
+		Value: randStr(257),
+	}
+	tagging.Tags = []Tag{tag}
+	err = s.bucket.PutObjectTagging(objectName, tagging)
+	c.Assert(err, NotNil)
+
+	//put tagging, the lens of tags exceed 10
+	tagging.Tags = []Tag{}
+	for i := 0; i < 11; i++ {
+		tag = Tag{
+			Key:   randStr(8),
+			Value: randStr(16),
+		}
+		tagging.Tags = append(tagging.Tags, tag)
+	}
+	err = s.bucket.PutObjectTagging(objectName, tagging)
+	c.Assert(err, NotNil)
+
+	//put tagging, invalid value of tag key
+	tag = Tag{
+		Key:   randStr(8) + "&",
+		Value: randStr(16),
+	}
+	tagging.Tags = []Tag{tag}
+	err = s.bucket.PutObjectTagging(objectName, tagging)
+	c.Assert(err, NotNil)
+
+	//put tagging, invalid value of tag value
+	tag = Tag{
+		Key:   randStr(8),
+		Value: randStr(16) + "&",
+	}
+	tagging.Tags = []Tag{tag}
+	err = s.bucket.PutObjectTagging(objectName, tagging)
+	c.Assert(err, NotNil)
+
+	//put tagging, repeated tag keys
+	tag1 = Tag{
+		Key:   randStr(8),
+		Value: randStr(16),
+	}
+	tag2 = Tag{
+		Key:   tag1.Key,
+		Value: randStr(16),
+	}
+	tagging.Tags = []Tag{tag1, tag2}
+	err = s.bucket.PutObjectTagging(objectName, tagging)
+	c.Assert(err, NotNil)
+
+	s.bucket.DeleteObject(objectName)
+}
+
+func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
+	// get object which has 2 tags
+	objectName := objectNamePrefix + randStr(8)
+	tag1 := Tag{
+		Key:   randStr(8),
+		Value: randStr(16),
+	}
+	tag2 := Tag{
+		Key:   randStr(8),
+		Value: randStr(16),
+	}
+	tagging := ObjectTagging{
+		Tags: []Tag{tag1, tag2},
+	}
+	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), Tagging(tagging))
+	c.Assert(err, IsNil)
+
+	tagging, err = s.bucket.GetObjectTagging(objectName)
+	c.Assert(len(tagging.Tags), Equals, 2)
+	c.Assert(tagging.Tags[0].Key, Equals, tag1.Key)
+	c.Assert(tagging.Tags[0].Value, Equals, tag1.Value)
+	c.Assert(tagging.Tags[1].Key, Equals, tag2.Key)
+	c.Assert(tagging.Tags[1].Value, Equals, tag2.Value)
+
+	// get tagging of an object that is not exist
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	tagging, err = s.bucket.GetObjectTagging(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(len(tagging.Tags), Equals, 0)
+
+	// get object which has no tag
+	objectName = objectNamePrefix + randStr(8)
+	err = s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)))
+	c.Assert(err, IsNil)
+	tagging, err = s.bucket.GetObjectTagging(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(len(tagging.Tags), Equals, 0)
+
+	// copy object, with tagging option
+	destObjectName := objectName + "-dest"
+	tagging.Tags = []Tag{tag1, tag2}
+	_, err = s.bucket.CopyObject(objectName, destObjectName, Tagging(tagging))
+	c.Assert(err, IsNil)
+	tagging, err = s.bucket.GetObjectTagging(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(len(tagging.Tags), Equals, 0)
+
+	// copy object, with tagging option, the value of tagging directive is "REPLACE"
+	_, err = s.bucket.CopyObject(objectName, destObjectName, Tagging(tagging), TaggingDirective(TaggingReplace))
+	c.Assert(err, IsNil)
+	tagging, err = s.bucket.GetObjectTagging(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(len(tagging.Tags), Equals, 2)
+	c.Assert(tagging.Tags[0].Key, Equals, tag1.Key)
+	c.Assert(tagging.Tags[0].Value, Equals, tag1.Value)
+	c.Assert(tagging.Tags[1].Key, Equals, tag2.Key)
+	c.Assert(tagging.Tags[1].Value, Equals, tag2.Value)
+
+	s.bucket.DeleteObject(objectName)
+	s.bucket.DeleteObject(destObjectName)
+}
+
+func (s *OssBucketSuite) TestDeleteObjectTagging(c *C) {
+	// delete object tagging, the object is not exist
+	objectName := objectNamePrefix + randStr(8)
+	err := s.bucket.DeleteObjectTagging(objectName)
+	c.Assert(err, NotNil)
+
+	// delete object tagging
+	tag := Tag{
+		Key:   randStr(8),
+		Value: randStr(16),
+	}
+	tagging := ObjectTagging{
+		Tags: []Tag{tag},
+	}
+	err = s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), Tagging(tagging))
+	c.Assert(err, IsNil)
+	err = s.bucket.DeleteObjectTagging(objectName)
+	c.Assert(err, IsNil)
+	tagging, err = s.bucket.GetObjectTagging(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(len(tagging.Tags), Equals, 0)
+
+	//delete object tagging again
+	err = s.bucket.DeleteObjectTagging(objectName)
+	c.Assert(err, IsNil)
+
+	s.bucket.DeleteObject(objectName)
+}
