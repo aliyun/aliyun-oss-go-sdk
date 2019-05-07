@@ -105,13 +105,6 @@ func BucketLifecycleSample() {
 		HandleError(err)
 	}
 
-	// for Debug only
-	//lc, err = client.GetBucketLifecycle(bucketName)
-	//if err != nil {
-	//	HandleError(err)
-	//}
-	//fmt.Printf("Bucket Lifecycle:%v, %v\n", lc.Rules, *lc.Rules[0].Expiration)
-
 	// Case 6: Delete bucket's Lifecycle
 	err = client.DeleteBucketLifecycle(bucketName)
 	if err != nil {
