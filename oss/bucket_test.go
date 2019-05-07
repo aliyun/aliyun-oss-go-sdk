@@ -2797,7 +2797,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	c.Assert(err, IsNil)
 
 	headers, err := s.bucket.GetObjectDetailedMeta(objectName)
-	taggingCount, err := strconv.Atoi(headers["x-oss-tagging-count"][0])
+	taggingCount, err := strconv.Atoi(headers["X-Oss-Tagging-Count"][0])
 	c.Assert(err, IsNil)
 	c.Assert(taggingCount, Equals, 2)
 
@@ -2898,10 +2898,16 @@ func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 
 	tagging, err = s.bucket.GetObjectTagging(objectName)
 	c.Assert(len(tagging.Tags), Equals, 2)
-	c.Assert(tagging.Tags[0].Key, Equals, tag1.Key)
-	c.Assert(tagging.Tags[0].Value, Equals, tag1.Value)
-	c.Assert(tagging.Tags[1].Key, Equals, tag2.Key)
-	c.Assert(tagging.Tags[1].Value, Equals, tag2.Value)
+	if tagging.Tags[0].Key == tag1.Key {
+		c.Assert(tagging.Tags[0].Value, Equals, tag1.Value)
+		c.Assert(tagging.Tags[1].Key, Equals, tag2.Key)
+		c.Assert(tagging.Tags[1].Value, Equals, tag2.Value)
+	} else {
+		c.Assert(tagging.Tags[0].Key, Equals, tag2.Key)
+		c.Assert(tagging.Tags[0].Value, Equals, tag2.Value)
+		c.Assert(tagging.Tags[1].Key, Equals, tag1.Key)
+		c.Assert(tagging.Tags[1].Value, Equals, tag1.Value)
+	}
 
 	// get tagging of an object that is not exist
 	err = s.bucket.DeleteObject(objectName)
@@ -2928,15 +2934,22 @@ func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 	c.Assert(len(tagging.Tags), Equals, 0)
 
 	// copy object, with tagging option, the value of tagging directive is "REPLACE"
+	tagging.Tags = []Tag{tag1, tag2}
 	_, err = s.bucket.CopyObject(objectName, destObjectName, Tagging(tagging), TaggingDirective(TaggingReplace))
 	c.Assert(err, IsNil)
-	tagging, err = s.bucket.GetObjectTagging(objectName)
+	tagging, err = s.bucket.GetObjectTagging(destObjectName)
 	c.Assert(err, IsNil)
 	c.Assert(len(tagging.Tags), Equals, 2)
-	c.Assert(tagging.Tags[0].Key, Equals, tag1.Key)
-	c.Assert(tagging.Tags[0].Value, Equals, tag1.Value)
-	c.Assert(tagging.Tags[1].Key, Equals, tag2.Key)
-	c.Assert(tagging.Tags[1].Value, Equals, tag2.Value)
+	if tagging.Tags[0].Key == tag1.Key {
+		c.Assert(tagging.Tags[0].Value, Equals, tag1.Value)
+		c.Assert(tagging.Tags[1].Key, Equals, tag2.Key)
+		c.Assert(tagging.Tags[1].Value, Equals, tag2.Value)
+	} else {
+		c.Assert(tagging.Tags[0].Key, Equals, tag2.Key)
+		c.Assert(tagging.Tags[0].Value, Equals, tag2.Value)
+		c.Assert(tagging.Tags[1].Key, Equals, tag1.Key)
+		c.Assert(tagging.Tags[1].Value, Equals, tag1.Value)
+	}
 
 	s.bucket.DeleteObject(objectName)
 	s.bucket.DeleteObject(destObjectName)
