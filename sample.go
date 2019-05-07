@@ -31,36 +31,10 @@ var sampleMap = map[string]interface{}{
 	"CnameSample":           sample.CnameSample,
 	"SignURLSample":         sample.SignURLSample,
 	"ArchiveSample":         sample.ArchiveSample,
+	"ObjectTaggingSample":   sample.ObjectTaggingSample,
 }
 
 func main() {
-<<<<<<< HEAD
-	sample.CreateBucketSample()
-	sample.NewBucketSample()
-	sample.ListBucketsSample()
-	sample.BucketACLSample()
-	sample.BucketLifecycleSample()
-	sample.BucketRefererSample()
-	sample.BucketLoggingSample()
-	sample.BucketCORSSample()
-
-	sample.ObjectACLSample()
-	sample.ObjectMetaSample()
-	sample.ListObjectsSample()
-	sample.DeleteObjectSample()
-	sample.AppendObjectSample()
-	sample.CopyObjectSample()
-	sample.PutObjectSample()
-	sample.GetObjectSample()
-
-	sample.CnameSample()
-	sample.SignURLSample()
-
-	sample.ArchiveSample()
-	sample.ObjectTaggingSample()
-
-	fmt.Println("All samples completed")
-=======
 	var name string
 	flag.StringVar(&name, "name", "", "Waiting for a sample of execution")
 	flag.Parse()
@@ -75,30 +49,4 @@ func main() {
 		}
 		sampleMap[name].(func())()
 	}
-
-	// sample.CreateBucketSample()
-	// sample.NewBucketSample()
-	// sample.ListBucketsSample()
-	// sample.BucketACLSample()
-	// sample.BucketLifecycleSample()
-	// sample.BucketRefererSample()
-	// sample.BucketLoggingSample()
-	// sample.BucketCORSSample()
-
-	// sample.ObjectACLSample()
-	// sample.ObjectMetaSample()
-	// sample.ListObjectsSample()
-	// sample.DeleteObjectSample()
-	// sample.AppendObjectSample()
-	// sample.CopyObjectSample()
-	// sample.PutObjectSample()
-	// sample.GetObjectSample()
-
-	// sample.CnameSample()
-	// sample.SignURLSample()
-
-	// sample.ArchiveSample()
-
-	// fmt.Println("All samples completed")
->>>>>>> 86eaf1f... modify the sample main function, let the implementation of a single sample
 }
