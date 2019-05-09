@@ -126,13 +126,14 @@ func (s *OssBucketSuite) TearDownTest(c *C) {
 }
 
 // TestPutObject
-func (s *OssBucketSuite) TestPutObject(c *C) {
+func (s *OssBucketSuite) TestPutObjectOnly(c *C) {
 	objectName := objectNamePrefix + randStr(8)
 	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
 		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
 
 	// Put string
-	err := s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	var respHeader http.Header
+	err := s.bucket.PutObject(objectName, strings.NewReader(objectValue), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 
 	// Check
@@ -2384,7 +2385,6 @@ func putObjectRoutin(bucket *Bucket, object string, textBuffer *string, notifyCh
 }
 
 func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
-
 	// create client and bucket
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -2790,10 +2790,10 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 		Key:   randStr(8),
 		Value: randStr(16),
 	}
-	tagging := ObjectTagging{
+	tagging := Tagging{
 		Tags: []Tag{tag1, tag2},
 	}
-	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), Tagging(tagging))
+	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), SetTagging(tagging))
 	c.Assert(err, IsNil)
 
 	headers, err := s.bucket.GetObjectDetailedMeta(objectName)
@@ -2810,10 +2810,10 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	err = s.bucket.PutObjectTagging(objectName, tagging)
 	c.Assert(err, IsNil)
 
-	tagging, err = s.bucket.GetObjectTagging(objectName)
-	c.Assert(len(tagging.Tags), Equals, 1)
-	c.Assert(tagging.Tags[0].Key, Equals, tag.Key)
-	c.Assert(tagging.Tags[0].Value, Equals, tag.Value)
+	taggingResult, err := s.bucket.GetObjectTagging(objectName)
+	c.Assert(len(taggingResult.Tags), Equals, 1)
+	c.Assert(taggingResult.Tags[0].Key, Equals, tag.Key)
+	c.Assert(taggingResult.Tags[0].Value, Equals, tag.Value)
 
 	//put tagging, the length of the key exceeds 128
 	tag = Tag{
@@ -2890,13 +2890,15 @@ func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 		Key:   randStr(8),
 		Value: randStr(16),
 	}
-	tagging := ObjectTagging{
+
+	taggingInfo := Tagging{
 		Tags: []Tag{tag1, tag2},
 	}
-	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), Tagging(tagging))
+
+	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), SetTagging(taggingInfo))
 	c.Assert(err, IsNil)
 
-	tagging, err = s.bucket.GetObjectTagging(objectName)
+	tagging, err := s.bucket.GetObjectTagging(objectName)
 	c.Assert(len(tagging.Tags), Equals, 2)
 	if tagging.Tags[0].Key == tag1.Key {
 		c.Assert(tagging.Tags[0].Value, Equals, tag1.Value)
@@ -2927,7 +2929,7 @@ func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 	// copy object, with tagging option
 	destObjectName := objectName + "-dest"
 	tagging.Tags = []Tag{tag1, tag2}
-	_, err = s.bucket.CopyObject(objectName, destObjectName, Tagging(tagging))
+	_, err = s.bucket.CopyObject(objectName, destObjectName, SetTagging(taggingInfo))
 	c.Assert(err, IsNil)
 	tagging, err = s.bucket.GetObjectTagging(objectName)
 	c.Assert(err, IsNil)
@@ -2935,7 +2937,7 @@ func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 
 	// copy object, with tagging option, the value of tagging directive is "REPLACE"
 	tagging.Tags = []Tag{tag1, tag2}
-	_, err = s.bucket.CopyObject(objectName, destObjectName, Tagging(tagging), TaggingDirective(TaggingReplace))
+	_, err = s.bucket.CopyObject(objectName, destObjectName, SetTagging(taggingInfo), TaggingDirective(TaggingReplace))
 	c.Assert(err, IsNil)
 	tagging, err = s.bucket.GetObjectTagging(destObjectName)
 	c.Assert(err, IsNil)
@@ -2966,20 +2968,1373 @@ func (s *OssBucketSuite) TestDeleteObjectTagging(c *C) {
 		Key:   randStr(8),
 		Value: randStr(16),
 	}
-	tagging := ObjectTagging{
+	tagging := Tagging{
 		Tags: []Tag{tag},
 	}
-	err = s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), Tagging(tagging))
+	err = s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), SetTagging(tagging))
 	c.Assert(err, IsNil)
 	err = s.bucket.DeleteObjectTagging(objectName)
 	c.Assert(err, IsNil)
-	tagging, err = s.bucket.GetObjectTagging(objectName)
+	taggingResult, err := s.bucket.GetObjectTagging(objectName)
 	c.Assert(err, IsNil)
-	c.Assert(len(tagging.Tags), Equals, 0)
+	c.Assert(len(taggingResult.Tags), Equals, 0)
 
 	//delete object tagging again
 	err = s.bucket.DeleteObjectTagging(objectName)
 	c.Assert(err, IsNil)
 
 	s.bucket.DeleteObject(objectName)
+}
+
+func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put bucket version:Suspended
+	versioningConfig.Status = string(VersionSuspended)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionSuspended))
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// get object v1
+	body, err := bucket.GetObject(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	body.Close()
+	c.Assert(str, Equals, contextV1)
+
+	// get object v2
+	body, err = bucket.GetObject(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	body.Close()
+	c.Assert(str, Equals, contextV2)
+
+	// get object without version
+	body, err = bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	body.Close()
+	c.Assert(str, Equals, contextV2)
+
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningHeadObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// head object v1
+	headResultV1, err := bucket.GetObjectMeta(objectName, VersionId(versionIdV1))
+	objLen, err := strconv.Atoi(headResultV1.Get("Content-Length"))
+	c.Assert(objLen, Equals, len(contextV1))
+
+	headResultV1, err = bucket.GetObjectDetailedMeta(objectName, VersionId(versionIdV1))
+	objLen, err = strconv.Atoi(headResultV1.Get("Content-Length"))
+	c.Assert(objLen, Equals, len(contextV1))
+
+	// head object v2
+	headResultV2, err := bucket.GetObjectMeta(objectName, VersionId(versionIdV2))
+	objLen, err = strconv.Atoi(headResultV2.Get("Content-Length"))
+	c.Assert(objLen, Equals, len(contextV2))
+
+	headResultV2, err = bucket.GetObjectDetailedMeta(objectName, VersionId(versionIdV2))
+	objLen, err = strconv.Atoi(headResultV2.Get("Content-Length"))
+	c.Assert(objLen, Equals, len(contextV2))
+
+	// head object without version
+	// head object v2
+	headResult, err := bucket.GetObjectMeta(objectName)
+	objLen, err = strconv.Atoi(headResult.Get("Content-Length"))
+	c.Assert(objLen, Equals, len(contextV2))
+
+	headResult, err = bucket.GetObjectDetailedMeta(objectName)
+	objLen, err = strconv.Atoi(headResultV2.Get("Content-Length"))
+	c.Assert(objLen, Equals, len(contextV2))
+
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningDeleteLatestVersionObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// delete v2 object:permently delete
+	options := []Option{VersionId(versionIdV2), GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, versionIdV2)
+
+	// get v2 object failure
+	body, err := bucket.GetObject(objectName, VersionId(versionIdV2))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchVersion")
+
+	// get v1 object success
+	body, err = bucket.GetObject(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV1)
+
+	// get default object success:v1
+	body, err = bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV1)
+
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// delete v1 object:permently delete
+	options := []Option{VersionId(versionIdV1), GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, versionIdV1)
+
+	// get v2 object success
+	body, err := bucket.GetObject(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV2)
+
+	// get v1 object faliure
+	body, err = bucket.GetObject(objectName, VersionId(versionIdV1))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchVersion")
+
+	// get default object success:v2
+	body, err = bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV2)
+
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningDeleteDefaultVersionObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// delete default object:mark delete v2
+	options := []Option{GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+
+	markVersionId := GetVersionId(respHeader)
+	c.Assert(len(markVersionId) > 0, Equals, true)
+	c.Assert(respHeader.Get("x-oss-delete-marker"), Equals, "true")
+
+	// get v2 object success
+	body, err := bucket.GetObject(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV2)
+
+	// get v1 object success
+	body, err = bucket.GetObject(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV1)
+
+	// get default object failure:marker v2
+	body, err = bucket.GetObject(objectName, GetResponseHeader(&respHeader))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchKey")
+	c.Assert(respHeader.Get("x-oss-delete-marker"), Equals, "true")
+
+	// delete mark v2
+	options = []Option{VersionId(markVersionId), GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, markVersionId)
+
+	// get default object success:v2
+	body, err = bucket.GetObject(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV2)
+
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningListObjectVersions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// delete default object:mark delete v2
+	options := []Option{GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+
+	markVersionId := GetVersionId(respHeader)
+	c.Assert(len(markVersionId) > 0, Equals, true)
+	c.Assert(respHeader.Get("x-oss-delete-marker"), Equals, "true")
+
+	// delete default object again:mark delete v2
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+	markVersionIdAgain := GetVersionId(respHeader)
+	c.Assert(len(markVersionIdAgain) > 0, Equals, true)
+	c.Assert(respHeader.Get("x-oss-delete-marker"), Equals, "true")
+	c.Assert(markVersionId != markVersionIdAgain, Equals, true)
+
+	// list bucket versions
+	listResult, err := bucket.ListObjectVersions()
+	c.Assert(err, IsNil)
+	c.Assert(len(listResult.ObjectDeleteMarkers), Equals, 2)
+	c.Assert(len(listResult.ObjectVersions), Equals, 2)
+	mapMarkVersion := map[string]string{}
+	mapMarkVersion[listResult.ObjectDeleteMarkers[0].VersionId] = listResult.ObjectDeleteMarkers[0].VersionId
+	mapMarkVersion[listResult.ObjectDeleteMarkers[1].VersionId] = listResult.ObjectDeleteMarkers[1].VersionId
+
+	// check delete mark
+	_, ok := mapMarkVersion[markVersionId]
+	c.Assert(ok == true, Equals, true)
+	_, ok = mapMarkVersion[markVersionIdAgain]
+	c.Assert(ok == true, Equals, true)
+
+	// check versionId
+	mapVersion := map[string]string{}
+	mapVersion[listResult.ObjectVersions[0].VersionId] = listResult.ObjectVersions[0].VersionId
+	mapVersion[listResult.ObjectVersions[1].VersionId] = listResult.ObjectVersions[1].VersionId
+	_, ok = mapVersion[versionIdV1]
+	c.Assert(ok == true, Equals, true)
+	_, ok = mapVersion[versionIdV2]
+	c.Assert(ok == true, Equals, true)
+
+	// delete deleteMark v2
+	options = []Option{VersionId(markVersionId), GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, markVersionId)
+
+	// delete deleteMark v2 again
+	options = []Option{VersionId(markVersionIdAgain), GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, markVersionIdAgain)
+
+	// delete versionId
+	bucket.DeleteObject(objectName, VersionId(versionIdV1))
+	bucket.DeleteObject(objectName, VersionId(versionIdV2))
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName1 := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName1, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	objectName2 := objectNamePrefix + randStr(8)
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	//batch delete objects
+	versionIds := map[string]string{}
+	versionIds[objectName1] = versionIdV1
+	versionIds[objectName2] = versionIdV2
+	deleteResult, err := bucket.DeleteObjects([]string{}, KeysVersions(versionIds))
+	c.Assert(len(deleteResult.DeletedObjects), Equals, 2)
+	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
+
+	// check delete info
+	deleteMap := map[string]string{}
+	deleteMap[deleteResult.DeletedObjects[0]] = deleteResult.DeletedObjects[0]
+	deleteMap[deleteResult.DeletedObjects[1]] = deleteResult.DeletedObjects[1]
+	_, ok := deleteMap[objectName1]
+	c.Assert(ok, Equals, true)
+	_, ok = deleteMap[objectName2]
+	c.Assert(ok, Equals, true)
+
+	// check delete detail info:key
+	deleteMap = map[string]string{}
+	deleteMap[deleteResult.DeletedObjectsDetail[0].Key] = deleteResult.DeletedObjectsDetail[0].VersionId
+	deleteMap[deleteResult.DeletedObjectsDetail[1].Key] = deleteResult.DeletedObjectsDetail[1].VersionId
+	id1, ok := deleteMap[objectName1]
+	c.Assert(ok, Equals, true)
+	c.Assert(id1, Equals, versionIdV1)
+
+	id2, ok := deleteMap[objectName2]
+	c.Assert(ok, Equals, true)
+	c.Assert(id2, Equals, versionIdV2)
+
+	// list bucket versions
+	listResult, err := bucket.ListObjectVersions()
+	c.Assert(err, IsNil)
+	c.Assert(len(listResult.ObjectDeleteMarkers), Equals, 0)
+	c.Assert(len(listResult.ObjectVersions), Equals, 0)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName1 := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName1, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	objectName2 := objectNamePrefix + randStr(8)
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	//batch delete objects
+	keys := []string{objectName1, objectName2}
+	deleteResult, err := bucket.DeleteObjects(keys)
+	c.Assert(len(deleteResult.DeletedObjects), Equals, 2)
+	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
+
+	// check delete info
+	deleteMap := map[string]string{}
+	deleteMap[deleteResult.DeletedObjects[0]] = deleteResult.DeletedObjects[0]
+	deleteMap[deleteResult.DeletedObjects[1]] = deleteResult.DeletedObjects[1]
+	_, ok := deleteMap[objectName1]
+	c.Assert(ok, Equals, true)
+	_, ok = deleteMap[objectName2]
+	c.Assert(ok, Equals, true)
+
+	// check delete detail info:key
+	deleteDetailMap := map[string]DeletedKeyInfo{}
+	deleteDetailMap[deleteResult.DeletedObjectsDetail[0].Key] = deleteResult.DeletedObjectsDetail[0]
+	deleteDetailMap[deleteResult.DeletedObjectsDetail[1].Key] = deleteResult.DeletedObjectsDetail[1]
+	keyInfo1, ok := deleteDetailMap[objectName1]
+	c.Assert(ok, Equals, true)
+	c.Assert(keyInfo1.Key, Equals, objectName1)
+	c.Assert(keyInfo1.VersionId, Equals, "")
+	c.Assert(keyInfo1.DeleteMarker, Equals, true)
+	c.Assert(keyInfo1.DeleteMarkerVersionId != versionIdV1, Equals, true)
+
+	keyInfo2, ok := deleteDetailMap[objectName2]
+	c.Assert(ok, Equals, true)
+	c.Assert(keyInfo2.Key, Equals, objectName2)
+	c.Assert(keyInfo2.VersionId, Equals, "")
+	c.Assert(keyInfo2.DeleteMarker, Equals, true)
+	c.Assert(keyInfo2.DeleteMarkerVersionId != versionIdV2, Equals, true)
+
+	// list bucket versions
+	listResult, err := bucket.ListObjectVersions()
+	c.Assert(err, IsNil)
+	c.Assert(len(listResult.ObjectDeleteMarkers), Equals, 2)
+	c.Assert(len(listResult.ObjectVersions), Equals, 2)
+
+	// delete version object
+	versionIds := map[string]string{}
+	versionIds[objectName1] = versionIdV1
+	versionIds[objectName2] = versionIdV2
+	deleteResult, err = bucket.DeleteObjects([]string{}, KeysVersions(versionIds))
+	c.Assert(err, IsNil)
+
+	// delete deleteMark object
+	versionIds = map[string]string{}
+	versionIds[objectName1] = keyInfo1.DeleteMarkerVersionId
+	versionIds[objectName2] = keyInfo2.DeleteMarkerVersionId
+	deleteResult, err = bucket.DeleteObjects([]string{}, KeysVersions(versionIds))
+	c.Assert(err, IsNil)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+// bucket has no versioning flag
+func (s *OssBucketSuite) TestVersioningBatchDeleteNormalObjects(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// not put bucket versioning
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put object v1
+	objectName1 := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName1, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1), Equals, 0)
+
+	// put object v2
+	objectName2 := objectNamePrefix + randStr(8)
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2), Equals, 0)
+
+	//batch delete objects
+	keys := []string{objectName1, objectName2}
+	deleteResult, err := bucket.DeleteObjects(keys)
+	c.Assert(len(deleteResult.DeletedObjects), Equals, 2)
+	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
+
+	// check delete info
+	deleteMap := map[string]string{}
+	deleteMap[deleteResult.DeletedObjects[0]] = deleteResult.DeletedObjects[0]
+	deleteMap[deleteResult.DeletedObjects[1]] = deleteResult.DeletedObjects[1]
+	_, ok := deleteMap[objectName1]
+	c.Assert(ok, Equals, true)
+	_, ok = deleteMap[objectName2]
+	c.Assert(ok, Equals, true)
+
+	// check delete detail info:key
+	deleteDetailMap := map[string]DeletedKeyInfo{}
+	deleteDetailMap[deleteResult.DeletedObjectsDetail[0].Key] = deleteResult.DeletedObjectsDetail[0]
+	deleteDetailMap[deleteResult.DeletedObjectsDetail[1].Key] = deleteResult.DeletedObjectsDetail[1]
+	keyInfo1, ok := deleteDetailMap[objectName1]
+	c.Assert(ok, Equals, true)
+	c.Assert(keyInfo1.Key, Equals, objectName1)
+	c.Assert(keyInfo1.VersionId, Equals, "")
+	c.Assert(keyInfo1.DeleteMarker, Equals, false)
+	c.Assert(keyInfo1.DeleteMarkerVersionId, Equals, "")
+
+	keyInfo2, ok := deleteDetailMap[objectName2]
+	c.Assert(ok, Equals, true)
+	c.Assert(keyInfo2.Key, Equals, objectName2)
+	c.Assert(keyInfo2.VersionId, Equals, "")
+	c.Assert(keyInfo2.DeleteMarker, Equals, false)
+	c.Assert(keyInfo2.DeleteMarkerVersionId, Equals, "")
+
+	forceDeleteBucket(client, bucketName, c)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssBucketSuite) TestVersioningSymlink(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// put object 1
+	objectName1 := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName1, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object 2
+	objectName2 := objectNamePrefix + randStr(8)
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// put symlink for object 1
+	linkName := objectNamePrefix + randStr(8)
+	err = bucket.PutSymlink(linkName, objectName1, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	linkVersionIdV1 := GetVersionId(respHeader)
+
+	// GetSymlink for object 2
+	err = bucket.PutSymlink(linkName, objectName2, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	linkVersionIdV2 := GetVersionId(respHeader)
+
+	// check v1 and v2
+	c.Assert(linkVersionIdV1 != linkVersionIdV2, Equals, true)
+
+	// GetSymlink for object1
+	getResult, err := bucket.GetSymlink(linkName, VersionId(linkVersionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.Get("x-oss-symlink-target"), Equals, objectName1)
+
+	// GetSymlink for object2
+	getResult, err = bucket.GetSymlink(linkName, VersionId(linkVersionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.Get("x-oss-symlink-target"), Equals, objectName2)
+
+	bucket.DeleteObject(linkName)
+	bucket.DeleteObject(objectName1)
+	bucket.DeleteObject(objectName2)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningObjectAcl(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// put Acl for v1
+	err = bucket.SetObjectACL(objectName, ACLPublicRead, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+
+	// put Acl for v2
+	err = bucket.SetObjectACL(objectName, ACLPublicReadWrite, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+
+	// GetAcl for v1
+	getResult, err := bucket.GetObjectACL(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.ACL, Equals, string(ACLPublicRead))
+
+	// GetAcl for v2
+	getResult, err = bucket.GetObjectACL(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.ACL, Equals, string(ACLPublicReadWrite))
+
+	// delete default version
+	err = bucket.DeleteObject(objectName, GetResponseHeader(&respHeader))
+	c.Assert(len(GetVersionId(respHeader)) > 0, Equals, true)
+	c.Assert(respHeader.Get("x-oss-delete-marker"), Equals, "true")
+
+	// GetAcl for v1 agagin
+	getResult, err = bucket.GetObjectACL(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.ACL, Equals, string(ACLPublicRead))
+
+	// GetAcl for v2 again
+	getResult, err = bucket.GetObjectACL(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.ACL, Equals, string(ACLPublicReadWrite))
+
+	// GetAcl for default failure
+	getResult, err = bucket.GetObjectACL(objectName)
+	c.Assert(err, NotNil)
+
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// append object
+	var nextPos int64 = 0
+	var respHeader http.Header
+	objectName := objectNamePrefix + randStr(8)
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("123"), nextPos, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, "null")
+
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("456"), nextPos, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, "null")
+
+	// delete object
+	err = bucket.DeleteObject(objectName, GetResponseHeader(&respHeader))
+	markVersionId := GetVersionId(respHeader)
+
+	// get default object failure
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+
+	// get null version success
+	body, err := bucket.GetObject(objectName, VersionId("null"))
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, "123456")
+
+	// append object again:failure
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("789"), nextPos, GetResponseHeader(&respHeader))
+	c.Assert(err, NotNil)
+
+	// delete deletemark
+	options := []Option{VersionId(markVersionId), GetResponseHeader(&respHeader)}
+	err = bucket.DeleteObject(objectName, options...)
+	c.Assert(markVersionId, Equals, GetVersionId(respHeader))
+
+	// append object again:success
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("789"), nextPos, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	c.Assert(int(nextPos), Equals, 9)
+
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	destObjectKey := objectNamePrefix + randStr(8)
+
+	// copyobject default
+	_, err = bucket.CopyObject(objectName, destObjectKey, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	srcVersionId := GetCopySrcVersionId(respHeader)
+	c.Assert(srcVersionId, Equals, versionIdV2)
+
+	body, err := bucket.GetObject(destObjectKey)
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV2)
+
+	//  copyobject v1
+	options := []Option{VersionId(versionIdV1), GetResponseHeader(&respHeader)}
+	_, err = bucket.CopyObject(objectName, destObjectKey, options...)
+	c.Assert(err, IsNil)
+	srcVersionId = GetCopySrcVersionId(respHeader)
+	c.Assert(srcVersionId, Equals, versionIdV1)
+
+	body, err = bucket.GetObject(destObjectKey)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, contextV1)
+
+	// delete object
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// default copyobject agagin,failuer
+	_, err = bucket.CopyObject(objectName, destObjectKey, GetResponseHeader(&respHeader))
+	c.Assert(err, NotNil)
+
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + randStr(8)
+	var fileName = "test-file-" + randStr(8)
+	content := randStr(500 * 1024)
+	createFile(fileName, content, c)
+
+	chunks, err := SplitFileByPartNum(fileName, 3)
+	c.Assert(err, IsNil)
+
+	options := []Option{
+		Expires(futureDate), Meta("my", "myprop"),
+	}
+
+	fd, err := os.Open(fileName)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	imur, err := bucket.InitiateMultipartUpload(objectName, options...)
+	c.Assert(err, IsNil)
+	var parts []UploadPart
+	for _, chunk := range chunks {
+		fd.Seek(chunk.Offset, os.SEEK_SET)
+		part, err := bucket.UploadPart(imur, fd, chunk.Size, chunk.Number)
+		c.Assert(err, IsNil)
+		parts = append(parts, part)
+	}
+
+	var respHeader http.Header
+	_, err = bucket.CompleteMultipartUpload(imur, parts, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+
+	//get versionId
+	versionIdV1 := GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	meta, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("X-Oss-Meta-My"), Equals, "myprop")
+	c.Assert(meta.Get("Expires"), Equals, futureDate.Format(http.TimeFormat))
+	c.Assert(meta.Get("X-Oss-Object-Type"), Equals, "Multipart")
+
+	// put object agagin
+	err = bucket.PutObject(objectName, strings.NewReader(""), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 := GetVersionId(respHeader)
+	c.Assert(versionIdV1 == versionIdV2, Equals, false)
+
+	// get meta v1
+	meta, err = bucket.GetObjectDetailedMeta(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("content-length"), Equals, strconv.Itoa(len(content)))
+
+	// get meta v2
+	meta, err = bucket.GetObjectDetailedMeta(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("content-length"), Equals, strconv.Itoa(0))
+
+	os.Remove(fileName)
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// upload mutlipart object with v1
+	multiName := objectNamePrefix + randStr(8)
+	var parts []UploadPart
+	imur, err := bucket.InitiateMultipartUpload(multiName)
+	c.Assert(err, IsNil)
+
+	part, err := bucket.UploadPartCopy(imur, bucketName, objectName, 0, int64(len(contextV1)), 1, VersionId(versionIdV1))
+	parts = []UploadPart{part}
+	c.Assert(err, IsNil)
+
+	_, err = bucket.CompleteMultipartUpload(imur, parts, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+
+	//get versionId
+	partVersionIdV1 := GetVersionId(respHeader)
+	c.Assert(len(partVersionIdV1) > 0, Equals, true)
+
+	// get meta v1
+	meta, err := bucket.GetObjectDetailedMeta(multiName, VersionId(partVersionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("content-length"), Equals, strconv.Itoa(len(contextV1)))
+
+	// upload mutlipart object with v2
+	imur, err = bucket.InitiateMultipartUpload(multiName)
+	part, err = bucket.UploadPartCopy(imur, bucketName, objectName, 0, int64(len(contextV2)), 1, VersionId(versionIdV2))
+	parts = []UploadPart{part}
+
+	_, err = bucket.CompleteMultipartUpload(imur, parts, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+
+	//get versionId
+	partVersionIdV2 := GetVersionId(respHeader)
+	c.Assert(len(partVersionIdV2) > 0, Equals, true)
+
+	// get meta v2
+	meta, err = bucket.GetObjectDetailedMeta(multiName, VersionId(partVersionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("content-length"), Equals, strconv.Itoa(len(contextV2)))
+
+	bucket.DeleteObject(objectName)
+	bucket.DeleteObject(multiName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningRestoreObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName, StorageClass(StorageArchive))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// RestoreObject v1
+	options := []Option{GetResponseHeader(&respHeader), VersionId(versionIdV1)}
+	err = bucket.RestoreObject(objectName, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, versionIdV1)
+
+	// RestoreObject v2
+	options = []Option{GetResponseHeader(&respHeader), VersionId(versionIdV2)}
+	err = bucket.RestoreObject(objectName, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, versionIdV2)
+
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName, StorageClass(StorageArchive))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// ObjectTagging v1
+	var tagging1 Tagging
+	tagging1.Tags = []Tag{Tag{Key: "testkey1", Value: "testvalue1"}}
+	err = bucket.PutObjectTagging(objectName, tagging1, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	getResult, err := bucket.GetObjectTagging(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.Tags[0].Key, Equals, tagging1.Tags[0].Key)
+	c.Assert(getResult.Tags[0].Value, Equals, tagging1.Tags[0].Value)
+
+	// ObjectTagging v2
+	var tagging2 Tagging
+	tagging2.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
+	err = bucket.PutObjectTagging(objectName, tagging2, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	getResult, err = bucket.GetObjectTagging(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(getResult.Tags[0].Key, Equals, tagging2.Tags[0].Key)
+	c.Assert(getResult.Tags[0].Value, Equals, tagging2.Tags[0].Value)
+
+	// delete ObjectTagging v2
+	err = bucket.DeleteObjectTagging(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+
+	getResult, err = bucket.GetObjectTagging(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(len(getResult.Tags), Equals, 0)
+
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
 }

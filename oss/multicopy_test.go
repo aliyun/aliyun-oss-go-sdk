@@ -2,6 +2,7 @@ package oss
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -495,4 +496,90 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	// Delete target bucket
 	err = s.client.DeleteBucket(destBucketName)
 	c.Assert(err, IsNil)
+}
+
+func (s *OssCopySuite) TestVersioningCopyFileCrossBucket(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// begin test
+	objectName := objectNamePrefix + randStr(8)
+	fileName := "test-file-" + randStr(8)
+	fileData := randStr(500 * 1024)
+	createFile(fileName, fileData, c)
+	newFile := "test-file-" + randStr(8)
+	destBucketName := bucketName + "-desc"
+	srcObjectName := objectNamePrefix + randStr(8)
+	destObjectName := srcObjectName + "-dest"
+
+	// Create dest bucket
+	err = client.CreateBucket(destBucketName)
+	c.Assert(err, IsNil)
+	destBucket, err := client.Bucket(destBucketName)
+	c.Assert(err, IsNil)
+
+	err = client.SetBucketVersioning(destBucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// Upload source file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(srcObjectName, fileName, 100*1024, options...)
+	versionId := GetVersionId(respHeader)
+	c.Assert(len(versionId) > 0, Equals, true)
+
+	c.Assert(err, IsNil)
+	os.Remove(newFile)
+
+	// Copy files
+	var respCopyHeader http.Header
+	options = []Option{Routines(5), Checkpoint(true, destObjectName+".cp"), GetResponseHeader(&respCopyHeader), VersionId(versionId)}
+	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, options...)
+	c.Assert(err, IsNil)
+	versionIdCopy := GetVersionId(respCopyHeader)
+	c.Assert(len(versionIdCopy) > 0, Equals, true)
+
+	err = destBucket.GetObjectToFile(destObjectName, newFile, VersionId(versionIdCopy))
+	c.Assert(err, IsNil)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	err = destBucket.DeleteObject(destObjectName)
+	c.Assert(err, IsNil)
+	os.Remove(newFile)
+
+	// Copy file with options meta
+	options = []Option{Routines(10), Checkpoint(true, "copy.cp"), Meta("myprop", "mypropval"), GetResponseHeader(&respCopyHeader), VersionId(versionId)}
+	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, options...)
+	c.Assert(err, IsNil)
+	versionIdCopy = GetVersionId(respCopyHeader)
+
+	err = destBucket.GetObjectToFile(destObjectName, newFile, VersionId(versionIdCopy))
+	c.Assert(err, IsNil)
+
+	eq, err = compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	destBucket.DeleteObject(destObjectName)
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+	forceDeleteBucket(client, destBucketName, c)
 }

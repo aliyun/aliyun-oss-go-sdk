@@ -19,20 +19,20 @@ var (
 )
 
 func (s *OssTypeSuite) TestDecodeDeleteObjectsResult(c *C) {
-	var res DeleteObjectsResult
+	var res DeleteObjectsResultXml
 	err := decodeDeleteObjectsResult(&res)
 	c.Assert(err, IsNil)
 
-	res.DeletedObjects = []string{""}
+	res.DeletedObjectsDetail = []DeletedKeyInfo{DeletedKeyInfo{Key: ""}}
 	err = decodeDeleteObjectsResult(&res)
 	c.Assert(err, IsNil)
-	c.Assert(res.DeletedObjects[0], Equals, "")
+	c.Assert(res.DeletedObjectsDetail[0].Key, Equals, "")
 
-	res.DeletedObjects = []string{goURLStr, chnURLStr}
+	res.DeletedObjectsDetail = []DeletedKeyInfo{DeletedKeyInfo{Key: goURLStr}, DeletedKeyInfo{Key: chnURLStr}}
 	err = decodeDeleteObjectsResult(&res)
 	c.Assert(err, IsNil)
-	c.Assert(res.DeletedObjects[0], Equals, goStr)
-	c.Assert(res.DeletedObjects[1], Equals, chnStr)
+	c.Assert(res.DeletedObjectsDetail[0].Key, Equals, goStr)
+	c.Assert(res.DeletedObjectsDetail[1].Key, Equals, chnStr)
 }
 
 func (s *OssTypeSuite) TestDecodeListObjectsResult(c *C) {

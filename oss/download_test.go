@@ -3,6 +3,7 @@ package oss
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -672,4 +673,201 @@ func compareFilesWithRange(fileL string, offsetL int64, fileR string, offsetR in
 	}
 
 	return true, nil
+}
+
+func (s *OssDownloadSuite) TestVersioningDownloadWithoutCheckPoint(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// begin test
+	objectName := objectNamePrefix + randStr(8)
+	fileName := "test-file-" + randStr(8)
+	fileData := randStr(500 * 1024)
+	createFile(fileName, fileData, c)
+
+	newFile := randStr(8) + ".jpg"
+	newFileGet := randStr(8) + "-.jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+	versionId := GetVersionId(respHeader)
+	c.Assert(len(versionId) > 0, Equals, true)
+
+	fileSize, err := getFileSize(fileName)
+	c.Assert(err, IsNil)
+
+	// Download with range, from 1024 to 4096
+	os.Remove(newFile)
+	options = []Option{Routines(3), Range(1024, 4095), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err := compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{Range(1024, 4095), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// Download with range, from 1024 to 4096
+	os.Remove(newFile)
+	options = []Option{Routines(3), NormalizedRange("1024-4095"), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err = compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{NormalizedRange("1024-4095"), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// Download with range, from 2048 to the end
+	os.Remove(newFile)
+	options = []Option{NormalizedRange("2048-"), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 1024*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err = compareFilesWithRange(fileName, 2048, newFile, 0, fileSize-2048)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{NormalizedRange("2048-"), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// Download with range, the last 4096
+	os.Remove(newFile)
+	options = []Option{Routines(3), NormalizedRange("-4096"), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err = compareFilesWithRange(fileName, fileSize-4096, newFile, 0, 4096)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{NormalizedRange("-4096"), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// download whole file
+	os.Remove(newFileGet)
+	options = []Option{Routines(3), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(fileName, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFileGet)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// begin test
+	objectName := objectNamePrefix + randStr(8)
+	fileName := "test-file-" + randStr(8)
+	fileData := randStr(500 * 1024)
+	createFile(fileName, fileData, c)
+	newFile := randStr(8) + ".jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+	versionId := GetVersionId(respHeader)
+	c.Assert(len(versionId) > 0, Equals, true)
+
+	// Resumable download with checkpoint dir
+	os.Remove(newFile)
+	downloadPartHooker = DownErrorHooker
+	options = []Option{CheckpointDir(true, "./"), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+
+	// download again
+	downloadPartHooker = defaultDownloadPartHook
+	options = []Option{CheckpointDir(true, "./"), VersionId(versionId), GetResponseHeader(&respHeader)}
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, versionId)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	forceDeleteBucket(client, bucketName, c)
 }
