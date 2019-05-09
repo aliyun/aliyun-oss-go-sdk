@@ -120,10 +120,10 @@ func CopyObjectSample() {
 		Key:   "key2",
 		Value: "value2",
 	}
-	tagging := oss.ObjectTagging{
+	tagging := oss.Tagging{
 		Tags: []oss.Tag{tag1, tag2},
 	}
-	_, err = bucket.CopyObject(objectKey, objectKey+"WithTagging", oss.Tagging(tagging), oss.TaggingDirective(oss.TaggingReplace))
+	_, err = bucket.CopyObject(objectKey, objectKey+"WithTagging", oss.SetTagging(tagging), oss.TaggingDirective(oss.TaggingReplace))
 	if err != nil {
 		HandleError(err)
 	}

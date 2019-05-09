@@ -30,7 +30,7 @@ func ObjectTaggingSample() {
 		Key:   "key2",
 		Value: "value2",
 	}
-	tagging := oss.ObjectTagging{
+	tagging := oss.Tagging{
 		Tags: []oss.Tag{tag1, tag2},
 	}
 	err = bucket.PutObjectTagging(objectKey, tagging)
@@ -39,11 +39,11 @@ func ObjectTaggingSample() {
 	}
 
 	// Case 2: Get Tagging of object
-	tagging, err = bucket.GetObjectTagging(objectKey)
+	taggingResult, err := bucket.GetObjectTagging(objectKey)
 	if err != nil {
 		HandleError(err)
 	}
-	fmt.Printf("Object Tagging: %v\n", tagging)
+	fmt.Printf("Object Tagging: %v\n", taggingResult)
 
 	tag3 := oss.Tag{
 		Key:   "key3",
@@ -51,10 +51,10 @@ func ObjectTaggingSample() {
 	}
 
 	// Case 3: Put object with tagging
-	tagging = oss.ObjectTagging{
+	tagging = oss.Tagging{
 		Tags: []oss.Tag{tag1, tag2, tag3},
 	}
-	err = bucket.PutObject(objectKey, strings.NewReader("ObjectTaggingSample"), oss.Tagging(tagging))
+	err = bucket.PutObject(objectKey, strings.NewReader("ObjectTaggingSample"), oss.SetTagging(tagging))
 	if err != nil {
 		HandleError(err)
 	}

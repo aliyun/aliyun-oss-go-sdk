@@ -3,6 +3,7 @@ package oss
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -473,4 +474,64 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+func (s *OssUploadSuite) TestVersioningUploadRoutineWithRecovery(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// begin test
+	objectName := objectNamePrefix + randStr(8)
+	fileName := "test-file-" + randStr(8)
+	fileData := randStr(500 * 1024)
+	createFile(fileName, fileData, c)
+	newFile := "test-file-" + randStr(8)
+
+	// Use default routines and default CP file path (fileName+.cp)Header
+	// First upload for 4 parts
+	var respHeader http.Header
+	uploadPartHooker = ErrorHooker
+	options := []Option{Checkpoint(true, fileName+".cp"), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	c.Assert(GetVersionId(respHeader), Equals, "")
+
+	uploadPartHooker = defaultUploadPart
+
+	// Second upload, finish the remaining part
+	options = []Option{Checkpoint(true, fileName+".cp"), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+	versionIdUp := GetVersionId(respHeader)
+	c.Assert(len(versionIdUp) > 0, Equals, true)
+
+	os.Remove(newFile)
+	var respHeaderDown http.Header
+	err = bucket.GetObjectToFile(objectName, newFile, GetResponseHeader(&respHeaderDown))
+	versionIdDown := GetVersionId(respHeaderDown)
+	c.Assert(err, IsNil)
+	c.Assert(versionIdUp, Equals, versionIdDown)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
 }

@@ -19,6 +19,17 @@ const (
 	ACLDefault ACLType = "default"
 )
 
+// bucket versioning status
+type VersioningStatus string
+
+const (
+	// Versioning Status definition: Enabled
+	VersionEnabled VersioningStatus = "Enabled"
+
+	// Versioning Status definition: Suspended
+	VersionSuspended VersioningStatus = "Suspended"
+)
+
 // MetadataDirectiveType specifying whether use the metadata of source object when copying object.
 type MetadataDirectiveType string
 
@@ -39,6 +50,14 @@ const (
 
 	// TaggingReplace the target object's tagging is created as part of the copy request (not same as the source one)
 	TaggingReplace TaggingDirectiveType = "REPLACE"
+)
+
+// AlgorithmType specifying the server side encryption algorithm name
+type AlgorithmType string
+
+const (
+	KMSAlgorithm AlgorithmType = "KMS"
+	AESAlgorithm AlgorithmType = "AES256"
 )
 
 // StorageClassType bucket storage type
@@ -155,5 +174,7 @@ const (
 
 	CheckpointFileSuffix = ".cp" // Checkpoint file suffix
 
-	Version = "v1.9.6" // Go SDK version
+	NullVersion = "null"
+
+	Version = "v1.9.7" // Go SDK version
 )
