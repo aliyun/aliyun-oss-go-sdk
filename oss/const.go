@@ -41,6 +41,14 @@ const (
 	TaggingReplace TaggingDirectiveType = "REPLACE"
 )
 
+// AlgorithmType specifying the server side encryption algorithm name
+type AlgorithmType string
+
+const (
+	KMSAlgorithm AlgorithmType = "KMS"
+	AESAlgorithm AlgorithmType = "AES256"
+)
+
 // StorageClassType bucket storage type
 type StorageClassType string
 

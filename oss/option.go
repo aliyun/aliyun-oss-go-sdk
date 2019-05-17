@@ -203,8 +203,8 @@ func RequestPayer(payerType PayerType) Option {
 	return setHeader(HTTPHeaderOssRequester, string(payerType))
 }
 
-// Tagging is an option to set object tagging
-func Tagging(tagging ObjectTagging) Option {
+// SetTagging is an option to set object tagging
+func SetTagging(tagging Tagging) Option {
 	if len(tagging.Tags) == 0 {
 		return nil
 	}

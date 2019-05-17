@@ -13,11 +13,13 @@ install:
 - if [[ $TRAVIS_GO_VERSION = '1.7' || $TRAVIS_GO_VERSION > '1.7' ]]; then go get golang.org/x/time/rate
   ; fi
 script:
-- if [ -n "$OSS_TEST_ACCESS_KEY_ID" ]; then
-    cd oss;
-    travis_wait 30 go test -v -covermode=count -coverprofile=coverage.out -timeout=30m;
-    $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci;
-  fi
+- if [[ ! -n "$OSS_TEST_ACCESS_KEY_ID" ]]; then exit 0
+  ; fi
+  
+- cd oss
+- travis_wait 30 go test -v -covermode=count -coverprofile=coverage.out -timeout=30m
+- "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
+
 env:
   global:
   - secure: ZCL5egxJmZA+o1ujsaJe//AIh1ag/exSUJ2FzoKPF3O9c84hMc2k5EYO2rGzTNn1ML6M89Mo5hAvHQhyJEHjRuMtjc1QrfxAaA3mqm4scGXIXesPMqYGuvuPSh++6/fkAwaVBAhrk5GaDG1/FuxHE5zusGx3SvGegnCwO7n/2YCfXco6DWgVCdrz4p1EpPkAM3JIdHFUzsDWiimVuiNAvJmAT8+IeOPTT+WgusCJj4ORS3X3LddTjttBP+hRrp/pGSoNqPMzfysWybtaL2SJ8URtvsxW0Mo5BwocHAxAhPP+M2OscQbDzthSAezCLngYvrfBplfIyWlahlgzNz/FjXz5pQwWdYVNoibyxLLMOH685n75LNONN/xVO/GFmVPx7DMGapkN5NzIWS62D4v8QrRkwtms42OUkyEUHjDh8Evui3K2MNJVXA3TI9zOAR+C0krD7OEyS37qrppodhRxJSqFUlgXnk//wLldMC7vleDd7L2UQSWjqyBHqFOgsVaiLU2KRTY3zvv7ke+dqb5VF31mH6qAr8lJTR9un8M1att0VwCEKxoIRT4cKJCpEtZd8ovXOVt1uE695ThVXE9I5e00GXdTzqXOuv6zT4hv/dgmbz9JN9MYeCwmokEoIUmJKNYERa/bNVVefdnJt7h+dm+KpyPAS+XvPLzjbnWdYNA=

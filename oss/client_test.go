@@ -1839,3 +1839,181 @@ func (s *OssClientSuite) TestSetLimitUploadSpeed(c *C) {
 		c.Assert(err, NotNil)
 	}
 }
+
+func (s *OssClientSuite) TestBucketEncyptionError(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// SetBucketEncryption:AES256 ,"123"
+	encryptionRule := ServerEncryptionRule{}
+	encryptionRule.SSEDefault.SSEAlgorithm = string(AESAlgorithm)
+	encryptionRule.SSEDefault.KMSMasterKeyID = "123"
+
+	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	c.Assert(err, NotNil)
+
+	// GetBucketEncryption
+	_, err = client.GetBucketEncryption(bucketName)
+	c.Assert(err, NotNil)
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// SetBucketEncryption:KMS ,""
+	encryptionRule := ServerEncryptionRule{}
+	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
+
+	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	c.Assert(err, IsNil)
+
+	// GetBucketEncryption
+	getResult, err := client.GetBucketEncryption(bucketName)
+	c.Assert(err, IsNil)
+
+	// check encryption value
+	c.Assert(encryptionRule.SSEDefault.SSEAlgorithm, Equals, getResult.SSEDefault.SSEAlgorithm)
+	c.Assert(encryptionRule.SSEDefault.KMSMasterKeyID, Equals, getResult.SSEDefault.KMSMasterKeyID)
+
+	// delete bucket encyption
+	err = client.DeleteBucketEncryption(bucketName)
+	c.Assert(err, IsNil)
+
+	// GetBucketEncryption failure
+	_, err = client.GetBucketEncryption(bucketName)
+	c.Assert(err, NotNil)
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketEncyptionPutObjectSuccess(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// SetBucketEncryption:KMS ,""
+	encryptionRule := ServerEncryptionRule{}
+	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
+
+	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	c.Assert(err, IsNil)
+
+	// GetBucketEncryption
+	getResult, err := client.GetBucketEncryption(bucketName)
+	c.Assert(err, IsNil)
+
+	// check encryption value
+	c.Assert(encryptionRule.SSEDefault.SSEAlgorithm, Equals, getResult.SSEDefault.SSEAlgorithm)
+	c.Assert(encryptionRule.SSEDefault.KMSMasterKeyID, Equals, getResult.SSEDefault.KMSMasterKeyID)
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "KMS")
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// SetBucketEncryption:KMS ,""
+	encryptionRule := ServerEncryptionRule{}
+	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
+	encryptionRule.SSEDefault.KMSMasterKeyID = "123"
+
+	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	c.Assert(err, IsNil)
+
+	// GetBucketEncryption
+	getResult, err := client.GetBucketEncryption(bucketName)
+	c.Assert(err, IsNil)
+
+	// check encryption value
+	c.Assert(encryptionRule.SSEDefault.SSEAlgorithm, Equals, getResult.SSEDefault.SSEAlgorithm)
+	c.Assert(encryptionRule.SSEDefault.KMSMasterKeyID, Equals, getResult.SSEDefault.KMSMasterKeyID)
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "KMS")
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "123")
+
+	// put and get object failure
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// put object failure
+	objectName := objectNamePrefix + randStr(8)
+	context := randStr(100)
+	err = bucket.PutObject(objectName, strings.NewReader(context))
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestGetBucketStat(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// put object
+	objectName := objectNamePrefix + randLowStr(5)
+	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
+	c.Assert(err, IsNil)
+
+	bucket.DeleteObject(objectName)
+	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
+	c.Assert(err, IsNil)
+	bucket.DeleteObject(objectName)
+
+	_, err = client.GetBucketStat(bucketName)
+	c.Assert(err, IsNil)
+
+	client.DeleteBucket(bucketName)
+}

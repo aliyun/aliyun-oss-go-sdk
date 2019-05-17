@@ -935,7 +935,7 @@ func (bucket Bucket) ProcessObject(objectKey string, process string) (ProcessObj
 //
 // error        nil if success, otherwise error
 //
-func (bucket Bucket) PutObjectTagging(objectKey string, tagging ObjectTagging) error {
+func (bucket Bucket) PutObjectTagging(objectKey string, tagging Tagging) error {
 	bs, err := xml.Marshal(tagging)
 	if err != nil {
 		return err
@@ -963,8 +963,8 @@ func (bucket Bucket) PutObjectTagging(objectKey string, tagging ObjectTagging) e
 // Tagging
 // error      nil if success, otherwise error
 //
-func (bucket Bucket) GetObjectTagging(objectKey string) (ObjectTagging, error) {
-	var out ObjectTagging
+func (bucket Bucket) GetObjectTagging(objectKey string) (GetObjectTaggingResult, error) {
+	var out GetObjectTaggingResult
 	params := map[string]interface{}{}
 	params["tagging"] = nil
 
