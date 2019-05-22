@@ -927,6 +927,81 @@ func (bucket Bucket) ProcessObject(objectKey string, process string) (ProcessObj
 	return out, err
 }
 
+//
+// PutObjectTagging add tagging to object
+//
+// objectKey  object key to add tagging
+// tagging    tagging to be added
+//
+// error        nil if success, otherwise error
+//
+func (bucket Bucket) PutObjectTagging(objectKey string, tagging Tagging) error {
+	bs, err := xml.Marshal(tagging)
+	if err != nil {
+		return err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	params := map[string]interface{}{}
+	params["tagging"] = nil
+	resp, err := bucket.do("PUT", objectKey, params, nil, buffer, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+//
+// GetObjectTagging get tagging of the object
+//
+// objectKey  object key to get tagging
+//
+// Tagging
+// error      nil if success, otherwise error
+//
+func (bucket Bucket) GetObjectTagging(objectKey string) (GetObjectTaggingResult, error) {
+	var out GetObjectTaggingResult
+	params := map[string]interface{}{}
+	params["tagging"] = nil
+
+	resp, err := bucket.do("GET", objectKey, params, nil, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+//
+// DeleteObjectTagging delete object taggging
+//
+// objectKey  object key to delete tagging
+//
+// error      nil if success, otherwise error
+//
+func (bucket Bucket) DeleteObjectTagging(objectKey string) error {
+	params := map[string]interface{}{}
+	params["tagging"] = nil
+
+	if objectKey == "" {
+		return fmt.Errorf("invalid argument: object name is empty")
+	}
+
+	resp, err := bucket.do("DELETE", objectKey, params, nil, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
 // Private
 func (bucket Bucket) do(method, objectName string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {

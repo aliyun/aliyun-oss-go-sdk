@@ -3,6 +3,7 @@ package oss
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -199,7 +200,28 @@ func CallbackVar(callbackVar string) Option {
 
 // RequestPayer is an option to set payer who pay for the request
 func RequestPayer(payerType PayerType) Option {
-	return setHeader(HTTPHeaderOSSRequester, string(payerType))
+	return setHeader(HTTPHeaderOssRequester, string(payerType))
+}
+
+// SetTagging is an option to set object tagging
+func SetTagging(tagging Tagging) Option {
+	if len(tagging.Tags) == 0 {
+		return nil
+	}
+
+	taggingValue := ""
+	for index, tag := range tagging.Tags {
+		if index != 0 {
+			taggingValue += "&"
+		}
+		taggingValue += url.QueryEscape(tag.Key) + "=" + url.QueryEscape(tag.Value)
+	}
+	return setHeader(HTTPHeaderOssTagging, taggingValue)
+}
+
+// TaggingDirective is an option to set X-Oss-Metadata-Directive header
+func TaggingDirective(directive TaggingDirectiveType) Option {
+	return setHeader(HTTPHeaderOssTaggingDirective, string(directive))
 }
 
 // Delimiter is an option to set delimiler parameter

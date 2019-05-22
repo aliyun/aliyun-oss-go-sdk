@@ -30,6 +30,25 @@ const (
 	MetaReplace MetadataDirectiveType = "REPLACE"
 )
 
+// TaggingDirectiveType specifying whether use the tagging of source object when copying object.
+type TaggingDirectiveType string
+
+const (
+	// TaggingCopy the target object's tagging is copied from the source one
+	TaggingCopy TaggingDirectiveType = "COPY"
+
+	// TaggingReplace the target object's tagging is created as part of the copy request (not same as the source one)
+	TaggingReplace TaggingDirectiveType = "REPLACE"
+)
+
+// AlgorithmType specifying the server side encryption algorithm name
+type AlgorithmType string
+
+const (
+	KMSAlgorithm AlgorithmType = "KMS"
+	AESAlgorithm AlgorithmType = "AES256"
+)
+
 // StorageClassType bucket storage type
 type StorageClassType string
 
@@ -118,7 +137,9 @@ const (
 	HTTPHeaderOssStorageClass                = "X-Oss-Storage-Class"
 	HTTPHeaderOssCallback                    = "X-Oss-Callback"
 	HTTPHeaderOssCallbackVar                 = "X-Oss-Callback-Var"
-	HTTPHeaderOSSRequester                   = "X-Oss-Request-Payer"
+	HTTPHeaderOssRequester                   = "X-Oss-Request-Payer"
+	HTTPHeaderOssTagging                     = "X-Oss-Tagging"
+	HTTPHeaderOssTaggingDirective            = "X-Oss-Tagging-Directive"
 )
 
 // HTTP Param

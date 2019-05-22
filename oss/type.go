@@ -47,6 +47,7 @@ type LifecycleRule struct {
 	ID                   string                         `xml:"ID,omitempty"`                   // The rule ID
 	Prefix               string                         `xml:"Prefix"`                         // The object key prefix
 	Status               string                         `xml:"Status"`                         // The rule status (enabled or not)
+	Tags                 []Tag                          `xml:"Tag,omitempty"`                  // the tags property
 	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
 	Transitions          []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
 	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
@@ -227,14 +228,21 @@ type GetBucketInfoResult struct {
 // BucketInfo defines Bucket information
 type BucketInfo struct {
 	XMLName          xml.Name  `xml:"Bucket"`
-	Name             string    `xml:"Name"`                    // Bucket name
-	Location         string    `xml:"Location"`                // Bucket datacenter
-	CreationDate     time.Time `xml:"CreationDate"`            // Bucket creation time
-	ExtranetEndpoint string    `xml:"ExtranetEndpoint"`        // Bucket external endpoint
-	IntranetEndpoint string    `xml:"IntranetEndpoint"`        // Bucket internal endpoint
-	ACL              string    `xml:"AccessControlList>Grant"` // Bucket ACL
-	Owner            Owner     `xml:"Owner"`                   // Bucket owner
-	StorageClass     string    `xml:"StorageClass"`            // Bucket storage class
+	Name             string    `xml:"Name"`                     // Bucket name
+	Location         string    `xml:"Location"`                 // Bucket datacenter
+	CreationDate     time.Time `xml:"CreationDate"`             // Bucket creation time
+	ExtranetEndpoint string    `xml:"ExtranetEndpoint"`         // Bucket external endpoint
+	IntranetEndpoint string    `xml:"IntranetEndpoint"`         // Bucket internal endpoint
+	ACL              string    `xml:"AccessControlList>Grant"`  // Bucket ACL
+	Owner            Owner     `xml:"Owner"`                    // Bucket owner
+	StorageClass     string    `xml:"StorageClass"`             // Bucket storage class
+	SseRule          SSERule   `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
+}
+
+type SSERule struct {
+	XMLName        xml.Name `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
+	KMSMasterKeyID string   `xml:"KMSMasterKeyID"`           // Bucket KMSMasterKeyID
+	SSEAlgorithm   string   `xml:"SSEAlgorithm"`             // Bucket SSEAlgorithm
 }
 
 // ListObjectsResult defines the result from ListObjects request
@@ -593,3 +601,41 @@ type LiveChannelInfo struct {
 	PublishUrls  []string  `xml:"PublishUrls>Url"` //push urls list
 	PlayUrls     []string  `xml:"PlayUrls>Url"`    //play urls list
 }
+
+// Tag a tag for the object
+type Tag struct {
+	XMLName xml.Name `xml:"Tag"`
+	Key     string   `xml:"Key"`
+	Value   string   `xml:"Value"`
+}
+
+// ObjectTagging tagset for the object
+type Tagging struct {
+	XMLName xml.Name `xml:"Tagging"`
+	Tags    []Tag    `xml:"TagSet>Tag,omitempty"`
+}
+
+type GetObjectTaggingResult Tagging
+
+// Server Encryption rule for the bucket
+type ServerEncryptionRule struct {
+	XMLName    xml.Name       `xml:"ServerSideEncryptionRule"`
+	SSEDefault SSEDefaultRule `xml:"ApplyServerSideEncryptionByDefault"`
+}
+
+// Server Encryption deafult rule for the bucket
+type SSEDefaultRule struct {
+	XMLName        xml.Name `xml:"ApplyServerSideEncryptionByDefault"`
+	SSEAlgorithm   string   `xml:"SSEAlgorithm"`
+	KMSMasterKeyID string   `xml:"KMSMasterKeyID"`
+}
+
+type GetBucketEncryptionResult ServerEncryptionRule
+
+type BucketStat struct {
+	XMLName              xml.Name `xml:"BucketStat"`
+	Storage              int64    `xml:"Storage"`
+	ObjectCount          int64    `xml:ObjectCount`
+	MultipartUploadCount int64    `xml:MultipartUploadCount`
+}
+type GetBucketStatResult BucketStat

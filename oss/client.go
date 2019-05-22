@@ -219,6 +219,7 @@ func (client Client) GetBucketLocation(bucketName string) (string, error) {
 func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 	headers := map[string]string{HTTPHeaderOssACL: string(bucketACL)}
 	params := map[string]interface{}{}
+	params["acl"] = nil
 	resp, err := client.do("PUT", bucketName, params, headers, nil)
 	if err != nil {
 		return err
@@ -644,6 +645,97 @@ func (client Client) GetBucketInfo(bucketName string) (GetBucketInfoResult, erro
 	var out GetBucketInfoResult
 	params := map[string]interface{}{}
 	params["bucketInfo"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+
+	// convert None to ""
+	if err == nil {
+		if out.BucketInfo.SseRule.KMSMasterKeyID == "None" {
+			out.BucketInfo.SseRule.KMSMasterKeyID = ""
+		}
+
+		if out.BucketInfo.SseRule.SSEAlgorithm == "None" {
+			out.BucketInfo.SseRule.SSEAlgorithm = ""
+		}
+	}
+	return out, err
+}
+
+// SetBucketEncryption set bucket encryption config
+// bucketName    the bucket name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) SetBucketEncryption(bucketName string, encryptionRule ServerEncryptionRule) error {
+	var err error
+	var bs []byte
+	bs, err = xml.Marshal(encryptionRule)
+
+	if err != nil {
+		return err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["encryption"] = nil
+	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketEncryption get bucket encryption config
+// bucketName    the bucket name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketEncryption(bucketName string) (GetBucketEncryptionResult, error) {
+	var out GetBucketEncryptionResult
+	params := map[string]interface{}{}
+	params["encryption"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// DeleteBucketEncryption delete bucket encryption config
+// bucketName    the bucket name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DeleteBucketEncryption(bucketName string) error {
+	params := map[string]interface{}{}
+	params["encryption"] = nil
+	resp, err := client.do("DELETE", bucketName, params, nil, nil)
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
+// GetBucketStat get bucket stat
+// bucketName    the bucket name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketStat(bucketName string) (GetBucketStatResult, error) {
+	var out GetBucketStatResult
+	params := map[string]interface{}{}
+	params["stat"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil)
 	if err != nil {
 		return out, err

@@ -106,8 +106,25 @@ func CopyObjectSample() {
 
 	// Case 7: Set the storage classes.OSS provides three storage classes: Standard, Infrequent Access, and Archive.
 	// Copy a object in the same bucket, and set object's storage-class to Archive.
-	_, rr := bucket.CopyObject(objectKey, objectKey+"DestArchive", oss.ObjectStorageClass("Archive"))
-	if rr != nil {
+	_, err = bucket.CopyObject(objectKey, objectKey+"DestArchive", oss.ObjectStorageClass("Archive"))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// Case 8: Copy object with tagging, the value of tagging directive is REPLACE
+	tag1 := oss.Tag{
+		Key:   "key1",
+		Value: "value1",
+	}
+	tag2 := oss.Tag{
+		Key:   "key2",
+		Value: "value2",
+	}
+	tagging := oss.Tagging{
+		Tags: []oss.Tag{tag1, tag2},
+	}
+	_, err = bucket.CopyObject(objectKey, objectKey+"WithTagging", oss.SetTagging(tagging), oss.TaggingDirective(oss.TaggingReplace))
+	if err != nil {
 		HandleError(err)
 	}
 
