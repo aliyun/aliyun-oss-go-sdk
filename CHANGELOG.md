@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v1.9.7 日期：2019-05-22
+### 变更内容
+- 增加：增加设置、查询、删除object tagging接口
+- 增加：增加设置、查询、删除bucket encryption接口
+- 增加：增加获取bucket统计信息接口
+
 ## 版本号：v1.9.6 日期：2019-04-15
 ### 变更内容
 - 变更：扩展lifecycle功能，提供设置AbortMutipartUpload和Transitions两种规则的生命周期管理的处理
