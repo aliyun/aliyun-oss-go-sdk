@@ -631,6 +631,7 @@ type SSEDefaultRule struct {
 }
 
 type GetBucketEncryptionResult ServerEncryptionRule
+type GetBucketTaggingResult Tagging
 
 type BucketStat struct {
 	XMLName              xml.Name `xml:"BucketStat"`

@@ -259,6 +259,16 @@ func KeyMarker(value string) Option {
 	return addParam("key-marker", value)
 }
 
+// TagKey is an option to set tag key parameter
+func TagKey(value string) Option {
+	return addParam("tag-key", value)
+}
+
+// TagValue is an option to set tag value parameter
+func TagValue(value string) Option {
+	return addParam("tag-value", value)
+}
+
 // UploadIDMarker is an option to set upload-id-marker parameter
 func UploadIDMarker(value string) Option {
 	return addParam("upload-id-marker", value)
