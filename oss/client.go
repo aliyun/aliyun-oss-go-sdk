@@ -729,6 +729,72 @@ func (client Client) DeleteBucketEncryption(bucketName string) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+//
+// SetBucketTagging add tagging to bucket
+// bucketName  name of bucket
+// tagging    tagging to be added
+// error        nil if success, otherwise error
+func (client Client) SetBucketTagging(bucketName string, tagging Tagging) error {
+	var err error
+	var bs []byte
+	bs, err = xml.Marshal(tagging)
+
+	if err != nil {
+		return err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["tagging"] = nil
+	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketTagging get tagging of the bucket
+// bucketName  name of bucket
+// error      nil if success, otherwise error
+func (client Client) GetBucketTagging(bucketName string) (GetBucketTaggingResult, error) {
+	var out GetBucketTaggingResult
+	params := map[string]interface{}{}
+	params["tagging"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+//
+// DeleteBucketTagging delete bucket tagging
+// bucketName  name of bucket
+// error      nil if success, otherwise error
+//
+func (client Client) DeleteBucketTagging(bucketName string) error {
+	params := map[string]interface{}{}
+	params["tagging"] = nil
+	resp, err := client.do("DELETE", bucketName, params, nil, nil)
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
 // GetBucketStat get bucket stat
 // bucketName    the bucket name.
 // error    it's nil if no error, otherwise it's an error object.

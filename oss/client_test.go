@@ -1991,6 +1991,64 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// Bucket Tagging
+	var tagging Tagging
+	tagging.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
+	err = client.SetBucketTagging(bucketName, tagging)
+	c.Assert(err, IsNil)
+
+	getResult, err := client.GetBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(getResult.Tags[0].Key, Equals, tagging.Tags[0].Key)
+	c.Assert(getResult.Tags[0].Value, Equals, tagging.Tags[0].Value)
+
+	// delete BucketTagging
+	err = client.DeleteBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+	getResult, err = client.GetBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(len(getResult.Tags), Equals, 0)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestListBucketsTagging(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName1 := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName1)
+	c.Assert(err, IsNil)
+
+	bucketName2 := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName2)
+	c.Assert(err, IsNil)
+
+	// Bucket Tagging
+	var tagging Tagging
+	tagging.Tags = []Tag{Tag{Key: "testkey", Value: "testvalue"}}
+	err = client.SetBucketTagging(bucketName1, tagging)
+	c.Assert(err, IsNil)
+
+	// list bucket
+	listResult, err := client.ListBuckets(TagKey("testkey"))
+	c.Assert(err, IsNil)
+	c.Assert(len(listResult.Buckets), Equals, 1)
+	c.Assert(listResult.Buckets[0].Name, Equals, bucketName1)
+
+	client.DeleteBucket(bucketName1)
+	client.DeleteBucket(bucketName2)
+}
+
 func (s *OssClientSuite) TestGetBucketStat(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
