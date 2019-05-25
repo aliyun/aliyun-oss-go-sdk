@@ -1,4 +1,9 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v1.9.8 日期：2019-05-25
+### 变更内容
+- 增加：增加设置、查询、删除bucket tagging接口
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v1.9.7 日期：2019-05-22
 ### 变更内容
 - 增加：增加设置、查询、删除object tagging接口
