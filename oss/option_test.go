@@ -297,3 +297,21 @@ func (s *OssOptionSuite) TestFindOption(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, "")
 }
+
+func (s *OssOptionSuite) TestDeleteOption(c *C) {
+	options := []Option{VersionId("123"), VersionIdMarker("456"), KeyMarker("789")}
+	str, err := findOption(options, "versionId", "")
+	c.Assert(str, Equals, "123")
+	c.Assert(err, IsNil)
+
+	skipOption := deleteOption(options, "versionId")
+	str, err = findOption(skipOption, "versionId", "")
+	c.Assert(str, Equals, "")
+
+	str, err = findOption(skipOption, "version-id-marker", "")
+	c.Assert(str, Equals, "456")
+
+	str, err = findOption(skipOption, "key-marker", "")
+	c.Assert(str, Equals, "789")
+
+}

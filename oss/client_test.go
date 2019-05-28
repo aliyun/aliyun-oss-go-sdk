@@ -85,6 +85,78 @@ func randLowStr(n int) string {
 	return strings.ToLower(randStr(n))
 }
 
+func forceDeleteBucket(client *Client, bucketName string, c *C) {
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// Delete Object
+	marker := Marker("")
+	for {
+		lor, err := bucket.ListObjects(marker)
+		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
+		}
+	}
+
+	// Delete Object Versions and DeleteMarks
+	keyMarker := KeyMarker("")
+	versionIdMarker := VersionIdMarker("")
+	options := []Option{keyMarker, versionIdMarker}
+	for {
+		lor, err := bucket.ListObjectVersions(options...)
+		if err != nil {
+			break
+		}
+
+		for _, object := range lor.ObjectDeleteMarkers {
+			err = bucket.DeleteObject(object.Key, VersionId(object.VersionId))
+			c.Assert(err, IsNil)
+		}
+
+		for _, object := range lor.ObjectVersions {
+			err = bucket.DeleteObject(object.Key, VersionId(object.VersionId))
+			c.Assert(err, IsNil)
+		}
+
+		keyMarker = KeyMarker(lor.NextKeyMarker)
+		versionIdMarker := VersionIdMarker(lor.NextVersionIdMarker)
+		options = []Option{keyMarker, versionIdMarker}
+
+		if !lor.IsTruncated {
+			break
+		}
+	}
+
+	// Delete Part
+	keyMarker = KeyMarker("")
+	uploadIDMarker := UploadIDMarker("")
+	for {
+		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
+		c.Assert(err, IsNil)
+		for _, upload := range lmur.Uploads {
+			var imur = InitiateMultipartUploadResult{Bucket: bucketName,
+				Key: upload.Key, UploadID: upload.UploadID}
+			err = bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
+		keyMarker = KeyMarker(lmur.NextKeyMarker)
+		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
+		if !lmur.IsTruncated {
+			break
+		}
+	}
+
+	// Delete Bucket
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
 // SetUpSuite runs once when the suite starts running
 func (s *OssClientSuite) SetUpSuite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
@@ -94,7 +166,7 @@ func (s *OssClientSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 
 	for _, bucket := range lbr.Buckets {
-		s.deleteBucket(client, bucket.Name, c)
+		forceDeleteBucket(client, bucket.Name, c)
 	}
 
 	testLogger.Println("test client started")
@@ -116,46 +188,7 @@ func (s *OssClientSuite) TearDownSuite(c *C) {
 }
 
 func (s *OssClientSuite) deleteBucket(client *Client, bucketName string, c *C) {
-	bucket, err := client.Bucket(bucketName)
-	c.Assert(err, IsNil)
-
-	// Delete Object
-	marker := Marker("")
-	for {
-		lor, err := bucket.ListObjects(marker)
-		c.Assert(err, IsNil)
-		for _, object := range lor.Objects {
-			err = bucket.DeleteObject(object.Key)
-			c.Assert(err, IsNil)
-		}
-		marker = Marker(lor.NextMarker)
-		if !lor.IsTruncated {
-			break
-		}
-	}
-
-	// Delete Part
-	keyMarker := KeyMarker("")
-	uploadIDMarker := UploadIDMarker("")
-	for {
-		lmur, err := bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
-		c.Assert(err, IsNil)
-		for _, upload := range lmur.Uploads {
-			var imur = InitiateMultipartUploadResult{Bucket: bucketName,
-				Key: upload.Key, UploadID: upload.UploadID}
-			err = bucket.AbortMultipartUpload(imur)
-			c.Assert(err, IsNil)
-		}
-		keyMarker = KeyMarker(lmur.NextKeyMarker)
-		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
-		if !lmur.IsTruncated {
-			break
-		}
-	}
-
-	// Delete Bucket
-	err = client.DeleteBucket(bucketName)
-	c.Assert(err, IsNil)
+	forceDeleteBucket(client, bucketName, c)
 }
 
 // SetUpTest runs after each test or benchmark runs
@@ -997,7 +1030,7 @@ func (s *OssClientSuite) TestBucketRefererNegative(c *C) {
 // TestSetBucketLogging
 func (s *OssClientSuite) TestSetBucketLogging(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
-	var bucketNameTarget = bucketNamePrefix + randLowStr(6)
+	var bucketNameTarget = bucketNameTest + "-target"
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -1037,7 +1070,7 @@ func (s *OssClientSuite) TestSetBucketLogging(c *C) {
 // TestDeleteBucketLogging
 func (s *OssClientSuite) TestDeleteBucketLogging(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
-	var bucketNameTarget = bucketNamePrefix + randLowStr(6)
+	var bucketNameTarget = bucketNameTest + "-target"
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -1096,7 +1129,7 @@ func (s *OssClientSuite) TestDeleteBucketLogging(c *C) {
 // TestSetBucketLoggingNegative
 func (s *OssClientSuite) TestSetBucketLoggingNegative(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
-	var bucketNameTarget = bucketNamePrefix + randLowStr(6)
+	var bucketNameTarget = bucketNameTest + "-target"
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -1853,12 +1886,17 @@ func (s *OssClientSuite) TestBucketEncyptionError(c *C) {
 	encryptionRule.SSEDefault.SSEAlgorithm = string(AESAlgorithm)
 	encryptionRule.SSEDefault.KMSMasterKeyID = "123"
 
-	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	var responseHeader http.Header
+	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
 	c.Assert(err, NotNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// GetBucketEncryption
-	_, err = client.GetBucketEncryption(bucketName)
+	_, err = client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, NotNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// Get default bucket info
 	bucketResult, err := client.GetBucketInfo(bucketName)
@@ -1866,6 +1904,7 @@ func (s *OssClientSuite) TestBucketEncyptionError(c *C) {
 
 	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
 	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
 
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
@@ -1883,12 +1922,17 @@ func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
 	encryptionRule := ServerEncryptionRule{}
 	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
 
-	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	var responseHeader http.Header
+	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// GetBucketEncryption
-	getResult, err := client.GetBucketEncryption(bucketName)
+	getResult, err := client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// check encryption value
 	c.Assert(encryptionRule.SSEDefault.SSEAlgorithm, Equals, getResult.SSEDefault.SSEAlgorithm)
@@ -1899,8 +1943,10 @@ func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
 	c.Assert(err, IsNil)
 
 	// GetBucketEncryption failure
-	_, err = client.GetBucketEncryption(bucketName)
+	_, err = client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, NotNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// Get default bucket info
 	bucketResult, err := client.GetBucketInfo(bucketName)
@@ -1908,6 +1954,7 @@ func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
 
 	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
 	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
 
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
@@ -1925,12 +1972,17 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectSuccess(c *C) {
 	encryptionRule := ServerEncryptionRule{}
 	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
 
-	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	var responseHeader http.Header
+	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// GetBucketEncryption
-	getResult, err := client.GetBucketEncryption(bucketName)
+	getResult, err := client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// check encryption value
 	c.Assert(encryptionRule.SSEDefault.SSEAlgorithm, Equals, getResult.SSEDefault.SSEAlgorithm)
@@ -1942,6 +1994,27 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectSuccess(c *C) {
 
 	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "KMS")
 	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
+
+	// put and get object success
+	//bucket, err := client.Bucket(bucketName)
+	//c.Assert(err, IsNil)
+
+	// put object success
+	//objectName := objectNamePrefix + randStr(8)
+	//context := randStr(100)
+	//err = bucket.PutObject(objectName, strings.NewReader(context))
+	//c.Assert(err, IsNil)
+
+	// get object success
+	//body, err := bucket.GetObject(objectName)
+	//c.Assert(err, IsNil)
+	//str, err := readBody(body)
+	//c.Assert(err, IsNil)
+	//body.Close()
+	//c.Assert(str, Equals, context)
+
+	//bucket.DeleteObject(objectName)
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 }
@@ -1959,12 +2032,17 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
 	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
 	encryptionRule.SSEDefault.KMSMasterKeyID = "123"
 
-	err = client.SetBucketEncryption(bucketName, encryptionRule)
+	var responseHeader http.Header
+	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// GetBucketEncryption
-	getResult, err := client.GetBucketEncryption(bucketName)
+	getResult, err := client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// check encryption value
 	c.Assert(encryptionRule.SSEDefault.SSEAlgorithm, Equals, getResult.SSEDefault.SSEAlgorithm)
@@ -1976,6 +2054,7 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
 
 	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "KMS")
 	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "123")
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
 
 	// put and get object failure
 	bucket, err := client.Bucket(bucketName)
@@ -2047,31 +2126,4 @@ func (s *OssClientSuite) TestListBucketsTagging(c *C) {
 
 	client.DeleteBucket(bucketName1)
 	client.DeleteBucket(bucketName2)
-}
-
-func (s *OssClientSuite) TestGetBucketStat(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
-	c.Assert(err, IsNil)
-
-	bucketName := bucketNamePrefix + randLowStr(5)
-	err = client.CreateBucket(bucketName)
-	c.Assert(err, IsNil)
-
-	bucket, err := client.Bucket(bucketName)
-	c.Assert(err, IsNil)
-
-	// put object
-	objectName := objectNamePrefix + randLowStr(5)
-	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
-	c.Assert(err, IsNil)
-
-	bucket.DeleteObject(objectName)
-	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
-	c.Assert(err, IsNil)
-	bucket.DeleteObject(objectName)
-
-	_, err = client.GetBucketStat(bucketName)
-	c.Assert(err, IsNil)
-
-	client.DeleteBucket(bucketName)
 }

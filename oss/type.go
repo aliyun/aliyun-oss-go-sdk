@@ -237,6 +237,7 @@ type BucketInfo struct {
 	Owner            Owner     `xml:"Owner"`                    // Bucket owner
 	StorageClass     string    `xml:"StorageClass"`             // Bucket storage class
 	SseRule          SSERule   `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
+	Versioning       string    `xml:"Versioning"`               // Bucket Versioning
 }
 
 type SSERule struct {
@@ -270,6 +271,46 @@ type ObjectProperties struct {
 	StorageClass string    `xml:"StorageClass"` // Object storage class (Standard, IA, Archive)
 }
 
+// ListObjectVersionsResult defines the result from ListObjectVersions request
+type ListObjectVersionsResult struct {
+	XMLName             xml.Name                       `xml:"ListVersionsResult"`
+	Name                string                         `xml:"Name"`                  // The Bucket Name
+	Owner               Owner                          `xml:"Owner"`                 // The owner of bucket
+	Prefix              string                         `xml:"Prefix"`                // The object prefix
+	KeyMarker           string                         `xml:"KeyMarker"`             // The start marker filter.
+	VersionIdMarker     string                         `xml:"VersionIdMarker"`       // The start VersionIdMarker filter.
+	MaxKeys             int                            `xml:"MaxKeys"`               // Max keys to return
+	Delimiter           string                         `xml:"Delimiter"`             // The delimiter for grouping objects' name
+	IsTruncated         bool                           `xml:"IsTruncated"`           // Flag indicates if all results are returned (when it's false)
+	NextKeyMarker       string                         `xml:"NextKeyMarker"`         // The start point of the next query
+	NextVersionIdMarker string                         `xml:"NextVersionIdMarker"`   // The start point of the next query
+	CommonPrefixes      []string                       `xml:"CommonPrefixes>Prefix"` // You can think of commonprefixes as "folders" whose names end with the delimiter
+	ObjectDeleteMarkers []ObjectDeleteMarkerProperties `xml:"DeleteMarker"`          // DeleteMarker list
+	ObjectVersions      []ObjectVersionProperties      `xml:"Version"`               // version list
+}
+
+type ObjectDeleteMarkerProperties struct {
+	XMLName      xml.Name  `xml:"DeleteMarker"`
+	Key          string    `xml:"Key"`          // The Object Key
+	VersionId    string    `xml:"VersionId"`    // The Object VersionId
+	IsLatest     bool      `xml:"IsLatest"`     // is current version or not
+	LastModified time.Time `xml:"LastModified"` // Object last modified time
+	Owner        Owner     `xml:"Owner"`        // bucket owner element
+}
+
+type ObjectVersionProperties struct {
+	XMLName      xml.Name  `xml:"Version"`
+	Key          string    `xml:"Key"`          // The Object Key
+	VersionId    string    `xml:"VersionId"`    // The Object VersionId
+	IsLatest     bool      `xml:"IsLatest"`     // is latest version or not
+	LastModified time.Time `xml:"LastModified"` // Object last modified time
+	Type         string    `xml:"Type"`         // Object type
+	Size         int64     `xml:"Size"`         // Object size
+	ETag         string    `xml:"ETag"`         // Object ETag
+	StorageClass string    `xml:"StorageClass"` // Object storage class (Standard, IA, Archive)
+	Owner        Owner     `xml:"Owner"`        // bucket owner element
+}
+
 // Owner defines Bucket/Object's owner
 type Owner struct {
 	XMLName     xml.Name `xml:"Owner"`
@@ -295,14 +336,30 @@ type deleteXML struct {
 
 // DeleteObject defines the struct for deleting object
 type DeleteObject struct {
-	XMLName xml.Name `xml:"Object"`
-	Key     string   `xml:"Key"` // Object name
+	XMLName   xml.Name `xml:"Object"`
+	Key       string   `xml:"Key"`                 // Object name
+	VersionId string   `xml:"VersionId,omitempty"` // Object VersionId
 }
 
 // DeleteObjectsResult defines result of DeleteObjects request
 type DeleteObjectsResult struct {
-	XMLName        xml.Name `xml:"DeleteResult"`
-	DeletedObjects []string `xml:"Deleted>Key"` // Deleted object list
+	XMLName        xml.Name
+	DeletedObjects []string // Deleted object key list
+}
+
+// DeleteObjectsResult_inner defines result of DeleteObjects request
+type DeleteObjectVersionsResult struct {
+	XMLName              xml.Name         `xml:"DeleteResult"`
+	DeletedObjectsDetail []DeletedKeyInfo `xml:"Deleted"` // Deleted object detail info
+}
+
+// DeleteKeyInfo defines object delete info
+type DeletedKeyInfo struct {
+	XMLName               xml.Name `xml:"Deleted"`
+	Key                   string   `xml:"Key"`                   // Object key
+	VersionId             string   `xml:"VersionId"`             // VersionId
+	DeleteMarker          bool     `xml:"DeleteMarker"`          // Object DeleteMarker
+	DeleteMarkerVersionId string   `xml:"DeleteMarkerVersionId"` // Object DeleteMarkerVersionId
 }
 
 // InitiateMultipartUploadResult defines result of InitiateMultipartUpload request
@@ -409,10 +466,10 @@ type ProcessObjectResult struct {
 }
 
 // decodeDeleteObjectsResult decodes deleting objects result in URL encoding
-func decodeDeleteObjectsResult(result *DeleteObjectsResult) error {
+func decodeDeleteObjectsResult(result *DeleteObjectVersionsResult) error {
 	var err error
-	for i := 0; i < len(result.DeletedObjects); i++ {
-		result.DeletedObjects[i], err = url.QueryUnescape(result.DeletedObjects[i])
+	for i := 0; i < len(result.DeletedObjectsDetail); i++ {
+		result.DeletedObjectsDetail[i].Key, err = url.QueryUnescape(result.DeletedObjectsDetail[i].Key)
 		if err != nil {
 			return err
 		}
@@ -451,6 +508,73 @@ func decodeListObjectsResult(result *ListObjectsResult) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// decodeListObjectVersionsResult decodes list version objects result in URL encoding
+func decodeListObjectVersionsResult(result *ListObjectVersionsResult) error {
+	var err error
+
+	// decode:Delimiter
+	result.Delimiter, err = url.QueryUnescape(result.Delimiter)
+	if err != nil {
+		return err
+	}
+
+	// decode Prefix
+	result.Prefix, err = url.QueryUnescape(result.Prefix)
+	if err != nil {
+		return err
+	}
+
+	// decode KeyMarker
+	result.KeyMarker, err = url.QueryUnescape(result.KeyMarker)
+	if err != nil {
+		return err
+	}
+
+	// decode VersionIdMarker
+	result.VersionIdMarker, err = url.QueryUnescape(result.VersionIdMarker)
+	if err != nil {
+		return err
+	}
+
+	// decode NextKeyMarker
+	result.NextKeyMarker, err = url.QueryUnescape(result.NextKeyMarker)
+	if err != nil {
+		return err
+	}
+
+	// decode NextVersionIdMarker
+	result.NextVersionIdMarker, err = url.QueryUnescape(result.NextVersionIdMarker)
+	if err != nil {
+		return err
+	}
+
+	// decode CommonPrefixes
+	for i := 0; i < len(result.CommonPrefixes); i++ {
+		result.CommonPrefixes[i], err = url.QueryUnescape(result.CommonPrefixes[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	// decode deleteMarker
+	for i := 0; i < len(result.ObjectDeleteMarkers); i++ {
+		result.ObjectDeleteMarkers[i].Key, err = url.QueryUnescape(result.ObjectDeleteMarkers[i].Key)
+		if err != nil {
+			return err
+		}
+	}
+
+	// decode ObjectVersions
+	for i := 0; i < len(result.ObjectVersions); i++ {
+		result.ObjectVersions[i].Key, err = url.QueryUnescape(result.ObjectVersions[i].Key)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -609,13 +733,22 @@ type Tag struct {
 	Value   string   `xml:"Value"`
 }
 
-// ObjectTagging tagset for the object
+// Tagging tagset for the object
 type Tagging struct {
 	XMLName xml.Name `xml:"Tagging"`
 	Tags    []Tag    `xml:"TagSet>Tag,omitempty"`
 }
 
+// for GetObjectTagging return value
 type GetObjectTaggingResult Tagging
+
+// VersioningConfig for the bucket
+type VersioningConfig struct {
+	XMLName xml.Name `xml:"VersioningConfiguration"`
+	Status  string   `xml:"Status"`
+}
+
+type GetBucketVersioningResult VersioningConfig
 
 // Server Encryption rule for the bucket
 type ServerEncryptionRule struct {
