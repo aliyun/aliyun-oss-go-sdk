@@ -19,6 +19,17 @@ const (
 	ACLDefault ACLType = "default"
 )
 
+// bucket versioning status
+type VersioningStatus string
+
+const (
+	// Versioning Status definition: Enabled
+	VersionEnabled VersioningStatus = "Enabled"
+
+	// Versioning Status definition: Suspended
+	VersionSuspended VersioningStatus = "Suspended"
+)
+
 // MetadataDirectiveType specifying whether use the metadata of source object when copying object.
 type MetadataDirectiveType string
 
@@ -163,5 +174,7 @@ const (
 
 	CheckpointFileSuffix = ".cp" // Checkpoint file suffix
 
-	Version = "v1.9.8" // Go SDK version
+	NullVersion = "null"
+
+	Version = "v1.9.9" // Go SDK version
 )

@@ -27,16 +27,22 @@ type Conn struct {
 	client *http.Client
 }
 
-var signKeyList = []string{"acl", "uploads", "location", "cors", "logging",
-	"website", "referer", "lifecycle", "delete", "append", "tagging", "objectMeta",
-	"uploadId", "partNumber", "security-token", "position", "img", "style", "styleName",
-	"replication", "replicationProgress", "replicationLocation", "cname", "bucketInfo",
-	"comp", "qos", "live", "status", "vod", "startTime", "endTime", "symlink",
-	"x-oss-process", "response-content-type", "response-content-language",
-	"response-expires", "response-cache-control", "response-content-disposition",
-	"response-content-encoding", "udf", "udfName", "udfImage", "udfId", "udfImageDesc",
-	"udfApplication", "comp", "udfApplicationLog", "restore", "callback", "callback-var",
-	"policy", "tagging", "stat", "encryption"}
+var signKeyList = []string{"acl", "uploads", "location", "cors",
+	"logging", "website", "referer", "lifecycle",
+	"delete", "append", "tagging", "objectMeta",
+	"uploadId", "partNumber", "security-token",
+	"position", "img", "style", "styleName",
+	"replication", "replicationProgress",
+	"replicationLocation", "cname", "bucketInfo",
+	"comp", "qos", "live", "status", "vod",
+	"startTime", "endTime", "symlink",
+	"x-oss-process", "response-content-type",
+	"response-content-language", "response-expires",
+	"response-cache-control", "response-content-disposition",
+	"response-content-encoding", "udf", "udfName", "udfImage",
+	"udfId", "udfImageDesc", "udfApplication", "comp",
+	"udfApplicationLog", "restore", "callback", "callback-var",
+	"policy", "stat", "encryption", "versions", "versioning", "versionId"}
 
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) error {

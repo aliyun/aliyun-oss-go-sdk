@@ -843,7 +843,7 @@ func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
 	acl, err := s.bucket.GetObjectACL(objectName)
 	c.Assert(err, IsNil)
 	testLogger.Println("GetObjectAcl:", acl)
-	c.Assert(acl.ACL, Equals, "default")
+	c.Assert(acl.ACL, Equals, "public-read")
 
 	meta, err := s.bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
