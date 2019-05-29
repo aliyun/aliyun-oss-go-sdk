@@ -392,6 +392,22 @@ func setHeader(key string, value interface{}) Option {
 	}
 }
 
+func blackhole(params map[string]optionValue) error {
+	return nil
+}
+
+// SetHeader allows developers to set custom headers for a http request.
+// The "key" must start with the "X-" prefix, but not including "X-Oss-".
+// If "key" doesn't match the requirement, this method will do nothing silently.
+func SetHeader(key, value string) Option {
+	name := strings.ToLower(key)
+	if !strings.HasPrefix(name, "x-") || strings.HasPrefix(name, "x-oss-") {
+		return blackhole
+	}
+
+	return setHeader(key, value)
+}
+
 func addParam(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == nil {

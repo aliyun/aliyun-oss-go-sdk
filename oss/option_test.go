@@ -22,6 +22,13 @@ var headerTestcases = []optionTestCase{
 		key:    "X-Oss-Meta-User",
 		value:  "baymax",
 	},
+
+	// should be ignored. SetHeader protected by "x-oss-" prefix
+	{
+		option: SetHeader("X-Oss-Meta-User", "*blackhole*"),
+		key:    "X-Oss-Meta-User",
+		value:  "",
+	},
 	{
 		option: ACL(ACLPrivate),
 		key:    "X-Oss-Acl",
@@ -31,6 +38,13 @@ var headerTestcases = []optionTestCase{
 		option: ContentType("plain/text"),
 		key:    "Content-Type",
 		value:  "plain/text",
+	},
+
+	// should be ignored, SetHeader must start with "x-"
+	{
+		option: SetHeader("Content-Type", "*blackhoe*"),
+		key:    "Content-Type",
+		value:  "",
 	},
 	{
 		option: CacheControl("no-cache"),
@@ -152,6 +166,13 @@ var headerTestcases = []optionTestCase{
 		key:    "X-Oss-Server-Side-Encryption-Key-Id",
 		value:  "xossekid",
 	},
+
+	// SetHeader works fine
+	{
+		option: SetHeader("X-Extended-Header", "123456"),
+		key:    "X-Extended-Header",
+		value:  "123456",
+	},
 }
 
 func (s *OssOptionSuite) TestHeaderOptions(c *C) {
@@ -160,8 +181,12 @@ func (s *OssOptionSuite) TestHeaderOptions(c *C) {
 		err := testcase.option(headers)
 		c.Assert(err, IsNil)
 
-		expected, actual := testcase.value, headers[testcase.key].Value
-		c.Assert(expected, Equals, actual)
+		actual, has := headers[testcase.key]
+		if len(testcase.value) < 1 {
+			c.Assert(has, Equals, false)
+		} else {
+			c.Assert(testcase.value, Equals, actual.Value)
+		}
 	}
 }
 
