@@ -1121,6 +1121,19 @@ func (bucket Bucket) DeleteObjectTagging(objectKey string, options ...Option) er
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+func (bucket Bucket) OptionsMethod(objectKey string, options ...Option) (int, http.Header, error) {
+	var statusCode int
+	var out http.Header
+	resp, err := bucket.do("OPTIONS", objectKey, nil, options, nil, nil)
+	if err != nil {
+		return statusCode, out, err
+	}
+	defer resp.Body.Close()
+	statusCode = resp.StatusCode
+	out = resp.Headers
+	return statusCode, out, nil
+}
+
 // Private
 func (bucket Bucket) do(method, objectName string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {

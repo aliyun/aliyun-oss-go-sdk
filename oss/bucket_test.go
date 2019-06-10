@@ -4317,3 +4317,83 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 	bucket.DeleteObject(objectName)
 	forceDeleteBucket(client, bucketName, c)
 }
+
+func (s *OssBucketSuite) TestOptionsMethod(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket cors
+	var rule1 = CORSRule{
+		AllowedOrigin: []string{"www.aliyun.com"},
+		AllowedMethod: []string{"PUT", "GET", "POST"},
+		AllowedHeader: []string{"x-oss-meta-author"},
+		ExposeHeader:  []string{"x-oss-meta-name"},
+		MaxAgeSeconds: 100,
+	}
+
+	// set cors
+	err = client.SetBucketCORS(bucketName, []CORSRule{rule1})
+	c.Assert(err, IsNil)
+
+	// bucket options success
+	options := []Option{}
+	originOption := Origin("www.aliyun.com")
+	acMethodOption := ACReqMethod("PUT")
+	acHeadersOption := ACReqHeaders("x-oss-meta-author")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	statusCode, _, err := bucket.OptionsMethod("", options...)
+	c.Assert(err, IsNil)
+	c.Assert(statusCode, Equals, 200)
+
+	// options failure
+	options = []Option{}
+	originOption = Origin("www.aliyun.com")
+	acMethodOption = ACReqMethod("PUT")
+	acHeadersOption = ACReqHeaders("x-oss-meta-author-1")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	statusCode, _, err = bucket.OptionsMethod("", options...)
+	c.Assert(err, NotNil)
+
+	// put object
+	objectName := objectNamePrefix + randStr(8)
+	context := randStr(100)
+	err = bucket.PutObject(objectName, strings.NewReader(context))
+	c.Assert(err, IsNil)
+
+	// object options success
+	options = []Option{}
+	originOption = Origin("www.aliyun.com")
+	acMethodOption = ACReqMethod("PUT")
+	acHeadersOption = ACReqHeaders("x-oss-meta-author")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	statusCode, _, err = bucket.OptionsMethod("", options...)
+	c.Assert(err, IsNil)
+	c.Assert(statusCode, Equals, 200)
+
+	// options failure
+	options = []Option{}
+	originOption = Origin("www.aliyun.com")
+	acMethodOption = ACReqMethod("PUT")
+	acHeadersOption = ACReqHeaders("x-oss-meta-author-1")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	statusCode, _, err = bucket.OptionsMethod("", options...)
+	c.Assert(err, NotNil)
+
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}

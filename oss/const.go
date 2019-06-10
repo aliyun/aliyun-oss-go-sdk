@@ -127,6 +127,8 @@ const (
 	HTTPHeaderIfUnmodifiedSince         = "If-Unmodified-Since"
 	HTTPHeaderIfMatch                   = "If-Match"
 	HTTPHeaderIfNoneMatch               = "If-None-Match"
+	HTTPHeaderACReqMethod               = "Access-Control-Request-Method"
+	HTTPHeaderACReqHeaders              = "Access-Control-Request-Headers"
 
 	HTTPHeaderOssACL                         = "X-Oss-Acl"
 	HTTPHeaderOssMetaPrefix                  = "X-Oss-Meta-"
