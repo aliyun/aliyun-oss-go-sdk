@@ -769,7 +769,7 @@ type GetBucketTaggingResult Tagging
 type BucketStat struct {
 	XMLName              xml.Name `xml:"BucketStat"`
 	Storage              int64    `xml:"Storage"`
-	ObjectCount          int64    `xml:ObjectCount`
-	MultipartUploadCount int64    `xml:MultipartUploadCount`
+	ObjectCount          int64    `xml:"ObjectCount"`
+	MultipartUploadCount int64    `xml:"MultipartUploadCount"`
 }
 type GetBucketStatResult BucketStat

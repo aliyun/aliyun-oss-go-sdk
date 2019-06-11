@@ -542,8 +542,8 @@ func (bucket Bucket) DeleteObjectVersions(objectVersions []DeleteObject, options
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
-	_, err := bucket.GetObjectMeta(objectKey)
+func (bucket Bucket) IsObjectExist(objectKey string, options ...Option) (bool, error) {
+	_, err := bucket.GetObjectMeta(objectKey, options...)
 	if err == nil {
 		return true, nil
 	}

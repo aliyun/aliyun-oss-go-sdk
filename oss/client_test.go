@@ -414,10 +414,13 @@ func (s *OssClientSuite) TestListBucket(c *C) {
 	err = client.CreateBucket(bucketNameLbThree)
 	c.Assert(err, IsNil)
 
-	// ListBuckets, specified prefix
-	lbr, err := client.ListBuckets(Prefix(prefix), MaxKeys(2))
+    // ListBuckets, specified prefix
+    var respHeader http.Header
+    lbr, err := client.ListBuckets(Prefix(prefix), MaxKeys(2),GetResponseHeader(&respHeader))
+    c.Assert(GetRequestId(respHeader) != "", Equals, true)
 	c.Assert(err, IsNil)
-	c.Assert(len(lbr.Buckets), Equals, 2)
+    c.Assert(len(lbr.Buckets), Equals, 2)
+    
 
 	// ListBuckets, specified max keys
 	lbr, err = client.ListBuckets(MaxKeys(2))
@@ -1939,8 +1942,10 @@ func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
 	c.Assert(encryptionRule.SSEDefault.KMSMasterKeyID, Equals, getResult.SSEDefault.KMSMasterKeyID)
 
 	// delete bucket encyption
-	err = client.DeleteBucketEncryption(bucketName)
+	err = client.DeleteBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// GetBucketEncryption failure
 	_, err = client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
@@ -2078,11 +2083,14 @@ func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
+	var respHeader http.Header
+
 	// Bucket Tagging
 	var tagging Tagging
 	tagging.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
-	err = client.SetBucketTagging(bucketName, tagging)
+	err = client.SetBucketTagging(bucketName, tagging, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 
 	getResult, err := client.GetBucketTagging(bucketName)
 	c.Assert(err, IsNil)
@@ -2090,10 +2098,13 @@ func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
 	c.Assert(getResult.Tags[0].Value, Equals, tagging.Tags[0].Value)
 
 	// delete BucketTagging
-	err = client.DeleteBucketTagging(bucketName)
+	err = client.DeleteBucketTagging(bucketName, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
-	getResult, err = client.GetBucketTagging(bucketName)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	getResult, err = client.GetBucketTagging(bucketName, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 	c.Assert(len(getResult.Tags), Equals, 0)
 
 	err = client.DeleteBucket(bucketName)
@@ -2126,4 +2137,57 @@ func (s *OssClientSuite) TestListBucketsTagging(c *C) {
 
 	client.DeleteBucket(bucketName1)
 	client.DeleteBucket(bucketName2)
+}
+
+func (s *OssClientSuite) TestGetBucketStat(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// put object
+	objectName := objectNamePrefix + randLowStr(5)
+	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
+	c.Assert(err, IsNil)
+
+	bucket.DeleteObject(objectName)
+	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
+	c.Assert(err, IsNil)
+	bucket.DeleteObject(objectName)
+
+	_, err = client.GetBucketStat(bucketName)
+	c.Assert(err, IsNil)
+
+	client.DeleteBucket(bucketName)
+}
+
+func (s *OssBucketSuite) TestGetBucketVersioning(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+
+	var respHeader http.Header
+	err = client.CreateBucket(bucketName, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// get bucket version success
+	versioningResult, err := client.GetBucketVersioning(bucketName, GetResponseHeader(&respHeader))
+	c.Assert(versioningResult.Status, Equals, "Enabled")
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	forceDeleteBucket(client, bucketName, c)
 }
