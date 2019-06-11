@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -931,6 +932,101 @@ func (client Client) GetBucketStat(bucketName string) (GetBucketStatResult, erro
 
 	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
+}
+
+// GetBucketPolicy API operation for Object Storage Service.
+//
+// Get the policy from the bucket.
+//
+// bucketName 	 the bucket name.
+//
+// string		 return the bucket's policy, and it's only valid when error is nil.
+//
+// error   		 it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketPolicy(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
+	out := string(body)
+	return out, err
+}
+
+// SetBucketPolicy API operation for Object Storage Service.
+//
+// Set the policy from the bucket.
+//
+// bucketName the bucket name.
+//
+// PolicyInfo the bucket policy.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketPolicy(bucketName string, strPolicy string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+
+	buffer := strings.NewReader(strPolicy)
+
+	resp, err := client.do("PUT", bucketName, params, nil, buffer)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// DeleteBucketPolicy API operation for Object Storage Service.
+//
+// Deletes the policy from the bucket.
+//
+// bucketName the bucket name.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) DeleteBucketPolicy(bucketName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+	resp, err := client.do("DELETE", bucketName, params, nil, nil)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited

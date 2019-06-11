@@ -2127,3 +2127,104 @@ func (s *OssClientSuite) TestListBucketsTagging(c *C) {
 	client.DeleteBucket(bucketName1)
 	client.DeleteBucket(bucketName2)
 }
+
+
+func (s *OssClientSuite) TestBucketPolicy(c *C){
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	var responseHeader http.Header
+	ret, err := client.GetBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	policyInfo := `
+	{
+		"Version":"1",
+		"Statement":[
+			{
+				"Action":[
+					"oss:GetObject",
+					"oss:PutObject"
+				],
+				"Effect":"Deny",
+				"Principal":"[123456790]",
+				"Resource":["acs:oss:*:1234567890:*/*"]
+			}
+		]
+	}`
+
+	err = client.SetBucketPolicy(bucketName, policyInfo, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	ret, err = client.GetBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	testLogger.Println("policy:", ret)
+	c.Assert(ret, Equals, policyInfo)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	err = client.DeleteBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	client.DeleteBucket(bucketName)
+}
+
+func (s *OssClientSuite) TestBucketPolicyNegative(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	var responseHeader http.Header
+	_, err = client.GetBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	// Setting the Version is 2, this is error policy
+	errPolicy := `
+		{
+			"Version":"2",
+			"Statement":[
+				{
+					"Action":[
+						"oss:GetObject",
+						"oss:PutObject"
+					],
+					"Effect":"Deny",
+					"Principal":"[123456790]",
+					"Resource":["acs:oss:*:1234567890:*/*"]
+				}
+			]
+		}
+	}`
+	err = client.SetBucketPolicy(bucketName, errPolicy, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	testLogger.Println("err:",err)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	err = client.DeleteBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+
+	bucketNameEmpty := bucketNamePrefix + randLowStr(5)
+	client.DeleteBucket(bucketNameEmpty)
+	
+	err = client.DeleteBucketPolicy(bucketNameEmpty, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	client.DeleteBucket(bucketName)
+}

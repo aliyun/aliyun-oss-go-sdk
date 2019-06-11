@@ -20,6 +20,7 @@ var sampleMap = map[string]interface{}{
 	"BucketRefererSample":    sample.BucketRefererSample,
 	"BucketLoggingSample":    sample.BucketLoggingSample,
 	"BucketCORSSample":       sample.BucketCORSSample,
+	"BucketPolicySample":	  sample.BucketPolicySample,
 	"ObjectACLSample":        sample.ObjectACLSample,
 	"ObjectMetaSample":       sample.ObjectMetaSample,
 	"ListObjectsSample":      sample.ListObjectsSample,
