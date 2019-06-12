@@ -1331,34 +1331,30 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	c.Assert(err, IsNil)
 	time.Sleep(timeoutInOperation)
 
+	btrue := true
+	bfalse := false
 	// Define one routing rule
 	ruleOk := RoutingRule {
 		RuleNumber:1,
 		Condition:Condition{
-			KeyPrefixEquals:"abc",
+			KeyPrefixEquals:"",
 			HTTPErrorCodeReturnedEquals:404,
-			IncludeHeader:[]IncludeHeader{
-				IncludeHeader {
-					Key:"host",
-					Equals:"test.oss-cn-beijing-internal.aliyuncs.com",
-				},
-			},
 		},
 		Redirect:Redirect {
 			RedirectType: "Mirror",
-			PassQueryString: false,
+			PassQueryString: &btrue,
 			MirrorURL:"http://www.test.com/",
-			MirrorPassQueryString:true,
-			MirrorFollowRedirect:true,
-			MirrorCheckMd5:false,
+			MirrorPassQueryString:&btrue,
+			MirrorFollowRedirect:&bfalse,
+			MirrorCheckMd5:&bfalse,
 			MirrorHeaders:MirrorHeaders{
-				PassAll:true,
-				Pass:[]string{"key1","key2"},
-				Remove:[]string{"remove1", "remove2"},
+				PassAll:&bfalse,
+				Pass:[]string{"myheader-key1","myheader-key2"},
+				Remove:[]string{"myheader-key3", "myheader-key4"},
 				Set:[]MirrorHeaderSet{
 					MirrorHeaderSet{
-						Key:"setKey1",
-						Value:"setValue1",
+						Key:"myheader-key5",
+						Value:"myheader-value5",
 					},
 				},
 			},
@@ -1370,7 +1366,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 		RoutingRule {
 			RuleNumber:2,
 			Condition:Condition{
-				KeyPrefixEquals:"abc",
+				KeyPrefixEquals:"abc/",
 				HTTPErrorCodeReturnedEquals:404,
 				IncludeHeader:[]IncludeHeader{
 					IncludeHeader {
@@ -1380,20 +1376,35 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 				},
 			},
 			Redirect:Redirect {
+				RedirectType: "AliCDN",
+				Protocol:"http",
+				HostName:"www.test.com",
+				PassQueryString: &bfalse,
+				ReplaceKeyWith: "prefix/${key}.suffix",
+				HttpRedirectCode: 301,
+			},
+		},
+		RoutingRule {
+			RuleNumber:3,
+			Condition:Condition{
+				KeyPrefixEquals:"",
+				HTTPErrorCodeReturnedEquals:404,
+			},
+			Redirect:Redirect {
 				RedirectType: "Mirror",
-				PassQueryString: false,
+				PassQueryString: &btrue,
 				MirrorURL:"http://www.test.com/",
-				MirrorPassQueryString:true,
-				MirrorFollowRedirect:true,
-				MirrorCheckMd5:false,
+				MirrorPassQueryString:&btrue,
+				// MirrorFollowRedirect:&bfalse,
+				MirrorCheckMd5:&bfalse,
 				MirrorHeaders:MirrorHeaders{
-					PassAll:true,
-					Pass:[]string{"key1","key2"},
-					Remove:[]string{"remove1", "remove2"},
+					PassAll:&bfalse,
+					Pass:[]string{"myheader-key1","myheader-key2"},
+					Remove:[]string{"myheader-key3", "myheader-key4"},
 					Set:[]MirrorHeaderSet{
 						MirrorHeaderSet{
-							Key:"setKey1",
-							Value:"setValue1",
+							Key:"myheader-key5",
+							Value:"myheader-value5",
 						},
 					},
 				},
@@ -1413,6 +1424,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	res, err := client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorFollowRedirect, Equals, false)
 
 	// Set one routing rule and IndexDocument, IndexDocument
 	wxml := WebsiteXML{
@@ -1442,15 +1454,16 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(res.IndexDocument.Suffix, Equals, indexWebsite)
 	c.Assert(res.ErrorDocument.Key, Equals, errorWebsite)
-	c.Assert(len(res.RoutingRules), Equals, 2)
-	c.Assert(res.RoutingRules[1].Redirect.RedirectType, Equals, "Mirror")
+	c.Assert(len(res.RoutingRules), Equals, 3)
+	c.Assert(res.RoutingRules[1].Redirect.RedirectType, Equals, "AliCDN")
+	c.Assert(*res.RoutingRules[2].Redirect.MirrorFollowRedirect, Equals, true)
 
 	// Define one error routing rule
 	ruleErr := RoutingRule {
 		RuleNumber:1,
 		Redirect:Redirect {
 			RedirectType: "Mirror",
-			PassQueryString: true,
+			PassQueryString: &btrue,
 		},
 	}
 	// Define array error routing rule
@@ -1459,14 +1472,14 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 			RuleNumber:1,
 			Redirect:Redirect {
 				RedirectType: "Mirror",
-				PassQueryString: true,
+				PassQueryString: &btrue,
 			},
 		},
 		RoutingRule {
 			RuleNumber:2,
 			Redirect:Redirect {
 				RedirectType: "Mirror",
-				PassQueryString: true,
+				PassQueryString: &btrue,
 			},
 		},
 	}
