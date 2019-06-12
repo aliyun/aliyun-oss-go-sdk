@@ -1318,6 +1318,184 @@ func (s *OssClientSuite) TestSetBucketWebsiteNegative(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestSetBucketWebsiteRules
+func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+	var indexWebsite = "myindex.html"
+	var errorWebsite = "myerror.html"
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	// Define one routing rule
+	ruleOk := RoutingRule {
+		RuleNumber:1,
+		Condition:Condition{
+			KeyPrefixEquals:"abc",
+			HTTPErrorCodeReturnedEquals:404,
+			IncludeHeader:[]IncludeHeader{
+				IncludeHeader {
+					Key:"host",
+					Equals:"test.oss-cn-beijing-internal.aliyuncs.com",
+				},
+			},
+		},
+		Redirect:Redirect {
+			RedirectType: "Mirror",
+			PassQueryString: false,
+			MirrorURL:"http://www.test.com/",
+			MirrorPassQueryString:true,
+			MirrorFollowRedirect:true,
+			MirrorCheckMd5:false,
+			MirrorHeaders:MirrorHeaders{
+				PassAll:true,
+				Pass:[]string{"key1","key2"},
+				Remove:[]string{"remove1", "remove2"},
+				Set:[]MirrorHeaderSet{
+					MirrorHeaderSet{
+						Key:"setKey1",
+						Value:"setValue1",
+					},
+				},
+			},
+		},
+	}
+
+	// Define array routing rule
+	ruleArrOk := []RoutingRule {
+		RoutingRule {
+			RuleNumber:2,
+			Condition:Condition{
+				KeyPrefixEquals:"abc",
+				HTTPErrorCodeReturnedEquals:404,
+				IncludeHeader:[]IncludeHeader{
+					IncludeHeader {
+						Key:"host",
+						Equals:"test.oss-cn-beijing-internal.aliyuncs.com",
+					},
+				},
+			},
+			Redirect:Redirect {
+				RedirectType: "Mirror",
+				PassQueryString: false,
+				MirrorURL:"http://www.test.com/",
+				MirrorPassQueryString:true,
+				MirrorFollowRedirect:true,
+				MirrorCheckMd5:false,
+				MirrorHeaders:MirrorHeaders{
+					PassAll:true,
+					Pass:[]string{"key1","key2"},
+					Remove:[]string{"remove1", "remove2"},
+					Set:[]MirrorHeaderSet{
+						MirrorHeaderSet{
+							Key:"setKey1",
+							Value:"setValue1",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Set one routing rule
+	wxmlOne := WebsiteXML{}
+	wxmlOne.RoutingRules = append(wxmlOne.RoutingRules, ruleOk)
+	var responseHeader http.Header
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlOne, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	res, err := client.GetBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
+
+	// Set one routing rule and IndexDocument, IndexDocument
+	wxml := WebsiteXML{
+		IndexDocument: IndexDocument{Suffix:indexWebsite},
+		ErrorDocument: ErrorDocument{Key: errorWebsite},
+	}
+	wxml.RoutingRules = append(wxml.RoutingRules, ruleOk)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxml, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	res, err = client.GetBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.IndexDocument.Suffix, Equals, indexWebsite)
+	c.Assert(res.ErrorDocument.Key, Equals, errorWebsite)
+	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
+
+	// Set array routing rule
+	wxml.RoutingRules = append(wxml.RoutingRules, ruleArrOk...)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxml, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	res, err = client.GetBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.IndexDocument.Suffix, Equals, indexWebsite)
+	c.Assert(res.ErrorDocument.Key, Equals, errorWebsite)
+	c.Assert(len(res.RoutingRules), Equals, 2)
+	c.Assert(res.RoutingRules[1].Redirect.RedirectType, Equals, "Mirror")
+
+	// Define one error routing rule
+	ruleErr := RoutingRule {
+		RuleNumber:1,
+		Redirect:Redirect {
+			RedirectType: "Mirror",
+			PassQueryString: true,
+		},
+	}
+	// Define array error routing rule
+	rulesErrArr := []RoutingRule{
+		RoutingRule {
+			RuleNumber:1,
+			Redirect:Redirect {
+				RedirectType: "Mirror",
+				PassQueryString: true,
+			},
+		},
+		RoutingRule {
+			RuleNumber:2,
+			Redirect:Redirect {
+				RedirectType: "Mirror",
+				PassQueryString: true,
+			},
+		},
+	}
+
+	// Set one error rule
+	wxmlErr := WebsiteXML{}
+	wxmlErr.RoutingRules = append(wxmlErr.RoutingRules, ruleErr)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlErr)
+	c.Assert(err, NotNil)
+
+	// Set one error rule and one correct rule
+	wxmlErr.RoutingRules = append(wxmlErr.RoutingRules, ruleOk)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlErr)
+	c.Assert(err, NotNil)
+
+	
+	wxmlErrRuleArr := WebsiteXML{}
+	wxmlErrRuleArr.RoutingRules = append(wxmlErrRuleArr.RoutingRules, rulesErrArr...)
+	// Set array error routing rule
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlErrRuleArr)
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
 // TestSetBucketWebsite
 func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
