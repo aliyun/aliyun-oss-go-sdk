@@ -1342,13 +1342,13 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 		},
 		Redirect:Redirect {
 			RedirectType: "Mirror",
-			PassQueryString: &btrue,
+			// PassQueryString: &btrue, 		// set default value
 			MirrorURL:"http://www.test.com/",
-			MirrorPassQueryString:&btrue,
-			MirrorFollowRedirect:&bfalse,
-			MirrorCheckMd5:&bfalse,
+			// MirrorPassQueryString:&btrue, 	// set default value
+			// MirrorFollowRedirect:&bfalse, 	// set default value
+			// MirrorCheckMd5:&bfalse, 			// set default value
 			MirrorHeaders:MirrorHeaders{
-				PassAll:&bfalse,
+				// PassAll:&bfalse, 			// set default value
 				Pass:[]string{"myheader-key1","myheader-key2"},
 				Remove:[]string{"myheader-key3", "myheader-key4"},
 				Set:[]MirrorHeaderSet{
@@ -1395,10 +1395,10 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 				PassQueryString: &btrue,
 				MirrorURL:"http://www.test.com/",
 				MirrorPassQueryString:&btrue,
-				// MirrorFollowRedirect:&bfalse,
+				MirrorFollowRedirect:&bfalse,
 				MirrorCheckMd5:&bfalse,
 				MirrorHeaders:MirrorHeaders{
-					PassAll:&bfalse,
+					PassAll:&btrue,
 					Pass:[]string{"myheader-key1","myheader-key2"},
 					Remove:[]string{"myheader-key3", "myheader-key4"},
 					Set:[]MirrorHeaderSet{
@@ -1424,7 +1424,11 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	res, err := client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
-	c.Assert(*res.RoutingRules[0].Redirect.MirrorFollowRedirect, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.PassQueryString, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorPassQueryString, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorFollowRedirect, Equals, true)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorCheckMd5, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorHeaders.PassAll, Equals, false)
 
 	// Set one routing rule and IndexDocument, IndexDocument
 	wxml := WebsiteXML{
@@ -1456,7 +1460,8 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	c.Assert(res.ErrorDocument.Key, Equals, errorWebsite)
 	c.Assert(len(res.RoutingRules), Equals, 3)
 	c.Assert(res.RoutingRules[1].Redirect.RedirectType, Equals, "AliCDN")
-	c.Assert(*res.RoutingRules[2].Redirect.MirrorFollowRedirect, Equals, true)
+	c.Assert(*res.RoutingRules[2].Redirect.MirrorPassQueryString, Equals, true)
+	c.Assert(*res.RoutingRules[2].Redirect.MirrorFollowRedirect, Equals, false)
 
 	// Define one error routing rule
 	ruleErr := RoutingRule {
