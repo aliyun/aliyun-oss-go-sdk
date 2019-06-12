@@ -1121,17 +1121,15 @@ func (bucket Bucket) DeleteObjectTagging(objectKey string, options ...Option) er
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
-func (bucket Bucket) OptionsMethod(objectKey string, options ...Option) (int, http.Header, error) {
-	var statusCode int
+func (bucket Bucket) OptionsMethod(objectKey string, options ...Option) (http.Header, error) {
 	var out http.Header
 	resp, err := bucket.do("OPTIONS", objectKey, nil, options, nil, nil)
 	if err != nil {
-		return statusCode, out, err
+		return out, err
 	}
 	defer resp.Body.Close()
-	statusCode = resp.StatusCode
 	out = resp.Headers
-	return statusCode, out, nil
+	return out, nil
 }
 
 // Private

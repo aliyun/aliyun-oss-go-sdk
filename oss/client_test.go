@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -148,6 +149,24 @@ func forceDeleteBucket(client *Client, bucketName string, c *C) {
 		keyMarker = KeyMarker(lmur.NextKeyMarker)
 		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
 		if !lmur.IsTruncated {
+			break
+		}
+	}
+
+	// delete live channel
+	strMarker := ""
+	for {
+		result, err := bucket.ListLiveChannel(Marker(strMarker))
+		c.Assert(err, IsNil)
+
+		for _, channel := range result.LiveChannel {
+			err := bucket.DeleteLiveChannel(channel.Name)
+			c.Assert(err, IsNil)
+		}
+
+		if result.IsTruncated {
+			strMarker = result.NextMarker
+		} else {
 			break
 		}
 	}
@@ -414,13 +433,12 @@ func (s *OssClientSuite) TestListBucket(c *C) {
 	err = client.CreateBucket(bucketNameLbThree)
 	c.Assert(err, IsNil)
 
-    // ListBuckets, specified prefix
-    var respHeader http.Header
-    lbr, err := client.ListBuckets(Prefix(prefix), MaxKeys(2),GetResponseHeader(&respHeader))
-    c.Assert(GetRequestId(respHeader) != "", Equals, true)
+	// ListBuckets, specified prefix
+	var respHeader http.Header
+	lbr, err := client.ListBuckets(Prefix(prefix), MaxKeys(2), GetResponseHeader(&respHeader))
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 	c.Assert(err, IsNil)
-    c.Assert(len(lbr.Buckets), Equals, 2)
-    
+	c.Assert(len(lbr.Buckets), Equals, 2)
 
 	// ListBuckets, specified max keys
 	lbr, err = client.ListBuckets(MaxKeys(2))
@@ -1321,7 +1339,235 @@ func (s *OssClientSuite) TestSetBucketWebsiteNegative(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSetBucketWebsite
+// TestSetBucketWebsiteDetail
+func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+	var indexWebsite = "myindex.html"
+	var errorWebsite = "myerror.html"
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	btrue := true
+	bfalse := false
+	// Define one routing rule
+	ruleOk := RoutingRule{
+		RuleNumber: 1,
+		Condition: Condition{
+			KeyPrefixEquals:             "",
+			HTTPErrorCodeReturnedEquals: 404,
+		},
+		Redirect: Redirect{
+			RedirectType: "Mirror",
+			// PassQueryString: &btrue, 		// set default value
+			MirrorURL: "http://www.test.com/",
+			// MirrorPassQueryString:&btrue, 	// set default value
+			// MirrorFollowRedirect:&bfalse, 	// set default value
+			// MirrorCheckMd5:&bfalse, 			// set default value
+			MirrorHeaders: MirrorHeaders{
+				// PassAll:&bfalse, 			// set default value
+				Pass:   []string{"myheader-key1", "myheader-key2"},
+				Remove: []string{"myheader-key3", "myheader-key4"},
+				Set: []MirrorHeaderSet{
+					MirrorHeaderSet{
+						Key:   "myheader-key5",
+						Value: "myheader-value5",
+					},
+				},
+			},
+		},
+	}
+
+	// Define array routing rule
+	ruleArrOk := []RoutingRule{
+		RoutingRule{
+			RuleNumber: 2,
+			Condition: Condition{
+				KeyPrefixEquals:             "abc/",
+				HTTPErrorCodeReturnedEquals: 404,
+				IncludeHeader: []IncludeHeader{
+					IncludeHeader{
+						Key:    "host",
+						Equals: "test.oss-cn-beijing-internal.aliyuncs.com",
+					},
+				},
+			},
+			Redirect: Redirect{
+				RedirectType:     "AliCDN",
+				Protocol:         "http",
+				HostName:         "www.test.com",
+				PassQueryString:  &bfalse,
+				ReplaceKeyWith:   "prefix/${key}.suffix",
+				HttpRedirectCode: 301,
+			},
+		},
+		RoutingRule{
+			RuleNumber: 3,
+			Condition: Condition{
+				KeyPrefixEquals:             "",
+				HTTPErrorCodeReturnedEquals: 404,
+			},
+			Redirect: Redirect{
+				RedirectType:          "Mirror",
+				PassQueryString:       &btrue,
+				MirrorURL:             "http://www.test.com/",
+				MirrorPassQueryString: &btrue,
+				MirrorFollowRedirect:  &bfalse,
+				MirrorCheckMd5:        &bfalse,
+				MirrorHeaders: MirrorHeaders{
+					PassAll: &btrue,
+					Pass:    []string{"myheader-key1", "myheader-key2"},
+					Remove:  []string{"myheader-key3", "myheader-key4"},
+					Set: []MirrorHeaderSet{
+						MirrorHeaderSet{
+							Key:   "myheader-key5",
+							Value: "myheader-value5",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Set one routing rule
+	wxmlOne := WebsiteXML{}
+	wxmlOne.RoutingRules = append(wxmlOne.RoutingRules, ruleOk)
+	var responseHeader http.Header
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlOne, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	res, err := client.GetBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
+	c.Assert(*res.RoutingRules[0].Redirect.PassQueryString, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorPassQueryString, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorFollowRedirect, Equals, true)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorCheckMd5, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorHeaders.PassAll, Equals, false)
+
+	// Set one routing rule and IndexDocument, IndexDocument
+	wxml := WebsiteXML{
+		IndexDocument: IndexDocument{Suffix: indexWebsite},
+		ErrorDocument: ErrorDocument{Key: errorWebsite},
+	}
+	wxml.RoutingRules = append(wxml.RoutingRules, ruleOk)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxml, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	res, err = client.GetBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.IndexDocument.Suffix, Equals, indexWebsite)
+	c.Assert(res.ErrorDocument.Key, Equals, errorWebsite)
+	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
+
+	// Set array routing rule
+	wxml.RoutingRules = append(wxml.RoutingRules, ruleArrOk...)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxml, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	res, err = client.GetBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.IndexDocument.Suffix, Equals, indexWebsite)
+	c.Assert(res.ErrorDocument.Key, Equals, errorWebsite)
+	c.Assert(len(res.RoutingRules), Equals, 3)
+	c.Assert(res.RoutingRules[1].Redirect.RedirectType, Equals, "AliCDN")
+	c.Assert(*res.RoutingRules[2].Redirect.MirrorPassQueryString, Equals, true)
+	c.Assert(*res.RoutingRules[2].Redirect.MirrorFollowRedirect, Equals, false)
+
+	// Define one error routing rule
+	ruleErr := RoutingRule{
+		RuleNumber: 1,
+		Redirect: Redirect{
+			RedirectType:    "Mirror",
+			PassQueryString: &btrue,
+		},
+	}
+	// Define array error routing rule
+	rulesErrArr := []RoutingRule{
+		RoutingRule{
+			RuleNumber: 1,
+			Redirect: Redirect{
+				RedirectType:    "Mirror",
+				PassQueryString: &btrue,
+			},
+		},
+		RoutingRule{
+			RuleNumber: 2,
+			Redirect: Redirect{
+				RedirectType:    "Mirror",
+				PassQueryString: &btrue,
+			},
+		},
+	}
+
+	ruleIntErr := RoutingRule{
+		// RuleNumber:0,						// set NULL value
+		Condition: Condition{
+			KeyPrefixEquals:             "",
+			HTTPErrorCodeReturnedEquals: 404,
+		},
+		Redirect: Redirect{
+			RedirectType: "Mirror",
+			// PassQueryString: &btrue, 		// set default value
+			MirrorURL: "http://www.test.com/",
+			// MirrorPassQueryString:&btrue, 	// set default value
+			// MirrorFollowRedirect:&bfalse, 	// set default value
+			// MirrorCheckMd5:&bfalse, 			// set default value
+			MirrorHeaders: MirrorHeaders{
+				// PassAll:&bfalse, 			// set default value
+				Pass:   []string{"myheader-key1", "myheader-key2"},
+				Remove: []string{"myheader-key3", "myheader-key4"},
+				Set: []MirrorHeaderSet{
+					MirrorHeaderSet{
+						Key:   "myheader-key5",
+						Value: "myheader-value5",
+					},
+				},
+			},
+		},
+	}
+
+	// Set one int type error rule
+	wxmlIntErr := WebsiteXML{}
+	wxmlIntErr.RoutingRules = append(wxmlIntErr.RoutingRules, ruleIntErr)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlIntErr)
+	c.Assert(err, NotNil)
+
+	// Set one error rule
+	wxmlErr := WebsiteXML{}
+	wxmlErr.RoutingRules = append(wxmlErr.RoutingRules, ruleErr)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlErr)
+	c.Assert(err, NotNil)
+
+	// Set one error rule and one correct rule
+	wxmlErr.RoutingRules = append(wxmlErr.RoutingRules, ruleOk)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlErr)
+	c.Assert(err, NotNil)
+
+	wxmlErrRuleArr := WebsiteXML{}
+	wxmlErrRuleArr.RoutingRules = append(wxmlErrRuleArr.RoutingRules, rulesErrArr...)
+	// Set array error routing rule
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlErrRuleArr)
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestSetBucketCORS
 func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
 	var rule1 = CORSRule{
@@ -1866,13 +2112,16 @@ func (s *OssClientSuite) TestSetLimitUploadSpeed(c *C) {
 	if len(pSlice) >= 2 {
 		if pSlice[0] > "go1" {
 			c.Assert(err, IsNil)
-		} else if pSlice[0] == "go1" && pSlice[1] >= "7" {
-			c.Assert(err, IsNil)
+		} else if pSlice[0] == "go1" {
+			subVersion, _ := strconv.Atoi(pSlice[1])
+			if subVersion >= 7 {
+				c.Assert(err, IsNil)
+			} else {
+				c.Assert(err, NotNil)
+			}
 		} else {
 			c.Assert(err, NotNil)
 		}
-	} else {
-		c.Assert(err, NotNil)
 	}
 }
 
@@ -2190,4 +2439,103 @@ func (s *OssBucketSuite) TestGetBucketVersioning(c *C) {
 	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 
 	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssClientSuite) TestBucketPolicy(c *C){
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	
+	var responseHeader http.Header
+	ret, err := client.GetBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	policyInfo := `
+	{
+		"Version":"1",
+		"Statement":[
+			{
+				"Action":[
+					"oss:GetObject",
+					"oss:PutObject"
+				],
+				"Effect":"Deny",
+				"Principal":"[123456790]",
+				"Resource":["acs:oss:*:1234567890:*/*"]
+			}
+		]
+	}`
+
+	err = client.SetBucketPolicy(bucketName, policyInfo, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	ret, err = client.GetBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	testLogger.Println("policy:", ret)
+	c.Assert(ret, Equals, policyInfo)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	err = client.DeleteBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+	client.DeleteBucket(bucketName)
+}
+
+func (s *OssClientSuite) TestBucketPolicyNegative(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	var responseHeader http.Header
+	_, err = client.GetBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	// Setting the Version is 2, this is error policy
+	errPolicy := `
+	{
+		"Version":"2",
+		"Statement":[
+			{
+				"Action":[
+					"oss:GetObject",
+					"oss:PutObject"
+				],
+				"Effect":"Deny",
+				"Principal":"[123456790]",
+				"Resource":["acs:oss:*:1234567890:*/*"]
+			}
+		]
+	}`
+	err = client.SetBucketPolicy(bucketName, errPolicy, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	testLogger.Println("err:",err)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	err = client.DeleteBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+
+	bucketNameEmpty := bucketNamePrefix + randLowStr(5)
+	client.DeleteBucket(bucketNameEmpty)
+	
+	err = client.DeleteBucketPolicy(bucketNameEmpty, GetResponseHeader(&responseHeader))
+	c.Assert(err, NotNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	client.DeleteBucket(bucketName)
 }

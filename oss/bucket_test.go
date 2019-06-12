@@ -4431,9 +4431,8 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	options = append(options, originOption)
 	options = append(options, acMethodOption)
 	options = append(options, acHeadersOption)
-	statusCode, _, err := bucket.OptionsMethod("", options...)
+	_, err = bucket.OptionsMethod("", options...)
 	c.Assert(err, IsNil)
-	c.Assert(statusCode, Equals, 200)
 
 	// options failure
 	options = []Option{}
@@ -4443,7 +4442,7 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	options = append(options, originOption)
 	options = append(options, acMethodOption)
 	options = append(options, acHeadersOption)
-	statusCode, _, err = bucket.OptionsMethod("", options...)
+	_, err = bucket.OptionsMethod("", options...)
 	c.Assert(err, NotNil)
 
 	// put object
@@ -4460,9 +4459,8 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	options = append(options, originOption)
 	options = append(options, acMethodOption)
 	options = append(options, acHeadersOption)
-	statusCode, _, err = bucket.OptionsMethod("", options...)
+	_, err = bucket.OptionsMethod("", options...)
 	c.Assert(err, IsNil)
-	c.Assert(statusCode, Equals, 200)
 
 	// options failure
 	options = []Option{}
@@ -4472,7 +4470,7 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	options = append(options, originOption)
 	options = append(options, acMethodOption)
 	options = append(options, acHeadersOption)
-	statusCode, _, err = bucket.OptionsMethod("", options...)
+	_, err = bucket.OptionsMethod("", options...)
 	c.Assert(err, NotNil)
 
 	bucket.DeleteObject(objectName)
