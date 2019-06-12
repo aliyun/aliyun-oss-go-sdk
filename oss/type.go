@@ -181,8 +181,9 @@ type GetBucketLoggingResult LoggingXML
 // WebsiteXML defines Website configuration
 type WebsiteXML struct {
 	XMLName       xml.Name      `xml:"WebsiteConfiguration"`
-	IndexDocument IndexDocument `xml:"IndexDocument"` // The index page
-	ErrorDocument ErrorDocument `xml:"ErrorDocument"` // The error page
+	IndexDocument IndexDocument `xml:"IndexDocument"`            // The index page
+	ErrorDocument ErrorDocument `xml:"ErrorDocument"`            // The error page
+	RoutingRules  []RoutingRule `xml:"RoutingRules>RoutingRule"` // The routing Rule list
 }
 
 // IndexDocument defines the index page info
@@ -195,6 +196,57 @@ type IndexDocument struct {
 type ErrorDocument struct {
 	XMLName xml.Name `xml:"ErrorDocument"`
 	Key     string   `xml:"Key"` // 404 error file name
+}
+
+// RoutingRule defines the routing rules
+type RoutingRule struct {
+	XMLName    xml.Name  `xml:"RoutingRule"`
+	RuleNumber int       `xml:"RuleNumber"` // The routing number
+	Condition  Condition `xml:"Condition"`  // The routing condition
+	Redirect   Redirect  `xml:"Redirect"`   // The routing redirect
+}
+
+// Condition defines codition in the RoutingRule
+type Condition struct {
+	XMLName                     xml.Name        `xml:"Condition"`
+	KeyPrefixEquals             string          `xml:"KeyPrefixEquals"`             // Matching objcet prefix
+	HTTPErrorCodeReturnedEquals int             `xml:"HttpErrorCodeReturnedEquals"` // The rule is for Accessing to the specified object
+	IncludeHeader               []IncludeHeader `xml:"IncludeHeader"`               // The rule is for request which include header
+}
+
+// IncludeHeader defines includeHeader in the RoutingRule's Condition
+type IncludeHeader struct {
+	XMLName xml.Name `xml:"IncludeHeader"`
+	Key     string   `xml:"Key"`    // The Include header key
+	Equals  string   `xml:"Equals"` // The Include header value
+}
+
+// Redirect defines redirect in the RoutingRule
+type Redirect struct {
+	XMLName               xml.Name      `xml:"Redirect"`
+	RedirectType          string        `xml:"RedirectType"`          // The redirect type, it have Mirror,External,Internal,AliCDN
+	PassQueryString       bool          `xml:"PassQueryString"`       // Whether to send the specified request's parameters, true or false
+	MirrorURL             string        `xml:"MirrorURL"`             // Mirror of the website address back to the source.
+	MirrorPassQueryString bool          `xml:"MirrorPassQueryString"` // To Mirror of the website Whether to send the specified request's parameters, true or false
+	MirrorFollowRedirect  bool          `xml:"MirrorFollowRedirect"`  // Redirect the location, if the mirror return 3XX
+	MirrorCheckMd5        bool          `xml:"MirrorCheckMd5"`        // Check the mirror is MD5.
+	MirrorHeaders         MirrorHeaders `xml:"MirrorHeaders"`         // Mirror headers
+}
+
+// MirrorHeaders defines MirrorHeaders in the Redirect
+type MirrorHeaders struct {
+	XMLName xml.Name          `xml:"MirrorHeaders"`
+	PassAll bool              `xml:"PassAll"` // Penetrating all of headers to source website.
+	Pass    []string          `xml:"Pass"`    // Penetrating some of headers to source website.
+	Remove  []string          `xml:"Remove"`  // Prohibit passthrough some of headers to source website
+	Set     []MirrorHeaderSet `xml:"Set"`     // Setting some of headers send to source website
+}
+
+// MirrorHeaderSet defines Set for Redirect's MirrorHeaders
+type MirrorHeaderSet struct {
+	XMLName xml.Name `xml:"Set"`
+	Key     string   `xml:"Key"`   // The mirror header key
+	Value   string   `xml:"Value"` // The mirror header value
 }
 
 // GetBucketWebsiteResult defines the result from GetBucketWebsite request.
