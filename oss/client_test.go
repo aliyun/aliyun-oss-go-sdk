@@ -1339,8 +1339,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteNegative(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSetBucketWebsiteRules
-// TestSetBucketWebsiteRules
+// TestSetBucketWebsiteDetail
 func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
 	var indexWebsite = "myindex.html"
