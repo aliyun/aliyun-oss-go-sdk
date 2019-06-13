@@ -181,9 +181,9 @@ type GetBucketLoggingResult LoggingXML
 // WebsiteXML defines Website configuration
 type WebsiteXML struct {
 	XMLName       xml.Name      `xml:"WebsiteConfiguration"`
-	IndexDocument IndexDocument `xml:"IndexDocument,omitempty"`            // The index page
-	ErrorDocument ErrorDocument `xml:"ErrorDocument,omitempty"`            // The error page
-	RoutingRules  []RoutingRule `xml:"RoutingRules>RoutingRule,omitempty"` // The routing Rule list
+	IndexDocument IndexDocument `xml:"IndexDocument"`            // The index page
+	ErrorDocument ErrorDocument `xml:"ErrorDocument"`            // The error page
+	RoutingRules  []RoutingRule `xml:"RoutingRules>RoutingRule"` // The routing Rule list
 }
 
 // IndexDocument defines the index page info
@@ -202,8 +202,8 @@ type ErrorDocument struct {
 type RoutingRule struct {
 	XMLName    xml.Name  `xml:"RoutingRule"`
 	RuleNumber int       `xml:"RuleNumber,omitempty"` // The routing number
-	Condition  Condition `xml:"Condition"`            // The routing condition
-	Redirect   Redirect  `xml:"Redirect"`             // The routing redirect
+	Condition  Condition `xml:"Condition,omitempty"`            // The routing condition
+	Redirect   Redirect  `xml:"Redirect,omitempty"`             // The routing redirect
 
 }
 
