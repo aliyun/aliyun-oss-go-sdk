@@ -30,6 +30,8 @@ func BucketWebsiteSample() {
 		HandleError(err)
 	}
 
+	btrue := true
+	bfalse := false
 	// Define one website detail
 	ruleOk := oss.RoutingRule{
 		RuleNumber: 1,
@@ -45,13 +47,13 @@ func BucketWebsiteSample() {
 		},
 		Redirect: oss.Redirect{
 			RedirectType:          "Mirror",
-			PassQueryString:       false,
+			PassQueryString:       &bfalse,
 			MirrorURL:             "http://www.test.com/",
-			MirrorPassQueryString: true,
-			MirrorFollowRedirect:  true,
-			MirrorCheckMd5:        false,
+			MirrorPassQueryString: &btrue,
+			MirrorFollowRedirect:  &btrue,
+			MirrorCheckMd5:        &bfalse,
 			MirrorHeaders: oss.MirrorHeaders{
-				PassAll: true,
+				PassAll: &btrue,
 				Pass:    []string{"key1", "key2"},
 				Remove:  []string{"remove1", "remove2"},
 				Set: []oss.MirrorHeaderSet{
