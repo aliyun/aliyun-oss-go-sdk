@@ -230,6 +230,16 @@ func TaggingDirective(directive TaggingDirectiveType) Option {
 	return setHeader(HTTPHeaderOssTaggingDirective, string(directive))
 }
 
+// ACReqMethod is an option to set Access-Control-Request-Method header
+func ACReqMethod(value string) Option {
+	return setHeader(HTTPHeaderACReqMethod, value)
+}
+
+// ACReqHeaders is an option to set Access-Control-Request-Headers header
+func ACReqHeaders(value string) Option {
+	return setHeader(HTTPHeaderACReqHeaders, value)
+}
+
 // Delimiter is an option to set delimiler parameter
 func Delimiter(value string) Option {
 	return addParam("delimiter", value)

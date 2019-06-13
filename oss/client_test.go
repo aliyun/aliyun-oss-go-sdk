@@ -414,10 +414,13 @@ func (s *OssClientSuite) TestListBucket(c *C) {
 	err = client.CreateBucket(bucketNameLbThree)
 	c.Assert(err, IsNil)
 
-	// ListBuckets, specified prefix
-	lbr, err := client.ListBuckets(Prefix(prefix), MaxKeys(2))
+    // ListBuckets, specified prefix
+    var respHeader http.Header
+    lbr, err := client.ListBuckets(Prefix(prefix), MaxKeys(2),GetResponseHeader(&respHeader))
+    c.Assert(GetRequestId(respHeader) != "", Equals, true)
 	c.Assert(err, IsNil)
-	c.Assert(len(lbr.Buckets), Equals, 2)
+    c.Assert(len(lbr.Buckets), Equals, 2)
+    
 
 	// ListBuckets, specified max keys
 	lbr, err = client.ListBuckets(MaxKeys(2))
@@ -1331,30 +1334,34 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	c.Assert(err, IsNil)
 	time.Sleep(timeoutInOperation)
 
-	btrue := true
-	bfalse := false
 	// Define one routing rule
 	ruleOk := RoutingRule {
 		RuleNumber:1,
 		Condition:Condition{
-			KeyPrefixEquals:"",
+			KeyPrefixEquals:"abc",
 			HTTPErrorCodeReturnedEquals:404,
+			IncludeHeader:[]IncludeHeader{
+				IncludeHeader {
+					Key:"host",
+					Equals:"test.oss-cn-beijing-internal.aliyuncs.com",
+				},
+			},
 		},
 		Redirect:Redirect {
 			RedirectType: "Mirror",
-			// PassQueryString: &btrue, 		// set default value
+			PassQueryString: false,
 			MirrorURL:"http://www.test.com/",
-			// MirrorPassQueryString:&btrue, 	// set default value
-			// MirrorFollowRedirect:&bfalse, 	// set default value
-			// MirrorCheckMd5:&bfalse, 			// set default value
+			MirrorPassQueryString:true,
+			MirrorFollowRedirect:true,
+			MirrorCheckMd5:false,
 			MirrorHeaders:MirrorHeaders{
-				// PassAll:&bfalse, 			// set default value
-				Pass:[]string{"myheader-key1","myheader-key2"},
-				Remove:[]string{"myheader-key3", "myheader-key4"},
+				PassAll:true,
+				Pass:[]string{"key1","key2"},
+				Remove:[]string{"remove1", "remove2"},
 				Set:[]MirrorHeaderSet{
 					MirrorHeaderSet{
-						Key:"myheader-key5",
-						Value:"myheader-value5",
+						Key:"setKey1",
+						Value:"setValue1",
 					},
 				},
 			},
@@ -1366,7 +1373,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 		RoutingRule {
 			RuleNumber:2,
 			Condition:Condition{
-				KeyPrefixEquals:"abc/",
+				KeyPrefixEquals:"abc",
 				HTTPErrorCodeReturnedEquals:404,
 				IncludeHeader:[]IncludeHeader{
 					IncludeHeader {
@@ -1376,35 +1383,20 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 				},
 			},
 			Redirect:Redirect {
-				RedirectType: "AliCDN",
-				Protocol:"http",
-				HostName:"www.test.com",
-				PassQueryString: &bfalse,
-				ReplaceKeyWith: "prefix/${key}.suffix",
-				HttpRedirectCode: 301,
-			},
-		},
-		RoutingRule {
-			RuleNumber:3,
-			Condition:Condition{
-				KeyPrefixEquals:"",
-				HTTPErrorCodeReturnedEquals:404,
-			},
-			Redirect:Redirect {
 				RedirectType: "Mirror",
-				PassQueryString: &btrue,
+				PassQueryString: false,
 				MirrorURL:"http://www.test.com/",
-				MirrorPassQueryString:&btrue,
-				MirrorFollowRedirect:&bfalse,
-				MirrorCheckMd5:&bfalse,
+				MirrorPassQueryString:true,
+				MirrorFollowRedirect:true,
+				MirrorCheckMd5:false,
 				MirrorHeaders:MirrorHeaders{
-					PassAll:&btrue,
-					Pass:[]string{"myheader-key1","myheader-key2"},
-					Remove:[]string{"myheader-key3", "myheader-key4"},
+					PassAll:true,
+					Pass:[]string{"key1","key2"},
+					Remove:[]string{"remove1", "remove2"},
 					Set:[]MirrorHeaderSet{
 						MirrorHeaderSet{
-							Key:"myheader-key5",
-							Value:"myheader-value5",
+							Key:"setKey1",
+							Value:"setValue1",
 						},
 					},
 				},
@@ -1424,11 +1416,6 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	res, err := client.GetBucketWebsite(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
-	c.Assert(*res.RoutingRules[0].Redirect.PassQueryString, Equals, false)
-	c.Assert(*res.RoutingRules[0].Redirect.MirrorPassQueryString, Equals, false)
-	c.Assert(*res.RoutingRules[0].Redirect.MirrorFollowRedirect, Equals, true)
-	c.Assert(*res.RoutingRules[0].Redirect.MirrorCheckMd5, Equals, false)
-	c.Assert(*res.RoutingRules[0].Redirect.MirrorHeaders.PassAll, Equals, false)
 
 	// Set one routing rule and IndexDocument, IndexDocument
 	wxml := WebsiteXML{
@@ -1458,17 +1445,15 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(res.IndexDocument.Suffix, Equals, indexWebsite)
 	c.Assert(res.ErrorDocument.Key, Equals, errorWebsite)
-	c.Assert(len(res.RoutingRules), Equals, 3)
-	c.Assert(res.RoutingRules[1].Redirect.RedirectType, Equals, "AliCDN")
-	c.Assert(*res.RoutingRules[2].Redirect.MirrorPassQueryString, Equals, true)
-	c.Assert(*res.RoutingRules[2].Redirect.MirrorFollowRedirect, Equals, false)
+	c.Assert(len(res.RoutingRules), Equals, 2)
+	c.Assert(res.RoutingRules[1].Redirect.RedirectType, Equals, "Mirror")
 
 	// Define one error routing rule
 	ruleErr := RoutingRule {
 		RuleNumber:1,
 		Redirect:Redirect {
 			RedirectType: "Mirror",
-			PassQueryString: &btrue,
+			PassQueryString: true,
 		},
 	}
 	// Define array error routing rule
@@ -1477,50 +1462,17 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 			RuleNumber:1,
 			Redirect:Redirect {
 				RedirectType: "Mirror",
-				PassQueryString: &btrue,
+				PassQueryString: true,
 			},
 		},
 		RoutingRule {
 			RuleNumber:2,
 			Redirect:Redirect {
 				RedirectType: "Mirror",
-				PassQueryString: &btrue,
+				PassQueryString: true,
 			},
 		},
 	}
-
-	ruleIntErr := RoutingRule {
-		// RuleNumber:0,						// set NULL value
-		Condition:Condition{
-			KeyPrefixEquals:"",
-			HTTPErrorCodeReturnedEquals:404,
-		},
-		Redirect:Redirect {
-			RedirectType: "Mirror",
-			// PassQueryString: &btrue, 		// set default value
-			MirrorURL:"http://www.test.com/",
-			// MirrorPassQueryString:&btrue, 	// set default value
-			// MirrorFollowRedirect:&bfalse, 	// set default value
-			// MirrorCheckMd5:&bfalse, 			// set default value
-			MirrorHeaders:MirrorHeaders{
-				// PassAll:&bfalse, 			// set default value
-				Pass:[]string{"myheader-key1","myheader-key2"},
-				Remove:[]string{"myheader-key3", "myheader-key4"},
-				Set:[]MirrorHeaderSet{
-					MirrorHeaderSet{
-						Key:"myheader-key5",
-						Value:"myheader-value5",
-					},
-				},
-			},
-		},
-	}
-
-	// Set one int type error rule
-	wxmlIntErr := WebsiteXML{}
-	wxmlIntErr.RoutingRules = append(wxmlIntErr.RoutingRules, ruleIntErr)
-	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlIntErr)
-	c.Assert(err, NotNil)
 
 	// Set one error rule
 	wxmlErr := WebsiteXML{}
@@ -1547,7 +1499,8 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSetBucketWebsite
+
+// TestSetBucketCORS
 func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
 	var rule1 = CORSRule{
@@ -2168,8 +2121,10 @@ func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
 	c.Assert(encryptionRule.SSEDefault.KMSMasterKeyID, Equals, getResult.SSEDefault.KMSMasterKeyID)
 
 	// delete bucket encyption
-	err = client.DeleteBucketEncryption(bucketName)
+	err = client.DeleteBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
 
 	// GetBucketEncryption failure
 	_, err = client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
@@ -2307,11 +2262,14 @@ func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
+	var respHeader http.Header
+
 	// Bucket Tagging
 	var tagging Tagging
 	tagging.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
-	err = client.SetBucketTagging(bucketName, tagging)
+	err = client.SetBucketTagging(bucketName, tagging, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 
 	getResult, err := client.GetBucketTagging(bucketName)
 	c.Assert(err, IsNil)
@@ -2319,10 +2277,13 @@ func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
 	c.Assert(getResult.Tags[0].Value, Equals, tagging.Tags[0].Value)
 
 	// delete BucketTagging
-	err = client.DeleteBucketTagging(bucketName)
+	err = client.DeleteBucketTagging(bucketName, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
-	getResult, err = client.GetBucketTagging(bucketName)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	getResult, err = client.GetBucketTagging(bucketName, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 	c.Assert(len(getResult.Tags), Equals, 0)
 
 	err = client.DeleteBucket(bucketName)
@@ -2355,4 +2316,57 @@ func (s *OssClientSuite) TestListBucketsTagging(c *C) {
 
 	client.DeleteBucket(bucketName1)
 	client.DeleteBucket(bucketName2)
+}
+
+func (s *OssClientSuite) TestGetBucketStat(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// put object
+	objectName := objectNamePrefix + randLowStr(5)
+	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
+	c.Assert(err, IsNil)
+
+	bucket.DeleteObject(objectName)
+	err = bucket.PutObject(objectName, strings.NewReader(randStr(10)))
+	c.Assert(err, IsNil)
+	bucket.DeleteObject(objectName)
+
+	_, err = client.GetBucketStat(bucketName)
+	c.Assert(err, IsNil)
+
+	client.DeleteBucket(bucketName)
+}
+
+func (s *OssBucketSuite) TestGetBucketVersioning(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+
+	var respHeader http.Header
+	err = client.CreateBucket(bucketName, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// get bucket version success
+	versioningResult, err := client.GetBucketVersioning(bucketName, GetResponseHeader(&respHeader))
+	c.Assert(versioningResult.Status, Equals, "Enabled")
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	forceDeleteBucket(client, bucketName, c)
 }

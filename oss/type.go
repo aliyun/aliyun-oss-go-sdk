@@ -204,6 +204,7 @@ type RoutingRule struct {
 	RuleNumber int       `xml:"RuleNumber,omitempty"` // The routing number
 	Condition  Condition `xml:"Condition"`            // The routing condition
 	Redirect   Redirect  `xml:"Redirect"`             // The routing redirect
+
 }
 
 // Condition defines codition in the RoutingRule
@@ -826,7 +827,7 @@ type GetBucketTaggingResult Tagging
 type BucketStat struct {
 	XMLName              xml.Name `xml:"BucketStat"`
 	Storage              int64    `xml:"Storage"`
-	ObjectCount          int64    `xml:ObjectCount`
-	MultipartUploadCount int64    `xml:MultipartUploadCount`
+	ObjectCount          int64    `xml:"ObjectCount"`
+	MultipartUploadCount int64    `xml:"MultipartUploadCount"`
 }
 type GetBucketStatResult BucketStat

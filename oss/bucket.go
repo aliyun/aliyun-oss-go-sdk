@@ -542,8 +542,8 @@ func (bucket Bucket) DeleteObjectVersions(objectVersions []DeleteObject, options
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (bucket Bucket) IsObjectExist(objectKey string) (bool, error) {
-	_, err := bucket.GetObjectMeta(objectKey)
+func (bucket Bucket) IsObjectExist(objectKey string, options ...Option) (bool, error) {
+	_, err := bucket.GetObjectMeta(objectKey, options...)
 	if err == nil {
 		return true, nil
 	}
@@ -1119,6 +1119,19 @@ func (bucket Bucket) DeleteObjectTagging(objectKey string, options ...Option) er
 	defer resp.Body.Close()
 
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
+func (bucket Bucket) OptionsMethod(objectKey string, options ...Option) (int, http.Header, error) {
+	var statusCode int
+	var out http.Header
+	resp, err := bucket.do("OPTIONS", objectKey, nil, options, nil, nil)
+	if err != nil {
+		return statusCode, out, err
+	}
+	defer resp.Body.Close()
+	statusCode = resp.StatusCode
+	out = resp.Headers
+	return statusCode, out, nil
 }
 
 // Private
