@@ -1499,7 +1499,8 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestSetBucketWebsite
+
+// TestSetBucketCORS
 func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
 	var rule1 = CORSRule{
