@@ -1489,6 +1489,39 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 		},
 	}
 
+	ruleIntErr := RoutingRule {
+		// RuleNumber:0,						// set NULL value
+		Condition:Condition{
+			KeyPrefixEquals:"",
+			HTTPErrorCodeReturnedEquals:404,
+		},
+		Redirect:Redirect {
+			RedirectType: "Mirror",
+			// PassQueryString: &btrue, 		// set default value
+			MirrorURL:"http://www.test.com/",
+			// MirrorPassQueryString:&btrue, 	// set default value
+			// MirrorFollowRedirect:&bfalse, 	// set default value
+			// MirrorCheckMd5:&bfalse, 			// set default value
+			MirrorHeaders:MirrorHeaders{
+				// PassAll:&bfalse, 			// set default value
+				Pass:[]string{"myheader-key1","myheader-key2"},
+				Remove:[]string{"myheader-key3", "myheader-key4"},
+				Set:[]MirrorHeaderSet{
+					MirrorHeaderSet{
+						Key:"myheader-key5",
+						Value:"myheader-value5",
+					},
+				},
+			},
+		},
+	}
+
+	// Set one int type error rule
+	wxmlIntErr := WebsiteXML{}
+	wxmlIntErr.RoutingRules = append(wxmlIntErr.RoutingRules, ruleIntErr)
+	err = client.SetBucketWebsiteDetail(bucketNameTest, wxmlIntErr)
+	c.Assert(err, NotNil)
+
 	// Set one error rule
 	wxmlErr := WebsiteXML{}
 	wxmlErr.RoutingRules = append(wxmlErr.RoutingRules, ruleErr)

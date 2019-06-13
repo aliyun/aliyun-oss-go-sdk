@@ -201,9 +201,9 @@ type ErrorDocument struct {
 // RoutingRule defines the routing rules
 type RoutingRule struct {
 	XMLName    xml.Name  `xml:"RoutingRule"`
-	RuleNumber int       `xml:"RuleNumber"` // The routing number
-	Condition  Condition `xml:"Condition"`  // The routing condition
-	Redirect   Redirect  `xml:"Redirect"`   // The routing redirect
+	RuleNumber int       `xml:"RuleNumber,omitempty"` // The routing number
+	Condition  Condition `xml:"Condition"`            // The routing condition
+	Redirect   Redirect  `xml:"Redirect"`             // The routing redirect
 }
 
 // Condition defines codition in the RoutingRule
