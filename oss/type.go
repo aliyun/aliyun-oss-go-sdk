@@ -217,14 +217,14 @@ type Condition struct {
 // IncludeHeader defines includeHeader in the RoutingRule's Condition
 type IncludeHeader struct {
 	XMLName xml.Name `xml:"IncludeHeader"`
-	Key     string   `xml:"Key"`    // The Include header key
-	Equals  string   `xml:"Equals"` // The Include header value
+	Key     string   `xml:"Key,omitempty"`    // The Include header key
+	Equals  string   `xml:"Equals,omitempty"` // The Include header value
 }
 
 // Redirect defines redirect in the RoutingRule
 type Redirect struct {
 	XMLName               xml.Name      `xml:"Redirect"`
-	RedirectType          string        `xml:"RedirectType"`                   // The redirect type, it have Mirror,External,Internal,AliCDN
+	RedirectType          string        `xml:"RedirectType,omitempty"`         // The redirect type, it have Mirror,External,Internal,AliCDN
 	PassQueryString       *bool         `xml:"PassQueryString"`                // Whether to send the specified request's parameters, true or false
 	MirrorURL             string        `xml:"MirrorURL,omitempty"`            // Mirror of the website address back to the source.
 	MirrorPassQueryString *bool         `xml:"MirrorPassQueryString"`          // To Mirror of the website Whether to send the specified request's parameters, true or false
@@ -250,8 +250,8 @@ type MirrorHeaders struct {
 // MirrorHeaderSet defines Set for Redirect's MirrorHeaders
 type MirrorHeaderSet struct {
 	XMLName xml.Name `xml:"Set"`
-	Key     string   `xml:"Key"`   // The mirror header key
-	Value   string   `xml:"Value"` // The mirror header value
+	Key     string   `xml:"Key,omitempty"`   // The mirror header key
+	Value   string   `xml:"Value,omitempty"` // The mirror header value
 }
 
 // GetBucketWebsiteResult defines the result from GetBucketWebsite request.
