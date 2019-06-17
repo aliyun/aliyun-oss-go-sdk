@@ -2194,20 +2194,19 @@ func (s *OssClientSuite) TestBucketPolicyNegative(c *C) {
 
 	// Setting the Version is 2, this is error policy
 	errPolicy := `
-		{
-			"Version":"2",
-			"Statement":[
-				{
-					"Action":[
-						"oss:GetObject",
-						"oss:PutObject"
-					],
-					"Effect":"Deny",
-					"Principal":"[123456790]",
-					"Resource":["acs:oss:*:1234567890:*/*"]
-				}
-			]
-		}
+	{
+		"Version":"2",
+		"Statement":[
+			{
+				"Action":[
+					"oss:GetObject",
+					"oss:PutObject"
+				],
+				"Effect":"Deny",
+				"Principal":"[123456790]",
+				"Resource":["acs:oss:*:1234567890:*/*"]
+			}
+		]
 	}`
 	err = client.SetBucketPolicy(bucketName, errPolicy, GetResponseHeader(&responseHeader))
 	c.Assert(err, NotNil)

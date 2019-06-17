@@ -960,9 +960,9 @@ func (client Client) GetBucketPolicy(bucketName string, options ...Option) (stri
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 
 	out := string(body)
 	return out, err
@@ -974,15 +974,15 @@ func (client Client) GetBucketPolicy(bucketName string, options ...Option) (stri
 //
 // bucketName the bucket name.
 //
-// PolicyInfo the bucket policy.
+// policy the bucket policy.
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (client Client) SetBucketPolicy(bucketName string, strPolicy string, options ...Option) error {
+func (client Client) SetBucketPolicy(bucketName string, policy string, options ...Option) error {
 	params := map[string]interface{}{}
 	params["policy"] = nil
 
-	buffer := strings.NewReader(strPolicy)
+	buffer := strings.NewReader(policy)
 
 	resp, err := client.do("PUT", bucketName, params, nil, buffer)
 
