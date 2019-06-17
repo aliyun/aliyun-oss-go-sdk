@@ -3023,10 +3023,12 @@ func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
 
 	// put bucket version:enabled
+	var respHeader http.Header
 	var versioningConfig VersioningConfig
 	versioningConfig.Status = string(VersionEnabled)
-	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	err = client.SetBucketVersioning(bucketName, versioningConfig, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 
 	bucketResult, err = client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -4313,6 +4315,163 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 	getResult, err = bucket.GetObjectTagging(objectName, VersionId(versionIdV2))
 	c.Assert(err, IsNil)
 	c.Assert(len(getResult.Tags), Equals, 0)
+
+	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestVersioningIsObjectExist(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// check default exist
+	exist, err := bucket.IsObjectExist(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, true)
+
+	// check object v1 exist
+	exist, err = bucket.IsObjectExist(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, true)
+
+	// check object v2 exist
+	exist, err = bucket.IsObjectExist(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, true)
+
+	// rm v2
+	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+
+	// check object v2 not exist
+	exist, err = bucket.IsObjectExist(objectName, VersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, false)
+
+	// rm default
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// check default exist
+	exist, err = bucket.IsObjectExist(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, false)
+
+	// check v1 exist
+	exist, err = bucket.IsObjectExist(objectName, VersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, true)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestOptionsMethod(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket cors
+	var rule = CORSRule{
+		AllowedOrigin: []string{"www.aliyun.com"},
+		AllowedMethod: []string{"PUT", "GET", "POST"},
+		AllowedHeader: []string{"x-oss-meta-author"},
+		ExposeHeader:  []string{"x-oss-meta-name"},
+		MaxAgeSeconds: 100,
+	}
+
+	// set cors
+	err = client.SetBucketCORS(bucketName, []CORSRule{rule})
+	c.Assert(err, IsNil)
+
+	// bucket options success
+	options := []Option{}
+	originOption := Origin("www.aliyun.com")
+	acMethodOption := ACReqMethod("PUT")
+	acHeadersOption := ACReqHeaders("x-oss-meta-author")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	_, err = bucket.OptionsMethod("", options...)
+	c.Assert(err, IsNil)
+
+	// options failure
+	options = []Option{}
+	originOption = Origin("www.aliyun.com")
+	acMethodOption = ACReqMethod("PUT")
+	acHeadersOption = ACReqHeaders("x-oss-meta-author-1")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	_, err = bucket.OptionsMethod("", options...)
+	c.Assert(err, NotNil)
+
+	// put object
+	objectName := objectNamePrefix + randStr(8)
+	context := randStr(100)
+	err = bucket.PutObject(objectName, strings.NewReader(context))
+	c.Assert(err, IsNil)
+
+	// object options success
+	options = []Option{}
+	originOption = Origin("www.aliyun.com")
+	acMethodOption = ACReqMethod("PUT")
+	acHeadersOption = ACReqHeaders("x-oss-meta-author")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	_, err = bucket.OptionsMethod("", options...)
+	c.Assert(err, IsNil)
+
+	// options failure
+	options = []Option{}
+	originOption = Origin("www.aliyun.com")
+	acMethodOption = ACReqMethod("PUT")
+	acHeadersOption = ACReqHeaders("x-oss-meta-author-1")
+	options = append(options, originOption)
+	options = append(options, acMethodOption)
+	options = append(options, acHeadersOption)
+	_, err = bucket.OptionsMethod("", options...)
+	c.Assert(err, NotNil)
 
 	bucket.DeleteObject(objectName)
 	forceDeleteBucket(client, bucketName, c)

@@ -533,6 +533,46 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// SetBucketWebsiteDetail sets the bucket's static website's detail
+//
+// OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
+// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+//
+// bucketName the bucket name to enable static web site.
+//
+// wxml the website's detail
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketWebsiteDetail(bucketName string, wxml WebsiteXML, options ...Option) error {
+	bs, err := xml.Marshal(wxml)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := make(map[string]string)
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["website"] = nil
+	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // DeleteBucketWebsite deletes the bucket's static web site settings.
 //
 // bucketName    the bucket name.
