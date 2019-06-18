@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -532,6 +533,46 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// SetBucketWebsiteDetail sets the bucket's static website's detail
+//
+// OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
+// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+//
+// bucketName the bucket name to enable static web site.
+//
+// wxml the website's detail
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketWebsiteDetail(bucketName string, wxml WebsiteXML, options ...Option) error {
+	bs, err := xml.Marshal(wxml)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := make(map[string]string)
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["website"] = nil
+	resp, err := client.do("PUT", bucketName, params, headers, buffer)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // DeleteBucketWebsite deletes the bucket's static web site settings.
 //
 // bucketName    the bucket name.
@@ -931,6 +972,101 @@ func (client Client) GetBucketStat(bucketName string) (GetBucketStatResult, erro
 
 	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
+}
+
+// GetBucketPolicy API operation for Object Storage Service.
+//
+// Get the policy from the bucket.
+//
+// bucketName 	 the bucket name.
+//
+// string		 return the bucket's policy, and it's only valid when error is nil.
+//
+// error   		 it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketPolicy(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	out := string(body)
+	return out, err
+}
+
+// SetBucketPolicy API operation for Object Storage Service.
+//
+// Set the policy from the bucket.
+//
+// bucketName the bucket name.
+//
+// policy the bucket policy.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketPolicy(bucketName string, policy string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+
+	buffer := strings.NewReader(policy)
+
+	resp, err := client.do("PUT", bucketName, params, nil, buffer)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// DeleteBucketPolicy API operation for Object Storage Service.
+//
+// Deletes the policy from the bucket.
+//
+// bucketName the bucket name.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) DeleteBucketPolicy(bucketName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+	resp, err := client.do("DELETE", bucketName, params, nil, nil)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited

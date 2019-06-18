@@ -855,6 +855,10 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
 	os.Remove(newFile)
 	downloadPartHooker = DownErrorHooker
 	options = []Option{CheckpointDir(true, "./"), VersionId(versionId)}
+
+	strPayer := getPayer(options)
+	c.Assert(strPayer, Equals, "")
+
 	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "ErrorHooker")
