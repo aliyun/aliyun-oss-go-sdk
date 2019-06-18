@@ -1,4 +1,13 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.0 日期：2019-06-18
+### 变更内容
+- 增加：增加各个接口对versioning的支持
+- 增加：增加设置、查询、删除bucket policy接口
+- 增加: 增加设置website详细配置接口: SetBucketWebsiteDetail
+- 增加: 增加Bucket OptionsMethod 接口
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v1.9.8 日期：2019-05-25
 ### 变更内容
 - 增加：增加设置、查询、删除bucket tagging接口
