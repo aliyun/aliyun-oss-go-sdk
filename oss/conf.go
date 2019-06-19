@@ -35,6 +35,13 @@ type HTTPMaxConns struct {
 	MaxIdleConnsPerHost int
 }
 
+// AKInterface is interface for getting AccessKeyID, AccessKeySecret, SecurityToken
+type AKInterface interface {
+	GetAccessKeyID() string
+	GetAccessKeySecret() string
+	GetSecurityToken() string
+}
+
 // Config defines oss configuration
 type Config struct {
 	Endpoint         string       // OSS endpoint
@@ -60,6 +67,7 @@ type Config struct {
 	Logger           *log.Logger  // For write log
 	UploadLimitSpeed int          // Upload limit speed:KB/s, 0 is unlimited
 	UploadLimiter    *OssLimiter  // Bandwidth limit reader for upload
+	UserAKInf        AKInterface  // User provides interface to get AccessKeyID, AccessKeySecret, SecurityToken
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0
@@ -90,6 +98,30 @@ func (config *Config) WriteLog(LogLevel int, format string, a ...interface{}) {
 	logBuffer.WriteString(LogTag[LogLevel-1])
 	logBuffer.WriteString(fmt.Sprintf(format, a...))
 	config.Logger.Printf("%s", logBuffer.String())
+}
+
+// for get AccessKeyID
+func (config *Config) GetAccessKeyID() string {
+	if config.UserAKInf != nil {
+		return config.UserAKInf.GetAccessKeyID()
+	}
+	return config.AccessKeyID
+}
+
+// for get AccessKeySecret
+func (config *Config) GetAccessKeySecret() string {
+	if config.UserAKInf != nil {
+		return config.UserAKInf.GetAccessKeySecret()
+	}
+	return config.AccessKeySecret
+}
+
+// for get SecurityToken
+func (config *Config) GetSecurityToken() string {
+	if config.UserAKInf != nil {
+		return config.UserAKInf.GetSecurityToken()
+	}
+	return config.SecurityToken
 }
 
 // getDefaultOssConfig gets the default configuration.

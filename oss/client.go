@@ -1216,6 +1216,15 @@ func SetLogger(Logger *log.Logger) ClientOption {
 	}
 }
 
+//
+// SetAKInterface sets funciton for get the user's ak
+//
+func SetAKInterface(akIf AKInterface) ClientOption {
+	return func(client *Client) {
+		client.Config.UserAKInf = akIf
+	}
+}
+
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
 	headers map[string]string, data io.Reader) (*Response, error) {
