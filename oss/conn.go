@@ -239,8 +239,8 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	req.Header.Set(HTTPHeaderDate, date)
 	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
-	if conn.config.SecurityToken != "" {
-		req.Header.Set(HTTPHeaderOssSecurityToken, conn.config.SecurityToken)
+	if conn.config.GetSecurityToken() != "" {
+		req.Header.Set(HTTPHeaderOssSecurityToken, conn.config.GetSecurityToken())
 	}
 
 	if headers != nil {
@@ -281,8 +281,8 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 }
 
 func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) string {
-	if conn.config.SecurityToken != "" {
-		params[HTTPParamSecurityToken] = conn.config.SecurityToken
+	if conn.config.GetSecurityToken() != "" {
+		params[HTTPParamSecurityToken] = conn.config.GetSecurityToken()
 	}
 	subResource := conn.getSubResource(params)
 	canonicalizedResource := conn.url.getResource(bucketName, objectName, subResource)
@@ -312,7 +312,7 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	signedStr := conn.getSignedStr(req, canonicalizedResource)
 
 	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
-	params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
+	params[HTTPParamAccessKeyID] = conn.config.GetAccessKeyID()
 	params[HTTPParamSignature] = signedStr
 
 	urlParams := conn.getURLParams(params)
@@ -327,10 +327,10 @@ func (conn Conn) signRtmpURL(bucketName, channelName, playlistName string, expir
 	expireStr := strconv.FormatInt(expiration, 10)
 	params[HTTPParamExpires] = expireStr
 
-	if conn.config.AccessKeyID != "" {
-		params[HTTPParamAccessKeyID] = conn.config.AccessKeyID
-		if conn.config.SecurityToken != "" {
-			params[HTTPParamSecurityToken] = conn.config.SecurityToken
+	if conn.config.GetAccessKeyID() != "" {
+		params[HTTPParamAccessKeyID] = conn.config.GetAccessKeyID()
+		if conn.config.GetSecurityToken() != "" {
+			params[HTTPParamSecurityToken] = conn.config.GetSecurityToken()
 		}
 		signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, params)
 		params[HTTPParamSignature] = signedStr

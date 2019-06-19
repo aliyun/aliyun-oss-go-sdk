@@ -23,7 +23,7 @@ type headerSorter struct {
 // signHeader signs the header and sets it as the authorization header.
 func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 	// Get the final authorization string
-	authorizationStr := "OSS " + conn.config.AccessKeyID + ":" + conn.getSignedStr(req, canonicalizedResource)
+	authorizationStr := "OSS " + conn.config.GetAccessKeyID() + ":" + conn.getSignedStr(req, canonicalizedResource)
 
 	// Give the parameter "Authorization" value
 	req.Header.Set(HTTPHeaderAuthorization, authorizationStr)
@@ -59,7 +59,7 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 
 	conn.config.WriteLog(Debug, "[Req:%p]signStr:%s.\n", req, signStr)
 
-	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.AccessKeySecret))
+	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.GetAccessKeySecret()))
 	io.WriteString(h, signStr)
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
@@ -88,7 +88,7 @@ func (conn Conn) getRtmpSignedStr(bucketName, channelName, playlistName string, 
 	expireStr := strconv.FormatInt(expiration, 10)
 	signStr := expireStr + "\n" + canonParamsStr + canonResource
 
-	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.AccessKeySecret))
+	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.GetAccessKeySecret()))
 	io.WriteString(h, signStr)
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	return signedStr
