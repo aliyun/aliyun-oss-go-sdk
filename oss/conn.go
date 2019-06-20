@@ -123,7 +123,7 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	}
 
 	// Transfer started
-	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
+	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength, 0)
 	publishProgress(listener, event)
 
 	if conn.config.LogLevel >= Debug {
@@ -133,7 +133,7 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	resp, err := conn.client.Do(req)
 	if err != nil {
 		// Transfer failed
-		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
+		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
 		publishProgress(listener, event)
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	}
 
 	// Transfer completed
-	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength)
+	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength, 0)
 	publishProgress(listener, event)
 
 	return conn.handleResponse(resp, crc)
@@ -252,7 +252,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	conn.signHeader(req, canonicalizedResource)
 
 	// Transfer started
-	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength)
+	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength, 0)
 	publishProgress(listener, event)
 
 	if conn.config.LogLevel >= Debug {
@@ -263,7 +263,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 
 	if err != nil {
 		// Transfer failed
-		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength)
+		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
 		publishProgress(listener, event)
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	}
 
 	// Transfer completed
-	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength)
+	event = newProgressEvent(TransferCompletedEvent, tracker.completedBytes, req.ContentLength, 0)
 	publishProgress(listener, event)
 
 	return conn.handleResponse(resp, crc)

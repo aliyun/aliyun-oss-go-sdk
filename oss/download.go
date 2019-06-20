@@ -263,7 +263,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 
 	var completedBytes int64
 	totalBytes := getObjectBytes(parts)
-	event := newProgressEvent(TransferStartedEvent, 0, totalBytes)
+	event := newProgressEvent(TransferStartedEvent, 0, totalBytes, 0)
 	publishProgress(listener, event)
 
 	// Start the download workers
@@ -281,13 +281,14 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 		select {
 		case part := <-results:
 			completed++
-			completedBytes += (part.End - part.Start + 1)
+			downBytes := (part.End - part.Start + 1)
+			completedBytes += downBytes
 			parts[part.Index].CRC64 = part.CRC64
-			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes)
+			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes, downBytes)
 			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
-			event = newProgressEvent(TransferFailedEvent, completedBytes, totalBytes)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, totalBytes, 0)
 			publishProgress(listener, event)
 			return err
 		}
@@ -297,7 +298,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 		}
 	}
 
-	event = newProgressEvent(TransferCompletedEvent, completedBytes, totalBytes)
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, totalBytes, 0)
 	publishProgress(listener, event)
 
 	if enableCRC {
@@ -510,7 +511,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 	die := make(chan bool)
 
 	completedBytes := dcp.getCompletedBytes()
-	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size)
+	event := newProgressEvent(TransferStartedEvent, completedBytes, dcp.ObjStat.Size, 0)
 	publishProgress(listener, event)
 
 	// Start the download workers routine
@@ -531,12 +532,13 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 			dcp.PartStat[part.Index] = true
 			dcp.Parts[part.Index].CRC64 = part.CRC64
 			dcp.dump(cpFilePath)
-			completedBytes += (part.End - part.Start + 1)
-			event = newProgressEvent(TransferDataEvent, completedBytes, dcp.ObjStat.Size)
+			downBytes := (part.End - part.Start + 1)
+			completedBytes += downBytes
+			event = newProgressEvent(TransferDataEvent, completedBytes, dcp.ObjStat.Size, downBytes)
 			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
-			event = newProgressEvent(TransferFailedEvent, completedBytes, dcp.ObjStat.Size)
+			event = newProgressEvent(TransferFailedEvent, completedBytes, dcp.ObjStat.Size, 0)
 			publishProgress(listener, event)
 			return err
 		}
@@ -546,7 +548,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 		}
 	}
 
-	event = newProgressEvent(TransferCompletedEvent, completedBytes, dcp.ObjStat.Size)
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, dcp.ObjStat.Size, 0)
 	publishProgress(listener, event)
 
 	if dcp.enableCRC {
