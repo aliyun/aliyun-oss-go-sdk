@@ -113,15 +113,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	}
 
 	params := map[string]interface{}{}
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
 	if err != nil {
 		return err
 	}
@@ -148,15 +140,7 @@ func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 		return out, err
 	}
 
-	resp, err := client.do("GET", "", params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("GET", "", params, nil, nil, options...)
 	if err != nil {
 		return out, err
 	}
@@ -558,14 +542,7 @@ func (client Client) SetBucketWebsiteDetail(bucketName string, wxml WebsiteXML, 
 
 	params := map[string]interface{}{}
 	params["website"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
 	if err != nil {
 		return err
 	}
@@ -744,14 +721,7 @@ func (client Client) SetBucketVersioning(bucketName string, versioningConfig Ver
 
 	params := map[string]interface{}{}
 	params["versioning"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
 
 	if err != nil {
 		return err
@@ -767,14 +737,7 @@ func (client Client) GetBucketVersioning(bucketName string, options ...Option) (
 	var out GetBucketVersioningResult
 	params := map[string]interface{}{}
 	params["versioning"] = nil
-	resp, err := client.do("GET", bucketName, params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
 
 	if err != nil {
 		return out, err
@@ -806,14 +769,7 @@ func (client Client) SetBucketEncryption(bucketName string, encryptionRule Serve
 
 	params := map[string]interface{}{}
 	params["encryption"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
 
 	if err != nil {
 		return err
@@ -829,14 +785,7 @@ func (client Client) GetBucketEncryption(bucketName string, options ...Option) (
 	var out GetBucketEncryptionResult
 	params := map[string]interface{}{}
 	params["encryption"] = nil
-	resp, err := client.do("GET", bucketName, params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
 
 	if err != nil {
 		return out, err
@@ -853,14 +802,7 @@ func (client Client) GetBucketEncryption(bucketName string, options ...Option) (
 func (client Client) DeleteBucketEncryption(bucketName string, options ...Option) error {
 	params := map[string]interface{}{}
 	params["encryption"] = nil
-	resp, err := client.do("DELETE", bucketName, params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
 
 	if err != nil {
 		return err
@@ -892,15 +834,7 @@ func (client Client) SetBucketTagging(bucketName string, tagging Tagging, option
 
 	params := map[string]interface{}{}
 	params["tagging"] = nil
-	resp, err := client.do("PUT", bucketName, params, headers, buffer)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
 	if err != nil {
 		return err
 	}
@@ -915,15 +849,7 @@ func (client Client) GetBucketTagging(bucketName string, options ...Option) (Get
 	var out GetBucketTaggingResult
 	params := map[string]interface{}{}
 	params["tagging"] = nil
-	resp, err := client.do("GET", bucketName, params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
 	if err != nil {
 		return out, err
 	}
@@ -941,15 +867,7 @@ func (client Client) GetBucketTagging(bucketName string, options ...Option) (Get
 func (client Client) DeleteBucketTagging(bucketName string, options ...Option) error {
 	params := map[string]interface{}{}
 	params["tagging"] = nil
-	resp, err := client.do("DELETE", bucketName, params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
 	if err != nil {
 		return err
 	}
@@ -988,15 +906,7 @@ func (client Client) GetBucketPolicy(bucketName string, options ...Option) (stri
 	params := map[string]interface{}{}
 	params["policy"] = nil
 
-	resp, err := client.do("GET", bucketName, params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
 	if err != nil {
 		return "", err
 	}
@@ -1024,15 +934,7 @@ func (client Client) SetBucketPolicy(bucketName string, policy string, options .
 
 	buffer := strings.NewReader(policy)
 
-	resp, err := client.do("PUT", bucketName, params, nil, buffer)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
 	if err != nil {
 		return err
 	}
@@ -1052,15 +954,7 @@ func (client Client) SetBucketPolicy(bucketName string, policy string, options .
 func (client Client) DeleteBucketPolicy(bucketName string, options ...Option) error {
 	params := map[string]interface{}{}
 	params["policy"] = nil
-	resp, err := client.do("DELETE", bucketName, params, nil, nil)
-
-	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
-	if respHeader != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
 	if err != nil {
 		return err
 	}
@@ -1227,7 +1121,16 @@ func SetAKInterface(akIf AKInterface) ClientOption {
 
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
-	headers map[string]string, data io.Reader) (*Response, error) {
-	return client.Conn.Do(method, bucketName, "", params,
+	headers map[string]string, data io.Reader, options ...Option) (*Response, error) {
+	resp, err := client.Conn.Do(method, bucketName, "", params,
 		headers, data, 0, nil)
+
+	// get response header
+	respHeader, _ := findOption(options, responseHeader, nil)
+	if respHeader != nil {
+		pRespHeader := respHeader.(*http.Header)
+		*pRespHeader = resp.Headers
+	}
+
+	return resp, err
 }
