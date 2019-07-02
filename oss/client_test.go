@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"reflect"
+	"encoding/json"
 
 	. "gopkg.in/check.v1"
 )
@@ -2538,4 +2540,107 @@ func (s *OssClientSuite) TestBucketPolicyNegative(c *C) {
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	client.DeleteBucket(bucketName)
+}
+
+func (s *OssClientSuite) TestBucketQos(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	ret, err := client.GetUserQoSInfo()
+	c.Assert(err, IsNil)
+	testLogger.Println("QosInfo:", ret)
+
+	bucketName := bucketNamePrefix + "liuxing"
+	_ = client.DeleteBucket(bucketName)
+
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketQosInfo(bucketName)
+	c.Assert(err, NotNil)
+
+	// case 1 set BucketQoSConfiguration every member
+	five := 5; four := 4; three := 3
+	qosConf := BucketQoSConfiguration {
+		TotalUploadBandwidth:      &five,
+		IntranetUploadBandwidth:   &four,
+		ExtranetUploadBandwidth:   &four,
+		TotalDownloadBandwidth:    &four,
+		IntranetDownloadBandwidth: &four,
+		ExtranetDownloadBandwidth: &four,
+		TotalQPS:                  &five,
+		IntranetQPS:               &three,
+		ExtranetQPS:               &three,
+	}
+	err = client.SetBucketQoSInfo(bucketName, qosConf)
+	c.Assert(err, IsNil)
+
+	retQos, err := client.GetBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+	// set qosConf default value
+	qosConf.XMLName.Local = "QoSConfiguration"
+	c.Assert(struct2string(retQos, c), Equals, struct2string(qosConf, c))
+
+	// case 2 set BucketQoSConfiguration not every member
+	qosConfNo := BucketQoSConfiguration {
+		TotalUploadBandwidth:      &five,
+		IntranetUploadBandwidth:   &four,
+		ExtranetUploadBandwidth:   &four,
+		TotalDownloadBandwidth:    &four,
+		IntranetDownloadBandwidth: &four,
+		ExtranetDownloadBandwidth: &four,
+		TotalQPS:                  &five,
+	}
+	err = client.SetBucketQoSInfo(bucketName, qosConfNo)
+	c.Assert(err, IsNil)
+
+	retQos, err = client.GetBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+	// set qosConfNo default value
+	qosConfNo.XMLName.Local = "QoSConfiguration"
+	defNum := -1
+	qosConfNo.IntranetQPS = &defNum
+	qosConfNo.ExtranetQPS = &defNum
+	c.Assert(struct2string(retQos, c), Equals, struct2string(qosConfNo, c))
+
+	err = client.DeleteBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketQosInfo(bucketName)
+	c.Assert(err, NotNil)
+
+	// this is a error qos configuration
+	to := *ret.TotalUploadBandwidth + 2
+	qosErrConf := BucketQoSConfiguration{
+		TotalUploadBandwidth:      &to,  // this exceed user TotalUploadBandwidth
+		IntranetUploadBandwidth:   &four,
+		ExtranetUploadBandwidth:   &four,
+		TotalDownloadBandwidth:    &four,
+		IntranetDownloadBandwidth: &four,
+		ExtranetDownloadBandwidth: &four,
+		TotalQPS:                  &three,
+		IntranetQPS:               &three,
+		ExtranetQPS:               &three,
+	}
+	err = client.SetBucketQoSInfo(bucketName, qosErrConf)
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+// struct to string
+func struct2string(obj interface{}, c *C) string {
+	t := reflect.TypeOf(obj)
+	v := reflect.ValueOf(obj)
+
+	var data = make(map[string]interface{})
+	for i := 0; i < t.NumField(); i++ {
+		data[t.Field(i).Name] = v.Field(i).Interface()
+	}
+	str, err := json.Marshal(data)
+	c.Assert(err, IsNil)
+	return string(str)
 }
