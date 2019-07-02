@@ -43,6 +43,11 @@ var (
 	stsaccessID  = os.Getenv("OSS_TEST_STS_ID")
 	stsaccessKey = os.Getenv("OSS_TEST_STS_KEY")
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
+
+	// Credential
+	credentialAccessID   = os.Getenv("OSS_CREDENTIAL_KEY_ID")
+	credentialAccessKey  = os.Getenv("OSS_CREDENTIAL_KEY_SECRET")
+	credentialUID        = os.Getenv("OSS_CREDENTIAL_UID")
 )
 
 var (
@@ -55,6 +60,8 @@ var (
 	objectNamePrefix = "go-sdk-test-object-"
 	// sts region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
+	// Credentials
+	credentialBucketName = bucketNamePrefix + randLowStr(6)
 )
 
 var (
@@ -2538,4 +2545,48 @@ func (s *OssClientSuite) TestBucketPolicyNegative(c *C) {
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	client.DeleteBucket(bucketName)
+}
+
+func (s *OssClientSuite) TestSetBucketRequestPayment(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	reqPayConf := RequestPaymentConfiguration{
+		Payer:"Requester",
+	}
+	err = client.SetBucketRequestPayment(bucketName, reqPayConf)
+	c.Assert(err, IsNil)
+
+	ret, err := client.GetBucketRequestPayment(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(ret.Payer, Equals, "Requester")
+
+	client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestSetBucketRequestPaymentNegative(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	reqPayConf := RequestPaymentConfiguration{
+		Payer:"Requesterttttt",	// this is a error configuration
+	}
+	err = client.SetBucketRequestPayment(bucketName, reqPayConf)
+	c.Assert(err, NotNil)
+
+	ret, err := client.GetBucketRequestPayment(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(ret.Payer, Equals, "BucketOwner")
+
+	client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
 }
