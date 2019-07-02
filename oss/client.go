@@ -963,6 +963,67 @@ func (client Client) DeleteBucketPolicy(bucketName string, options ...Option) er
 	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+// SetBucketRequestPayment API operation for Object Storage Service.
+//
+// Set the requestPayment of bucket
+//
+// bucketName the bucket name.
+//
+// paymentConfig the payment configuration
+//
+// error it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketRequestPayment(bucketName string, paymentConfig RequestPaymentConfiguration, options ...Option) error {
+	params := map[string]interface{}{}
+	params["requestPayment"] = nil
+
+	var bs []byte
+	bs, err := xml.Marshal(paymentConfig)
+
+	if err != nil {
+		return err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketRequestPayment API operation for Object Storage Service.
+//
+// Get bucket requestPayment
+//
+// bucketName the bucket name.
+//
+// RequestPaymentConfiguration the payment configuration
+//
+// error it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketRequestPayment(bucketName string, options ...Option) (RequestPaymentConfiguration, error) {
+	var out RequestPaymentConfiguration
+	params := map[string]interface{}{}
+	params["requestPayment"] = nil
+
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure

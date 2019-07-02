@@ -831,3 +831,9 @@ type BucketStat struct {
 	MultipartUploadCount int64    `xml:"MultipartUploadCount"`
 }
 type GetBucketStatResult BucketStat
+
+// RequestPaymentConfiguration define the request payment configuration
+type RequestPaymentConfiguration struct {
+	XMLName xml.Name `xml:"RequestPaymentConfiguration"`
+	Payer   string   `xml:"Payer,omitempty"`
+}

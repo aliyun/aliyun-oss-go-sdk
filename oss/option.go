@@ -206,7 +206,7 @@ func CallbackVar(callbackVar string) Option {
 
 // RequestPayer is an option to set payer who pay for the request
 func RequestPayer(payerType PayerType) Option {
-	return setHeader(HTTPHeaderOssRequester, string(payerType))
+	return setHeader(HTTPHeaderOssRequester, strings.ToLower(string(payerType)))
 }
 
 // SetTagging is an option to set object tagging

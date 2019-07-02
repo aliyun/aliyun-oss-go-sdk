@@ -79,7 +79,10 @@ type PayerType string
 
 const (
 	// Requester the requester who send the request
-	Requester PayerType = "requester"
+	Requester PayerType = "Requester"
+
+	// BucketOwner the requester who send the request
+	BucketOwner PayerType = "BucketOwner"
 )
 
 // HTTPMethod HTTP request method
