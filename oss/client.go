@@ -1024,6 +1024,110 @@ func (client Client) GetBucketRequestPayment(bucketName string, options ...Optio
 	return out, err
 }
 
+// GetUserQoSInfo API operation for Object Storage Service.
+//
+// Get user qos.
+//
+// UserQoSConfiguration the User Qos and range Information.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetUserQoSInfo(options ...Option) (UserQoSConfiguration, error) {
+	var out UserQoSConfiguration
+	params := map[string]interface{}{}
+	params["qosInfo"] = nil
+
+	resp, err := client.do("GET", "", params, nil, nil, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// SetBucketQoSInfo API operation for Object Storage Service.
+//
+// Set Bucket Qos information.
+//
+// bucketName tht bucket name.
+//
+// qosConf the qos configuration.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketQoSInfo(bucketName string, qosConf BucketQoSConfiguration, options ...Option) error {
+	params := map[string]interface{}{}
+	params["qosInfo"] = nil
+
+	var bs []byte
+	bs, err := xml.Marshal(qosConf)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentTpye := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentTpye
+
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketQosInfo API operation for Object Storage Service.
+//
+// Get Bucket Qos information.
+//
+// bucketName tht bucket name.
+//
+// BucketQoSConfiguration the  return qos configuration.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketQosInfo(bucketName string, options ...Option) (BucketQoSConfiguration, error) {
+	var out BucketQoSConfiguration
+	params := map[string]interface{}{}
+	params["qosInfo"] = nil
+
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// DeleteBucketQosInfo API operation for Object Storage Service.
+//
+// Delete Bucket QoS information.
+//
+// bucketName tht bucket name.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) DeleteBucketQosInfo(bucketName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["qosInfo"] = nil
+
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
