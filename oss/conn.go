@@ -41,7 +41,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"response-cache-control", "response-content-disposition",
 	"response-content-encoding", "udf", "udfName", "udfImage",
 	"udfId", "udfImageDesc", "udfApplication", "comp",
-	"udfApplicationLog", "restore", "callback", "callback-var",
+	"udfApplicationLog", "restore", "callback", "callback-var", "qosInfo",
 	"policy", "stat", "encryption", "versions", "versioning", "versionId", "requestPayment"}
 
 // init initializes Conn
