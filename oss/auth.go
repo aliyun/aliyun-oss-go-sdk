@@ -57,7 +57,16 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string) s
 
 	signStr := req.Method + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedOSSHeaders + canonicalizedResource
 
-	conn.config.WriteLog(Debug, "[Req:%p]signStr:%s.\n", req, signStr)
+	// convert sign to log for easy to view
+	var signBuf bytes.Buffer
+	for i := 0; i < len(signStr); i++ {
+		if signStr[i] != '\n' {
+			signBuf.WriteByte(signStr[i])
+		} else {
+			signBuf.WriteString("\\n")
+		}
+	}
+	conn.config.WriteLog(Debug, "[Req:%p]signStr:%s\n", req, signBuf.String())
 
 	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(conn.config.GetAccessKeySecret()))
 	io.WriteString(h, signStr)
