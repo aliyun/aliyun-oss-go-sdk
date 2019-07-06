@@ -20,6 +20,21 @@ type OssLimiter struct {
 	limiter *rate.Limiter
 }
 
+// SetSpeed
+func (lm *OssLimiter) SetSpeed(speed int) {
+	lm.limiter.SetLimit(rate.Limit(speed))
+}
+
+// NewOssLimiter create OssLimiter with speed and maxTokens
+func NewOssLimiter(speed, maxTokens int) *OssLimiter {
+	limiter := rate.NewLimiter(rate.Limit(speed), maxTokens)
+
+	// first consume the initial full token,the limiter will behave more accurately
+	limiter.AllowN(time.Now(), maxTokens)
+
+	return &OssLimiter{limiter: limiter}
+}
+
 // GetOssLimiter create OssLimiter
 // uploadSpeed KB/s
 func GetOssLimiter(uploadSpeed int) (ossLimiter *OssLimiter, err error) {
@@ -33,11 +48,20 @@ func GetOssLimiter(uploadSpeed int) (ossLimiter *OssLimiter, err error) {
 	}, nil
 }
 
-// LimitSpeedReader for limit bandwidth upload
+// LimitSpeedReader for limit bandwidth
 type LimitSpeedReader struct {
 	io.ReadCloser
 	reader     io.Reader
 	ossLimiter *OssLimiter
+}
+
+// NewLimitSpeedReader
+// wrapper io.Reader
+func NewLimitSpeedReader(reader io.Reader, limiter *OssLimiter) *LimitSpeedReader {
+	return &LimitSpeedReader{
+		reader:     reader,
+		ossLimiter: limiter,
+	}
 }
 
 // Read

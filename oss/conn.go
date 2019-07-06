@@ -412,8 +412,7 @@ func tryGetFileSize(f *os.File) int64 {
 	return fInfo.Size()
 }
 
-// handleResponse handles response
-func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response, error) {
+func (conn Conn) doHandleResponse(resp *http.Response, crc hash.Hash64) (*Response, error) {
 	var cliCRC uint64
 	var srvCRC uint64
 
@@ -470,6 +469,15 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		ClientCRC:  cliCRC,
 		ServerCRC:  srvCRC,
 	}, nil
+}
+
+// handleResponse handles response
+func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (res *Response, err error) {
+	res, err = conn.doHandleResponse(resp, crc)
+	if conn.config.IsLimitDownloadSpeed && res != nil && res.Body != nil {
+		res.Body = NewLimitSpeedReader(res.Body, conn.config.DownloadLimiter)
+	}
+	return
 }
 
 // LoggerHTTPReq Print the header information of the http request

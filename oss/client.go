@@ -1079,6 +1079,16 @@ func (client Client) LimitUploadSpeed(upSpeed int) error {
 	return client.Config.LimitUploadSpeed(upSpeed)
 }
 
+// LimitDownloadSpeed set download bandwidth limit speed,default is unlimited
+// downSpeed KB/s
+// error it's nil if success, otherwise failure
+func (client Client) LimitDownloadSpeed(downSpeed int) error {
+	if client.Config == nil {
+		return fmt.Errorf("client config is nil")
+	}
+	return client.Config.LimitDownloadSpeed(downSpeed)
+}
+
 // UseCname sets the flag of using CName. By default it's false.
 //
 // isUseCname    true: the endpoint has the CName, false: the endpoint does not have cname. Default is false.
@@ -1169,6 +1179,16 @@ func Proxy(proxyHost string) ClientOption {
 		client.Config.IsUseProxy = true
 		client.Config.ProxyHost = proxyHost
 		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
+	}
+}
+
+// DownloadSpeedLimit set download limiter（optional).
+//
+// The default is not limit download speed
+func DownloadSpeedLimit(limiter *OssLimiter) ClientOption {
+	return func(client *Client) {
+		client.Config.DownloadLimiter = limiter
+		client.Config.IsLimitDownloadSpeed = true
 	}
 }
 
