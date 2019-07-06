@@ -76,7 +76,7 @@ func GetObjectSample() {
 
 	// Last modified time contraint is not met, do not download the file
 	body, err = bucket.GetObject(objectKey, oss.IfUnmodifiedSince(pastDate))
-	if err == nil {
+	if err != nil {
 		HandleError(err)
 	}
 	body.Close()
@@ -95,7 +95,7 @@ func GetObjectSample() {
 
 	// Check the content, etag contraint is not met, do not download the file
 	body, err = bucket.GetObject(objectKey, oss.IfNoneMatch(etag))
-	if err == nil {
+	if err != nil {
 		HandleError(err)
 	}
 	body.Close()
