@@ -240,6 +240,11 @@ func ACReqHeaders(value string) Option {
 	return setHeader(HTTPHeaderACReqHeaders, value)
 }
 
+// TrafficLimitHeader is an option to set X-Oss-Traffic-Limit
+func TrafficLimitHeader(value int64) Option {
+	return setHeader(HTTPHeaderOssTrafficLimit, strconv.FormatInt(value, 10))
+}
+
 // Delimiter is an option to set delimiler parameter
 func Delimiter(value string) Option {
 	return addParam("delimiter", value)
@@ -392,6 +397,11 @@ func Process(value string) Option {
 	return addParam("x-oss-process", value)
 }
 
+// TrafficLimitParam is a option to set x-oss-traffic-limit
+func TrafficLimitParam(value int64) Option {
+	return addParam("x-oss-traffic-limit", strconv.FormatInt(value, 10))
+}
+
 func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == nil {
@@ -530,4 +540,8 @@ func GetDeleteMark(header http.Header) bool {
 		return true
 	}
 	return false
+}
+
+func GetQosDelayTime(header http.Header) string {
+	return header.Get("x-oss-qos-delay-time")
 }
