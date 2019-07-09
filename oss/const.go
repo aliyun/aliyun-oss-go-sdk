@@ -156,6 +156,7 @@ const (
 	HTTPHeaderOssRequester                   = "X-Oss-Request-Payer"
 	HTTPHeaderOssTagging                     = "X-Oss-Tagging"
 	HTTPHeaderOssTaggingDirective            = "X-Oss-Tagging-Directive"
+	HTTPHeaderOssTrafficLimit                = "X-Oss-Traffic-Limit"
 )
 
 // HTTP Param
