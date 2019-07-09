@@ -174,11 +174,15 @@ func (s *OssConnSuite) TestGetRtmpSignedStr(c *C) {
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
 
+	defAkBuild := &defaultCredentialInfBuild{config: cfg}
+	cfg.UserAKBuild = defAkBuild
+
+	akIf := conn.config.GetCredentialInf()
 	//Anonymous
 	channelName := "test-get-rtmp-signed-str"
 	playlistName := "playlist.m3u8"
 	expiration := time.Now().Unix() + 3600
 	params := map[string]interface{}{}
-	signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, params)
+	signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, akIf.GetAccessKeySecret(), params)
 	c.Assert(signedStr, Equals, "")
 }

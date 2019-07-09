@@ -46,6 +46,9 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	config.AccessKeyID = accessKeyID
 	config.AccessKeySecret = accessKeySecret
 
+	defAkBuild := &defaultCredentialInfBuild{config: config}
+	config.UserAKBuild = defAkBuild
+
 	// URL parse
 	url := &urlMaker{}
 	url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
@@ -1275,12 +1278,11 @@ func SetLogger(Logger *log.Logger) ClientOption {
 	}
 }
 
-//
 // SetAKInterface sets funciton for get the user's ak
 //
-func SetAKInterface(akIf AKInterface) ClientOption {
+func SetCredentialInfBuild(akBuild CredentialInfBuild) ClientOption {
 	return func(client *Client) {
-		client.Config.UserAKInf = akIf
+		client.Config.UserAKBuild = akBuild
 	}
 }
 

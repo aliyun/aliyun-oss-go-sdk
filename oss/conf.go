@@ -35,39 +35,68 @@ type HTTPMaxConns struct {
 	MaxIdleConnsPerHost int
 }
 
-// AKInterface is interface for getting AccessKeyID, AccessKeySecret, SecurityToken
-type AKInterface interface {
+// CredentialInf is interface for get AccessKeyID,AccessKeySecret,SecurityToken
+type CredentialInf interface {
 	GetAccessKeyID() string
 	GetAccessKeySecret() string
 	GetSecurityToken() string
 }
 
+// CredentialInfBuild is interface for get CredentialInf
+type CredentialInfBuild interface {
+	GetCredentialInf() CredentialInf
+}
+
+type defaultCredentialInf struct {
+	config *Config
+}
+
+func (defCre *defaultCredentialInf) GetAccessKeyID() string {
+	return defCre.config.AccessKeyID
+}
+
+func (defCre *defaultCredentialInf) GetAccessKeySecret() string {
+	return defCre.config.AccessKeySecret
+}
+
+func (defCre *defaultCredentialInf) GetSecurityToken() string {
+	return defCre.config.SecurityToken
+}
+
+type defaultCredentialInfBuild struct {
+	config *Config
+}
+
+func (defBuild *defaultCredentialInfBuild) GetCredentialInf() CredentialInf {
+	return &defaultCredentialInf{config: defBuild.config}
+}
+
 // Config defines oss configuration
 type Config struct {
-	Endpoint         string       // OSS endpoint
-	AccessKeyID      string       // AccessId
-	AccessKeySecret  string       // AccessKey
-	RetryTimes       uint         // Retry count by default it's 5.
-	UserAgent        string       // SDK name/version/system information
-	IsDebug          bool         // Enable debug mode. Default is false.
-	Timeout          uint         // Timeout in seconds. By default it's 60.
-	SecurityToken    string       // STS Token
-	IsCname          bool         // If cname is in the endpoint.
-	HTTPTimeout      HTTPTimeout  // HTTP timeout
-	HTTPMaxConns     HTTPMaxConns // Http max connections
-	IsUseProxy       bool         // Flag of using proxy.
-	ProxyHost        string       // Flag of using proxy host.
-	IsAuthProxy      bool         // Flag of needing authentication.
-	ProxyUser        string       // Proxy user
-	ProxyPassword    string       // Proxy password
-	IsEnableMD5      bool         // Flag of enabling MD5 for upload.
-	MD5Threshold     int64        // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
-	IsEnableCRC      bool         // Flag of enabling CRC for upload.
-	LogLevel         int          // Log level
-	Logger           *log.Logger  // For write log
-	UploadLimitSpeed int          // Upload limit speed:KB/s, 0 is unlimited
-	UploadLimiter    *OssLimiter  // Bandwidth limit reader for upload
-	UserAKInf        AKInterface  // User provides interface to get AccessKeyID, AccessKeySecret, SecurityToken
+	Endpoint         string             // OSS endpoint
+	AccessKeyID      string             // AccessId
+	AccessKeySecret  string             // AccessKey
+	RetryTimes       uint               // Retry count by default it's 5.
+	UserAgent        string             // SDK name/version/system information
+	IsDebug          bool               // Enable debug mode. Default is false.
+	Timeout          uint               // Timeout in seconds. By default it's 60.
+	SecurityToken    string             // STS Token
+	IsCname          bool               // If cname is in the endpoint.
+	HTTPTimeout      HTTPTimeout        // HTTP timeout
+	HTTPMaxConns     HTTPMaxConns       // Http max connections
+	IsUseProxy       bool               // Flag of using proxy.
+	ProxyHost        string             // Flag of using proxy host.
+	IsAuthProxy      bool               // Flag of needing authentication.
+	ProxyUser        string             // Proxy user
+	ProxyPassword    string             // Proxy password
+	IsEnableMD5      bool               // Flag of enabling MD5 for upload.
+	MD5Threshold     int64              // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
+	IsEnableCRC      bool               // Flag of enabling CRC for upload.
+	LogLevel         int                // Log level
+	Logger           *log.Logger        // For write log
+	UploadLimitSpeed int                // Upload limit speed:KB/s, 0 is unlimited
+	UploadLimiter    *OssLimiter        // Bandwidth limit reader for upload
+	UserAKBuild      CredentialInfBuild // User provides interface to get AccessKeyID, AccessKeySecret, SecurityToken
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0
@@ -100,28 +129,9 @@ func (config *Config) WriteLog(LogLevel int, format string, a ...interface{}) {
 	config.Logger.Printf("%s", logBuffer.String())
 }
 
-// for get AccessKeyID
-func (config *Config) GetAccessKeyID() string {
-	if config.UserAKInf != nil {
-		return config.UserAKInf.GetAccessKeyID()
-	}
-	return config.AccessKeyID
-}
-
-// for get AccessKeySecret
-func (config *Config) GetAccessKeySecret() string {
-	if config.UserAKInf != nil {
-		return config.UserAKInf.GetAccessKeySecret()
-	}
-	return config.AccessKeySecret
-}
-
-// for get SecurityToken
-func (config *Config) GetSecurityToken() string {
-	if config.UserAKInf != nil {
-		return config.UserAKInf.GetSecurityToken()
-	}
-	return config.SecurityToken
+// for get CredentialInfBuild
+func (config *Config) GetCredentialInf() CredentialInf {
+	return config.UserAKBuild.GetCredentialInf()
 }
 
 // getDefaultOssConfig gets the default configuration.

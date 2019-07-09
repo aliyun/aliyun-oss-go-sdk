@@ -2712,3 +2712,36 @@ func struct2string(obj interface{}, c *C) string {
 	c.Assert(err, IsNil)
 	return string(str)
 }
+
+type TestCredentialInf struct {
+}
+
+func (testCreInf *TestCredentialInf) GetAccessKeyID() string {
+	return os.Getenv("OSS_TEST_ACCESS_KEY_ID")
+}
+
+func (testCreInf *TestCredentialInf) GetAccessKeySecret() string {
+	return os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
+}
+
+func (testCreInf *TestCredentialInf) GetSecurityToken() string {
+	return ""
+}
+
+type TestCredentialInfBuild struct {
+}
+
+func (testInfBuild *TestCredentialInfBuild) GetCredentialInf() CredentialInf {
+	return &TestCredentialInf{}
+}
+
+func (s *OssClientSuite) TestClientCredentialInfBuild(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+	var defaultBuild TestCredentialInfBuild
+	client, err := New(endpoint, "", "", SetCredentialInfBuild(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
