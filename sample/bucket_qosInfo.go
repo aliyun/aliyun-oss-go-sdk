@@ -20,7 +20,9 @@ func BucketQoSInfoSample() {
 		HandleError(err)
 	}
 	// Initial QoS Configuration
-	five := 5; four := 4; three := 3
+	five := 5
+	four := 4
+	totalQps := 200
 	qosConf := oss.BucketQoSConfiguration{
 		TotalUploadBandwidth:      &five,
 		IntranetUploadBandwidth:   &four,
@@ -28,9 +30,9 @@ func BucketQoSInfoSample() {
 		TotalDownloadBandwidth:    &four,
 		IntranetDownloadBandwidth: &four,
 		ExtranetDownloadBandwidth: &four,
-		TotalQPS:                  &five,
-		IntranetQPS:               &three,
-		ExtranetQPS:               &three,
+		TotalQPS:                  &totalQps,
+		IntranetQPS:               &totalQps,
+		ExtranetQPS:               &totalQps,
 	}
 
 	// Set Qos Info
@@ -45,7 +47,7 @@ func BucketQoSInfoSample() {
 		HandleError(err)
 	}
 	fmt.Printf("Bucket QoSInfo\n  TotalUploadBandwidth: %d\n  IntranetUploadBandwidth: %d\n  ExtranetUploadBandwidth: %d\n",
-	 	*ret.TotalUploadBandwidth, *ret.IntranetUploadBandwidth, *ret.ExtranetUploadBandwidth)
+		*ret.TotalUploadBandwidth, *ret.IntranetUploadBandwidth, *ret.ExtranetUploadBandwidth)
 
 	// Delete QosInfo
 	err = client.DeleteBucketQosInfo(bucketName)

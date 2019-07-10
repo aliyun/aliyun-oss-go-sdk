@@ -2613,7 +2613,7 @@ func (s *OssClientSuite) TestBucketQos(c *C) {
 	// case 1 set BucketQoSConfiguration every member
 	five := 5
 	four := 4
-	three := 3
+	totalQps := 200
 	qosConf := BucketQoSConfiguration{
 		TotalUploadBandwidth:      &five,
 		IntranetUploadBandwidth:   &four,
@@ -2621,9 +2621,9 @@ func (s *OssClientSuite) TestBucketQos(c *C) {
 		TotalDownloadBandwidth:    &four,
 		IntranetDownloadBandwidth: &four,
 		ExtranetDownloadBandwidth: &four,
-		TotalQPS:                  &five,
-		IntranetQPS:               &three,
-		ExtranetQPS:               &three,
+		TotalQPS:                  &totalQps,
+		IntranetQPS:               &totalQps,
+		ExtranetQPS:               &totalQps,
 	}
 	var responseHeader http.Header
 	err = client.SetBucketQoSInfo(bucketName, qosConf, GetResponseHeader(&responseHeader))
@@ -2649,7 +2649,7 @@ func (s *OssClientSuite) TestBucketQos(c *C) {
 		TotalDownloadBandwidth:    &four,
 		IntranetDownloadBandwidth: &four,
 		ExtranetDownloadBandwidth: &four,
-		TotalQPS:                  &five,
+		TotalQPS:                  &totalQps,
 	}
 	err = client.SetBucketQoSInfo(bucketName, qosConfNo)
 	c.Assert(err, IsNil)
@@ -2685,9 +2685,9 @@ func (s *OssClientSuite) TestBucketQos(c *C) {
 		TotalDownloadBandwidth:    &four,
 		IntranetDownloadBandwidth: &four,
 		ExtranetDownloadBandwidth: &four,
-		TotalQPS:                  &three,
-		IntranetQPS:               &three,
-		ExtranetQPS:               &three,
+		TotalQPS:                  &totalQps,
+		IntranetQPS:               &totalQps,
+		ExtranetQPS:               &totalQps,
 	}
 	err = client.SetBucketQoSInfo(bucketName, qosErrConf)
 	c.Assert(err, NotNil)

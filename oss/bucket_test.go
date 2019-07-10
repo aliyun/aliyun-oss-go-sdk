@@ -4477,7 +4477,17 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	forceDeleteBucket(client, bucketName, c)
 }
 
-func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
+func (s *OssBucketSuite) TestBucketTrafficLimitObject(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
 	var respHeader http.Header
 	var qosDelayTime string
 	var traffic int64 = 819220 // 100KB
@@ -4489,7 +4499,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
 	c.Assert(err, IsNil)
 	defer fd.Close()
 
-	tryGetFileSize := func (f *os.File) int64 {
+	tryGetFileSize := func(f *os.File) int64 {
 		fInfo, _ := f.Stat()
 		return fInfo.Size()
 	}
@@ -4497,11 +4507,11 @@ func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
 
 	// put object
 	start := time.Now().UnixNano() / 1000 / 1000
-	err = s.bucket.PutObject(objectName, fd, TrafficLimitHeader(traffic))
+	err = bucket.PutObject(objectName, fd, TrafficLimitHeader(traffic))
 	c.Assert(err, IsNil)
 	endingTime := time.Now().UnixNano() / 1000 / 1000
 	costT := endingTime - start
-	costV := contentLength * 1000 / costT  // bit * 1000 / Millisecond = bit/s
+	costV := contentLength * 1000 / costT // bit * 1000 / Millisecond = bit/s
 	c.Assert((costV < maxTraffic), Equals, true)
 
 	// putobject without TrafficLimit
@@ -4510,7 +4520,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
 	// c.Assert(err, IsNil)
 	// defer fd.Close()
 	// start = time.Now().UnixNano() / 1000 / 1000
-	// err = s.bucket.PutObject(objectName, fd)
+	// err = bucket.PutObject(objectName, fd)
 	// c.Assert(err, IsNil)
 	// endingTime = time.Now().UnixNano() / 1000 / 1000
 	// costT = endingTime - start
@@ -4521,11 +4531,11 @@ func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
 	// get object to file
 	newFile := "test-file-" + randStr(10)
 	start = time.Now().UnixNano() / 1000 / 1000
-	err = s.bucket.GetObjectToFile(objectName, newFile, TrafficLimitHeader(traffic))
+	err = bucket.GetObjectToFile(objectName, newFile, TrafficLimitHeader(traffic))
 	c.Assert(err, IsNil)
 	endingTime = time.Now().UnixNano() / 1000 / 1000
 	costT = endingTime - start
-	costV = contentLength * 1000 / costT  // bit * 1000 / Millisecond = bit/s
+	costV = contentLength * 1000 / costT // bit * 1000 / Millisecond = bit/s
 	c.Assert((costV < maxTraffic), Equals, true)
 	os.Remove(newFile)
 
@@ -4537,17 +4547,17 @@ func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
 	c.Assert(err, IsNil)
 	defer fd.Close()
 	start = time.Now().UnixNano() / 1000 / 1000
-	nextPos, err = s.bucket.AppendObject(objectKey, strings.NewReader(randStr(18)), nextPos)
+	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(randStr(18)), nextPos)
 	c.Assert(err, IsNil)
-	nextPos, err = s.bucket.AppendObject(objectKey, fd, nextPos, TrafficLimitHeader(traffic))
+	nextPos, err = bucket.AppendObject(objectKey, fd, nextPos, TrafficLimitHeader(traffic))
 	c.Assert(err, IsNil)
 	endingTime = time.Now().UnixNano() / 1000 / 1000
 	costT = endingTime - start
-	costV = contentLength * 1000 / costT  // bit * 1000 / Millisecond = bit/s
+	costV = contentLength * 1000 / costT // bit * 1000 / Millisecond = bit/s
 	c.Assert((costV < maxTraffic), Equals, true)
-	err = s.bucket.GetObjectToFile(objectKey, newFile, TrafficLimitHeader(traffic))
+	err = bucket.GetObjectToFile(objectKey, newFile, TrafficLimitHeader(traffic))
 	c.Assert(err, IsNil)
-	err = s.bucket.DeleteObject(objectKey)
+	err = bucket.DeleteObject(objectKey)
 	c.Assert(err, IsNil)
 	os.Remove(newFile)
 
@@ -4555,25 +4565,25 @@ func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
 	fd, err = os.Open(localFile)
 	c.Assert(err, IsNil)
 	defer fd.Close()
-	strURL, err := s.bucket.SignURL(objectName, HTTPPut, 60, TrafficLimitParam(traffic))
+	strURL, err := bucket.SignURL(objectName, HTTPPut, 60, TrafficLimitParam(traffic))
 	start = time.Now().UnixNano() / 1000 / 1000
-	err = s.bucket.PutObjectWithURL(strURL, fd)
+	err = bucket.PutObjectWithURL(strURL, fd)
 	c.Assert(err, IsNil)
 	endingTime = time.Now().UnixNano() / 1000 / 1000
 	costT = endingTime - start
-	costV = contentLength * 1000 / costT  // bit * 1000 / Millisecond = bit/s
+	costV = contentLength * 1000 / costT // bit * 1000 / Millisecond = bit/s
 	c.Assert((costV < maxTraffic), Equals, true)
 
 	// get object with url
 	newFile = "test-file-" + randStr(10)
-	strURL, err = s.bucket.SignURL(objectName, HTTPGet, 60, TrafficLimitParam(traffic), GetResponseHeader(&respHeader))
+	strURL, err = bucket.SignURL(objectName, HTTPGet, 60, TrafficLimitParam(traffic), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 	start = time.Now().UnixNano() / 1000 / 1000
-	err = s.bucket.GetObjectToFileWithURL(strURL, newFile)
+	err = bucket.GetObjectToFileWithURL(strURL, newFile)
 	c.Assert(err, IsNil)
 	endingTime = time.Now().UnixNano() / 1000 / 1000
 	costT = endingTime - start
-	costV = contentLength * 1000 / costT  // bit * 1000 / Millisecond = bit/s
+	costV = contentLength * 1000 / costT // bit * 1000 / Millisecond = bit/s
 	c.Assert((costV < maxTraffic), Equals, true)
 	qosDelayTime = GetQosDelayTime(respHeader)
 	c.Assert(len(qosDelayTime) > 0, Equals, true)
@@ -4581,18 +4591,29 @@ func (s *OssBucketSuite) TestBucketTrafficLimit(c *C) {
 
 	// copy object
 	destObjectName := objectNamePrefix + randStr(8)
-	_, err = s.bucket.CopyObject(objectName, destObjectName, TrafficLimitHeader(traffic), GetResponseHeader(&respHeader))
+	_, err = bucket.CopyObject(objectName, destObjectName, TrafficLimitHeader(traffic), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 	qosDelayTime = GetQosDelayTime(respHeader)
 	c.Assert(len(qosDelayTime) > 0, Equals, true)
-	err = s.bucket.DeleteObject(destObjectName)
+	err = bucket.DeleteObject(destObjectName)
 	c.Assert(err, IsNil)
 
-	err = s.bucket.DeleteObject(objectName)
+	err = bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
+	bucket.DeleteObject(bucketName)
 }
 
 func (s *OssBucketSuite) TestBucketTrafficLimitUpload(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
 	var traffic int64 = 819220 // 100KB
 	maxTraffic := traffic * 120 / 100
 	contentLength := 500 * 1024
@@ -4613,24 +4634,24 @@ func (s *OssBucketSuite) TestBucketTrafficLimitUpload(c *C) {
 	c.Assert(err, IsNil)
 	defer fd.Close()
 
-	imur, err := s.bucket.InitiateMultipartUpload(objectName, options...)
+	imur, err := bucket.InitiateMultipartUpload(objectName, options...)
 	c.Assert(err, IsNil)
 	var parts []UploadPart
 	start := time.Now().UnixNano() / 1000 / 1000
 	for _, chunk := range chunks {
 		fd.Seek(chunk.Offset, os.SEEK_SET)
-		part, err := s.bucket.UploadPart(imur, fd, chunk.Size, chunk.Number, TrafficLimitHeader(traffic))
+		part, err := bucket.UploadPart(imur, fd, chunk.Size, chunk.Number, TrafficLimitHeader(traffic))
 		c.Assert(err, IsNil)
 		parts = append(parts, part)
 	}
-	_, err = s.bucket.CompleteMultipartUpload(imur, parts)
+	_, err = bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
 	endingTime := time.Now().UnixNano() / 1000 / 1000
 	costT := endingTime - start
-	costV := int64(contentLength) * 8 * 1000 / costT  // B * 8 * 1000 / Millisecond = bit/s
+	costV := int64(contentLength) * 8 * 1000 / costT // B * 8 * 1000 / Millisecond = bit/s
 	c.Assert((costV < maxTraffic), Equals, true)
 	os.Remove(fileName)
 
-	s.bucket.DeleteObject(objectName)
+	bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
 }
