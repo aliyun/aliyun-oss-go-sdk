@@ -84,11 +84,7 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 
 func (s *OssConnSuite) TestAuth(c *C) {
 	endpoint := "https://github.com/"
-
 	cfg := getDefaultOssConfig()
-	defAkBuild := &defaultCredentialInfBuild{config: cfg}
-	cfg.UserAKBuild = defAkBuild
-
 	um := urlMaker{}
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
@@ -151,8 +147,6 @@ func (s *OssConnSuite) TestConnToolFunc(c *C) {
 
 func (s *OssConnSuite) TestSignRtmpURL(c *C) {
 	cfg := getDefaultOssConfig()
-	defAkBuild := &defaultCredentialInfBuild{config: cfg}
-	cfg.UserAKBuild = defAkBuild
 
 	um := urlMaker{}
 	um.Init(endpoint, false, false)
@@ -181,10 +175,8 @@ func (s *OssConnSuite) TestGetRtmpSignedStr(c *C) {
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
 
-	defAkBuild := &defaultCredentialInfBuild{config: cfg}
-	cfg.UserAKBuild = defAkBuild
+	akIf := conn.config.GetCredentials()
 
-	akIf := conn.config.GetCredentialInf()
 	//Anonymous
 	channelName := "test-get-rtmp-signed-str"
 	playlistName := "playlist.m3u8"

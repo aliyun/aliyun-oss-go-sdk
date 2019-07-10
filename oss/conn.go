@@ -240,7 +240,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
 
-	akIf := conn.config.GetCredentialInf()
+	akIf := conn.config.GetCredentials()
 	if akIf.GetSecurityToken() != "" {
 		req.Header.Set(HTTPHeaderOssSecurityToken, akIf.GetSecurityToken())
 	}
@@ -283,7 +283,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 }
 
 func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) string {
-	akIf := conn.config.GetCredentialInf()
+	akIf := conn.config.GetCredentials()
 	if akIf.GetSecurityToken() != "" {
 		params[HTTPParamSecurityToken] = akIf.GetSecurityToken()
 	}
@@ -330,7 +330,7 @@ func (conn Conn) signRtmpURL(bucketName, channelName, playlistName string, expir
 	expireStr := strconv.FormatInt(expiration, 10)
 	params[HTTPParamExpires] = expireStr
 
-	akIf := conn.config.GetCredentialInf()
+	akIf := conn.config.GetCredentials()
 	if akIf.GetAccessKeyID() != "" {
 		params[HTTPParamAccessKeyID] = akIf.GetAccessKeyID()
 		if akIf.GetSecurityToken() != "" {

@@ -2713,32 +2713,32 @@ func struct2string(obj interface{}, c *C) string {
 	return string(str)
 }
 
-type TestCredentialInf struct {
+type TestCredentials struct {
 }
 
-func (testCreInf *TestCredentialInf) GetAccessKeyID() string {
+func (testCreInf *TestCredentials) GetAccessKeyID() string {
 	return os.Getenv("OSS_TEST_ACCESS_KEY_ID")
 }
 
-func (testCreInf *TestCredentialInf) GetAccessKeySecret() string {
+func (testCreInf *TestCredentials) GetAccessKeySecret() string {
 	return os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
 }
 
-func (testCreInf *TestCredentialInf) GetSecurityToken() string {
+func (testCreInf *TestCredentials) GetSecurityToken() string {
 	return ""
 }
 
-type TestCredentialInfBuild struct {
+type TestCredentialsProvider struct {
 }
 
-func (testInfBuild *TestCredentialInfBuild) GetCredentialInf() CredentialInf {
-	return &TestCredentialInf{}
+func (testInfBuild *TestCredentialsProvider) GetCredentials() Credentials {
+	return &TestCredentials{}
 }
 
 func (s *OssClientSuite) TestClientCredentialInfBuild(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)
-	var defaultBuild TestCredentialInfBuild
-	client, err := New(endpoint, "", "", SetCredentialInfBuild(&defaultBuild))
+	var defaultBuild TestCredentialsProvider
+	client, err := New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
 	c.Assert(err, IsNil)
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
