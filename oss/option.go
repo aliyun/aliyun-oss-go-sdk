@@ -206,7 +206,7 @@ func CallbackVar(callbackVar string) Option {
 
 // RequestPayer is an option to set payer who pay for the request
 func RequestPayer(payerType PayerType) Option {
-	return setHeader(HTTPHeaderOssRequester, string(payerType))
+	return setHeader(HTTPHeaderOssRequester, strings.ToLower(string(payerType)))
 }
 
 // SetTagging is an option to set object tagging
@@ -238,6 +238,11 @@ func ACReqMethod(value string) Option {
 // ACReqHeaders is an option to set Access-Control-Request-Headers header
 func ACReqHeaders(value string) Option {
 	return setHeader(HTTPHeaderACReqHeaders, value)
+}
+
+// TrafficLimitHeader is an option to set X-Oss-Traffic-Limit
+func TrafficLimitHeader(value int64) Option {
+	return setHeader(HTTPHeaderOssTrafficLimit, strconv.FormatInt(value, 10))
 }
 
 // Delimiter is an option to set delimiler parameter
@@ -392,6 +397,11 @@ func Process(value string) Option {
 	return addParam("x-oss-process", value)
 }
 
+// TrafficLimitParam is a option to set x-oss-traffic-limit
+func TrafficLimitParam(value int64) Option {
+	return addParam("x-oss-traffic-limit", strconv.FormatInt(value, 10))
+}
+
 func setHeader(key string, value interface{}) Option {
 	return func(params map[string]optionValue) error {
 		if value == nil {
@@ -530,4 +540,8 @@ func GetDeleteMark(header http.Header) bool {
 		return true
 	}
 	return false
+}
+
+func GetQosDelayTime(header http.Header) string {
+	return header.Get("x-oss-qos-delay-time")
 }

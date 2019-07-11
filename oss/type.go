@@ -831,3 +831,30 @@ type BucketStat struct {
 	MultipartUploadCount int64    `xml:"MultipartUploadCount"`
 }
 type GetBucketStatResult BucketStat
+
+// RequestPaymentConfiguration define the request payment configuration
+type RequestPaymentConfiguration struct {
+	XMLName xml.Name `xml:"RequestPaymentConfiguration"`
+	Payer   string   `xml:"Payer,omitempty"`
+}
+
+// BucketQoSConfiguration define QoS configuration
+type BucketQoSConfiguration struct {
+	XMLName                   xml.Name `xml:"QoSConfiguration"`	
+	TotalUploadBandwidth      *int      `xml:"TotalUploadBandwidth"`      // Total upload bandwidth
+	IntranetUploadBandwidth   *int      `xml:"IntranetUploadBandwidth"`   // Intranet upload bandwidth
+	ExtranetUploadBandwidth   *int      `xml:"ExtranetUploadBandwidth"`   // Extranet upload bandwidth
+	TotalDownloadBandwidth    *int      `xml:"TotalDownloadBandwidth"`    // Total download bandwidth
+	IntranetDownloadBandwidth *int      `xml:"IntranetDownloadBandwidth"` // Intranet download bandwidth
+	ExtranetDownloadBandwidth *int      `xml:"ExtranetDownloadBandwidth"` // Extranet download bandwidth
+	TotalQPS                  *int      `xml:"TotalQps"`                  // Total Qps
+	IntranetQPS               *int      `xml:"IntranetQps"`               // Intranet Qps
+	ExtranetQPS               *int      `xml:"ExtranetQps"`               // Extranet Qps
+}
+
+// UserQoSConfiguration define QoS and Range configuration
+type UserQoSConfiguration struct {
+	XMLName xml.Name `xml:"QoSConfiguration"`
+	Region  string   `xml:"Region,omitempty"` // Effective area of Qos configuration
+	BucketQoSConfiguration
+}

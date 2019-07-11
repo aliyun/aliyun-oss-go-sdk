@@ -10,6 +10,11 @@ var (
 	bucketName = os.Getenv("OSS_TEST_BUCKET")
 	kmsID      = os.Getenv("OSS_TEST_KMS_ID")
 
+	// Credential
+	credentialAccessID  = os.Getenv("OSS_CREDENTIAL_KEY_ID")
+	credentialAccessKey = os.Getenv("OSS_CREDENTIAL_KEY_SECRET")
+	credentialUID       = os.Getenv("OSS_CREDENTIAL_UID")
+
 	// The cname endpoint
 	endpoint4Cname = os.Getenv("OSS_TEST_CNAME_ENDPOINT")
 )

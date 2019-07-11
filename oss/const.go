@@ -79,7 +79,10 @@ type PayerType string
 
 const (
 	// Requester the requester who send the request
-	Requester PayerType = "requester"
+	Requester PayerType = "Requester"
+
+	// BucketOwner the requester who send the request
+	BucketOwner PayerType = "BucketOwner"
 )
 
 // HTTPMethod HTTP request method
@@ -153,6 +156,7 @@ const (
 	HTTPHeaderOssRequester                   = "X-Oss-Request-Payer"
 	HTTPHeaderOssTagging                     = "X-Oss-Tagging"
 	HTTPHeaderOssTaggingDirective            = "X-Oss-Tagging-Directive"
+	HTTPHeaderOssTrafficLimit                = "X-Oss-Traffic-Limit"
 )
 
 // HTTP Param
@@ -178,5 +182,5 @@ const (
 
 	NullVersion = "null"
 
-	Version = "v2.0.0" // Go SDK version
+	Version = "v2.0.1" // Go SDK version
 )

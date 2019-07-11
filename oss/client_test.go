@@ -5,11 +5,13 @@
 package oss
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -43,6 +45,11 @@ var (
 	stsaccessID  = os.Getenv("OSS_TEST_STS_ID")
 	stsaccessKey = os.Getenv("OSS_TEST_STS_KEY")
 	stsARN       = os.Getenv("OSS_TEST_STS_ARN")
+
+	// Credential
+	credentialAccessID  = os.Getenv("OSS_CREDENTIAL_KEY_ID")
+	credentialAccessKey = os.Getenv("OSS_CREDENTIAL_KEY_SECRET")
+	credentialUID       = os.Getenv("OSS_CREDENTIAL_UID")
 )
 
 var (
@@ -55,6 +62,8 @@ var (
 	objectNamePrefix = "go-sdk-test-object-"
 	// sts region is one and only hangzhou
 	stsRegion = "cn-hangzhou"
+	// Credentials
+	credentialBucketName = bucketNamePrefix + randLowStr(6)
 )
 
 var (
@@ -2441,14 +2450,14 @@ func (s *OssBucketSuite) TestGetBucketVersioning(c *C) {
 	forceDeleteBucket(client, bucketName, c)
 }
 
-func (s *OssClientSuite) TestBucketPolicy(c *C){
+func (s *OssClientSuite) TestBucketPolicy(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
 	bucketName := bucketNamePrefix + randLowStr(5)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
-	
+
 	var responseHeader http.Header
 	ret, err := client.GetBucketPolicy(bucketName, GetResponseHeader(&responseHeader))
 	c.Assert(err, NotNil)
@@ -2522,7 +2531,7 @@ func (s *OssClientSuite) TestBucketPolicyNegative(c *C) {
 	}`
 	err = client.SetBucketPolicy(bucketName, errPolicy, GetResponseHeader(&responseHeader))
 	c.Assert(err, NotNil)
-	testLogger.Println("err:",err)
+	testLogger.Println("err:", err)
 	requestId = GetRequestId(responseHeader)
 	c.Assert(len(requestId) > 0, Equals, true)
 
@@ -2531,11 +2540,208 @@ func (s *OssClientSuite) TestBucketPolicyNegative(c *C) {
 
 	bucketNameEmpty := bucketNamePrefix + randLowStr(5)
 	client.DeleteBucket(bucketNameEmpty)
-	
+
 	err = client.DeleteBucketPolicy(bucketNameEmpty, GetResponseHeader(&responseHeader))
 	c.Assert(err, NotNil)
 	requestId = GetRequestId(responseHeader)
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	client.DeleteBucket(bucketName)
+}
+
+func (s *OssClientSuite) TestSetBucketRequestPayment(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	reqPayConf := RequestPaymentConfiguration{
+		Payer: "Requester",
+	}
+	err = client.SetBucketRequestPayment(bucketName, reqPayConf)
+	c.Assert(err, IsNil)
+
+	ret, err := client.GetBucketRequestPayment(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(ret.Payer, Equals, "Requester")
+
+	client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestSetBucketRequestPaymentNegative(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	reqPayConf := RequestPaymentConfiguration{
+		Payer: "Requesterttttt", // this is a error configuration
+	}
+	err = client.SetBucketRequestPayment(bucketName, reqPayConf)
+	c.Assert(err, NotNil)
+
+	ret, err := client.GetBucketRequestPayment(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(ret.Payer, Equals, "BucketOwner")
+
+	client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketQos(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	ret, err := client.GetUserQoSInfo()
+	c.Assert(err, IsNil)
+	testLogger.Println("QosInfo:", ret)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	_ = client.DeleteBucket(bucketName)
+
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketQosInfo(bucketName)
+	c.Assert(err, NotNil)
+
+	// case 1 set BucketQoSConfiguration every member
+	five := 5
+	four := 4
+	totalQps := 200
+	qosConf := BucketQoSConfiguration{
+		TotalUploadBandwidth:      &five,
+		IntranetUploadBandwidth:   &four,
+		ExtranetUploadBandwidth:   &four,
+		TotalDownloadBandwidth:    &four,
+		IntranetDownloadBandwidth: &four,
+		ExtranetDownloadBandwidth: &four,
+		TotalQPS:                  &totalQps,
+		IntranetQPS:               &totalQps,
+		ExtranetQPS:               &totalQps,
+	}
+	var responseHeader http.Header
+	err = client.SetBucketQoSInfo(bucketName, qosConf, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	// wait a moment for configuration effect
+	time.Sleep(time.Second)
+
+	retQos, err := client.GetBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	// set qosConf default value
+	qosConf.XMLName.Local = "QoSConfiguration"
+	c.Assert(struct2string(retQos, c), Equals, struct2string(qosConf, c))
+
+	// case 2 set BucketQoSConfiguration not every member
+	qosConfNo := BucketQoSConfiguration{
+		TotalUploadBandwidth:      &five,
+		IntranetUploadBandwidth:   &four,
+		ExtranetUploadBandwidth:   &four,
+		TotalDownloadBandwidth:    &four,
+		IntranetDownloadBandwidth: &four,
+		ExtranetDownloadBandwidth: &four,
+		TotalQPS:                  &totalQps,
+	}
+	err = client.SetBucketQoSInfo(bucketName, qosConfNo)
+	c.Assert(err, IsNil)
+
+	// wait a moment for configuration effect
+	time.Sleep(time.Second)
+
+	retQos, err = client.GetBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	// set qosConfNo default value
+	qosConfNo.XMLName.Local = "QoSConfiguration"
+	defNum := -1
+	qosConfNo.IntranetQPS = &defNum
+	qosConfNo.ExtranetQPS = &defNum
+	c.Assert(struct2string(retQos, c), Equals, struct2string(qosConfNo, c))
+
+	err = client.DeleteBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	// wait a moment for configuration effect
+	time.Sleep(time.Second)
+
+	_, err = client.GetBucketQosInfo(bucketName)
+	c.Assert(err, NotNil)
+
+	// this is a error qos configuration
+	to := *ret.TotalUploadBandwidth + 2
+	qosErrConf := BucketQoSConfiguration{
+		TotalUploadBandwidth:      &to, // this exceed user TotalUploadBandwidth
+		IntranetUploadBandwidth:   &four,
+		ExtranetUploadBandwidth:   &four,
+		TotalDownloadBandwidth:    &four,
+		IntranetDownloadBandwidth: &four,
+		ExtranetDownloadBandwidth: &four,
+		TotalQPS:                  &totalQps,
+		IntranetQPS:               &totalQps,
+		ExtranetQPS:               &totalQps,
+	}
+	err = client.SetBucketQoSInfo(bucketName, qosErrConf)
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucketQosInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+// struct to string
+func struct2string(obj interface{}, c *C) string {
+	t := reflect.TypeOf(obj)
+	v := reflect.ValueOf(obj)
+
+	var data = make(map[string]interface{})
+	for i := 0; i < t.NumField(); i++ {
+		data[t.Field(i).Name] = v.Field(i).Interface()
+	}
+	str, err := json.Marshal(data)
+	c.Assert(err, IsNil)
+	return string(str)
+}
+
+type TestCredentials struct {
+}
+
+func (testCreInf *TestCredentials) GetAccessKeyID() string {
+	return os.Getenv("OSS_TEST_ACCESS_KEY_ID")
+}
+
+func (testCreInf *TestCredentials) GetAccessKeySecret() string {
+	return os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
+}
+
+func (testCreInf *TestCredentials) GetSecurityToken() string {
+	return ""
+}
+
+type TestCredentialsProvider struct {
+}
+
+func (testInfBuild *TestCredentialsProvider) GetCredentials() Credentials {
+	return &TestCredentials{}
+}
+
+func (s *OssClientSuite) TestClientCredentialInfBuild(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+	var defaultBuild TestCredentialsProvider
+	client, err := New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
 }
