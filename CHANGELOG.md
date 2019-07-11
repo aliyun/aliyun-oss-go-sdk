@@ -1,4 +1,13 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.1 日期：2019-07-11
+### 变更内容
+- 增加：增加qos相关api
+- 增加：增加payment相关api
+- 增加：增加自定义获取AccessKeyID、AccessKeySecret、SecurityToken
+- 增加: 增加http请求限速option
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.0.0 日期：2019-06-18
 ### 变更内容
 - 增加：增加各个接口对versioning的支持
