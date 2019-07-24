@@ -34,6 +34,7 @@ var sampleMap = map[string]interface{}{
 	"GetObjectSample":             sample.GetObjectSample,
 	"CnameSample":                 sample.CnameSample,
 	"SignURLSample":               sample.SignURLSample,
+	"signCallbackUrl":             sample.signCallbackUrl,
 	"ArchiveSample":               sample.ArchiveSample,
 	"ObjectTaggingSample":         sample.ObjectTaggingSample,
 	"BucketEncryptionSample":      sample.BucketEncryptionSample,

@@ -1,6 +1,9 @@
 package sample
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -77,4 +80,37 @@ func SignURLSample() {
 	}
 
 	fmt.Println("SignURLSample completed")
+}
+
+func signCallbackUrl() (string, error) {
+	bucket, err := GetTestBucket(bucketName)
+	if err != nil {
+		HandleError(err)
+	}
+
+	body := `{"object":${object},"bucket":${bucket},"size":${size},"mimeType":${mimeType},"my_var":${x:my_var}}`
+	callbackMap := map[string]string{}
+	callbackMap["callbackUrl"] = "http://oss-demo.aliyuncs.com:23450"
+	callbackMap["callbackBody"] = body
+	callbackMap["callbackBodyType"] = "application/json"
+
+	callbackBuffer := bytes.NewBuffer([]byte{})
+	callbackEncoder := json.NewEncoder(callbackBuffer)
+	//do not encode '&' to "\u0026"
+	callbackEncoder.SetEscapeHTML(false)
+	err = callbackEncoder.Encode(callbackMap)
+	if err != nil {
+		return "", err
+	}
+	callbackVal := base64.StdEncoding.EncodeToString(callbackBuffer.Bytes())
+	signURL, err := bucket.SignURL("foo/bar.png", oss.HTTPPut,
+		3600,
+		oss.ContentType("image/png"),
+		oss.AddCallback(callbackVal),
+		oss.AddCallbackVar(base64.StdEncoding.EncodeToString([]byte(`{"x:my_var": "1245"}`))),
+	)
+	if err != nil {
+		return "", err
+	}
+	return signURL, err
 }

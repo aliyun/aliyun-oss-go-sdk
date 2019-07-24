@@ -315,6 +315,16 @@ func PartNumberMarker(value int) Option {
 	return addParam("part-number-marker", strconv.Itoa(value))
 }
 
+// AddCallback is an option to set callback values in param
+func AddCallback(callback string) Option {
+	return addParam("callback", callback)
+}
+
+// AddCallbackVar is an option to set callback user defined values in param
+func AddCallbackVar(callbackVar string) Option {
+	return addParam("callback-var", callbackVar)
+}
+
 // DeleteObjectsQuiet false:DeleteObjects in verbose mode; true:DeleteObjects in quite mode. Default is false.
 func DeleteObjectsQuiet(isQuiet bool) Option {
 	return addArg(deleteObjectsQuiet, isQuiet)
