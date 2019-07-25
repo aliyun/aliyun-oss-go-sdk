@@ -147,6 +147,7 @@ func (s *OssConnSuite) TestConnToolFunc(c *C) {
 
 func (s *OssConnSuite) TestSignRtmpURL(c *C) {
 	cfg := getDefaultOssConfig()
+
 	um := urlMaker{}
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
@@ -174,11 +175,13 @@ func (s *OssConnSuite) TestGetRtmpSignedStr(c *C) {
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
 
+	akIf := conn.config.GetCredentials()
+
 	//Anonymous
 	channelName := "test-get-rtmp-signed-str"
 	playlistName := "playlist.m3u8"
 	expiration := time.Now().Unix() + 3600
 	params := map[string]interface{}{}
-	signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, params)
+	signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, akIf.GetAccessKeySecret(), params)
 	c.Assert(signedStr, Equals, "")
 }

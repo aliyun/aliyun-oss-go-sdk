@@ -1,4 +1,49 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.1 日期：2019-07-11
+### 变更内容
+- 增加：增加qos相关api
+- 增加：增加payment相关api
+- 增加：增加自定义获取AccessKeyID、AccessKeySecret、SecurityToken
+- 增加: 增加http请求限速option
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.0 日期：2019-06-18
+### 变更内容
+- 增加：增加各个接口对versioning的支持
+- 增加：增加设置、查询、删除bucket policy接口
+- 增加: 增加设置website详细配置接口: SetBucketWebsiteDetail
+- 增加: 增加Bucket OptionsMethod 接口
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v1.9.8 日期：2019-05-25
+### 变更内容
+- 增加：增加设置、查询、删除bucket tagging接口
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v1.9.7 日期：2019-05-22
+### 变更内容
+- 增加：增加设置、查询、删除object tagging接口
+- 增加：增加设置、查询、删除bucket encryption接口
+- 增加：增加获取bucket统计信息接口
+
+## 版本号：v1.9.6 日期：2019-04-15
+### 变更内容
+- 变更：扩展lifecycle功能，提供设置AbortMutipartUpload和Transitions两种规则的生命周期管理的处理
+- 修复：测试用例BucketName使用固定前缀+随机的字符串
+- 修复：测试用例ObjectName使用固定前缀+随机字符串
+- 修复：测试用例有关bucket相关的异步操作，统一定义sleep时间
+- 修复：测试集结束后，列出bucket内的所有对象并删除所有测试的对象
+- 修复：测试集结束后，列出bucket内的所有未上传完成的分片并删除所有测试过程中产生的为上传完成的分片
+- 修复：支持上传webp类型的对象时从对象的后缀名字自动解析对应的content-type并设置content-type
+- 变更：增加在put/copy/append等接口时时设置对象的存储类型的sample
+- 修复：sample示例中的配置项的值改为直接从环境变量读取
+
+## 版本号：1.9.5 日期：2019-03-08
+### 变更内容
+- 变更：增加了限速上传功能
+
 ## 版本号：1.9.4 日期：2019-01-25
 ### 变更内容
 - 修复：在开启日志后，如果接口返回错误readResponseBody函数被调用两次
