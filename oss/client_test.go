@@ -2009,6 +2009,50 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestProxy for https endpoint
+func (s *OssClientSuite) TestHttpsEndpointProxy(c *C) {
+	bucketNameTest := bucketNamePrefix + randLowStr(6)
+	objectName := objectNamePrefix + randLowStr(6)
+	objectValue := randLowStr(100)
+
+	httpsEndPoint := ""
+	if strings.HasPrefix(endpoint, "http://") {
+		httpsEndPoint = strings.Replace(endpoint, "http://", "https://", 1)
+	} else if !strings.HasPrefix(endpoint, "https://") {
+		httpsEndPoint = "https://" + endpoint
+	} else {
+		httpsEndPoint = endpoint
+	}
+
+	client, err := New(httpsEndPoint, accessID, accessKey, AuthProxy(proxyHost, proxyUser, proxyPasswd))
+
+	// Create bucket
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+
+	// Put object
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+
+	// List objects
+	_, err = bucket.ListObjects()
+	c.Assert(err, IsNil)
+
+	// Delete object
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Delete bucket
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
 // Private
 func (s *OssClientSuite) checkBucket(buckets []BucketProperties, bucket string) bool {
 	for _, v := range buckets {

@@ -56,6 +56,13 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) 
 			if err != nil {
 				return err
 			}
+			if config.IsAuthProxy {
+				if config.ProxyPassword != "" {
+					proxyURL.User = url.UserPassword(config.ProxyUser, config.ProxyPassword)
+				} else {
+					proxyURL.User = url.User(config.ProxyUser)
+				}
+			}
 			transport.Proxy = http.ProxyURL(proxyURL)
 		}
 		client = &http.Client{Transport: transport}
@@ -135,6 +142,7 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
 		publishProgress(listener, event)
+		conn.config.WriteLog(Debug, "[Resp:%p]http error:%s\n", req, err.Error())
 		return nil, err
 	}
 
@@ -267,6 +275,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
 		publishProgress(listener, event)
+		conn.config.WriteLog(Debug, "[Resp:%p]http error:%s\n", req, err.Error())
 		return nil, err
 	}
 

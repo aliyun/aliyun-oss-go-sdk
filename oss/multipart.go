@@ -255,7 +255,7 @@ func (bucket Bucket) ListUploadedParts(imur InitiateMultipartUploadResult, optio
 	}
 
 	params["uploadId"] = imur.UploadID
-	resp, err := bucket.do("GET", imur.Key, params, nil, nil, nil)
+	resp, err := bucket.do("GET", imur.Key, params, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
