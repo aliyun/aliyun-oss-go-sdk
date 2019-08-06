@@ -1,4 +1,9 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.2 日期：2019-08-06
+### 变更内容
+- 修复：proxy代理不支持https请求
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.0.1 日期：2019-07-11
 ### 变更内容
 - 增加：增加qos相关api
