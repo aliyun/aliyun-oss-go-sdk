@@ -24,6 +24,7 @@ var sampleMap = map[string]interface{}{
 	"BucketPolicySample":	       sample.BucketPolicySample,
 	"BucketrRequestPaymentSample": sample.BucketrRequestPaymentSample,
 	"BucketQoSInfoSample":	       sample.BucketQoSInfoSample,
+	"BucketInventorySample":	   sample.BucketInventorySample,
 	"ObjectACLSample":             sample.ObjectACLSample,
 	"ObjectMetaSample":            sample.ObjectMetaSample,
 	"ListObjectsSample":           sample.ListObjectsSample,

@@ -840,16 +840,16 @@ type RequestPaymentConfiguration struct {
 
 // BucketQoSConfiguration define QoS configuration
 type BucketQoSConfiguration struct {
-	XMLName                   xml.Name `xml:"QoSConfiguration"`	
-	TotalUploadBandwidth      *int      `xml:"TotalUploadBandwidth"`      // Total upload bandwidth
-	IntranetUploadBandwidth   *int      `xml:"IntranetUploadBandwidth"`   // Intranet upload bandwidth
-	ExtranetUploadBandwidth   *int      `xml:"ExtranetUploadBandwidth"`   // Extranet upload bandwidth
-	TotalDownloadBandwidth    *int      `xml:"TotalDownloadBandwidth"`    // Total download bandwidth
-	IntranetDownloadBandwidth *int      `xml:"IntranetDownloadBandwidth"` // Intranet download bandwidth
-	ExtranetDownloadBandwidth *int      `xml:"ExtranetDownloadBandwidth"` // Extranet download bandwidth
-	TotalQPS                  *int      `xml:"TotalQps"`                  // Total Qps
-	IntranetQPS               *int      `xml:"IntranetQps"`               // Intranet Qps
-	ExtranetQPS               *int      `xml:"ExtranetQps"`               // Extranet Qps
+	XMLName                   xml.Name `xml:"QoSConfiguration"`
+	TotalUploadBandwidth      *int     `xml:"TotalUploadBandwidth"`      // Total upload bandwidth
+	IntranetUploadBandwidth   *int     `xml:"IntranetUploadBandwidth"`   // Intranet upload bandwidth
+	ExtranetUploadBandwidth   *int     `xml:"ExtranetUploadBandwidth"`   // Extranet upload bandwidth
+	TotalDownloadBandwidth    *int     `xml:"TotalDownloadBandwidth"`    // Total download bandwidth
+	IntranetDownloadBandwidth *int     `xml:"IntranetDownloadBandwidth"` // Intranet download bandwidth
+	ExtranetDownloadBandwidth *int     `xml:"ExtranetDownloadBandwidth"` // Extranet download bandwidth
+	TotalQPS                  *int     `xml:"TotalQps"`                  // Total Qps
+	IntranetQPS               *int     `xml:"IntranetQps"`               // Intranet Qps
+	ExtranetQPS               *int     `xml:"ExtranetQps"`               // Extranet Qps
 }
 
 // UserQoSConfiguration define QoS and Range configuration
@@ -857,4 +857,36 @@ type UserQoSConfiguration struct {
 	XMLName xml.Name `xml:"QoSConfiguration"`
 	Region  string   `xml:"Region,omitempty"` // Effective area of Qos configuration
 	BucketQoSConfiguration
+}
+
+// InventoryConfiguration is Inventory config
+type InventoryConfiguration struct {
+	XMLName                xml.Name             `xml:"InventoryConfiguration"`
+	Id                     string               `xml:"Id,omitempty"`
+	IsEnabled              *bool                `xml:"IsEnabled,omitempty"`
+	Prefix                 string               `xml:"Filter>Prefix,omitempty"`
+	OSSBucketDestination   OSSBucketDestination `xml:"Destination>OSSBucketDestination,omitempty"`
+	Frequency              string               `xml:"Schedule>Frequency,omitempty"`
+	IncludedObjectVersions string               `xml:"IncludedObjectVersions,omitempty"`
+	OptionalFields         OptionalFields       `xml:OptionalFields,omitempty`
+}
+type OptionalFields struct {
+	XMLName xml.Name `xml:"OptionalFields,omitempty`
+	Field   []string `xml:"Field,omitempty`
+}
+type OSSBucketDestination struct {
+	XMLName   xml.Name `name:"OSSBucketDestination"`
+	Format    string   `xml:"Format,omitempty"`
+	AccountId string   `xml:"AccountId,omitempty"`
+	RoleArn   string   `xml:"RoleArn,omitempty"`
+	Bucket    string   `xml:"Bucket,omitempty"`
+	Prefix    string   `xml:"Prefix,omitempty"`
+	KeyId     string   `xml:"Encryption>SSE-KMS>KeyId,omitempty"`
+}
+
+type ListInventoryConfigurationsResult struct {
+	XMLName                xml.Name                 `xml:"ListInventoryConfigurationsResult"`
+	InventoryConfiguration []InventoryConfiguration `xml:"InventoryConfiguration,omitempty`
+	IsTruncated            *bool                    `xml:"IsTruncated,omitempty"`
+	NextContinuationToken  string                   `xml:"NextContinuationToken,omitempty"`
 }
