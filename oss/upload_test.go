@@ -89,9 +89,9 @@ func (s *OssUploadSuite) TearDownTest(c *C) {
 
 // TestUploadRoutineWithoutRecovery tests multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Routines is not specified, by default single routine
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
@@ -224,7 +224,7 @@ func ErrorHooker(id int, chunk FileChunk) error {
 
 // TestUploadRoutineWithoutRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	uploadPartHooker = ErrorHooker
@@ -248,7 +248,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 
 // TestUploadRoutineWithRecovery is multi-routine upload with resumable recovery
 func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file-2.jpg"
 
@@ -397,7 +397,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 
 // TestUploadRoutineWithRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// The local file does not exist
@@ -423,10 +423,10 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 
 // TestUploadLocalFileChange tests the file is updated while being uploaded
 func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	localFile := randStr(8) + ".jpg"
-	newFile := randStr(8) + ".jpg"
+	localFile := RandStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	os.Remove(localFile)
 	err := copyFile(fileName, localFile)
@@ -481,7 +481,7 @@ func (s *OssUploadSuite) TestVersioningUploadRoutineWithRecovery(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -494,11 +494,11 @@ func (s *OssUploadSuite) TestVersioningUploadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 
 	// begin test
-	objectName := objectNamePrefix + randStr(8)
-	fileName := "test-file-" + randStr(8)
-	fileData := randStr(500 * 1024)
-	createFile(fileName, fileData, c)
-	newFile := "test-file-" + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := "test-file-" + RandStr(8)
 
 	// Use default routines and default CP file path (fileName+.cp)Header
 	// First upload for 4 parts
@@ -533,5 +533,5 @@ func (s *OssUploadSuite) TestVersioningUploadRoutineWithRecovery(c *C) {
 	os.Remove(fileName)
 	os.Remove(newFile)
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }

@@ -93,9 +93,9 @@ func (s *OssDownloadSuite) TearDownTest(c *C) {
 
 // TestDownloadRoutineWithoutRecovery multipart downloads without checkpoint
 func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -155,9 +155,9 @@ func DownErrorHooker(part downloadPart) error {
 
 // TestDownloadRoutineWithRecovery multi-routine resumable download
 func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -269,9 +269,9 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 // TestDownloadOption options
 func (s *OssDownloadSuite) TestDownloadOption(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload the file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -309,9 +309,9 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 
 // TestDownloadObjectChange tests the file is updated during the upload
 func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -337,9 +337,9 @@ func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 
 // TestDownloadNegative tests downloading negative
 func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -389,10 +389,10 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 
 // TestDownloadWithRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
-	newFileGet := randStr(8) + "-.jpg"
+	newFile := RandStr(8) + ".jpg"
+	newFileGet := RandStr(8) + "-.jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -483,10 +483,10 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 
 // TestDownloadWithCheckoutAndRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
-	newFileGet := randStr(8) + "-get.jpg"
+	newFile := RandStr(8) + ".jpg"
+	newFileGet := RandStr(8) + "-get.jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, fileName+".cp"))
@@ -681,7 +681,7 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithoutCheckPoint(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -694,13 +694,13 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithoutCheckPoint(c *C) {
 	c.Assert(err, IsNil)
 
 	// begin test
-	objectName := objectNamePrefix + randStr(8)
-	fileName := "test-file-" + randStr(8)
-	fileData := randStr(500 * 1024)
-	createFile(fileName, fileData, c)
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
 
-	newFile := randStr(8) + ".jpg"
-	newFileGet := randStr(8) + "-.jpg"
+	newFile := RandStr(8) + ".jpg"
+	newFileGet := RandStr(8) + "-.jpg"
 
 	// Upload a file
 	var respHeader http.Header
@@ -816,7 +816,7 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithoutCheckPoint(c *C) {
 	os.Remove(newFileGet)
 	err = bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
@@ -824,7 +824,7 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -837,11 +837,11 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
 	c.Assert(err, IsNil)
 
 	// begin test
-	objectName := objectNamePrefix + randStr(8)
-	fileName := "test-file-" + randStr(8)
-	fileData := randStr(500 * 1024)
-	createFile(fileName, fileData, c)
-	newFile := randStr(8) + ".jpg"
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	var respHeader http.Header
@@ -878,5 +878,5 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
 	os.Remove(newFile)
 	err = bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }

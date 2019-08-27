@@ -435,17 +435,17 @@ type UploadPart struct {
 	ETag       string   `xml:"ETag"`       // ETag value of the part's data
 }
 
-type uploadParts []UploadPart
+type UploadParts []UploadPart
 
-func (slice uploadParts) Len() int {
+func (slice UploadParts) Len() int {
 	return len(slice)
 }
 
-func (slice uploadParts) Less(i, j int) bool {
+func (slice UploadParts) Less(i, j int) bool {
 	return slice[i].PartNumber < slice[j].PartNumber
 }
 
-func (slice uploadParts) Swap(i, j int) {
+func (slice UploadParts) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
@@ -840,16 +840,16 @@ type RequestPaymentConfiguration struct {
 
 // BucketQoSConfiguration define QoS configuration
 type BucketQoSConfiguration struct {
-	XMLName                   xml.Name `xml:"QoSConfiguration"`	
-	TotalUploadBandwidth      *int      `xml:"TotalUploadBandwidth"`      // Total upload bandwidth
-	IntranetUploadBandwidth   *int      `xml:"IntranetUploadBandwidth"`   // Intranet upload bandwidth
-	ExtranetUploadBandwidth   *int      `xml:"ExtranetUploadBandwidth"`   // Extranet upload bandwidth
-	TotalDownloadBandwidth    *int      `xml:"TotalDownloadBandwidth"`    // Total download bandwidth
-	IntranetDownloadBandwidth *int      `xml:"IntranetDownloadBandwidth"` // Intranet download bandwidth
-	ExtranetDownloadBandwidth *int      `xml:"ExtranetDownloadBandwidth"` // Extranet download bandwidth
-	TotalQPS                  *int      `xml:"TotalQps"`                  // Total Qps
-	IntranetQPS               *int      `xml:"IntranetQps"`               // Intranet Qps
-	ExtranetQPS               *int      `xml:"ExtranetQps"`               // Extranet Qps
+	XMLName                   xml.Name `xml:"QoSConfiguration"`
+	TotalUploadBandwidth      *int     `xml:"TotalUploadBandwidth"`      // Total upload bandwidth
+	IntranetUploadBandwidth   *int     `xml:"IntranetUploadBandwidth"`   // Intranet upload bandwidth
+	ExtranetUploadBandwidth   *int     `xml:"ExtranetUploadBandwidth"`   // Extranet upload bandwidth
+	TotalDownloadBandwidth    *int     `xml:"TotalDownloadBandwidth"`    // Total download bandwidth
+	IntranetDownloadBandwidth *int     `xml:"IntranetDownloadBandwidth"` // Intranet download bandwidth
+	ExtranetDownloadBandwidth *int     `xml:"ExtranetDownloadBandwidth"` // Extranet download bandwidth
+	TotalQPS                  *int     `xml:"TotalQps"`                  // Total Qps
+	IntranetQPS               *int     `xml:"IntranetQps"`               // Intranet Qps
+	ExtranetQPS               *int     `xml:"ExtranetQps"`               // Extranet Qps
 }
 
 // UserQoSConfiguration define QoS and Range configuration

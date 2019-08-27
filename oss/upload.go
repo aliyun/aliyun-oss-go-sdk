@@ -54,7 +54,7 @@ func getUploadCpFilePath(cpConf *cpConfig, srcFile, destBucket, destObject strin
 
 // getCpConfig gets checkpoint configuration
 func getCpConfig(options []Option) *cpConfig {
-	cpcOpt, err := findOption(options, checkpointConfig, nil)
+	cpcOpt, err := FindOption(options, checkpointConfig, nil)
 	if err != nil || cpcOpt == nil {
 		return nil
 	}
@@ -77,7 +77,7 @@ func getCpFileName(src, dest string) string {
 
 // getRoutines gets the routine count. by default it's 1.
 func getRoutines(options []Option) int {
-	rtnOpt, err := findOption(options, routineNum, nil)
+	rtnOpt, err := FindOption(options, routineNum, nil)
 	if err != nil || rtnOpt == nil {
 		return 1
 	}
@@ -94,7 +94,7 @@ func getRoutines(options []Option) int {
 
 // getPayer return the payer of the request
 func getPayer(options []Option) string {
-	payerOpt, err := findOption(options, HTTPHeaderOssRequester, nil)
+	payerOpt, err := FindOption(options, HTTPHeaderOssRequester, nil)
 	if err != nil || payerOpt == nil {
 		return ""
 	}
@@ -102,9 +102,9 @@ func getPayer(options []Option) string {
 	return payerOpt.(string)
 }
 
-// getProgressListener gets the progress callback
-func getProgressListener(options []Option) ProgressListener {
-	isSet, listener, _ := isOptionSet(options, progressListener)
+// GetProgressListener gets the progress callback
+func GetProgressListener(options []Option) ProgressListener {
+	isSet, listener, _ := IsOptionSet(options, progressListener)
 	if !isSet {
 		return nil
 	}
@@ -168,7 +168,7 @@ func getTotalBytes(chunks []FileChunk) int64 {
 
 // uploadFile is a concurrent upload, without checkpoint
 func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, options []Option, routines int) error {
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	chunks, err := SplitFileByPartSize(filePath, partSize)
 	if err != nil {
@@ -443,7 +443,7 @@ func complete(cp *uploadCheckpoint, bucket *Bucket, parts []UploadPart, cpFilePa
 
 // uploadFileWithCp handles concurrent upload with checkpoint
 func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int) error {
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	// Load CP data
 	ucp := uploadCheckpoint{}

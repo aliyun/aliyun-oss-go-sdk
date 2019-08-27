@@ -99,7 +99,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 
 	buffer := new(bytes.Buffer)
 
-	isOptSet, val, _ := isOptionSet(options, storageClass)
+	isOptSet, val, _ := IsOptionSet(options, storageClass)
 	if isOptSet {
 		cbConfig := createBucketConfiguration{StorageClass: val.(StorageClassType)}
 		bs, err := xml.Marshal(cbConfig)
@@ -119,7 +119,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	}
 
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // ListBuckets lists buckets of the current account under the given endpoint, with optional filters.
@@ -135,7 +135,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 	var out ListBucketsResult
 
-	params, err := getRawParams(options)
+	params, err := GetRawParams(options)
 	if err != nil {
 		return out, err
 	}
@@ -183,7 +183,7 @@ func (client Client) DeleteBucket(bucketName string, options ...Option) error {
 	}
 
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // GetBucketLocation gets the bucket location.
@@ -226,7 +226,7 @@ func (client Client) SetBucketACL(bucketName string, bucketACL ACLType) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // GetBucketACL gets the bucket ACL.
@@ -285,7 +285,7 @@ func (client Client) SetBucketLifecycle(bucketName string, rules []LifecycleRule
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // DeleteBucketLifecycle deletes the bucket's lifecycle.
@@ -303,7 +303,7 @@ func (client Client) DeleteBucketLifecycle(bucketName string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // GetBucketLifecycle gets the bucket's lifecycle settings.
@@ -371,7 +371,7 @@ func (client Client) SetBucketReferer(bucketName string, referers []string, allo
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // GetBucketReferer gets the bucket's referrer white list.
@@ -439,7 +439,7 @@ func (client Client) SetBucketLogging(bucketName, targetBucket, targetPrefix str
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // DeleteBucketLogging deletes the logging configuration to disable the logging on the bucket.
@@ -456,7 +456,7 @@ func (client Client) DeleteBucketLogging(bucketName string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // GetBucketLogging gets the bucket's logging settings
@@ -514,7 +514,7 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // SetBucketWebsiteDetail sets the bucket's static website's detail
@@ -547,7 +547,7 @@ func (client Client) SetBucketWebsiteDetail(bucketName string, wxml WebsiteXML, 
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // DeleteBucketWebsite deletes the bucket's static web site settings.
@@ -564,7 +564,7 @@ func (client Client) DeleteBucketWebsite(bucketName string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // GetBucketWebsite gets the bucket's default page (index page) and the error page.
@@ -627,7 +627,7 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule) erro
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // DeleteBucketCORS deletes the bucket's static website settings.
@@ -644,7 +644,7 @@ func (client Client) DeleteBucketCORS(bucketName string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // GetBucketCORS gets the bucket's CORS settings.
@@ -727,7 +727,7 @@ func (client Client) SetBucketVersioning(bucketName string, versioningConfig Ver
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // GetBucketVersioning get bucket versioning status:Enabled、Suspended
@@ -775,7 +775,7 @@ func (client Client) SetBucketEncryption(bucketName string, encryptionRule Serve
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // GetBucketEncryption get bucket encryption
@@ -808,7 +808,7 @@ func (client Client) DeleteBucketEncryption(bucketName string, options ...Option
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 //
@@ -839,7 +839,7 @@ func (client Client) SetBucketTagging(bucketName string, tagging Tagging, option
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // GetBucketTagging get tagging of the bucket
@@ -872,7 +872,7 @@ func (client Client) DeleteBucketTagging(bucketName string, options ...Option) e
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // GetBucketStat get bucket stat
@@ -940,7 +940,7 @@ func (client Client) SetBucketPolicy(bucketName string, policy string, options .
 	}
 	defer resp.Body.Close()
 
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // DeleteBucketPolicy API operation for Object Storage Service.
@@ -960,7 +960,7 @@ func (client Client) DeleteBucketPolicy(bucketName string, options ...Option) er
 	}
 
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // SetBucketRequestPayment API operation for Object Storage Service.
@@ -996,7 +996,7 @@ func (client Client) SetBucketRequestPayment(bucketName string, paymentConfig Re
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // GetBucketRequestPayment API operation for Object Storage Service.
@@ -1079,7 +1079,7 @@ func (client Client) SetBucketQoSInfo(bucketName string, qosConf BucketQoSConfig
 	}
 
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
 // GetBucketQosInfo API operation for Object Storage Service.
@@ -1125,7 +1125,7 @@ func (client Client) DeleteBucketQosInfo(bucketName string, options ...Option) e
 	}
 	defer resp.Body.Close()
 
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
@@ -1290,7 +1290,7 @@ func (client Client) do(method, bucketName string, params map[string]interface{}
 	resp, err := client.Conn.Do(method, bucketName, "", params, headers, data, 0, nil)
 
 	// get response header
-	respHeader, _ := findOption(options, responseHeader, nil)
+	respHeader, _ := FindOption(options, responseHeader, nil)
 	if respHeader != nil {
 		pRespHeader := respHeader.(*http.Header)
 		*pRespHeader = resp.Headers

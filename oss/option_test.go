@@ -267,7 +267,7 @@ func (s *OssOptionSuite) TestHandleParams(c *C) {
 		options = append(options, testcase.option)
 	}
 
-	params, err := getRawParams(options)
+	params, err := GetRawParams(options)
 	c.Assert(err, IsNil)
 
 	out := client.Conn.getURLParams(params)
@@ -275,7 +275,7 @@ func (s *OssOptionSuite) TestHandleParams(c *C) {
 
 	options = []Option{KeyMarker(""), nil}
 
-	params, err = getRawParams(options)
+	params, err = GetRawParams(options)
 	c.Assert(err, IsNil)
 
 	out = client.Conn.getURLParams(params)
@@ -289,29 +289,29 @@ func (s *OssOptionSuite) TestFindOption(c *C) {
 		options = append(options, testcase.option)
 	}
 
-	str, err := findOption(options, "X-Oss-Acl", "")
+	str, err := FindOption(options, "X-Oss-Acl", "")
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, "private")
 
-	str, err = findOption(options, "MyProp", "")
+	str, err = FindOption(options, "MyProp", "")
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, "")
 }
 
 func (s *OssOptionSuite) TestDeleteOption(c *C) {
 	options := []Option{VersionId("123"), VersionIdMarker("456"), KeyMarker("789")}
-	str, err := findOption(options, "versionId", "")
+	str, err := FindOption(options, "versionId", "")
 	c.Assert(str, Equals, "123")
 	c.Assert(err, IsNil)
 
-	skipOption := deleteOption(options, "versionId")
-	str, err = findOption(skipOption, "versionId", "")
+	skipOption := DeleteOption(options, "versionId")
+	str, err = FindOption(skipOption, "versionId", "")
 	c.Assert(str, Equals, "")
 
-	str, err = findOption(skipOption, "version-id-marker", "")
+	str, err = FindOption(skipOption, "version-id-marker", "")
 	c.Assert(str, Equals, "456")
 
-	str, err = findOption(skipOption, "key-marker", "")
+	str, err = FindOption(skipOption, "key-marker", "")
 	c.Assert(str, Equals, "789")
 
 }

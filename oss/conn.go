@@ -359,20 +359,11 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 	var file *os.File
 	var crc hash.Hash64
 	reader := body
-
-	// Length
-	switch v := body.(type) {
-	case *bytes.Buffer:
-		req.ContentLength = int64(v.Len())
-	case *bytes.Reader:
-		req.ContentLength = int64(v.Len())
-	case *strings.Reader:
-		req.ContentLength = int64(v.Len())
-	case *os.File:
-		req.ContentLength = tryGetFileSize(v)
-	case *io.LimitedReader:
-		req.ContentLength = int64(v.N)
+	readerLen, err := GetReaderLen(reader)
+	if err == nil {
+		req.ContentLength = readerLen
 	}
+
 	req.Header.Set(HTTPHeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
 
 	// MD5
@@ -384,7 +375,7 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 
 	// CRC
 	if reader != nil && conn.config.IsEnableCRC {
-		crc = NewCRC(crcTable(), initCRC)
+		crc = NewCRC(CrcTable(), initCRC)
 		reader = TeeReader(reader, crc, req.ContentLength, listener, tracker)
 	}
 

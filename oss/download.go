@@ -30,7 +30,7 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 		return errors.New("oss: part size smaller than 1")
 	}
 
-	uRange, err := getRangeConfig(options)
+	uRange, err := GetRangeConfig(options)
 	if err != nil {
 		return err
 	}
@@ -56,15 +56,6 @@ func getDownloadCpFilePath(cpConf *cpConfig, srcBucket, srcObject, destFile stri
 		cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
 	}
 	return cpConf.FilePath
-}
-
-// getRangeConfig gets the download range from the options.
-func getRangeConfig(options []Option) (*unpackedRange, error) {
-	rangeOpt, err := findOption(options, HTTPHeaderRange, nil)
-	if err != nil || rangeOpt == nil {
-		return nil, err
-	}
-	return parseRange(rangeOpt.(string))
 }
 
 // ----- concurrent download without checkpoint  -----
@@ -121,7 +112,7 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 
 		var crcCalc hash.Hash64
 		if arg.enableCRC {
-			crcCalc = crc64.New(crcTable())
+			crcCalc = crc64.New(CrcTable())
 			contentLen := part.End - part.Start + 1
 			rd = ioutil.NopCloser(TeeReader(rd, crcCalc, contentLen, nil, nil))
 		}
@@ -180,11 +171,11 @@ type downloadPart struct {
 }
 
 // getDownloadParts gets download parts
-func getDownloadParts(objectSize, partSize int64, uRange *unpackedRange) []downloadPart {
+func getDownloadParts(objectSize, partSize int64, uRange *UnpackedRange) []downloadPart {
 	parts := []downloadPart{}
 	part := downloadPart{}
 	i := 0
-	start, end := adjustRange(uRange, objectSize)
+	start, end := AdjustRange(uRange, objectSize)
 	for offset := start; offset < end; offset += partSize {
 		part.Index = i
 		part.Start = offset
@@ -221,9 +212,9 @@ func combineCRCInParts(dps []downloadPart) uint64 {
 }
 
 // downloadFile downloads file concurrently without checkpoint.
-func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, options []Option, routines int, uRange *unpackedRange) error {
+func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, options []Option, routines int, uRange *UnpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	// If the file does not exist, create one. If exists, the download will overwrite it.
 	fd, err := os.OpenFile(tempFilePath, os.O_WRONLY|os.O_CREATE, FilePermMode)
@@ -234,23 +225,23 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 
 	// Get the object detailed meta for object whole size
 	// must delete header:range to get whole object size
-	skipOptions := deleteOption(options, HTTPHeaderRange)
+	skipOptions := DeleteOption(options, HTTPHeaderRange)
 	meta, err := bucket.GetObjectDetailedMeta(objectKey, skipOptions...)
 	if err != nil {
 		return err
 	}
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return err
 	}
 
 	enableCRC := false
 	expectedCRC := (uint64)(0)
-	if bucket.getConfig().IsEnableCRC && meta.Get(HTTPHeaderOssCRC64) != "" {
-		if uRange == nil || (!uRange.hasStart && !uRange.hasEnd) {
+	if bucket.GetConfig().IsEnableCRC && meta.Get(HTTPHeaderOssCRC64) != "" {
+		if uRange == nil || (!uRange.HasStart && !uRange.HasEnd) {
 			enableCRC = true
-			expectedCRC, _ = strconv.ParseUint(meta.Get(HTTPHeaderOssCRC64), 10, 0)
+			expectedCRC, _ = strconv.ParseUint(meta.Get(HTTPHeaderOssCRC64), 10, 64)
 		}
 	}
 
@@ -303,7 +294,7 @@ func (bucket Bucket) downloadFile(objectKey, filePath string, partSize int64, op
 
 	if enableCRC {
 		actualCRC := combineCRCInParts(parts)
-		err = checkDownloadCRC(actualCRC, expectedCRC)
+		err = CheckDownloadCRC(actualCRC, expectedCRC)
 		if err != nil {
 			return err
 		}
@@ -337,7 +328,7 @@ type objectStat struct {
 }
 
 // isValid flags of checkpoint data is valid. It returns true when the data is valid and the checkpoint is valid and the object is not updated.
-func (cp downloadCheckpoint) isValid(meta http.Header, uRange *unpackedRange) (bool, error) {
+func (cp downloadCheckpoint) isValid(meta http.Header, uRange *UnpackedRange) (bool, error) {
 	// Compare the CP's Magic and the MD5
 	cpb := cp
 	cpb.MD5 = ""
@@ -349,7 +340,7 @@ func (cp downloadCheckpoint) isValid(meta http.Header, uRange *unpackedRange) (b
 		return false, nil
 	}
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return false, err
 	}
@@ -363,7 +354,7 @@ func (cp downloadCheckpoint) isValid(meta http.Header, uRange *unpackedRange) (b
 
 	// Check the download range
 	if uRange != nil {
-		start, end := adjustRange(uRange, objectSize)
+		start, end := AdjustRange(uRange, objectSize)
 		if start != cp.Start || end != cp.End {
 			return false, nil
 		}
@@ -430,13 +421,13 @@ func (cp downloadCheckpoint) getCompletedBytes() int64 {
 }
 
 // prepare initiates download tasks
-func (cp *downloadCheckpoint) prepare(meta http.Header, bucket *Bucket, objectKey, filePath string, partSize int64, uRange *unpackedRange) error {
+func (cp *downloadCheckpoint) prepare(meta http.Header, bucket *Bucket, objectKey, filePath string, partSize int64, uRange *UnpackedRange) error {
 	// CP
 	cp.Magic = downloadCpMagic
 	cp.FilePath = filePath
 	cp.Object = objectKey
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return err
 	}
@@ -445,10 +436,10 @@ func (cp *downloadCheckpoint) prepare(meta http.Header, bucket *Bucket, objectKe
 	cp.ObjStat.LastModified = meta.Get(HTTPHeaderLastModified)
 	cp.ObjStat.Etag = meta.Get(HTTPHeaderEtag)
 
-	if bucket.getConfig().IsEnableCRC && meta.Get(HTTPHeaderOssCRC64) != "" {
-		if uRange == nil || (!uRange.hasStart && !uRange.hasEnd) {
+	if bucket.GetConfig().IsEnableCRC && meta.Get(HTTPHeaderOssCRC64) != "" {
+		if uRange == nil || (!uRange.HasStart && !uRange.HasEnd) {
 			cp.enableCRC = true
-			cp.CRC, _ = strconv.ParseUint(meta.Get(HTTPHeaderOssCRC64), 10, 0)
+			cp.CRC, _ = strconv.ParseUint(meta.Get(HTTPHeaderOssCRC64), 10, 64)
 		}
 	}
 
@@ -468,9 +459,9 @@ func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
 }
 
 // downloadFileWithCp downloads files with checkpoint.
-func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int, uRange *unpackedRange) error {
+func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int64, options []Option, cpFilePath string, routines int, uRange *UnpackedRange) error {
 	tempFilePath := filePath + TempFileSuffix
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	// Load checkpoint data.
 	dcp := downloadCheckpoint{}
@@ -481,7 +472,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 
 	// Get the object detailed meta for object whole size
 	// must delete header:range to get whole object size
-	skipOptions := deleteOption(options, HTTPHeaderRange)
+	skipOptions := DeleteOption(options, HTTPHeaderRange)
 	meta, err := bucket.GetObjectDetailedMeta(objectKey, skipOptions...)
 	if err != nil {
 		return err
@@ -553,7 +544,7 @@ func (bucket Bucket) downloadFileWithCp(objectKey, filePath string, partSize int
 
 	if dcp.enableCRC {
 		actualCRC := combineCRCInParts(dcp.Parts)
-		err = checkDownloadCRC(actualCRC, dcp.CRC)
+		err = CheckDownloadCRC(actualCRC, dcp.CRC)
 		if err != nil {
 			return err
 		}

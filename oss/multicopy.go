@@ -140,16 +140,16 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	partSize int64, options []Option, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	// for get whole length
-	skipOptions := deleteOption(options, HTTPHeaderRange)
+	skipOptions := DeleteOption(options, HTTPHeaderRange)
 	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, skipOptions...)
 	if err != nil {
 		return err
 	}
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func (cp copyCheckpoint) isValid(meta http.Header) (bool, error) {
 		return false, nil
 	}
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return false, err
 	}
@@ -337,7 +337,7 @@ func (cp *copyCheckpoint) prepare(meta http.Header, srcBucket *Bucket, srcObject
 	cp.DestBucketName = destBucket.BucketName
 	cp.DestObjectKey = destObjectKey
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return err
 	}
@@ -380,7 +380,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	partSize int64, options []Option, cpFilePath string, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	// Load CP data
 	ccp := copyCheckpoint{}
@@ -391,7 +391,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 
 	// Make sure the object is not updated.
 	// get whole length
-	skipOptions := deleteOption(options, HTTPHeaderRange)
+	skipOptions := DeleteOption(options, HTTPHeaderRange)
 	meta, err := srcBucket.GetObjectDetailedMeta(srcObjectKey, skipOptions...)
 	if err != nil {
 		return err

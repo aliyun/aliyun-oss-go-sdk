@@ -82,7 +82,7 @@ func (s *OssTypeSuite) TestDecodeListMultipartUploadResult(c *C) {
 func (s *OssTypeSuite) TestSortUploadPart(c *C) {
 	parts := []UploadPart{}
 
-	sort.Sort(uploadParts(parts))
+	sort.Sort(UploadParts(parts))
 	c.Assert(len(parts), Equals, 0)
 
 	parts = []UploadPart{
@@ -93,7 +93,7 @@ func (s *OssTypeSuite) TestSortUploadPart(c *C) {
 		{PartNumber: 3, ETag: "E3"},
 	}
 
-	sort.Sort(uploadParts(parts))
+	sort.Sort(UploadParts(parts))
 
 	c.Assert(parts[0].PartNumber, Equals, 1)
 	c.Assert(parts[0].ETag, Equals, "E1")

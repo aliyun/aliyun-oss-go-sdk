@@ -2,10 +2,14 @@ package oss
 
 import (
 	"bytes"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"hash/crc64"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -46,31 +50,52 @@ func getSysInfo() sysInfo {
 	return sysInfo{name: name, release: release, machine: machine}
 }
 
-// unpackedRange
-type unpackedRange struct {
-	hasStart bool  // Flag indicates if the start point is specified
-	hasEnd   bool  // Flag indicates if the end point is specified
-	start    int64 // Start point
-	end      int64 // End point
+// GetRangeConfig gets the download range from the options.
+func GetRangeConfig(options []Option) (*UnpackedRange, error) {
+	rangeOpt, err := FindOption(options, HTTPHeaderRange, nil)
+	if err != nil || rangeOpt == nil {
+		return nil, err
+	}
+	return ParseRange(rangeOpt.(string))
 }
 
-// invalidRangeError returns invalid range error
-func invalidRangeError(r string) error {
+// UnpackedRange
+type UnpackedRange struct {
+	HasStart bool  // Flag indicates if the start point is specified
+	HasEnd   bool  // Flag indicates if the end point is specified
+	Start    int64 // Start point
+	End      int64 // End point
+}
+
+// InvalidRangeError returns invalid range error
+func InvalidRangeError(r string) error {
 	return fmt.Errorf("InvalidRange %s", r)
 }
 
-// parseRange parse various styles of range such as bytes=M-N
-func parseRange(normalizedRange string) (*unpackedRange, error) {
+func GetRangeString(unpackRange UnpackedRange) string {
+	var strRange string
+	if unpackRange.HasStart && unpackRange.HasEnd {
+		strRange = fmt.Sprintf("%d-%d", unpackRange.Start, unpackRange.End)
+	} else if unpackRange.HasStart {
+		strRange = fmt.Sprintf("%d-", unpackRange.Start)
+	} else if unpackRange.HasEnd {
+		strRange = fmt.Sprintf("-%d", unpackRange.End)
+	}
+	return strRange
+}
+
+// ParseRange parse various styles of range such as bytes=M-N
+func ParseRange(normalizedRange string) (*UnpackedRange, error) {
 	var err error
-	hasStart := false
-	hasEnd := false
-	var start int64
-	var end int64
+	HasStart := false
+	HasEnd := false
+	var Start int64
+	var End int64
 
 	// Bytes==M-N or ranges=M-N
 	nrSlice := strings.Split(normalizedRange, "=")
 	if len(nrSlice) != 2 || nrSlice[0] != "bytes" {
-		return nil, invalidRangeError(normalizedRange)
+		return nil, InvalidRangeError(normalizedRange)
 	}
 
 	// Bytes=M-N,X-Y
@@ -79,66 +104,66 @@ func parseRange(normalizedRange string) (*unpackedRange, error) {
 
 	if strings.HasSuffix(rStr, "-") { // M-
 		startStr := rStr[:len(rStr)-1]
-		start, err = strconv.ParseInt(startStr, 10, 64)
+		Start, err = strconv.ParseInt(startStr, 10, 64)
 		if err != nil {
-			return nil, invalidRangeError(normalizedRange)
+			return nil, InvalidRangeError(normalizedRange)
 		}
-		hasStart = true
+		HasStart = true
 	} else if strings.HasPrefix(rStr, "-") { // -N
 		len := rStr[1:]
-		end, err = strconv.ParseInt(len, 10, 64)
+		End, err = strconv.ParseInt(len, 10, 64)
 		if err != nil {
-			return nil, invalidRangeError(normalizedRange)
+			return nil, InvalidRangeError(normalizedRange)
 		}
-		if end == 0 { // -0
-			return nil, invalidRangeError(normalizedRange)
+		if End == 0 { // -0
+			return nil, InvalidRangeError(normalizedRange)
 		}
-		hasEnd = true
+		HasEnd = true
 	} else { // M-N
 		valSlice := strings.Split(rStr, "-")
 		if len(valSlice) != 2 {
-			return nil, invalidRangeError(normalizedRange)
+			return nil, InvalidRangeError(normalizedRange)
 		}
-		start, err = strconv.ParseInt(valSlice[0], 10, 64)
+		Start, err = strconv.ParseInt(valSlice[0], 10, 64)
 		if err != nil {
-			return nil, invalidRangeError(normalizedRange)
+			return nil, InvalidRangeError(normalizedRange)
 		}
-		hasStart = true
-		end, err = strconv.ParseInt(valSlice[1], 10, 64)
+		HasStart = true
+		End, err = strconv.ParseInt(valSlice[1], 10, 64)
 		if err != nil {
-			return nil, invalidRangeError(normalizedRange)
+			return nil, InvalidRangeError(normalizedRange)
 		}
-		hasEnd = true
+		HasEnd = true
 	}
 
-	return &unpackedRange{hasStart, hasEnd, start, end}, nil
+	return &UnpackedRange{HasStart, HasEnd, Start, End}, nil
 }
 
-// adjustRange returns adjusted range, adjust the range according to the length of the file
-func adjustRange(ur *unpackedRange, size int64) (start, end int64) {
+// AdjustRange returns adjusted range, adjust the range according to the length of the file
+func AdjustRange(ur *UnpackedRange, size int64) (Start, End int64) {
 	if ur == nil {
 		return 0, size
 	}
 
-	if ur.hasStart && ur.hasEnd {
-		start = ur.start
-		end = ur.end + 1
-		if ur.start < 0 || ur.start >= size || ur.end > size || ur.start > ur.end {
-			start = 0
-			end = size
+	if ur.HasStart && ur.HasEnd {
+		Start = ur.Start
+		End = ur.End + 1
+		if ur.Start < 0 || ur.Start >= size || ur.End > size || ur.Start > ur.End {
+			Start = 0
+			End = size
 		}
-	} else if ur.hasStart {
-		start = ur.start
-		end = size
-		if ur.start < 0 || ur.start >= size {
-			start = 0
+	} else if ur.HasStart {
+		Start = ur.Start
+		End = size
+		if ur.Start < 0 || ur.Start >= size {
+			Start = 0
 		}
-	} else if ur.hasEnd {
-		start = size - ur.end
-		end = size
-		if ur.end < 0 || ur.end > size {
-			start = 0
-			end = size
+	} else if ur.HasEnd {
+		Start = size - ur.End
+		End = size
+		if ur.End < 0 || ur.End > size {
+			Start = 0
+			End = size
 		}
 	}
 	return
@@ -259,7 +284,101 @@ func GetPartEnd(begin int64, total int64, per int64) int64 {
 	return begin + per - 1
 }
 
-// crcTable returns the table constructed from the specified polynomial
-var crcTable = func() *crc64.Table {
+// CrcTable returns the table constructed from the specified polynomial
+var CrcTable = func() *crc64.Table {
 	return crc64.MakeTable(crc64.ECMA)
+}
+
+func GetReaderLen(reader io.Reader) (int64, error) {
+	var contentLength int64
+	var err error
+	switch v := reader.(type) {
+	case *bytes.Buffer:
+		contentLength = int64(v.Len())
+	case *bytes.Reader:
+		contentLength = int64(v.Len())
+	case *strings.Reader:
+		contentLength = int64(v.Len())
+	case *os.File:
+		fInfo, fError := v.Stat()
+		if fError != nil {
+			err = fmt.Errorf("can't get reader content length,%s", fError.Error())
+		} else {
+			contentLength = fInfo.Size()
+		}
+	case *io.LimitedReader:
+		contentLength = int64(v.N)
+	case *LimitedReadCloser:
+		contentLength = int64(v.N)
+	default:
+		err = fmt.Errorf("can't get reader content length,unkown reader type")
+	}
+	return contentLength, err
+}
+
+func LimitReadCloser(r io.Reader, n int64) io.Reader {
+	var lc LimitedReadCloser
+	lc.R = r
+	lc.N = n
+	return &lc
+}
+
+// LimitedRC support Close()
+type LimitedReadCloser struct {
+	io.LimitedReader
+}
+
+func (lc *LimitedReadCloser) Close() error {
+	if closer, ok := lc.R.(io.ReadCloser); ok {
+		return closer.Close()
+	}
+	return nil
+}
+
+type DiscardReadCloser struct {
+	RC      io.ReadCloser
+	Discard int
+}
+
+func (drc *DiscardReadCloser) Read(b []byte) (int, error) {
+	n, err := drc.RC.Read(b)
+	if drc.Discard == 0 || n <= 0 {
+		return n, err
+	}
+
+	if n <= drc.Discard {
+		drc.Discard -= n
+		return 0, err
+	}
+
+	realLen := n - drc.Discard
+	copy(b[0:realLen], b[drc.Discard:n])
+	drc.Discard = 0
+	return realLen, err
+}
+
+func (drc *DiscardReadCloser) Close() error {
+	closer, ok := drc.RC.(io.ReadCloser)
+	if ok {
+		return closer.Close()
+	}
+	return nil
+}
+
+func XmlUnmarshal(body io.Reader, v interface{}) error {
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		return err
+	}
+	return xml.Unmarshal(data, v)
+}
+
+// decodeListUploadedPartsResult decodes
+func DecodeListUploadedPartsResult(result *ListUploadedPartsResult) error {
+	var err error
+	result.Key, err = url.QueryUnescape(result.Key)
+	if err != nil {
+		return err
+	}
+	return nil
 }

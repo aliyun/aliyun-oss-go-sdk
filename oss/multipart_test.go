@@ -133,7 +133,7 @@ func (s *OssBucketMultipartSuite) TearDownTest(c *C) {
 
 // TestMultipartUpload
 func (s *OssBucketMultipartSuite) TestMultipartUpload(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -178,7 +178,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUpload(c *C) {
 
 // TestMultipartUploadFromFile
 func (s *OssBucketMultipartSuite) TestMultipartUploadFromFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -217,8 +217,8 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFile(c *C) {
 
 // TestUploadPartCopy
 func (s *OssBucketMultipartSuite) TestUploadPartCopy(c *C) {
-	objectSrc := objectNamePrefix + randStr(8) + "-src"
-	objectDest := objectNamePrefix + randStr(8) + "-dest"
+	objectSrc := objectNamePrefix + RandStr(8) + "-src"
+	objectDest := objectNamePrefix + RandStr(8) + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -261,7 +261,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopy(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectSrc := objectName + "-src"
 	objectDest := objectName + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
@@ -327,7 +327,7 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectSrc := objectName + "-src"
 	objectDest := objectName + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
@@ -393,8 +393,8 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 
 // TestUploadPartCopyWithConstraints
 func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
-	objectSrc := objectNamePrefix + randStr(8) + "-src"
-	objectDest := objectNamePrefix + randStr(8) + "-dest"
+	objectSrc := objectNamePrefix + RandStr(8) + "-src"
+	objectDest := objectNamePrefix + RandStr(8) + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
@@ -450,7 +450,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 
 // TestMultipartUploadFromFileOutofOrder
 func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileOutofOrder(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartSize(fileName, 1024*100)
@@ -484,8 +484,8 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileOutofOrder(c *C) {
 
 // TestUploadPartCopyOutofOrder
 func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
-	objectSrc := objectNamePrefix + randStr(8) + "-src"
-	objectDest := objectNamePrefix + randStr(8) + "-dest"
+	objectSrc := objectNamePrefix + RandStr(8) + "-src"
+	objectDest := objectNamePrefix + RandStr(8) + "-dest"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartSize(fileName, 1024*100)
@@ -524,7 +524,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 
 // TestMultipartUploadFromFileType
 func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileType(c *C) {
-	objectName := objectNamePrefix + randStr(8) + ".jpg"
+	objectName := objectNamePrefix + RandStr(8) + ".jpg"
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	chunks, err := SplitFileByPartNum(fileName, 4)
@@ -556,7 +556,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileType(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestListMultipartUploads(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	imurs := []InitiateMultipartUploadResult{}
 	for i := 0; i < 20; i++ {
@@ -598,7 +598,7 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploads(c *C) {
 	c.Assert(len(lmpu.Uploads), Equals, 18)
 	c.Assert(len(lmpu.CommonPrefixes), Equals, 2)
 
-	upLoadIDStr := randStr(3)
+	upLoadIDStr := RandStr(3)
 	lmpu, err = s.bucket.ListMultipartUploads(KeyMarker(objectName+"12"), UploadIDMarker(upLoadIDStr))
 	c.Assert(err, IsNil)
 	checkNum := 15
@@ -618,7 +618,7 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploads(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestListMultipartUploadsEncodingKey(c *C) {
-	prefix := objectNamePrefix + "让你任性让你狂" + randStr(8)
+	prefix := objectNamePrefix + "让你任性让你狂" + RandStr(8)
 
 	imurs := []InitiateMultipartUploadResult{}
 	for i := 0; i < 3; i++ {
@@ -652,7 +652,7 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploadsEncodingKey(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestMultipartNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// Key tool long
 	data := make([]byte, 100*1024)
@@ -711,7 +711,7 @@ func (s *OssBucketMultipartSuite) TestMultipartNegative(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileBigFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	bigFile := "D:\\tmp\\bigfile.zip"
 	newFile := "D:\\tmp\\newbigfile.zip"
 
@@ -759,9 +759,9 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadFromFileBigFile(c *C) {
 
 // TestUploadFile
 func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload with 100K part size
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
@@ -852,7 +852,7 @@ func (s *OssBucketMultipartSuite) TestUploadFile(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestUploadFileNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// Smaller than the required minimal part size (100KB)
@@ -874,9 +874,9 @@ func (s *OssBucketMultipartSuite) TestUploadFileNegative(c *C) {
 
 // TestDownloadFile
 func (s *OssBucketMultipartSuite) TestDownloadFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
 	c.Assert(err, IsNil)
@@ -956,8 +956,8 @@ func (s *OssBucketMultipartSuite) TestDownloadFile(c *C) {
 }
 
 func (s *OssBucketMultipartSuite) TestDownloadFileNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
-	newFile := randStr(8) + ".jpg"
+	objectName := objectNamePrefix + RandStr(8)
+	newFile := RandStr(8) + ".jpg"
 
 	// Smaller than the required minimal part size (100KB)
 	err := s.bucket.DownloadFile(objectName, newFile, 100*1024-1)
