@@ -367,10 +367,10 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 	c.Assert(err, IsNil)
 
 	// Local file does not exist
-	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024)
+	err = s.bucket.DownloadFile(objectName, "../tmp/", 100*1024)
 	c.Assert(err, NotNil)
 
-	err = s.bucket.DownloadFile(objectName, "/tmp/", 100*1024, Routines(2))
+	err = s.bucket.DownloadFile(objectName, "../tmp/", 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 
 	// Invalid part size

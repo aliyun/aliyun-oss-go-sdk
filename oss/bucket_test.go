@@ -740,7 +740,7 @@ func (s *OssBucketSuite) TestPutObjectNegative(c *C) {
 	err = s.bucket.PutObjectFromFile(objectName, "bucket.go", IfModifiedSince(pastDate))
 	c.Assert(err, NotNil)
 
-	err = s.bucket.PutObjectFromFile(objectName, "/tmp/xxx")
+	err = s.bucket.PutObjectFromFile(objectName, "../tmp/xxx")
 	c.Assert(err, NotNil)
 }
 
@@ -908,7 +908,7 @@ func (s *OssBucketSuite) TestGetObjectToWriterNegative(c *C) {
 	c.Assert(err, IsNil)
 
 	// Not exist
-	err = s.bucket.GetObjectToFile(objectName, "/root/123abc9874")
+	err = s.bucket.GetObjectToFile(objectName, "../root/123abc9874")
 	c.Assert(err, NotNil)
 
 	// Invalid option

@@ -968,7 +968,7 @@ func (s *OssBucketMultipartSuite) TestDownloadFileNegative(c *C) {
 	c.Assert(err, NotNil)
 
 	// File does not exist
-	err = s.bucket.DownloadFile(objectName, "/OSS/TEMP/ZIBI/QUQU/BALA", 1024*1024*1024+1)
+	err = s.bucket.DownloadFile(objectName, "../TEMP/ZIBI/QUQU/BALA", 1024*1024*1024+1)
 	c.Assert(err, NotNil)
 
 	// Key does not exist
