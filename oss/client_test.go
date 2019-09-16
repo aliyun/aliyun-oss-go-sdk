@@ -2338,7 +2338,6 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
 	// SetBucketEncryption:KMS ,""
 	encryptionRule := ServerEncryptionRule{}
 	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
-	encryptionRule.SSEDefault.KMSMasterKeyID = "123"
 
 	var responseHeader http.Header
 	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
