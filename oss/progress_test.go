@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"sync/atomic"
 
 	. "gopkg.in/check.v1"
 )
@@ -112,7 +113,7 @@ func (listener *OssProgressListener) ProgressChanged(event *ProgressEvent) {
 		testLogger.Printf("Transfer Started, ConsumedBytes: %d, TotalBytes %d.\n",
 			event.ConsumedBytes, event.TotalBytes)
 	case TransferDataEvent:
-		listener.TotalRwBytes += event.RwBytes
+		atomic.AddInt64(&listener.TotalRwBytes, event.RwBytes)
 		testLogger.Printf("Transfer Data, ConsumedBytes: %d, TotalBytes %d, %d%%.\n",
 			event.ConsumedBytes, event.TotalBytes, event.ConsumedBytes*100/event.TotalBytes)
 	case TransferCompletedEvent:

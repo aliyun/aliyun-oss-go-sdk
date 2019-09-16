@@ -623,7 +623,7 @@ func (s *OssBucketSuite) TestPutObjectType(c *C) {
 
 	meta, err = s.bucket.GetObjectDetailedMeta(objectName + ".txt")
 	c.Assert(err, IsNil)
-	c.Assert(meta.Get("Content-Type"), Equals, "text/plain; charset=utf-8")
+	c.Assert(strings.Contains(meta.Get("Content-Type"), "text/plain"), Equals, true)
 
 	err = s.bucket.DeleteObject(objectName + ".txt")
 	c.Assert(err, IsNil)
@@ -908,7 +908,7 @@ func (s *OssBucketSuite) TestGetObjectToWriterNegative(c *C) {
 	c.Assert(err, IsNil)
 
 	// Not exist
-	err = s.bucket.GetObjectToFile(objectName, "/root/123abc9874")
+	err = s.bucket.GetObjectToFile(objectName, "/root1/123abc9874")
 	c.Assert(err, NotNil)
 
 	// Invalid option
@@ -3005,7 +3005,7 @@ func (s *OssBucketSuite) TestDeleteObjectTagging(c *C) {
 	s.bucket.DeleteObject(objectName)
 }
 
-func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
+func (s *OssBucketSuite) TestUploadFileMimeShtml(c *C) {
 	// create a bucket with default proprety
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -3014,35 +3014,18 @@ func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
-	// Get default bucket info
-	bucketResult, err := client.GetBucketInfo(bucketName)
+	bucket, err := client.Bucket(bucketName)
+	objectName := objectNamePrefix + randStr(8)
+	fileName := "oss-sdk-test-file-" + randLowStr(5) + ".shtml"
+	createFile(fileName, "123", c)
+
+	err = bucket.PutObjectFromFile(objectName, fileName)
 	c.Assert(err, IsNil)
 
-	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
-	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
-	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
-
-	// put bucket version:enabled
-	var respHeader http.Header
-	var versioningConfig VersioningConfig
-	versioningConfig.Status = string(VersionEnabled)
-	err = client.SetBucketVersioning(bucketName, versioningConfig, GetResponseHeader(&respHeader))
+	headResult, err := bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	c.Assert(GetRequestId(respHeader) != "", Equals, true)
-
-	bucketResult, err = client.GetBucketInfo(bucketName)
-	c.Assert(err, IsNil)
-	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
-
-	// put bucket version:Suspended
-	versioningConfig.Status = string(VersionSuspended)
-	err = client.SetBucketVersioning(bucketName, versioningConfig)
-	c.Assert(err, IsNil)
-
-	bucketResult, err = client.GetBucketInfo(bucketName)
-	c.Assert(err, IsNil)
-	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionSuspended))
-
+	c.Assert(headResult.Get("Content-Type"), Equals, "text/html")
+	os.Remove(fileName)
 	forceDeleteBucket(client, bucketName, c)
 }
 
