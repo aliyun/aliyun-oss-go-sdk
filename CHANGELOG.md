@@ -1,4 +1,12 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.3 日期：2019-09-17
+### 变更内容
+- 修复：不支持分块上传归档object
+- 增加：增加绑定客户端ip地址
+- 增加: 增加更多的mime type类型
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.0.2 日期：2019-08-06
 ### 变更内容
 - 修复：proxy代理不支持https请求
