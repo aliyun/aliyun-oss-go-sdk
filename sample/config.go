@@ -26,6 +26,9 @@ const (
 	appendObjectKey string = "my-object-append"
 
 	// The local files to run sample code.
-	localFile     string = "sample/BingWallpaper-2015-11-07.jpg"
-	htmlLocalFile string = "sample/The Go Programming Language.html"
+	localFile          string = "sample/BingWallpaper-2015-11-07.jpg"
+	localCsvFile       string = "sample/sample_data.csv"
+	localJSONFile      string = "sample/sample_json.json"
+	localJSONLinesFile string = "sample/sample_json_lines.json"
+	htmlLocalFile      string = "sample/The Go Programming Language.html"
 )

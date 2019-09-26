@@ -192,7 +192,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 	publishProgress(listener, event)
 
 	// oss server don't support x-oss-storage-class
-	options = deleteOption(options, HTTPHeaderOssStorageClass)
+	options = DeleteOption(options, HTTPHeaderOssStorageClass)
 
 	// Start the worker coroutine
 	arg := workerArg{&bucket, filePath, imur, options, uploadPartHooker}
@@ -483,7 +483,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 	publishProgress(listener, event)
 
 	// oss server don't support x-oss-storage-class
-	options = deleteOption(options, HTTPHeaderOssStorageClass)
+	options = DeleteOption(options, HTTPHeaderOssStorageClass)
 
 	// Start the workers
 	arg := workerArg{&bucket, filePath, imur, options, uploadPartHooker}

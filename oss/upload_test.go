@@ -459,17 +459,17 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadPartArchiveObject 
+// TestUploadPartArchiveObject
 func (s *OssUploadSuite) TestUploadPartArchiveObject(c *C) {
 	// create archive bucket
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName, StorageClass(StorageArchive))
 	c.Assert(err, IsNil)
 	bucket, err := client.Bucket(bucketName)
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	fileInfo, err := os.Stat(fileName)
@@ -482,7 +482,7 @@ func (s *OssUploadSuite) TestUploadPartArchiveObject(c *C) {
 	// Updating the file,archive object,checkpoint
 	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, ObjectStorageClass(StorageArchive), Checkpoint(true, fileName+".cp"))
 	c.Assert(err, IsNil)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func copyFile(src, dst string) error {

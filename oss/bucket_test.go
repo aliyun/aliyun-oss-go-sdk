@@ -3015,9 +3015,9 @@ func (s *OssBucketSuite) TestUploadFileMimeShtml(c *C) {
 	c.Assert(err, IsNil)
 
 	bucket, err := client.Bucket(bucketName)
-	objectName := objectNamePrefix + randStr(8)
-	fileName := "oss-sdk-test-file-" + randLowStr(5) + ".shtml"
-	createFile(fileName, "123", c)
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "oss-sdk-test-file-" + RandLowStr(5) + ".shtml"
+	CreateFile(fileName, "123", c)
 
 	err = bucket.PutObjectFromFile(objectName, fileName)
 	c.Assert(err, IsNil)
