@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"reflect"
@@ -2337,7 +2338,6 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
 	// SetBucketEncryption:KMS ,""
 	encryptionRule := ServerEncryptionRule{}
 	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
-	encryptionRule.SSEDefault.KMSMasterKeyID = "123"
 
 	var responseHeader http.Header
 	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
@@ -2784,6 +2784,40 @@ func (s *OssClientSuite) TestClientCredentialInfBuild(c *C) {
 	var defaultBuild TestCredentialsProvider
 	client, err := New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
 	c.Assert(err, IsNil)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestClientSetLocalIpError(c *C) {
+	// create client and bucket
+	ipAddr, err := net.ResolveIPAddr("ip", "127.0.0.1")
+	c.Assert(err, IsNil)
+	localTCPAddr := &(net.TCPAddr{IP: ipAddr.IP})
+	client, err := New(endpoint, accessID, accessKey, SetLocalAddr(localTCPAddr))
+	c.Assert(err, IsNil)
+
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+}
+
+func (s *OssClientSuite) TestClientSetLocalIpSuccess(c *C) {
+	//get local ip
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	c.Assert(err, IsNil)
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	localIp := localAddr.IP.String()
+	conn.Close()
+
+	ipAddr, err := net.ResolveIPAddr("ip", localIp)
+	c.Assert(err, IsNil)
+	localTCPAddr := &(net.TCPAddr{IP: ipAddr.IP})
+	client, err := New(endpoint, accessID, accessKey, SetLocalAddr(localTCPAddr))
+	c.Assert(err, IsNil)
+
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 	err = client.DeleteBucket(bucketNameTest)
