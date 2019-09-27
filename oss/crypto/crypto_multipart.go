@@ -30,6 +30,7 @@ func (pcc PartCryptoContext) Valid() bool {
 // cryptoContext.ContentCipher is output parameter
 // cryptoContext will be used in next API
 func (bucket CryptoBucket) InitiateMultipartUpload(objectKey string, cryptoContext *PartCryptoContext, options ...oss.Option) (oss.InitiateMultipartUploadResult, error) {
+	options = bucket.AddEncryptionUaSuffix(options)
 	var imur oss.InitiateMultipartUploadResult
 	if cryptoContext == nil {
 		return imur, fmt.Errorf("error,cryptoContext is nil")
@@ -65,6 +66,7 @@ func (bucket CryptoBucket) InitiateMultipartUpload(objectKey string, cryptoConte
 // cryptoContext is the input parameter
 func (bucket CryptoBucket) UploadPart(imur oss.InitiateMultipartUploadResult, reader io.Reader,
 	partSize int64, partNumber int, cryptoContext PartCryptoContext, options ...oss.Option) (oss.UploadPart, error) {
+	options = bucket.AddEncryptionUaSuffix(options)
 	var uploadPart oss.UploadPart
 	if cryptoContext.ContentCipher == nil {
 		return uploadPart, fmt.Errorf("error,cryptoContext is nil or cryptoContext.ContentCipher is nil")
@@ -100,7 +102,7 @@ func (bucket CryptoBucket) UploadPart(imur oss.InitiateMultipartUploadResult, re
 	}
 
 	opts := addCryptoHeaders(options, partCC.GetCipherData())
-	if cryptoContext.DataSize >= 0 {
+	if cryptoContext.DataSize > 0 {
 		opts = append(opts, oss.Meta(OssClientSideEncryptionDataSize, strconv.FormatInt(cryptoContext.DataSize, 10)))
 	}
 	opts = append(opts, oss.Meta(OssClientSideEncryptionPartSize, strconv.FormatInt(cryptoContext.PartSize, 10)))
@@ -113,6 +115,7 @@ func (bucket CryptoBucket) UploadPart(imur oss.InitiateMultipartUploadResult, re
 // cryptoContext is the input parameter
 func (bucket CryptoBucket) UploadPartFromFile(imur oss.InitiateMultipartUploadResult, filePath string,
 	startPosition, partSize int64, partNumber int, cryptoContext PartCryptoContext, options ...oss.Option) (oss.UploadPart, error) {
+	options = bucket.AddEncryptionUaSuffix(options)
 	var uploadPart = oss.UploadPart{}
 	if cryptoContext.ContentCipher == nil {
 		return uploadPart, fmt.Errorf("error,cryptoContext is nil or cryptoContext.ContentCipher is nil")
@@ -148,7 +151,7 @@ func (bucket CryptoBucket) UploadPartFromFile(imur oss.InitiateMultipartUploadRe
 
 	encryptedLen := partCC.GetEncryptedLen(partSize)
 	opts := addCryptoHeaders(options, partCC.GetCipherData())
-	if cryptoContext.DataSize >= 0 {
+	if cryptoContext.DataSize > 0 {
 		opts = append(opts, oss.Meta(OssClientSideEncryptionDataSize, strconv.FormatInt(cryptoContext.DataSize, 10)))
 	}
 	opts = append(opts, oss.Meta(OssClientSideEncryptionPartSize, strconv.FormatInt(cryptoContext.PartSize, 10)))

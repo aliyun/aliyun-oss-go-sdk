@@ -27,13 +27,13 @@ type MasterCipherManager interface {
 	GetMasterKey(matDesc map[string]string) ([]string, error)
 }
 
-// DecryptCipherManager is interface for creating a decrypt ContentCipher with Envelope
+// ExtraCipherBuilder is interface for creating a decrypt ContentCipher with Envelope
 // If the objects you need to decrypt are neither encrypted with ContentCipherBuilder
 // you provided, nor encrypted with rsa and ali kms master keys, you must provide this interface
 //
 // ContentCipher  the interface used to decrypt objects
-type DecryptCipherManager interface {
-	GetDecryptCipher(envelope Envelope) (ContentCipher, error)
+type ExtraCipherBuilder interface {
+	GetDecryptCipher(envelope Envelope, cm MasterCipherManager) (ContentCipher, error)
 }
 
 // CryptoBucketOption CryptoBucket option such as SetAliKmsClient, SetMasterCipherManager, SetDecryptCipherManager.
@@ -55,11 +55,80 @@ func SetMasterCipherManager(manager MasterCipherManager) CryptoBucketOption {
 	}
 }
 
-// SetDecryptCipherManager set field DecryptCipherManager of CryptoBucket
-func SetDecryptCipherManager(manager DecryptCipherManager) CryptoBucketOption {
+// SetExtraCipherBuilder set field ExtraCipherBuilder of CryptoBucket
+func SetExtraCipherBuilder(extraBuilder ExtraCipherBuilder) CryptoBucketOption {
 	return func(bucket *CryptoBucket) {
-		bucket.DecryptCipherManager = manager
+		bucket.ExtraCipherBuilder = extraBuilder
 	}
+}
+
+// DefaultExtraCipherBuilder is Default implementation of the ExtraCipherBuilder for rsa and kms master keys
+type DefaultExtraCipherBuilder struct {
+	AliKmsClient *kms.Client
+}
+
+// GetDecryptCipher is used to get ContentCipher for decrypt object
+func (decb *DefaultExtraCipherBuilder) GetDecryptCipher(envelope Envelope, cm MasterCipherManager) (ContentCipher, error) {
+	if cm == nil {
+		return nil, fmt.Errorf("DefaultExtraCipherBuilder GetDecryptCipher error,MasterCipherManager is nil")
+	}
+
+	if envelope.CEKAlg != AesCtrAlgorithm {
+		return nil, fmt.Errorf("DefaultExtraCipherBuilder GetDecryptCipher error,not supported content algorithm %s", envelope.CEKAlg)
+	}
+
+	if envelope.WrapAlg != RsaCryptoWrap && envelope.WrapAlg != KmsAliCryptoWrap {
+		return nil, fmt.Errorf("DefaultExtraCipherBuilder GetDecryptCipher error,not supported envelope wrap algorithm %s", envelope.WrapAlg)
+	}
+
+	matDesc := make(map[string]string)
+	if envelope.MatDesc != "" {
+		err := json.Unmarshal([]byte(envelope.MatDesc), &matDesc)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	masterKeys, err := cm.GetMasterKey(matDesc)
+	if err != nil {
+		return nil, err
+	}
+
+	var contentCipher ContentCipher
+	if envelope.WrapAlg == RsaCryptoWrap {
+		// for rsa master key
+		if len(masterKeys) != 2 {
+			return nil, fmt.Errorf("rsa keys count must be 2,now is %d", len(masterKeys))
+		}
+		rsaCipher, err := CreateMasterRsa(matDesc, masterKeys[0], masterKeys[1])
+		if err != nil {
+			return nil, err
+		}
+		aesCtrBuilder := CreateAesCtrCipher(rsaCipher)
+		contentCipher, err = aesCtrBuilder.ContentCipherEnv(envelope)
+
+	} else if envelope.WrapAlg == KmsAliCryptoWrap {
+		// for kms master key
+		if len(masterKeys) != 1 {
+			return nil, fmt.Errorf("non-rsa keys count must be 1,now is %d", len(masterKeys))
+		}
+
+		if decb.AliKmsClient == nil {
+			return nil, fmt.Errorf("aliyun kms client is nil")
+		}
+
+		kmsCipher, err := CreateMasterAliKms(matDesc, masterKeys[0], decb.AliKmsClient)
+		if err != nil {
+			return nil, err
+		}
+		aesCtrBuilder := CreateAesCtrCipher(kmsCipher)
+		contentCipher, err = aesCtrBuilder.ContentCipherEnv(envelope)
+	} else {
+		// to do
+		// for master keys which are neither rsa nor kms
+	}
+
+	return contentCipher, err
 }
 
 // CryptoBucket implements the operations for encrypting and decrypting objects
@@ -70,8 +139,8 @@ func SetDecryptCipherManager(manager DecryptCipherManager) CryptoBucketOption {
 type CryptoBucket struct {
 	oss.Bucket
 	ContentCipherBuilder ContentCipherBuilder
+	ExtraCipherBuilder   ExtraCipherBuilder
 	MasterCipherManager  MasterCipherManager
-	DecryptCipherManager DecryptCipherManager
 	AliKmsClient         *kms.Client
 }
 
@@ -86,11 +155,17 @@ func GetCryptoBucket(client *oss.Client, bucketName string, builder ContentCiphe
 	for _, option := range options {
 		option(&cryptoBucket)
 	}
+
+	if cryptoBucket.ExtraCipherBuilder == nil {
+		cryptoBucket.ExtraCipherBuilder = &DefaultExtraCipherBuilder{AliKmsClient: cryptoBucket.AliKmsClient}
+	}
+
 	return &cryptoBucket, nil
 }
 
 // PutObject creates a new object and encyrpt it on client side when uploading to oss
 func (bucket CryptoBucket) PutObject(objectKey string, reader io.Reader, options ...oss.Option) error {
+	options = bucket.AddEncryptionUaSuffix(options)
 	cc, err := bucket.ContentCipherBuilder.ContentCipher()
 	if err != nil {
 		return err
@@ -129,6 +204,7 @@ func (bucket CryptoBucket) PutObject(objectKey string, reader io.Reader, options
 // GetObject downloads the object from oss
 // If the object is encrypted, sdk decrypt it automaticly
 func (bucket CryptoBucket) GetObject(objectKey string, options ...oss.Option) (io.ReadCloser, error) {
+	options = bucket.AddEncryptionUaSuffix(options)
 	result, err := bucket.DoGetObject(&oss.GetObjectRequest{ObjectKey: objectKey}, options)
 	if err != nil {
 		return nil, err
@@ -139,6 +215,7 @@ func (bucket CryptoBucket) GetObject(objectKey string, options ...oss.Option) (i
 // GetObjectToFile downloads the object from oss to local file
 // If the object is encrypted, sdk decrypt it automaticly
 func (bucket CryptoBucket) GetObjectToFile(objectKey, filePath string, options ...oss.Option) error {
+	options = bucket.AddEncryptionUaSuffix(options)
 	tempFilePath := filePath + oss.TempFileSuffix
 
 	// Calls the API to actually download the object. Returns the result instance.
@@ -183,6 +260,8 @@ func (bucket CryptoBucket) GetObjectToFile(objectKey, filePath string, options .
 // DoGetObject is the actual API that gets the encrypted or not encrypted object.
 // It's the internal function called by other public APIs.
 func (bucket CryptoBucket) DoGetObject(request *oss.GetObjectRequest, options []oss.Option) (*oss.GetObjectResult, error) {
+	options = bucket.AddEncryptionUaSuffix(options)
+
 	// first,we must head object
 	metaInfo, err := bucket.GetObjectDetailedMeta(request.ObjectKey)
 	if err != nil {
@@ -208,13 +287,13 @@ func (bucket CryptoBucket) DoGetObject(request *oss.GetObjectRequest, options []
 	}
 
 	// use ContentCipherBuilder to decrpt object by default
-	defaultMatDesc := bucket.ContentCipherBuilder.GetMatDesc()
+	encryptMatDesc := bucket.ContentCipherBuilder.GetMatDesc()
 	var cc ContentCipher
 	err = nil
-	if envelope.MatDesc == defaultMatDesc {
+	if envelope.MatDesc == encryptMatDesc {
 		cc, err = bucket.ContentCipherBuilder.ContentCipherEnv(envelope)
 	} else {
-		cc, err = bucket.getDecryptCipher(envelope)
+		cc, err = bucket.ExtraCipherBuilder.GetDecryptCipher(envelope, bucket.MasterCipherManager)
 	}
 
 	if err != nil {
@@ -278,6 +357,7 @@ func (bucket CryptoBucket) DoGetObject(request *oss.GetObjectRequest, options []
 // PutObjectFromFile creates a new object from the local file
 // the object will be encrypted automaticly on client side when uploaded to oss
 func (bucket CryptoBucket) PutObjectFromFile(objectKey, filePath string, options ...oss.Option) error {
+	options = bucket.AddEncryptionUaSuffix(options)
 	fd, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -365,65 +445,15 @@ func (bucket CryptoBucket) ProcessObject(objectKey string, process string, optio
 	return out, fmt.Errorf("CryptoBucket doesn't support ProcessObject")
 }
 
-// getDecryptCipher create a ContentCipher for decrypt object by envelope stored in object meta
-func (bucket CryptoBucket) getDecryptCipher(envelope Envelope) (ContentCipher, error) {
-	if envelope.CEKAlg != AesCtrAlgorithm {
-		return nil, fmt.Errorf("not supported content algorithm %s", envelope.CEKAlg)
+func (bucket CryptoBucket) AddEncryptionUaSuffix(options []oss.Option) []oss.Option {
+	var outOption []oss.Option
+	bSet, _, _ := oss.IsOptionSet(options, oss.HTTPHeaderUserAgent)
+	if bSet || bucket.Client.Config.UserSetUa {
+		outOption = options
+		return outOption
 	}
-
-	matDesc := make(map[string]string)
-	if envelope.MatDesc != "" {
-		err := json.Unmarshal([]byte(envelope.MatDesc), &matDesc)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	var masterKeys []string
-	var err error
-	if envelope.WrapAlg == RsaCryptoWrap || envelope.WrapAlg == KmsAliCryptoWrap {
-		if bucket.MasterCipherManager == nil {
-			return nil, fmt.Errorf("MasterCipherManager is nil")
-		}
-		masterKeys, err = bucket.MasterCipherManager.GetMasterKey(matDesc)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if envelope.WrapAlg == RsaCryptoWrap {
-		if len(masterKeys) != 2 {
-			return nil, fmt.Errorf("rsa keys count must be 2,now is %d", len(masterKeys))
-		}
-		rsaCipher, err := CreateMasterRsa(matDesc, masterKeys[0], masterKeys[1])
-		if err != nil {
-			return nil, err
-		}
-		aesCtrBuilder := CreateAesCtrCipher(rsaCipher)
-		contentCipher, err := aesCtrBuilder.ContentCipherEnv(envelope)
-		return contentCipher, err
-	} else if envelope.WrapAlg == KmsAliCryptoWrap {
-		if len(masterKeys) != 1 {
-			return nil, fmt.Errorf("non-rsa keys count must be 1,now is %d", len(masterKeys))
-		}
-
-		if bucket.AliKmsClient == nil {
-			return nil, fmt.Errorf("aliyun kms client is nil")
-		}
-
-		kmsCipher, err := CreateMasterAliKms(matDesc, masterKeys[0], bucket.AliKmsClient)
-		if err != nil {
-			return nil, err
-		}
-
-		aesCtrBuilder := CreateAesCtrCipher(kmsCipher)
-		contentCipher, err := aesCtrBuilder.ContentCipherEnv(envelope)
-		return contentCipher, err
-	} else if bucket.DecryptCipherManager != nil {
-		return bucket.DecryptCipherManager.GetDecryptCipher(envelope)
-	}
-	return nil, fmt.Errorf("not supported key wrap algorithm:%s", envelope.WrapAlg)
+	outOption = append(options, oss.UserAgentHeader(bucket.Client.Config.UserAgent+"/"+EncryptionUaSuffix))
+	return outOption
 }
 
 // isEncryptedObject judge the object is encrypted or not

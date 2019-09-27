@@ -1000,28 +1000,28 @@ func (s *OssCryptoBucketSuite) TestGetDecryptCipher(c *C) {
 	// test for getDecryptCipher
 	CEKAlg := envelope.CEKAlg
 	envelope.CEKAlg = ""
-	_, err = bucket.getDecryptCipher(envelope)
+	_, err = bucket.ExtraCipherBuilder.GetDecryptCipher(envelope, bucket.MasterCipherManager)
 	c.Assert(err, NotNil)
 	envelope.CEKAlg = CEKAlg
 
 	// matDesc is emtpy
 	bucket.MasterCipherManager = &MockRsaManager{}
-	_, err = bucket.getDecryptCipher(envelope)
+	_, err = bucket.ExtraCipherBuilder.GetDecryptCipher(envelope, bucket.MasterCipherManager)
 	c.Assert(err, NotNil)
 
 	// MasterCipherManager is nil
 	bucket.MasterCipherManager = nil
-	_, err = bucket.getDecryptCipher(envelope)
+	_, err = bucket.ExtraCipherBuilder.GetDecryptCipher(envelope, bucket.MasterCipherManager)
 	c.Assert(err, NotNil)
 
 	WrapAlg := envelope.WrapAlg
 	envelope.WrapAlg = "test"
-	_, err = bucket.getDecryptCipher(envelope)
+	_, err = bucket.ExtraCipherBuilder.GetDecryptCipher(envelope, bucket.MasterCipherManager)
 	c.Assert(err, NotNil)
 	envelope.WrapAlg = WrapAlg
 
 	envelope.WrapAlg = KmsAliCryptoWrap
-	_, err = bucket.getDecryptCipher(envelope)
+	_, err = bucket.ExtraCipherBuilder.GetDecryptCipher(envelope, bucket.MasterCipherManager)
 	c.Assert(err, NotNil)
 	ForceDeleteBucket(client, bucketName, c)
 }
@@ -1149,5 +1149,78 @@ func (s *OssCryptoBucketSuite) TestRepeatedPutObjectFromFile(c *C) {
 	c.Assert(downMd5, Equals, srcJpgMd5)
 
 	os.Remove(downFileName)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssCryptoBucketSuite) TestPutObjectEncryptionUserAgent(c *C) {
+	logName := "." + string(os.PathSeparator) + "test-go-sdk.log" + RandStr(5)
+	f, err := os.OpenFile(logName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
+	c.Assert(err, IsNil)
+
+	// create a bucket with default proprety
+	client, err := oss.New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	client.Config.LogLevel = oss.Debug
+	client.Config.Logger = log.New(f, "", log.LstdFlags)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	srcJpgFile := "../../sample/test-client-encryption-src.jpg"
+
+	// put object from file
+	masterRsaCipher, _ := CreateMasterRsa(matDesc, rsaPublicKey, rsaPrivateKey)
+	contentProvider := CreateAesCtrCipher(masterRsaCipher)
+	cryptoBucket, err := GetCryptoBucket(client, bucketName, contentProvider)
+
+	err = cryptoBucket.PutObjectFromFile(objectName, srcJpgFile)
+	c.Assert(err, IsNil)
+
+	// read log file,get http info
+	contents, err := ioutil.ReadFile(logName)
+	c.Assert(err, IsNil)
+
+	httpContent := string(contents)
+	c.Assert(strings.Contains(httpContent, EncryptionUaSuffix), Equals, true)
+
+    f.Close()
+	os.Remove(logName)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssCryptoBucketSuite) TestPutObjectNormalUserAgent(c *C) {
+	logName := "." + string(os.PathSeparator) + "test-go-sdk.log" + RandStr(5)
+	f, err := os.OpenFile(logName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
+	c.Assert(err, IsNil)
+
+	// create a bucket with default proprety
+	client, err := oss.New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	client.Config.LogLevel = oss.Debug
+	client.Config.Logger = log.New(f, "", log.LstdFlags)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	srcJpgFile := "../../sample/test-client-encryption-src.jpg"
+
+	bucket, err := client.Bucket(bucketName)
+
+	err = bucket.PutObjectFromFile(objectName, srcJpgFile)
+	c.Assert(err, IsNil)
+
+	// read log file,get http info
+	contents, err := ioutil.ReadFile(logName)
+	c.Assert(err, IsNil)
+
+	httpContent := string(contents)
+	c.Assert(strings.Contains(httpContent, EncryptionUaSuffix), Equals, false)
+
+    f.Close()
+	os.Remove(logName)
 	ForceDeleteBucket(client, bucketName, c)
 }

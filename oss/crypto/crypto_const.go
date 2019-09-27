@@ -19,3 +19,8 @@ const (
 	KmsAliCryptoWrap string = "KMS/ALICLOUD"
 	AesCtrAlgorithm  string = "AES/CTR/NoPadding"
 )
+
+// user agent tag for client encryption
+const (
+	EncryptionUaSuffix string = "OssEncryptionClient"
+)

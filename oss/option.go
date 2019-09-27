@@ -245,6 +245,11 @@ func TrafficLimitHeader(value int64) Option {
 	return setHeader(HTTPHeaderOssTrafficLimit, strconv.FormatInt(value, 10))
 }
 
+// UserAgentHeader is an option to set HTTPHeaderUserAgent
+func UserAgentHeader(ua string) Option {
+	return setHeader(HTTPHeaderUserAgent, ua)
+}
+
 // Delimiter is an option to set delimiler parameter
 func Delimiter(value string) Option {
 	return addParam("delimiter", value)

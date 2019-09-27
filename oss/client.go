@@ -1217,6 +1217,7 @@ func EnableCRC(isEnableCRC bool) ClientOption {
 func UserAgent(userAgent string) ClientOption {
 	return func(client *Client) {
 		client.Config.UserAgent = userAgent
+		client.Config.UserSetUa = true
 	}
 }
 
