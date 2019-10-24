@@ -1219,6 +1219,130 @@ func Timeout(connectTimeoutSec, readWriteTimeout int64) ClientOption {
 	}
 }
 
+// SetBucketInventory API operation for Object Storage Service
+//
+// Set the Bucket inventory.
+//
+// bucketName tht bucket name.
+//
+// inventoryConfig the inventory configuration.
+//
+// error    it's nil if no error, otherwise it's an error.
+//
+func (client Client) SetBucketInventory(bucketName string, inventoryConfig InventoryConfiguration, options ...Option) error {
+	params := map[string]interface{}{}
+	params["inventoryId"] = inventoryConfig.Id
+	params["inventory"] = nil
+
+	var bs []byte
+	bs, err := xml.Marshal(inventoryConfig)
+
+	if err != nil {
+		return err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := make(map[string]string)
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketInventory API operation for Object Storage Service
+//
+// Get the Bucket inventory.
+//
+// bucketName tht bucket name.
+//
+// strInventoryId the inventory id.
+//
+// InventoryConfiguration the inventory configuration.
+//
+// error    it's nil if no error, otherwise it's an error.
+//
+func (client Client) GetBucketInventory(bucketName string, strInventoryId string, options ...Option) (InventoryConfiguration, error) {
+	var out InventoryConfiguration
+	params := map[string]interface{}{}
+	params["inventory"] = nil
+	params["inventoryId"] = strInventoryId
+
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// ListBucketInventory API operation for Object Storage Service
+//
+// List the Bucket inventory.
+//
+// bucketName tht bucket name.
+//
+// continuationToken the users token.
+//
+// ListInventoryConfigurationsResult list all inventory configuration by .
+//
+// error    it's nil if no error, otherwise it's an error.
+//
+func (client Client) ListBucketInventory(bucketName, continuationToken string, options ...Option) (ListInventoryConfigurationsResult, error) {
+	var out ListInventoryConfigurationsResult
+	params := map[string]interface{}{}
+	params["inventory"] = nil
+	if continuationToken == "" {
+		params["continuation-token"] = nil
+	} else {
+		params["continuation-token"] = continuationToken
+	}
+
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// DeleteBucketInventory API operation for Object Storage Service.
+//
+// Delete Bucket inventory information.
+//
+// bucketName tht bucket name.
+//
+// strInventoryId the inventory id.
+//
+// error    it's nil if no error, otherwise it's an error.
+//
+func (client Client) DeleteBucketInventory(bucketName, strInventoryId string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["inventory"] = nil
+	params["inventoryId"] = strInventoryId
+
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
 // SecurityToken sets the temporary user's SecurityToken.
 //
 // token    STS token
