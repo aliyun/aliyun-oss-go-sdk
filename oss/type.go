@@ -1078,3 +1078,52 @@ type MetaEndFrameJSON struct {
 	RowsCount    int64
 	ErrorMsg     string
 }
+
+// InventoryConfiguration is Inventory config
+type InventoryConfiguration struct {
+	XMLName                xml.Name             `xml:"InventoryConfiguration"`
+	Id                     string               `xml:"Id,omitempty"`
+	IsEnabled              *bool                `xml:"IsEnabled,omitempty"`
+	Prefix                 string               `xml:"Filter>Prefix,omitempty"`
+	OSSBucketDestination   OSSBucketDestination `xml:"Destination>OSSBucketDestination,omitempty"`
+	Frequency              string               `xml:"Schedule>Frequency,omitempty"`
+	IncludedObjectVersions string               `xml:"IncludedObjectVersions,omitempty"`
+	OptionalFields         OptionalFields       `xml:OptionalFields,omitempty`
+}
+
+type OptionalFields struct {
+	XMLName xml.Name `xml:"OptionalFields,omitempty`
+	Field   []string `xml:"Field,omitempty`
+}
+
+type OSSBucketDestination struct {
+	XMLName    xml.Name       `xml:"OSSBucketDestination"`
+	Format     string         `xml:"Format,omitempty"`
+	AccountId  string         `xml:"AccountId,omitempty"`
+	RoleArn    string         `xml:"RoleArn,omitempty"`
+	Bucket     string         `xml:"Bucket,omitempty"`
+	Prefix     string         `xml:"Prefix,omitempty"`
+	Encryption *InvEncryption `xml:"Encryption,omitempty"`
+}
+
+type InvEncryption struct {
+	XMLName xml.Name   `xml:"Encryption"`
+	SseOss  *InvSseOss `xml:"SSE-OSS"`
+	SseKms  *InvSseKms `xml:"SSE-KMS"`
+}
+
+type InvSseOss struct {
+	XMLName xml.Name `xml:"SSE-OSS"`
+}
+
+type InvSseKms struct {
+	XMLName xml.Name `xml:"SSE-KMS"`
+	KmsId   string   `xml:"KeyId,omitempty"`
+}
+
+type ListInventoryConfigurationsResult struct {
+	XMLName                xml.Name                 `xml:"ListInventoryConfigurationsResult"`
+	InventoryConfiguration []InventoryConfiguration `xml:"InventoryConfiguration,omitempty`
+	IsTruncated            *bool                    `xml:"IsTruncated,omitempty"`
+	NextContinuationToken  string                   `xml:"NextContinuationToken,omitempty"`
+}

@@ -37,6 +37,7 @@ var (
 	endpoint  = os.Getenv("OSS_TEST_ENDPOINT")
 	accessID  = os.Getenv("OSS_TEST_ACCESS_KEY_ID")
 	accessKey = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
+	accountID = os.Getenv("OSS_TEST_ACCOUNT_ID")
 
 	// Proxy
 	proxyHost   = os.Getenv("OSS_TEST_PROXY_HOST")
@@ -3079,4 +3080,247 @@ func (s *OssClientSuite) TestClientBucketError(c *C) {
 	bucketName := "-" + randLowStr(5)
 	_, err = client.Bucket(bucketName)
 	c.Assert(err, NotNil)
+}
+
+func (s *OssClientSuite) TestSetBucketInventory(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// encryption config
+	var invSseOss InvSseOss
+	invSseKms := InvSseKms{
+		KmsId: "keyId",
+	}
+	var invEncryption InvEncryption
+
+	bl := true
+	// not any encryption
+	invConfig := InventoryConfiguration{
+		Id:        "report1",
+		IsEnabled: &bl,
+		Prefix:    "filterPrefix/",
+		OSSBucketDestination: OSSBucketDestination{
+			Format:    "CSV",
+			AccountId: accountID,
+			RoleArn:   stsARN,
+			Bucket:    "acs:oss:::" + bucketName,
+			Prefix:    "prefix1",
+		},
+		Frequency:              "Daily",
+		IncludedObjectVersions: "All",
+		OptionalFields: OptionalFields{
+			Field: []string{
+				"Size", "LastModifiedDate", "ETag", "StorageClass", "IsMultipartUploaded", "EncryptionStatus",
+			},
+		},
+	}
+
+	// case 1: not any encryption
+	err = client.SetBucketInventory(bucketName, invConfig)
+	c.Assert(err, IsNil)
+
+	// case 2: use kms encryption
+	invConfig.Id = "report2"
+	invEncryption.SseKms = &invSseKms
+	invEncryption.SseOss = nil
+	invConfig.OSSBucketDestination.Encryption = &invEncryption
+	err = client.SetBucketInventory(bucketName, invConfig)
+	c.Assert(err, IsNil)
+
+	// case 3: use SseOss encryption
+	invConfig.Id = "report3"
+	invEncryption.SseKms = nil
+	invEncryption.SseOss = &invSseOss
+	invConfig.OSSBucketDestination.Encryption = &invEncryption
+	err = client.SetBucketInventory(bucketName, invConfig)
+	c.Assert(err, IsNil)
+
+	//case 4: use two type encryption
+	invConfig.Id = "report4"
+	invEncryption.SseKms = &invSseKms
+	invEncryption.SseOss = &invSseOss
+	invConfig.OSSBucketDestination.Encryption = &invEncryption
+	err = client.SetBucketInventory(bucketName, invConfig)
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketInventory(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bl := true
+	invConfig := InventoryConfiguration{
+		Id:        "report1",
+		IsEnabled: &bl,
+		Prefix:    "filterPrefix/",
+		OSSBucketDestination: OSSBucketDestination{
+			Format:    "CSV",
+			AccountId: accountID,
+			RoleArn:   stsARN,
+			Bucket:    "acs:oss:::" + bucketName,
+			Prefix:    "prefix1",
+		},
+		Frequency:              "Daily",
+		IncludedObjectVersions: "All",
+		OptionalFields: OptionalFields{
+			Field: []string{
+				"Size", "LastModifiedDate", "ETag", "StorageClass", "IsMultipartUploaded", "EncryptionStatus",
+			},
+		},
+	}
+
+	// case 1: test SetBucketInventory
+	err = client.SetBucketInventory(bucketName, invConfig)
+	c.Assert(err, IsNil)
+
+	// case 2: test GetBucketInventory
+	out, err := client.GetBucketInventory(bucketName, "report1")
+	c.Assert(err, IsNil)
+	invConfig.XMLName.Local = "InventoryConfiguration"
+	invConfig.OSSBucketDestination.XMLName.Local = "OSSBucketDestination"
+	invConfig.OptionalFields.XMLName.Local = "OptionalFields"
+	c.Assert(struct2string(invConfig, c), Equals, struct2string(out, c))
+
+	// case 3: test ListBucketInventory
+	invConfig2 := InventoryConfiguration{
+		Id:        "report2",
+		IsEnabled: &bl,
+		Prefix:    "filterPrefix/",
+		OSSBucketDestination: OSSBucketDestination{
+			Format:    "CSV",
+			AccountId: accountID,
+			RoleArn:   stsARN,
+			Bucket:    "acs:oss:::" + bucketName,
+			Prefix:    "prefix1",
+		},
+		Frequency:              "Daily",
+		IncludedObjectVersions: "All",
+		OptionalFields: OptionalFields{
+			Field: []string{
+				"Size", "LastModifiedDate", "ETag", "StorageClass", "IsMultipartUploaded", "EncryptionStatus",
+			},
+		},
+	}
+	invConfig2.XMLName.Local = "InventoryConfiguration"
+	invConfig2.OSSBucketDestination.XMLName.Local = "OSSBucketDestination"
+	invConfig2.OptionalFields.XMLName.Local = "OptionalFields"
+
+	err = client.SetBucketInventory(bucketName, invConfig2)
+	c.Assert(err, IsNil)
+
+	listInvConf, err := client.ListBucketInventory(bucketName, "", Marker("report1"), MaxKeys(2))
+	c.Assert(err, IsNil)
+	var listInvLocal ListInventoryConfigurationsResult
+	listInvLocal.InventoryConfiguration = []InventoryConfiguration{
+		invConfig,
+		invConfig2,
+	}
+	bo := false
+	listInvLocal.IsTruncated = &bo
+	listInvLocal.XMLName.Local = "ListInventoryConfigurationsResult"
+	c.Assert(struct2string(listInvLocal, c), Equals, struct2string(listInvConf, c))
+
+	for i := 3; i < 109; i++ {
+		invConfig2 := InventoryConfiguration{
+			Id:        "report" + strconv.Itoa(i),
+			IsEnabled: &bl,
+			Prefix:    "filterPrefix/",
+			OSSBucketDestination: OSSBucketDestination{
+				Format:    "CSV",
+				AccountId: accountID,
+				RoleArn:   stsARN,
+				Bucket:    "acs:oss:::" + bucketName,
+				Prefix:    "prefix1",
+			},
+			Frequency:              "Daily",
+			IncludedObjectVersions: "All",
+			OptionalFields: OptionalFields{
+				Field: []string{
+					"Size", "LastModifiedDate", "ETag", "StorageClass", "IsMultipartUploaded", "EncryptionStatus",
+				},
+			},
+		}
+		err = client.SetBucketInventory(bucketName, invConfig2)
+		c.Assert(err, IsNil)
+	}
+	token := ""
+	for {
+		listInvConf1, err := client.ListBucketInventory(bucketName, token)
+		c.Assert(err, IsNil)
+		token = listInvConf1.NextContinuationToken
+		testLogger.Println(listInvConf1.NextContinuationToken, *listInvConf1.IsTruncated, token)
+		if *listInvConf1.IsTruncated == false {
+			break
+		} else {
+			c.Assert(listInvConf1.NextContinuationToken, Equals, "report91")
+		}
+	}
+
+	// case 4: test DeleteBucketInventory
+	for i := 1; i < 109; i++ {
+		err = client.DeleteBucketInventory(bucketName, "report"+strconv.Itoa(i))
+		c.Assert(err, IsNil)
+	}
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketInventoryNegative(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bl := true
+	invConfigErr := InventoryConfiguration{
+		Id:        "report1",
+		IsEnabled: &bl,
+		Prefix:    "filterPrefix/",
+		OSSBucketDestination: OSSBucketDestination{
+			Format:    "CSV",
+			AccountId: accountID,
+			RoleArn:   stsARN,
+			Bucket:    "test",
+			Prefix:    "prefix1",
+		},
+		Frequency:              "Daily",
+		IncludedObjectVersions: "All",
+		OptionalFields: OptionalFields{
+			Field: []string{
+				"Size", "LastModifiedDate", "ETag", "StorageClass", "IsMultipartUploaded", "EncryptionStatus",
+			},
+		},
+	}
+	// case 1: test SetBucketInventory
+	err = client.SetBucketInventory(bucketName, invConfigErr)
+	c.Assert(err, NotNil)
+
+	// case 2: test GetBucketInventory
+	_, err = client.GetBucketInventory(bucketName, "report1")
+	c.Assert(err, NotNil)
+
+	// case 3: test ListBucketInventory
+	_, err = client.ListBucketInventory(bucketName, "", Marker("report1"), MaxKeys(2))
+	c.Assert(err, NotNil)
+
+	// case 4: test DeleteBucketInventory
+	err = client.DeleteBucketInventory(bucketName, "report1")
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
 }

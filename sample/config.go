@@ -9,6 +9,8 @@ var (
 	accessKey  = os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")
 	bucketName = os.Getenv("OSS_TEST_BUCKET")
 	kmsID      = os.Getenv("OSS_TEST_KMS_ID")
+	accountID  = os.Getenv("OSS_TEST_ACCOUNT_ID")
+	stsARN     = os.Getenv("OSS_TEST_STS_ARN")
 
 	// Credential
 	credentialAccessID  = os.Getenv("OSS_CREDENTIAL_KEY_ID")

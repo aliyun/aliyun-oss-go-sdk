@@ -3181,6 +3181,47 @@ func (s *OssBucketSuite) TestUploadFileMimeShtml(c *C) {
 	forceDeleteBucket(client, bucketName, c)
 }
 
+func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
+
+	// put bucket version:enabled
+	var respHeader http.Header
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	bucketResult, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put bucket version:Suspended
+	versioningConfig.Status = string(VersionSuspended)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionSuspended))
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
 func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
 	// create a bucket with default proprety
 	client, err := New(endpoint, accessID, accessKey)
