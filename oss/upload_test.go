@@ -459,7 +459,7 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	c.Assert(err, IsNil)
 }
 
-// TestUploadPartArchiveObject 
+// TestUploadPartArchiveObject
 func (s *OssUploadSuite) TestUploadPartArchiveObject(c *C) {
 	// create archive bucket
 	client, err := New(endpoint, accessID, accessKey)
@@ -559,5 +559,89 @@ func (s *OssUploadSuite) TestVersioningUploadRoutineWithRecovery(c *C) {
 	os.Remove(fileName)
 	os.Remove(newFile)
 	bucket.DeleteObject(objectName)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+// TestUploadFileChoiceOptions
+func (s *OssUploadSuite) TestUploadFileChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + randStr(8)
+
+	// UploadFile with properties
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, IsNil)
+
+	// GetMetaDetail
+	headerResp, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+
+	c.Assert(headerResp.Get("X-Oss-Server-Side-Encryption"), Equals, "AES256")
+	aclResult, err := bucket.GetObjectACL(objectName)
+	c.Assert(aclResult.ACL, Equals, "public-read")
+	c.Assert(err, IsNil)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+// TestUploadFileWithCpChoiceOptions
+func (s *OssUploadSuite) TestUploadFileWithCpChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + randStr(8)
+
+	// UploadFile with properties
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+		Checkpoint(true, fileName+".cp"),
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, IsNil)
+
+	// GetMetaDetail
+	headerResp, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+
+	c.Assert(headerResp.Get("X-Oss-Server-Side-Encryption"), Equals, "AES256")
+	aclResult, err := bucket.GetObjectACL(objectName)
+	c.Assert(aclResult.ACL, Equals, "public-read")
+	c.Assert(err, IsNil)
+
 	forceDeleteBucket(client, bucketName, c)
 }

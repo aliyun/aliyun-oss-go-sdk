@@ -334,7 +334,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	// Check CP
 	ccp = copyCheckpoint{}
 	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
-	cpFilePath := getCopyCpFilePath(&cpConf, bucketName, srcObjectName, s.bucket.BucketName, destObjectName)
+	cpFilePath := getCopyCpFilePath(&cpConf, bucketName, srcObjectName, s.bucket.BucketName, destObjectName, "")
 	err = ccp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(ccp.Magic, Equals, copyCpMagic)
@@ -587,4 +587,62 @@ func (s *OssCopySuite) TestVersioningCopyFileCrossBucket(c *C) {
 	bucket.DeleteObject(objectName)
 	forceDeleteBucket(client, bucketName, c)
 	forceDeleteBucket(client, destBucketName, c)
+}
+
+// TestCopyFileChoiceOptions
+func (s *OssCopySuite) TestCopyFileChoiceOptions(c *C) {
+	destBucketName := bucketName + "-desc"
+	srcObjectName := objectNamePrefix + randStr(8)
+	destObjectName := srcObjectName + "-dest"
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	newFile := randStr(8) + ".jpg"
+
+	destBucket, err := s.client.Bucket(destBucketName)
+	c.Assert(err, IsNil)
+
+	// Create a target bucket
+	err = s.client.CreateBucket(destBucketName)
+
+	// Upload source file
+	err = s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
+	c.Assert(err, IsNil)
+	os.Remove(newFile)
+
+	// copyfile with properties
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ObjectStorageClass(StorageArchive),
+		Routines(5),
+	}
+
+	// Copy files
+	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, options...)
+	c.Assert(err, IsNil)
+
+	err = destBucket.DeleteObject(destObjectName)
+	c.Assert(err, IsNil)
+	os.Remove(newFile)
+
+	// Copy file with options
+	options = []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ObjectStorageClass(StorageArchive),
+		Routines(10),
+		Checkpoint(true, "copy.cp"),
+	}
+
+	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, options...)
+	c.Assert(err, IsNil)
+
+	err = destBucket.DeleteObject(destObjectName)
+	c.Assert(err, IsNil)
+	os.Remove(newFile)
+
+	// Delete target bucket
+	err = s.client.DeleteBucket(destBucketName)
+	c.Assert(err, IsNil)
 }
