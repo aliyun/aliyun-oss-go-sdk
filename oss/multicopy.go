@@ -31,8 +31,14 @@ func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string,
 	cpConf := getCpConfig(options)
 	routines := getRoutines(options)
 
+	var strVersionId string
+	versionId, _ := findOption(options, "versionId", nil)
+	if versionId != nil {
+		strVersionId = versionId.(string)
+	}
+
 	if cpConf != nil && cpConf.IsEnable {
-		cpFilePath := getCopyCpFilePath(cpConf, srcBucketName, srcObjectKey, destBucketName, destObjectKey)
+		cpFilePath := getCopyCpFilePath(cpConf, srcBucketName, srcObjectKey, destBucketName, destObjectKey, strVersionId)
 		if cpFilePath != "" {
 			return bucket.copyFileWithCp(srcBucketName, srcObjectKey, destBucketName, destObjectKey, partSize, options, cpFilePath, routines)
 		}
@@ -42,11 +48,11 @@ func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string,
 		partSize, options, routines)
 }
 
-func getCopyCpFilePath(cpConf *cpConfig, srcBucket, srcObject, destBucket, destObject string) string {
+func getCopyCpFilePath(cpConf *cpConfig, srcBucket, srcObject, destBucket, destObject, versionId string) string {
 	if cpConf.FilePath == "" && cpConf.DirPath != "" {
 		dest := fmt.Sprintf("oss://%v/%v", destBucket, destObject)
 		src := fmt.Sprintf("oss://%v/%v", srcBucket, srcObject)
-		cpFileName := getCpFileName(src, dest)
+		cpFileName := getCpFileName(src, dest, versionId)
 		cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
 	}
 	return cpConf.FilePath
@@ -171,6 +177,9 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	totalBytes := getSrcObjectBytes(parts)
 	event := newProgressEvent(TransferStartedEvent, 0, totalBytes, 0)
 	publishProgress(listener, event)
+
+	// oss server don't support x-oss-storage-class
+	options = deleteOption(options, HTTPHeaderOssStorageClass)
 
 	// Start to copy workers
 	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
@@ -422,6 +431,9 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	event := newProgressEvent(TransferStartedEvent, completedBytes, ccp.ObjStat.Size, 0)
 	publishProgress(listener, event)
 
+	// oss server don't support x-oss-storage-class
+	options = deleteOption(options, HTTPHeaderOssStorageClass)
+
 	// Start the worker coroutines
 	arg := copyWorkerArg{descBucket, imur, srcBucketName, srcObjectKey, options, copyPartHooker}
 	for w := 1; w <= routines; w++ {
@@ -455,7 +467,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 		}
 	}
 
-	event = newProgressEvent(TransferCompletedEvent, completedBytes, ccp.ObjStat.Size,0)
+	event = newProgressEvent(TransferCompletedEvent, completedBytes, ccp.ObjStat.Size, 0)
 	publishProgress(listener, event)
 
 	return ccp.complete(descBucket, ccp.CopyParts, cpFilePath, options)

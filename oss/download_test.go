@@ -216,7 +216,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	// Check
 	dcp = downloadCheckpoint{}
 	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
-	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, newFile)
+	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, newFile, "")
 	err = dcp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(dcp.Magic, Equals, downloadCpMagic)
@@ -869,6 +869,103 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
 	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
 	c.Assert(err, IsNil)
 	c.Assert(GetVersionId(respHeader), Equals, versionId)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssDownloadSuite) TestdownloadFileChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// begin test
+	objectName := objectNamePrefix + randStr(8)
+	fileName := "test-file-" + randStr(8)
+	fileData := randStr(500 * 1024)
+	createFile(fileName, fileData, c)
+	newFile := randStr(8) + ".jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Resumable download with checkpoint dir
+	os.Remove(newFile)
+
+	// downloadFile with properties
+	options = []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+	}
+
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssDownloadSuite) TestdownloadFileWithCpChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// begin test
+	objectName := objectNamePrefix + randStr(8)
+	fileName := "test-file-" + randStr(8)
+	fileData := randStr(500 * 1024)
+	createFile(fileName, fileData, c)
+	newFile := randStr(8) + ".jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Resumable download with checkpoint dir
+	os.Remove(newFile)
+
+	// DownloadFile with properties
+	options = []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		CheckpointDir(true, "./"),
+	}
+
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
 
 	eq, err := compareFiles(fileName, newFile)
 	c.Assert(err, IsNil)
