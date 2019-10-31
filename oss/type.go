@@ -52,14 +52,17 @@ type LifecycleRule struct {
 	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
 	Transitions          []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
 	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
+	VersionExpiration    *LifecycleVersionExpiration    `xml:"NoncurrentVersionExpiration,omitempty"`
+	VersionTransition    *LifecycleVersionTransition    `xml:"NoncurrentVersionTransition,omitempty"`
 }
 
 // LifecycleExpiration defines the rule's expiration property
 type LifecycleExpiration struct {
-	XMLName           xml.Name `xml:"Expiration"`
-	Days              int      `xml:"Days,omitempty"`              // Relative expiration time: The expiration time in days after the last modified time
-	Date              string   `xml:"Date,omitempty"`              // Absolute expiration time: The expiration time in date, not recommended
-	CreatedBeforeDate string   `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
+	XMLName                   xml.Name `xml:"Expiration"`
+	Days                      int      `xml:"Days,omitempty"`                      // Relative expiration time: The expiration time in days after the last modified time
+	Date                      string   `xml:"Date,omitempty"`                      // Absolute expiration time: The expiration time in date, not recommended
+	CreatedBeforeDate         string   `xml:"CreatedBeforeDate,omitempty"`         // objects created before the date will be expired
+	ExpiredObjectDeleteMarker *bool    `xml:"ExpiredObjectDeleteMarker,omitempty"` // Specifies whether the expired delete tag is automatically deleted
 }
 
 // LifecycleTransition defines the rule's transition propery
@@ -75,6 +78,19 @@ type LifecycleAbortMultipartUpload struct {
 	XMLName           xml.Name `xml:"AbortMultipartUpload"`
 	Days              int      `xml:"Days,omitempty"`              // Relative expiration time: The expiration time in days after the last modified time
 	CreatedBeforeDate string   `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
+}
+
+// LifecycleVersionExpiration defines the rule's NoncurrentVersionExpiration propery
+type LifecycleVersionExpiration struct {
+	XMLName        xml.Name `xml:"NoncurrentVersionExpiration"`
+	NoncurrentDays int      `xml:"NoncurrentDays,omitempty"` // How many days after the Object becomes a non-current version
+}
+
+// LifecycleVersionTransition defines the rule's NoncurrentVersionTransition propery
+type LifecycleVersionTransition struct {
+	XMLName        xml.Name         `xml:"NoncurrentVersionTransition"`
+	NoncurrentDays int              `xml:"NoncurrentDays,omitempty"` // How many days after the Object becomes a non-current version
+	StorageClass   StorageClassType `xml:"StorageClass,omitempty"`
 }
 
 const iso8601DateFormat = "2006-01-02T15:04:05.000Z"
@@ -110,13 +126,6 @@ func verifyLifecycleRules(rules []LifecycleRule) error {
 			return fmt.Errorf("invalid rule, the value of status must be Enabled or Disabled")
 		}
 
-		expiration := rule.Expiration
-		if expiration != nil {
-			if (expiration.Days != 0 && expiration.CreatedBeforeDate != "") || (expiration.Days != 0 && expiration.Date != "") || (expiration.CreatedBeforeDate != "" && expiration.Date != "") || (expiration.Days == 0 && expiration.CreatedBeforeDate == "" && expiration.Date == "") {
-				return fmt.Errorf("invalid expiration lifecycle, must be set one of CreatedBeforeDate, Days and Date")
-			}
-		}
-
 		abortMPU := rule.AbortMultipartUpload
 		if abortMPU != nil {
 			if (abortMPU.Days != 0 && abortMPU.CreatedBeforeDate != "") || (abortMPU.Days == 0 && abortMPU.CreatedBeforeDate == "") {
@@ -138,8 +147,8 @@ func verifyLifecycleRules(rules []LifecycleRule) error {
 					return fmt.Errorf("invalid transition lifecylce, the value of storage class must be IA or Archive")
 				}
 			}
-		} else if expiration == nil && abortMPU == nil {
-			return fmt.Errorf("invalid rule, must set one of Expiration, AbortMultipartUplaod and Transitions")
+		} else if rule.Expiration == nil && abortMPU == nil && rule.VersionExpiration == nil && rule.VersionTransition == nil {
+			return fmt.Errorf("invalid rule, must set one of Expiration, AbortMultipartUplaod, VersionExpiration, VersionTransition and Transitions")
 		}
 	}
 
