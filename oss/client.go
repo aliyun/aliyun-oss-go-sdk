@@ -49,7 +49,10 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 	// URL parse
 	url := &urlMaker{}
-	url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
+	err := url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
+	if err != nil {
+		return nil, err
+	}
 
 	// HTTP connect
 	conn := &Conn{config: config, url: url}
@@ -66,7 +69,7 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	}
 
 	// Create HTTP connection
-	err := conn.init(config, url, client.HTTPClient)
+	err = conn.init(config, url, client.HTTPClient)
 
 	return client, err
 }

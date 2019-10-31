@@ -218,3 +218,38 @@ func (s *OssUtilsSuite) TestAdjustRange(c *C) {
 	c.Assert(start, Equals, (int64)(0))
 	c.Assert(end, Equals, (int64)(8192))
 }
+
+func (s *OssUtilsSuite) TestUtilCheckBucketName(c *C) {
+	err := CheckBucketName("a")
+	c.Assert(err, NotNil)
+
+	err = CheckBucketName("a11111111111111111111111111111nbbbbbbbbbbbbbbbbbbbbbbbbbbbqqqqqqqqqqqqqqqqqqqq")
+	c.Assert(err, NotNil)
+
+	err = CheckBucketName("-abcd")
+	c.Assert(err, NotNil)
+
+	err = CheckBucketName("abcd-")
+	c.Assert(err, NotNil)
+
+	err = CheckBucketName("abcD")
+	c.Assert(err, NotNil)
+
+	err = CheckBucketName("abc 1")
+	c.Assert(err, NotNil)
+
+	err = CheckBucketName("abc&1")
+	c.Assert(err, NotNil)
+
+	err = CheckBucketName("abc-1")
+	c.Assert(err, IsNil)
+
+	err = CheckBucketName("1bc-1")
+	c.Assert(err, IsNil)
+
+	err = CheckBucketName("111-1")
+	c.Assert(err, IsNil)
+
+	err = CheckBucketName("abc123-def1")
+	c.Assert(err, IsNil)
+}

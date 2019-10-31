@@ -2823,3 +2823,45 @@ func (s *OssClientSuite) TestClientSetLocalIpSuccess(c *C) {
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 }
+
+// TestCreateBucketInvalidName
+func (s *OssClientSuite) TestCreateBucketInvalidName(c *C) {
+	var bucketNameTest = "-" + bucketNamePrefix + randLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	// Create
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+}
+
+// TestClientProcessEndpointSuccess
+func (s *OssClientSuite) TestClientProcessEndpointSuccess(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+
+	testEndpoint := endpoint + "/" + "sina.com" + "?" + "para=abc"
+
+	client, err := New(testEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// Create
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// delete
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestClientProcessEndpointSuccess
+func (s *OssClientSuite) TestClientProcessEndpointError(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+
+	testEndpoint := "https://127.0.0.1/" + endpoint
+
+	client, err := New(testEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// Create
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+}

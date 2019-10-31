@@ -377,3 +377,23 @@ func ChoiceHeadObjectOption(options []Option) []Option {
 
 	return outOption
 }
+
+func CheckBucketName(bucketName string) error {
+	nameLen := len(bucketName)
+	if nameLen < 3 || nameLen > 63 {
+		return fmt.Errorf("bucket name %s len is between [3-63],now is %d", bucketName, nameLen)
+	}
+
+	for _, v := range bucketName {
+		if !(('a' <= v && v <= 'z') || ('0' <= v && v <= '9') || v == '-') {
+			return fmt.Errorf("bucket name %s can only include lowercase letters, numbers, and -", bucketName)
+		}
+	}
+
+	if bucketName[0] == '-' || bucketName[nameLen-1] == '-' {
+		return fmt.Errorf("bucket name %s must start and end with a lowercase letter or number", bucketName)
+	}
+
+	return nil
+
+}
