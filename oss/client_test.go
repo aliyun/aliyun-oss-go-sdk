@@ -919,6 +919,57 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestSetBucketLifecycleAboutVersionObject
+func (s *OssClientSuite) TestSetBucketLifecycleAboutVersionObject(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	deleteMark := true
+	expiration := LifecycleExpiration{
+		ExpiredObjectDeleteMarker: &deleteMark,
+	}
+
+	versionExpiration := LifecycleVersionExpiration{
+		NoncurrentDays: 20,
+	}
+
+	versionTransition := LifecycleVersionTransition{
+		NoncurrentDays: 10,
+		StorageClass:   "IA",
+	}
+
+	rule := LifecycleRule{
+        Status:            "Enabled",
+		Expiration:        &expiration,
+		VersionExpiration: &versionExpiration,
+		VersionTransition: &versionTransition,
+	}
+	rules := []LifecycleRule{rule}
+
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	res, err := client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[0].Expiration.Days, Equals, 0)
+	c.Assert(res.Rules[0].Expiration.Date, Equals, "")
+	c.Assert(*(res.Rules[0].Expiration.ExpiredObjectDeleteMarker), Equals, true)
+
+	c.Assert(res.Rules[0].VersionExpiration.NoncurrentDays, Equals, 20)
+	c.Assert(res.Rules[0].VersionTransition.NoncurrentDays, Equals, 10)
+	c.Assert(res.Rules[0].VersionTransition.StorageClass, Equals, StorageClassType("IA"))
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
 // TestDeleteBucketLifecycle
 func (s *OssClientSuite) TestDeleteBucketLifecycle(c *C) {
 	var bucketNameTest = bucketNamePrefix + randLowStr(6)

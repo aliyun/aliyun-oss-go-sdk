@@ -120,7 +120,7 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	}
 	rules := []LifecycleRule{rule}
 	err := verifyLifecycleRules(rules)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	expiration = LifecycleExpiration{
 		Date:              "2015-11-11T00:00:00.000Z",
@@ -134,7 +134,7 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	}
 	rules = []LifecycleRule{rule}
 	err = verifyLifecycleRules(rules)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	expiration = LifecycleExpiration{
 		Days:              0,
@@ -149,7 +149,7 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	}
 	rules = []LifecycleRule{rule}
 	err = verifyLifecycleRules(rules)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	abortMPU := LifecycleAbortMultipartUpload{
 		Days:              30,
