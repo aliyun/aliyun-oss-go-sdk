@@ -78,6 +78,10 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) 
 // Do sends request and returns the response
 func (conn Conn) Do(method, bucketName, objectName string, params map[string]interface{}, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
+	err := CheckBucketName(bucketName)
+	if len(bucketName) > 0 && err != nil {
+		return nil, err
+	}
 	urlParams := conn.getURLParams(params)
 	subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
@@ -656,7 +660,7 @@ type urlMaker struct {
 }
 
 // Init parses endpoint
-func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
+func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
 	if strings.HasPrefix(endpoint, "http://") {
 		um.Scheme = "http"
 		um.NetLoc = endpoint[len("http://"):]
@@ -668,6 +672,14 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 		um.NetLoc = endpoint
 	}
 
+	//use url.Parse() to get real host
+	strUrl := um.Scheme + "://" + um.NetLoc
+	url, err := url.Parse(strUrl)
+	if err != nil {
+		return err
+	}
+
+	um.NetLoc = url.Host
 	host, _, err := net.SplitHostPort(um.NetLoc)
 	if err != nil {
 		host = um.NetLoc
@@ -685,6 +697,8 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) {
 		um.Type = urlTypeAliyun
 	}
 	um.IsProxy = isProxy
+
+	return nil
 }
 
 // getURL gets URL
