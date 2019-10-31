@@ -37,6 +37,7 @@ var sampleMap = map[string]interface{}{
 	"ArchiveSample":               sample.ArchiveSample,
 	"ObjectTaggingSample":         sample.ObjectTaggingSample,
 	"BucketEncryptionSample":      sample.BucketEncryptionSample,
+        "SelectObjectSample":          sample.SelectObjectSample,
 }
 
 func main() {

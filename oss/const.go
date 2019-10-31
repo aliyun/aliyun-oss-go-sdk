@@ -184,3 +184,12 @@ const (
 
 	Version = "v2.0.4" // Go SDK version
 )
+
+// FrameType
+const (
+	DataFrameType        = 8388609
+	ContinuousFrameType  = 8388612
+	EndFrameType         = 8388613
+	MetaEndFrameCSVType  = 8388614
+	MetaEndFrameJSONType = 8388615
+)
