@@ -239,11 +239,11 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 	copyPartHooker = defaultCopyPartHook
 
 	// Source bucket does not exist
-	err = s.bucket.CopyFile("NotExist", srcObjectName, destObjectName, 100*1024, Routines(2))
+	err = s.bucket.CopyFile("notexist", srcObjectName, destObjectName, 100*1024, Routines(2))
 	c.Assert(err, NotNil)
 
 	// Target object does not exist
-	err = s.bucket.CopyFile(bucketName, "NotExist", destObjectName, 100*1024, Routines(2))
+	err = s.bucket.CopyFile(bucketName, "notexist", destObjectName, 100*1024, Routines(2))
 
 	// The part size is invalid
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024, Routines(2))
@@ -429,12 +429,12 @@ func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 	destObjectName := srcObjectName + "-dest"
 
 	// Source bucket does not exist
-	err := s.bucket.CopyFile("NotExist", srcObjectName, destObjectName, 100*1024, Checkpoint(true, destObjectName+".cp"))
+	err := s.bucket.CopyFile("notexist", srcObjectName, destObjectName, 100*1024, Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, NotNil)
 	c.Assert(err, NotNil)
 
 	// Source object does not exist
-	err = s.bucket.CopyFile(bucketName, "NotExist", destObjectName, 100*1024, Routines(2), Checkpoint(true, destObjectName+".cp"))
+	err = s.bucket.CopyFile(bucketName, "notexist", destObjectName, 100*1024, Routines(2), Checkpoint(true, destObjectName+".cp"))
 	c.Assert(err, NotNil)
 
 	// Specify part size is invalid.

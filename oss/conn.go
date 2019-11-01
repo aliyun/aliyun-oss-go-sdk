@@ -78,10 +78,6 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) 
 // Do sends request and returns the response
 func (conn Conn) Do(method, bucketName, objectName string, params map[string]interface{}, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
-	err := CheckBucketName(bucketName)
-	if len(bucketName) > 0 && err != nil {
-		return nil, err
-	}
 	urlParams := conn.getURLParams(params)
 	subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
