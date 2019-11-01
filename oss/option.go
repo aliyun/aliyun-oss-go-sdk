@@ -25,6 +25,7 @@ const (
 	progressListener   = "x-progress-listener"
 	storageClass       = "storage-class"
 	responseHeader     = "x-response-header"
+	redundancyType     = "redundancy-type"
 )
 
 type (
@@ -323,6 +324,11 @@ func DeleteObjectsQuiet(isQuiet bool) Option {
 // StorageClass bucket storage class
 func StorageClass(value StorageClassType) Option {
 	return addArg(storageClass, value)
+}
+
+// RedundancyType bucket data redundancy type
+func RedundancyType(value DataRedundancyType) Option {
+	return addArg(redundancyType, value)
 }
 
 // Checkpoint configuration

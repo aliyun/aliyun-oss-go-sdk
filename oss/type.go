@@ -52,8 +52,8 @@ type LifecycleRule struct {
 	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
 	Transitions          []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
 	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
-	VersionExpiration    *LifecycleVersionExpiration    `xml:"NoncurrentVersionExpiration,omitempty"`
-	VersionTransition    *LifecycleVersionTransition    `xml:"NoncurrentVersionTransition,omitempty"`
+	NonVersionExpiration *LifecycleVersionExpiration    `xml:"NoncurrentVersionExpiration,omitempty"`
+	NonVersionTransition *LifecycleVersionTransition    `xml:"NoncurrentVersionTransition,omitempty"`
 }
 
 // LifecycleExpiration defines the rule's expiration property
@@ -147,8 +147,8 @@ func verifyLifecycleRules(rules []LifecycleRule) error {
 					return fmt.Errorf("invalid transition lifecylce, the value of storage class must be IA or Archive")
 				}
 			}
-		} else if rule.Expiration == nil && abortMPU == nil && rule.VersionExpiration == nil && rule.VersionTransition == nil {
-			return fmt.Errorf("invalid rule, must set one of Expiration, AbortMultipartUplaod, VersionExpiration, VersionTransition and Transitions")
+		} else if rule.Expiration == nil && abortMPU == nil && rule.NonVersionExpiration == nil && rule.NonVersionTransition == nil {
+			return fmt.Errorf("invalid rule, must set one of Expiration, AbortMultipartUplaod, NonVersionExpiration, NonVersionTransition and Transitions")
 		}
 	}
 
@@ -302,6 +302,7 @@ type BucketInfo struct {
 	ExtranetEndpoint string    `xml:"ExtranetEndpoint"`         // Bucket external endpoint
 	IntranetEndpoint string    `xml:"IntranetEndpoint"`         // Bucket internal endpoint
 	ACL              string    `xml:"AccessControlList>Grant"`  // Bucket ACL
+	RedundancyType   string    `xml:"DataRedundancyType"`       // Bucket DataRedundancyType
 	Owner            Owner     `xml:"Owner"`                    // Bucket owner
 	StorageClass     string    `xml:"StorageClass"`             // Bucket storage class
 	SseRule          SSERule   `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
@@ -692,8 +693,9 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 
 // createBucketConfiguration defines the configuration for creating a bucket.
 type createBucketConfiguration struct {
-	XMLName      xml.Name         `xml:"CreateBucketConfiguration"`
-	StorageClass StorageClassType `xml:"StorageClass,omitempty"`
+	XMLName            xml.Name           `xml:"CreateBucketConfiguration"`
+	StorageClass       StorageClassType   `xml:"StorageClass,omitempty"`
+	DataRedundancyType DataRedundancyType `xml:"DataRedundancyType,omitempty"`
 }
 
 // LiveChannelConfiguration defines the configuration for live-channel

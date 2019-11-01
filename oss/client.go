@@ -82,6 +82,11 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) Bucket(bucketName string) (*Bucket, error) {
+	err := CheckBucketName(bucketName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Bucket{
 		client,
 		bucketName,
@@ -103,18 +108,26 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 
 	buffer := new(bytes.Buffer)
 
-	isOptSet, val, _ := isOptionSet(options, storageClass)
-	if isOptSet {
-		cbConfig := createBucketConfiguration{StorageClass: val.(StorageClassType)}
-		bs, err := xml.Marshal(cbConfig)
-		if err != nil {
-			return err
-		}
-		buffer.Write(bs)
+	var cbConfig createBucketConfiguration
+	cbConfig.StorageClass = StorageStandard
 
-		contentType := http.DetectContentType(buffer.Bytes())
-		headers[HTTPHeaderContentType] = contentType
+	isStorageSet, valStroage, _ := isOptionSet(options, storageClass)
+	isRedundancySet, valRedundancy, _ := isOptionSet(options, redundancyType)
+	if isStorageSet {
+		cbConfig.StorageClass = valStroage.(StorageClassType)
 	}
+
+	if isRedundancySet {
+		cbConfig.DataRedundancyType = valRedundancy.(DataRedundancyType)
+	}
+
+	bs, err := xml.Marshal(cbConfig)
+	if err != nil {
+		return err
+	}
+	buffer.Write(bs)
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers[HTTPHeaderContentType] = contentType
 
 	params := map[string]interface{}{}
 	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
@@ -1296,6 +1309,10 @@ func SetLocalAddr(localAddr net.Addr) ClientOption {
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
 	headers map[string]string, data io.Reader, options ...Option) (*Response, error) {
+	err := CheckBucketName(bucketName)
+	if len(bucketName) > 0 && err != nil {
+		return nil, err
+	}
 
 	resp, err := client.Conn.Do(method, bucketName, "", params, headers, data, 0, nil)
 

@@ -216,7 +216,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	// Check
 	dcp = downloadCheckpoint{}
 	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
-	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, newFile, "")
+	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "",newFile)
 	err = dcp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(dcp.Magic, Equals, downloadCpMagic)

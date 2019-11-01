@@ -334,6 +334,49 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	}
 }
 
+func (s *OssClientSuite) TestCreateBucketRedundancyType(c *C) {
+	bucketNameTest := bucketNamePrefix + randLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// CreateBucket creates without property
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	client.DeleteBucket(bucketNameTest)
+	time.Sleep(timeoutInOperation)
+
+	// CreateBucket creates with RedundancyZRS
+	err = client.CreateBucket(bucketNameTest, RedundancyType(RedundancyZRS))
+	c.Assert(err, IsNil)
+
+	res, err := client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.RedundancyType, Equals, string(RedundancyZRS))
+	client.DeleteBucket(bucketNameTest)
+	time.Sleep(timeoutInOperation)
+
+	// CreateBucket creates with RedundancyLRS
+	err = client.CreateBucket(bucketNameTest, RedundancyType(RedundancyLRS))
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.RedundancyType, Equals, string(RedundancyLRS))
+	c.Assert(res.BucketInfo.StorageClass, Equals, string(StorageStandard))
+	client.DeleteBucket(bucketNameTest)
+	time.Sleep(timeoutInOperation)
+
+	// CreateBucket creates with ACLPublicRead RedundancyZRS
+	err = client.CreateBucket(bucketNameTest, ACL(ACLPublicRead), RedundancyType(RedundancyZRS))
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.RedundancyType, Equals, string(RedundancyZRS))
+	c.Assert(res.BucketInfo.ACL, Equals, string(ACLPublicRead))
+	client.DeleteBucket(bucketNameTest)
+}
+
 // TestCreateBucketNegative
 func (s *OssClientSuite) TestCreateBucketNegative(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
@@ -944,10 +987,10 @@ func (s *OssClientSuite) TestSetBucketLifecycleAboutVersionObject(c *C) {
 	}
 
 	rule := LifecycleRule{
-        Status:            "Enabled",
-		Expiration:        &expiration,
-		VersionExpiration: &versionExpiration,
-		VersionTransition: &versionTransition,
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		NonVersionExpiration: &versionExpiration,
+		NonVersionTransition: &versionTransition,
 	}
 	rules := []LifecycleRule{rule}
 
@@ -962,9 +1005,9 @@ func (s *OssClientSuite) TestSetBucketLifecycleAboutVersionObject(c *C) {
 	c.Assert(res.Rules[0].Expiration.Date, Equals, "")
 	c.Assert(*(res.Rules[0].Expiration.ExpiredObjectDeleteMarker), Equals, true)
 
-	c.Assert(res.Rules[0].VersionExpiration.NoncurrentDays, Equals, 20)
-	c.Assert(res.Rules[0].VersionTransition.NoncurrentDays, Equals, 10)
-	c.Assert(res.Rules[0].VersionTransition.StorageClass, Equals, StorageClassType("IA"))
+	c.Assert(res.Rules[0].NonVersionExpiration.NoncurrentDays, Equals, 20)
+	c.Assert(res.Rules[0].NonVersionTransition.NoncurrentDays, Equals, 10)
+	c.Assert(res.Rules[0].NonVersionTransition.StorageClass, Equals, StorageClassType("IA"))
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -2914,5 +2957,15 @@ func (s *OssClientSuite) TestClientProcessEndpointError(c *C) {
 
 	// Create
 	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+}
+
+// TestClientBucketError
+func (s *OssClientSuite) TestClientBucketError(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := "-" + randLowStr(5)
+	_, err = client.Bucket(bucketName)
 	c.Assert(err, NotNil)
 }

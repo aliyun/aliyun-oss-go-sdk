@@ -45,7 +45,7 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 	}
 
 	if cpConf != nil && cpConf.IsEnable {
-		cpFilePath := getDownloadCpFilePath(cpConf, bucket.BucketName, objectKey, filePath, strVersionId)
+		cpFilePath := getDownloadCpFilePath(cpConf, bucket.BucketName, objectKey, strVersionId, filePath)
 		if cpFilePath != "" {
 			return bucket.downloadFileWithCp(objectKey, filePath, partSize, options, cpFilePath, routines, uRange)
 		}
@@ -54,7 +54,7 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 	return bucket.downloadFile(objectKey, filePath, partSize, options, routines, uRange)
 }
 
-func getDownloadCpFilePath(cpConf *cpConfig, srcBucket, srcObject, destFile, versionId string) string {
+func getDownloadCpFilePath(cpConf *cpConfig, srcBucket, srcObject, versionId, destFile string) string {
 	if cpConf.FilePath == "" && cpConf.DirPath != "" {
 		src := fmt.Sprintf("oss://%v/%v", srcBucket, srcObject)
 		absPath, _ := filepath.Abs(destFile)
