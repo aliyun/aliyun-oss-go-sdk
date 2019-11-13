@@ -1,4 +1,15 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.4 日期：2019-11-13
+### 变更内容
+- 增加：SSR 对bucket 和 endpoint 做合法性校验，不符合要求要直接提示错误。
+- 增加：select object 功能merge
+- 增加：断点续传文件支持多版本
+- 增加：lifecycle 支持多版本
+- 修复：断点续传文件中的时间比较方式优化
+- 修复：修复断点上传不支持服务端加密的bug
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.0.3 日期：2019-09-17
 ### 变更内容
 - 修复：不支持分块上传归档object
