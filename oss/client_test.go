@@ -297,7 +297,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	c.Assert(err, IsNil)
 
 	// Create bucket with configuration and test GetBucketInfo
-	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
+	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive, StorageColdArchive} {
 		bucketNameTest := bucketNamePrefix + randLowStr(6)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage), ACL(ACLPublicRead))
 		c.Assert(err, IsNil)
@@ -319,7 +319,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	c.Assert(err, NotNil)
 
 	// Create bucket with configuration and test ListBuckets
-	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive} {
+	for _, storage := range []StorageClassType{StorageStandard, StorageIA, StorageArchive, StorageColdArchive} {
 		bucketNameTest := bucketNamePrefix + randLowStr(6)
 		err = client.CreateBucket(bucketNameTest, StorageClass(storage))
 		c.Assert(err, IsNil)
