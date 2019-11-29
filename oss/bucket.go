@@ -808,6 +808,39 @@ func (bucket Bucket) RestoreObject(objectKey string, options ...Option) error {
 	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
 }
 
+// RestoreObjectDetail support more features than RestoreObject
+func (bucket Bucket) RestoreObjectDetail(objectKey string, restoreConfig RestoreConfiguration, options ...Option) error {
+	if restoreConfig.Tier == "" {
+		// Expedited, Standard, Bulk
+		restoreConfig.Tier = string(RestoreStandard)
+	}
+
+	if restoreConfig.Days == 0 {
+		restoreConfig.Days = 1
+	}
+
+	bs, err := xml.Marshal(restoreConfig)
+	if err != nil {
+		return err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	options = append(options, ContentType(contentType))
+
+	params, _ := getRawParams(options)
+	params["restore"] = nil
+
+	resp, err := bucket.do("POST", objectKey, params, options, buffer, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
+}
+
 // SignURL signs the URL. Users could access the object directly with this URL without getting the AK.
 //
 // objectKey    the target object to sign.

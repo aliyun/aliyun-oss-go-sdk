@@ -1127,3 +1127,10 @@ type ListInventoryConfigurationsResult struct {
 	IsTruncated            *bool                    `xml:"IsTruncated,omitempty"`
 	NextContinuationToken  string                   `xml:"NextContinuationToken,omitempty"`
 }
+
+// RestoreConfiguration for RestoreObject
+type RestoreConfiguration struct {
+	XMLName xml.Name `xml:"RestoreRequest"`
+	Days    int32    `xml:"Days,omitempty"`
+	Tier    string   `xml:"JobParameters>Tier,omitempty"`
+}

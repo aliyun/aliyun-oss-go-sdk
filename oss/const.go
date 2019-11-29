@@ -72,9 +72,12 @@ const (
 
 	// StorageArchive archive
 	StorageArchive StorageClassType = "Archive"
+
+	// StorageColdArchive cold archive
+	StorageColdArchive StorageClassType = "ColdArchive"
 )
 
-// RedundancyType bucket data Redundancy type
+//RedundancyType bucket data Redundancy type
 type DataRedundancyType string
 
 const (
@@ -94,6 +97,20 @@ const (
 
 	// BucketOwner the requester who send the request
 	BucketOwner PayerType = "BucketOwner"
+)
+
+//RestoreMode the restore mode for coldArchive object
+type RestoreMode string
+
+const (
+	//RestoreExpedited object will be restored in 1 hour
+	RestoreExpedited RestoreMode = "Expedited"
+
+	//RestoreStandard object will be restored in 2-5 hours
+	RestoreStandard RestoreMode = "Standard"
+
+	//RestoreBulk object will be restored in 5-10 hours
+	RestoreBulk RestoreMode = "Bulk"
 )
 
 // HTTPMethod HTTP request method

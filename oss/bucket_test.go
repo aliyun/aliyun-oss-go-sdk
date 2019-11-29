@@ -2232,6 +2232,46 @@ func (s *OssBucketSuite) TestRestoreObject(c *C) {
 	c.Assert(meta.Get("X-Oss-Storage-Class"), Equals, "Archive")
 }
 
+// TestRestoreObjectWithXml
+func (s *OssBucketSuite) TestRestoreObjectWithConfig(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName, StorageClass(StorageColdArchive))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	objectName := objectNamePrefix + randStr(8)
+
+	// Put object
+	err = bucket.PutObject(objectName, strings.NewReader("123456789"), ObjectStorageClass(StorageColdArchive))
+	c.Assert(err, IsNil)
+
+	var restoreConfig RestoreConfiguration
+	restoreConfig.Days = 2
+
+	err = bucket.RestoreObjectDetail(objectName, restoreConfig)
+	c.Assert(err, IsNil)
+
+	objectName = objectNamePrefix + randStr(8)
+	err = bucket.PutObject(objectName, strings.NewReader("123456789"), ObjectStorageClass(StorageColdArchive))
+	c.Assert(err, IsNil)
+	restoreConfig.Tier = string(RestoreBulk)
+	err = bucket.RestoreObjectDetail(objectName, restoreConfig)
+	c.Assert(err, IsNil)
+
+	objectName = objectNamePrefix + randStr(8)
+	err = bucket.PutObject(objectName, strings.NewReader("123456789"), ObjectStorageClass(StorageColdArchive))
+	c.Assert(err, IsNil)
+	restoreConfig.Days = 0
+	err = bucket.RestoreObjectDetail(objectName, restoreConfig)
+	c.Assert(err, IsNil)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
 // TestProcessObject
 func (s *OssBucketSuite) TestProcessObject(c *C) {
 	objectName := objectNamePrefix + randStr(8) + ".jpg"
