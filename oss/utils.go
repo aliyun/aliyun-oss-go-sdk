@@ -337,6 +337,15 @@ func ChoiceCompletePartOption(options []Option) []Option {
 		outOption = append(outOption, GetResponseHeader(respHeader.(*http.Header)))
 	}
 
+	forbidOverWrite, _ := findOption(options, HTTPHeaderOssForbidOverWrite, nil)
+	if forbidOverWrite != nil {
+		if forbidOverWrite.(string) == "true" {
+			outOption = append(outOption, ForbidOverWrite(true))
+		} else {
+			outOption = append(outOption, ForbidOverWrite(false))
+		}
+	}
+
 	return outOption
 }
 

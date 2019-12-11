@@ -168,6 +168,7 @@ const (
 	HTTPHeaderOssTagging                     = "X-Oss-Tagging"
 	HTTPHeaderOssTaggingDirective            = "X-Oss-Tagging-Directive"
 	HTTPHeaderOssTrafficLimit                = "X-Oss-Traffic-Limit"
+	HTTPHeaderOssForbidOverWrite             = "X-Oss-Forbid-Overwrite"
 )
 
 // HTTP Param

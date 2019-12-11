@@ -42,7 +42,8 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"response-content-encoding", "udf", "udfName", "udfImage",
 	"udfId", "udfImageDesc", "udfApplication", "comp",
 	"udfApplicationLog", "restore", "callback", "callback-var", "qosInfo",
-	"policy", "stat", "encryption", "versions", "versioning", "versionId", "requestPayment"}
+	"policy", "stat", "encryption", "versions", "versioning", "versionId", "requestPayment",
+	"x-oss-request-payer"}
 
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) error {

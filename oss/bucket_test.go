@@ -4638,3 +4638,110 @@ func (s *OssBucketSuite) TestBucketTrafficLimitUpload(c *C) {
 
 	forceDeleteBucket(client, bucketName, c)
 }
+
+func (s *OssBucketSuite) TestPutObjectWithForbidOverWrite(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	contentLength := 1024
+	objectName := objectNamePrefix + randStr(8)
+	content := randStr(contentLength)
+
+	// first put success
+	err = bucket.PutObject(objectName, strings.NewReader(content), ForbidOverWrite(true))
+	c.Assert(err, IsNil)
+
+	// second put failure with ForbidOverWrite true
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(content), ForbidOverWrite(true), GetResponseHeader(&respHeader))
+	c.Assert(err, NotNil)
+
+	// third  put success with ForbidOverWrite false
+	err = bucket.PutObject(objectName, strings.NewReader(content), ForbidOverWrite(false))
+	c.Assert(err, IsNil)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestCopyObjectWithForbidOverWrite(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	contentLength := 1024
+	objectName := objectNamePrefix + randStr(8)
+	content := randStr(contentLength)
+
+	err = bucket.PutObject(objectName, strings.NewReader(content))
+	c.Assert(err, IsNil)
+
+	// first copy success
+	copyObjectName := objectName + "-copy"
+	_, err = bucket.CopyObject(objectName, copyObjectName, ForbidOverWrite(true))
+	c.Assert(err, IsNil)
+
+	// second copy failure with ForbidOverWrite true
+	var respHeader http.Header
+	_, err = bucket.CopyObject(objectName, copyObjectName, ForbidOverWrite(true), GetResponseHeader(&respHeader))
+	c.Assert(err, NotNil)
+
+	// third  copy success with ForbidOverWrite false
+	_, err = bucket.CopyObject(objectName, copyObjectName, ForbidOverWrite(false))
+	c.Assert(err, IsNil)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestDeleteObjectsWithSpecialCharacter(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	contentLength := 100
+    objectName1 := objectNamePrefix + randStr(8) + "<-->+&*\r%%"
+    objectName2 := objectNamePrefix + randStr(8) + "\r&*\r%%"
+	//objectName2 := objectNamePrefix + randStr(8) + "%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2Fetc%2Fprofile"
+	//objectName2, err = url.QueryUnescape(objectName2)
+
+	c.Assert(err, IsNil)
+	content := randStr(contentLength)
+
+	err = bucket.PutObject(objectName1, strings.NewReader(content))
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObject(objectName2, strings.NewReader(content))
+	c.Assert(err, IsNil)
+
+	// delete objectName1 objectName2
+	objectKeys := []string{objectName1, objectName2}
+	_, err = bucket.DeleteObjects(objectKeys)
+	c.Assert(err, IsNil)
+
+	// objectName1 is not exist
+	exist, err := bucket.IsObjectExist(objectName1)
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, false)
+
+	// objectName2 is not exist
+	exist, err = bucket.IsObjectExist(objectName2)
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, false)
+
+	forceDeleteBucket(client, bucketName, c)
+}

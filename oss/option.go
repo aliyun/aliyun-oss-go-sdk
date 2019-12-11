@@ -210,6 +210,11 @@ func RequestPayer(payerType PayerType) Option {
 	return setHeader(HTTPHeaderOssRequester, strings.ToLower(string(payerType)))
 }
 
+// RequestPayerParam is an option to set payer who pay for the request
+func RequestPayerParam(payerType PayerType) Option {
+	return addParam(strings.ToLower(HTTPHeaderOssRequester), strings.ToLower(string(payerType)))
+}
+
 // SetTagging is an option to set object tagging
 func SetTagging(tagging Tagging) Option {
 	if len(tagging.Tags) == 0 {
@@ -244,6 +249,15 @@ func ACReqHeaders(value string) Option {
 // TrafficLimitHeader is an option to set X-Oss-Traffic-Limit
 func TrafficLimitHeader(value int64) Option {
 	return setHeader(HTTPHeaderOssTrafficLimit, strconv.FormatInt(value, 10))
+}
+
+// ForbidOverWrite  is an option to set X-Oss-Forbid-Overwrite
+func ForbidOverWrite(forbidWrite bool) Option {
+	if forbidWrite {
+		return setHeader(HTTPHeaderOssForbidOverWrite, "true")
+	} else {
+		return setHeader(HTTPHeaderOssForbidOverWrite, "false")
+	}
 }
 
 // Delimiter is an option to set delimiler parameter
