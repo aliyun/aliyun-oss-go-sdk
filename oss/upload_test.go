@@ -645,3 +645,56 @@ func (s *OssUploadSuite) TestUploadFileWithCpChoiceOptions(c *C) {
 
 	forceDeleteBucket(client, bucketName, c)
 }
+
+// TestUploadFileWithForbidOverWrite
+func (s *OssUploadSuite) TestUploadFileWithForbidOverWrite(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + randStr(8)
+
+	// UploadFile with properties
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+		ForbidOverWrite(true),
+		Checkpoint(true, fileName+".cp"),
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, IsNil)
+
+	// Updating the file with ForbidOverWrite(true)
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, NotNil)
+
+	// without Checkpoint
+	options = []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+		ForbidOverWrite(true),
+	}
+
+	// Updating the file with ForbidOverWrite(true)
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, NotNil)
+
+	forceDeleteBucket(client, bucketName, c)
+}
