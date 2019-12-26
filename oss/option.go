@@ -330,6 +330,11 @@ func PartNumberMarker(value int) Option {
 	return addParam("part-number-marker", strconv.Itoa(value))
 }
 
+// Sequential is an option to set sequential parameter for InitiateMultipartUpload
+func Sequential() Option {
+	return addParam("sequential", "")
+}
+
 // DeleteObjectsQuiet false:DeleteObjects in verbose mode; true:DeleteObjects in quite mode. Default is false.
 func DeleteObjectsQuiet(isQuiet bool) Option {
 	return addArg(deleteObjectsQuiet, isQuiet)
