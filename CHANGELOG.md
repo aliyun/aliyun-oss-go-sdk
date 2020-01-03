@@ -1,4 +1,9 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.5 日期：2020-01-03
+### 变更内容
+- 增加：增加禁止同名覆盖选项X-Oss-Forbid-Overwrite
+- 增加：增加分块上传参数sequential, 支持分块上传返回md5校验值
+
 ## 版本号：v2.0.4 日期：2019-11-13
 ### 变更内容
 - 增加：SSR 对bucket 和 endpoint 做合法性校验，不符合要求要直接提示错误。
