@@ -495,8 +495,7 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	os.Remove(newFile)
 
 	// Delete target bucket
-	err = s.client.DeleteBucket(destBucketName)
-	c.Assert(err, IsNil)
+	forceDeleteBucket(s.client, destBucketName, c)
 }
 
 func (s *OssCopySuite) TestVersioningCopyFileCrossBucket(c *C) {
@@ -614,11 +613,22 @@ func (s *OssCopySuite) TestCopyFileChoiceOptions(c *C) {
 		RequestPayer(Requester),
 		TrafficLimitHeader(1024 * 1024 * 8),
 		ObjectStorageClass(StorageArchive),
-		Routines(5),
+		ServerSideEncryption("AES256"),
+		Routines(5), // without checkpoint
 	}
 
 	// Copy files
 	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, options...)
+	c.Assert(err, IsNil)
+
+	// check object
+	meta, err := destBucket.GetObjectDetailedMeta(destObjectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("X-Oss-Storage-Class"), Equals, "Archive")
+	c.Assert(meta.Get("X-Oss-Server-Side-Encryption"), Equals, "AES256")
+
+	aclResult, err := destBucket.GetObjectACL(destObjectName)
+	c.Assert(aclResult.ACL, Equals, "public-read")
 	c.Assert(err, IsNil)
 
 	err = destBucket.DeleteObject(destObjectName)
@@ -631,11 +641,22 @@ func (s *OssCopySuite) TestCopyFileChoiceOptions(c *C) {
 		RequestPayer(Requester),
 		TrafficLimitHeader(1024 * 1024 * 8),
 		ObjectStorageClass(StorageArchive),
+		ServerSideEncryption("AES256"),
 		Routines(10),
-		Checkpoint(true, "copy.cp"),
+		Checkpoint(true, "copy.cp"), // with checkpoint
 	}
 
 	err = destBucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, options...)
+	c.Assert(err, IsNil)
+
+	// check object
+	meta, err = destBucket.GetObjectDetailedMeta(destObjectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("X-Oss-Storage-Class"), Equals, "Archive")
+	c.Assert(meta.Get("X-Oss-Server-Side-Encryption"), Equals, "AES256")
+
+	aclResult, err = destBucket.GetObjectACL(destObjectName)
+	c.Assert(aclResult.ACL, Equals, "public-read")
 	c.Assert(err, IsNil)
 
 	err = destBucket.DeleteObject(destObjectName)

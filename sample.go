@@ -19,11 +19,11 @@ var sampleMap = map[string]interface{}{
 	"BucketLifecycleSample":       sample.BucketLifecycleSample,
 	"BucketRefererSample":         sample.BucketRefererSample,
 	"BucketLoggingSample":         sample.BucketLoggingSample,
-	"BucketWebsiteSample":	       sample.BucketWebsiteSample,
+	"BucketWebsiteSample":         sample.BucketWebsiteSample,
 	"BucketCORSSample":            sample.BucketCORSSample,
-	"BucketPolicySample":	       sample.BucketPolicySample,
+	"BucketPolicySample":          sample.BucketPolicySample,
 	"BucketrRequestPaymentSample": sample.BucketrRequestPaymentSample,
-	"BucketQoSInfoSample":	       sample.BucketQoSInfoSample,
+	"BucketQoSInfoSample":         sample.BucketQoSInfoSample,
 	"ObjectACLSample":             sample.ObjectACLSample,
 	"ObjectMetaSample":            sample.ObjectMetaSample,
 	"ListObjectsSample":           sample.ListObjectsSample,
@@ -37,7 +37,7 @@ var sampleMap = map[string]interface{}{
 	"ArchiveSample":               sample.ArchiveSample,
 	"ObjectTaggingSample":         sample.ObjectTaggingSample,
 	"BucketEncryptionSample":      sample.BucketEncryptionSample,
-        "SelectObjectSample":          sample.SelectObjectSample,
+	"SelectObjectSample":          sample.SelectObjectSample,
 }
 
 func main() {
