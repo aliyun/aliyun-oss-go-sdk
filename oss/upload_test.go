@@ -627,7 +627,7 @@ func (s *OssUploadSuite) TestUploadFileWithCpChoiceOptions(c *C) {
 		TrafficLimitHeader(1024 * 1024 * 8),
 		ServerSideEncryption("AES256"),
 		ObjectStorageClass(StorageArchive),
-		Checkpoint(true, fileName+".cp"),
+		Checkpoint(true, fileName+".cp"), // with checkpoint
 	}
 
 	// Updating the file
@@ -639,6 +639,8 @@ func (s *OssUploadSuite) TestUploadFileWithCpChoiceOptions(c *C) {
 	c.Assert(err, IsNil)
 
 	c.Assert(headerResp.Get("X-Oss-Server-Side-Encryption"), Equals, "AES256")
+	c.Assert(headerResp.Get("X-Oss-Storage-Class"), Equals, "Archive")
+
 	aclResult, err := bucket.GetObjectACL(objectName)
 	c.Assert(aclResult.ACL, Equals, "public-read")
 	c.Assert(err, IsNil)

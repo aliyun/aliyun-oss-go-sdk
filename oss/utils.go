@@ -369,6 +369,7 @@ func ChoiceAbortPartOption(options []Option) []Option {
 func ChoiceHeadObjectOption(options []Option) []Option {
 	var outOption []Option
 
+	// not select HTTPHeaderRange to get whole object length
 	payer, _ := findOption(options, HTTPHeaderOssRequester, nil)
 	if payer != nil {
 		outOption = append(outOption, RequestPayer(PayerType(payer.(string))))
