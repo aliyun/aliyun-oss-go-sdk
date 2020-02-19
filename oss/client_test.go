@@ -6,6 +6,7 @@ package oss
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -1669,6 +1670,67 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
+}
+
+// TestSetBucketWebsiteXml
+func (s *OssClientSuite) TestSetBucketWebsiteXml(c *C) {
+	var bucketNameTest = bucketNamePrefix + randLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	// Define one routing rule
+	ruleOk := RoutingRule{
+		RuleNumber: 1,
+		Condition: Condition{
+			KeyPrefixEquals:             "",
+			HTTPErrorCodeReturnedEquals: 404,
+		},
+		Redirect: Redirect{
+			RedirectType: "Mirror",
+			// PassQueryString: &btrue, 		// set default value
+			MirrorURL: "http://www.test.com/",
+			// MirrorPassQueryString:&btrue, 	// set default value
+			// MirrorFollowRedirect:&bfalse, 	// set default value
+			// MirrorCheckMd5:&bfalse, 			// set default value
+			MirrorHeaders: MirrorHeaders{
+				// PassAll:&bfalse, 			// set default value
+				Pass:   []string{"myheader-key1", "myheader-key2"},
+				Remove: []string{"myheader-key3", "myheader-key4"},
+				Set: []MirrorHeaderSet{
+					MirrorHeaderSet{
+						Key:   "myheader-key5",
+						Value: "myheader-value5",
+					},
+				},
+			},
+		},
+	}
+
+	// Set one routing rule
+	wxmlOne := WebsiteXML{}
+	wxmlOne.RoutingRules = append(wxmlOne.RoutingRules, ruleOk)
+	bs, err := xml.Marshal(wxmlOne)
+	c.Assert(err, IsNil)
+
+	var responseHeader http.Header
+	err = client.SetBucketWebsiteXml(bucketNameTest, string(bs), GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	res, err := client.GetBucketWebsite(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.RoutingRules[0].Redirect.RedirectType, Equals, "Mirror")
+	c.Assert(*res.RoutingRules[0].Redirect.PassQueryString, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorPassQueryString, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorFollowRedirect, Equals, true)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorCheckMd5, Equals, false)
+	c.Assert(*res.RoutingRules[0].Redirect.MirrorHeaders.PassAll, Equals, false)
 }
 
 // TestSetBucketCORS
