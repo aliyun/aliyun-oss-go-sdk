@@ -82,7 +82,7 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 	urlParams := conn.getURLParams(params)
 	subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
-	resource := conn.url.getResource(bucketName, objectName, subResource)
+	resource := conn.getResource(bucketName, objectName, subResource)
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
@@ -121,7 +121,7 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 		req.Header.Set("Proxy-Authorization", basic)
 	}
 
-	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
+	req.Header.Set(HTTPHeaderHost, req.Host)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
 
 	if headers != nil {
@@ -175,7 +175,7 @@ func (conn Conn) getURLParams(params map[string]interface{}) string {
 		}
 		buf.WriteString(url.QueryEscape(k))
 		if params[k] != nil {
-			buf.WriteString("=" + url.QueryEscape(params[k].(string)))
+			buf.WriteString("=" + strings.Replace(url.QueryEscape(params[k].(string)), "+", "%20", -1))
 		}
 	}
 
@@ -185,9 +185,19 @@ func (conn Conn) getURLParams(params map[string]interface{}) string {
 func (conn Conn) getSubResource(params map[string]interface{}) string {
 	// Sort
 	keys := make([]string, 0, len(params))
+	signParams := make(map[string]string)
 	for k := range params {
-		if conn.isParamSign(k) {
+		if conn.config.AuthVersion == AuthV2 {
+			encodedKey := url.QueryEscape(k)
+			keys = append(keys, encodedKey)
+			if params[k] != nil && params[k] != "" {
+				signParams[encodedKey] = strings.Replace(url.QueryEscape(params[k].(string)), "+", "%20", -1)
+			}
+		} else if conn.isParamSign(k) {
 			keys = append(keys, k)
+			if params[k] != nil {
+				signParams[k] = params[k].(string)
+			}
 		}
 	}
 	sort.Strings(keys)
@@ -199,11 +209,10 @@ func (conn Conn) getSubResource(params map[string]interface{}) string {
 			buf.WriteByte('&')
 		}
 		buf.WriteString(k)
-		if params[k] != nil {
-			buf.WriteString("=" + params[k].(string))
+		if _, ok := signParams[k]; ok {
+			buf.WriteString("=" + signParams[k])
 		}
 	}
-
 	return buf.String()
 }
 
@@ -214,6 +223,23 @@ func (conn Conn) isParamSign(paramKey string) bool {
 		}
 	}
 	return false
+}
+
+// getResource gets canonicalized resource
+func (conn Conn) getResource(bucketName, objectName, subResource string) string {
+	if subResource != "" {
+		subResource = "?" + subResource
+	}
+	if bucketName == "" {
+		if conn.config.AuthVersion == AuthV2 {
+			return url.QueryEscape("/") + subResource
+		}
+		return fmt.Sprintf("/%s%s", bucketName, subResource)
+	}
+	if conn.config.AuthVersion == AuthV2 {
+		return url.QueryEscape("/"+bucketName+"/") + strings.Replace(url.QueryEscape(objectName), "+", "%20", -1) + subResource
+	}
+	return fmt.Sprintf("/%s/%s%s", bucketName, objectName, subResource)
 }
 
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string, headers map[string]string,
@@ -246,7 +272,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 
 	date := time.Now().UTC().Format(http.TimeFormat)
 	req.Header.Set(HTTPHeaderDate, date)
-	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
+	req.Header.Set(HTTPHeaderHost, req.Host)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
 
 	akIf := conn.config.GetCredentials()
@@ -297,8 +323,6 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	if akIf.GetSecurityToken() != "" {
 		params[HTTPParamSecurityToken] = akIf.GetSecurityToken()
 	}
-	subResource := conn.getSubResource(params)
-	canonicalizedResource := conn.url.getResource(bucketName, objectName, subResource)
 
 	m := strings.ToUpper(string(method))
 	req := &http.Request{
@@ -313,7 +337,6 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 	}
 
 	req.Header.Set(HTTPHeaderDate, strconv.FormatInt(expiration, 10))
-	req.Header.Set(HTTPHeaderHost, conn.config.Endpoint)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
 
 	if headers != nil {
@@ -322,12 +345,27 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 		}
 	}
 
+	if conn.config.AuthVersion == AuthV2 {
+		params[HTTPParamSignatureVersion] = "OSS2"
+		params[HTTPParamExpiresV2] = strconv.FormatInt(expiration, 10)
+		params[HTTPParamAccessKeyIDV2] = conn.config.AccessKeyID
+		additionalList, _ := conn.getAdditionalHeaderKeys(req)
+		if len(additionalList) > 0 {
+			params[HTTPParamAdditionalHeadersV2] = strings.Join(additionalList, ";")
+		}
+	}
+
+	subResource := conn.getSubResource(params)
+	canonicalizedResource := conn.getResource(bucketName, objectName, subResource)
 	signedStr := conn.getSignedStr(req, canonicalizedResource, akIf.GetAccessKeySecret())
 
-	params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
-	params[HTTPParamAccessKeyID] = akIf.GetAccessKeyID()
-	params[HTTPParamSignature] = signedStr
-
+	if conn.config.AuthVersion == AuthV1 {
+		params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
+		params[HTTPParamAccessKeyID] = akIf.GetAccessKeyID()
+		params[HTTPParamSignature] = signedStr
+	} else if conn.config.AuthVersion == AuthV2 {
+		params[HTTPParamSignatureV2] = signedStr
+	}
 	urlParams := conn.getURLParams(params)
 	return conn.url.getSignURL(bucketName, objectName, urlParams)
 }
@@ -757,15 +795,4 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	}
 
 	return host, path
-}
-
-// getResource gets canonicalized resource
-func (um urlMaker) getResource(bucketName, objectName, subResource string) string {
-	if subResource != "" {
-		subResource = "?" + subResource
-	}
-	if bucketName == "" {
-		return fmt.Sprintf("/%s%s", bucketName, subResource)
-	}
-	return fmt.Sprintf("/%s/%s%s", bucketName, objectName, subResource)
 }

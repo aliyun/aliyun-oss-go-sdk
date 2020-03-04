@@ -2103,12 +2103,17 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 }
 
 // TestProxy
-func (s *OssClientSuite) TestProxy(c *C) {
+func (s *OssClientSuite) ProxyTestFunc(c *C, authVersion AuthVersionType, extraHeaders []string) {
 	bucketNameTest := bucketNamePrefix + randLowStr(6)
 	objectName := "体育/奥运/首金"
 	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。"
 
 	client, err := New(endpoint, accessID, accessKey, AuthProxy(proxyHost, proxyUser, proxyPasswd))
+
+	oldType := client.Config.AuthVersion
+	oldHeaders := client.Config.AdditionalHeaders
+	client.Config.AuthVersion = authVersion
+	client.Config.AdditionalHeaders = extraHeaders
 
 	// Create bucket
 	err = client.CreateBucket(bucketNameTest)
@@ -2123,9 +2128,16 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	// Sign URL
 	str, err := bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if bucket.Client.Config.AuthVersion == AuthV1 {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	}
 
 	// Put object with URL
 	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
@@ -2134,9 +2146,16 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	// Sign URL for get object
 	str, err = bucket.SignURL(objectName, HTTPGet, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if bucket.Client.Config.AuthVersion == AuthV1 {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	}
 
 	// Get object with URL
 	body, err := bucket.GetObjectWithURL(str)
@@ -2164,6 +2183,15 @@ func (s *OssClientSuite) TestProxy(c *C) {
 	// Delete bucket
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
+
+	client.Config.AuthVersion = oldType
+	client.Config.AdditionalHeaders = oldHeaders
+}
+
+func (s *OssClientSuite) TestProxy(c *C) {
+	s.ProxyTestFunc(c, AuthV1, []string{})
+	s.ProxyTestFunc(c, AuthV2, []string{})
+	s.ProxyTestFunc(c, AuthV2, []string{"host", "range", "user-agent"})
 }
 
 // TestProxy for https endpoint
@@ -2260,7 +2288,7 @@ func (s *OssClientSuite) TestHttpLogNotSignUrl(c *C) {
 	client.DeleteBucket(testBucketName)
 }
 
-func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
+func (s *OssClientSuite) HttpLogSignUrlTestFunc(c *C, authVersion AuthVersionType, extraHeaders []string) {
 	logName := "." + string(os.PathSeparator) + "test-go-sdk-httpdebug-signurl.log" + randStr(5)
 	f, err := os.OpenFile(logName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
 	c.Assert(err, IsNil)
@@ -2268,6 +2296,11 @@ func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	client.Config.LogLevel = Debug
 	client.Config.Logger = log.New(f, "", log.LstdFlags)
+
+	oldType := client.Config.AuthVersion
+	oldHeaders := client.Config.AdditionalHeaders
+	client.Config.AuthVersion = authVersion
+	client.Config.AdditionalHeaders = extraHeaders
 
 	var testBucketName = bucketNamePrefix + randLowStr(6)
 
@@ -2286,9 +2319,16 @@ func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
 	// Sign URL for put
 	str, err := bucket.SignURL(objectName, HTTPPut, 60)
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if bucket.Client.Config.AuthVersion == AuthV1 {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	}
 
 	// Error put object with URL
 	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue), ContentType("image/tiff"))
@@ -2307,6 +2347,15 @@ func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
 	// delete test bucket and log
 	os.Remove(logName)
 	client.DeleteBucket(testBucketName)
+
+	client.Config.AuthVersion = oldType
+	client.Config.AdditionalHeaders = oldHeaders
+}
+
+func (s *OssClientSuite) TestHttpLogSignUrl(c *C) {
+	s.HttpLogSignUrlTestFunc(c, AuthV1, []string{})
+	s.HttpLogSignUrlTestFunc(c, AuthV2, []string{})
+	s.HttpLogSignUrlTestFunc(c, AuthV2, []string{"host", "range", "user-agent"})
 }
 
 func (s *OssClientSuite) TestSetLimitUploadSpeed(c *C) {

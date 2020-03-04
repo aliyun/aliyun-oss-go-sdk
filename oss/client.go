@@ -68,6 +68,10 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 		option(client)
 	}
 
+	if config.AuthVersion != AuthV1 && config.AuthVersion != AuthV2 {
+		return nil, fmt.Errorf("Init client Error, invalid Auth version: %v", config.AuthVersion)
+	}
+
 	// Create HTTP connection
 	err = conn.init(config, url, client.HTTPClient)
 
@@ -1332,6 +1336,20 @@ func SetCredentialsProvider(provider CredentialsProvider) ClientOption {
 func SetLocalAddr(localAddr net.Addr) ClientOption {
 	return func(client *Client) {
 		client.Config.LocalAddr = localAddr
+	}
+}
+
+// AuthVersion  sets auth version: v1 or v2 signature which oss_server needed
+func AuthVersion(authVersion AuthVersionType) ClientOption {
+	return func(client *Client) {
+		client.Config.AuthVersion = authVersion
+	}
+}
+
+// AdditionalHeaders sets special http headers needed to be signed
+func AdditionalHeaders(headers []string) ClientOption {
+	return func(client *Client) {
+		client.Config.AdditionalHeaders = headers
 	}
 }
 
