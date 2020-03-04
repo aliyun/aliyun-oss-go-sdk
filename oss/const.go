@@ -178,6 +178,12 @@ const (
 	HTTPParamSignature     = "Signature"
 	HTTPParamSecurityToken = "security-token"
 	HTTPParamPlaylistName  = "playlistName"
+
+	HTTPParamSignatureVersion    = "x-oss-signature-version"
+	HTTPParamExpiresV2           = "x-oss-expires"
+	HTTPParamAccessKeyIDV2       = "x-oss-access-key-id"
+	HTTPParamSignatureV2         = "x-oss-signature"
+	HTTPParamAdditionalHeadersV2 = "x-oss-additional-headers"
 )
 
 // Other constants
@@ -194,7 +200,7 @@ const (
 
 	NullVersion = "null"
 
-	Version = "v2.0.6" // Go SDK version
+	Version = "v2.0.7" // Go SDK version
 )
 
 // FrameType
@@ -204,4 +210,14 @@ const (
 	EndFrameType         = 8388613
 	MetaEndFrameCSVType  = 8388614
 	MetaEndFrameJSONType = 8388615
+)
+
+// AuthVersion the version of auth
+type AuthVersionType string
+
+const (
+	// AuthV1 v1
+	AuthV1 AuthVersionType = "v1"
+	// AuthV2 v2
+	AuthV2 AuthVersionType = "v2"
 )

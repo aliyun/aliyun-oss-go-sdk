@@ -176,19 +176,31 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 }
 
 // TestSignURL
-func (s *OssProgressSuite) TestSignURL(c *C) {
+func (s *OssProgressSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extraHeaders []string) {
 	objectName := objectNamePrefix + randStr(8)
 	filePath := randLowStr(10)
 	content := randStr(20)
 	createFile(filePath, content, c)
 
+	oldType := s.bucket.Client.Config.AuthVersion
+	oldHeaders := s.bucket.Client.Config.AdditionalHeaders
+	s.bucket.Client.Config.AuthVersion = authVersion
+	s.bucket.Client.Config.AdditionalHeaders = extraHeaders
+
 	// Sign URL for put
 	progressListener := OssProgressListener{}
 	str, err := s.bucket.SignURL(objectName, HTTPPut, 60, Progress(&progressListener))
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if s.bucket.Client.Config.AuthVersion == AuthV1 {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	}
 
 	// Put object with URL
 	fd, err := os.Open(filePath)
@@ -219,9 +231,16 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	// Sign URL for get
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 60, Progress(&progressListener))
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if s.bucket.Client.Config.AuthVersion == AuthV1 {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	}
 
 	// Get object with URL
 	progressListener.TotalRwBytes = 0
@@ -253,6 +272,15 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	c.Assert(err, IsNil)
 
 	testLogger.Println("OssProgressSuite.TestSignURL")
+
+	s.bucket.Client.Config.AuthVersion = oldType
+	s.bucket.Client.Config.AdditionalHeaders = oldHeaders
+}
+
+func (s *OssProgressSuite) TestSignURL(c *C) {
+	s.SignURLTestFunc(c, AuthV1, []string{})
+	s.SignURLTestFunc(c, AuthV2, []string{})
+	s.SignURLTestFunc(c, AuthV2, []string{"host", "range", "user-agent"})
 }
 
 func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
