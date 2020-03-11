@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.7 日期：2020-03-11
+### 变更内容
+- 增加：支持OSS V2 签名
+- 增加：增加SetBucketWebsiteXml接口,支持直接传入xml文件内容
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.0.6 日期：2020-02-15
 ### 变更内容
 - 修复：CopyFile接口需要支持服务端加密功能
