@@ -1908,34 +1908,34 @@ func (s *OssBucketSuite) TestAddContentType(c *C) {
 	opts := addContentType(nil, "abc.txt")
 	typ, err := findOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
-	c.Assert(typ, Equals, "text/plain; charset=utf-8")
+	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
 
 	opts = addContentType(nil)
 	typ, err = findOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(len(opts), Equals, 1)
-	c.Assert(typ, Equals, "application/octet-stream")
+	c.Assert(strings.Contains(typ.(string), "application/octet-stream"), Equals, true)
 
 	opts = addContentType(nil, "abc.txt", "abc.pdf")
 	typ, err = findOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
-	c.Assert(typ, Equals, "text/plain; charset=utf-8")
+	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
 
 	opts = addContentType(nil, "abc", "abc.txt", "abc.pdf")
 	typ, err = findOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
-	c.Assert(typ, Equals, "text/plain; charset=utf-8")
+	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
 
 	opts = addContentType(nil, "abc", "abc", "edf")
 	typ, err = findOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
-	c.Assert(typ, Equals, "application/octet-stream")
+	c.Assert(strings.Contains(typ.(string), "application/octet-stream"), Equals, true)
 
 	opts = addContentType([]Option{Meta("meta", "my")}, "abc", "abc.txt", "abc.pdf")
 	typ, err = findOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(len(opts), Equals, 2)
-	c.Assert(typ, Equals, "text/plain; charset=utf-8")
+	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
 }
 
 func (s *OssBucketSuite) TestGetConfig(c *C) {
@@ -3175,7 +3175,8 @@ func (s *OssBucketSuite) TestUploadFileMimeShtml(c *C) {
 
 	headResult, err := bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
-	c.Assert(headResult.Get("Content-Type"), Equals, "text/html")
+	strContentType := headResult.Get("Content-Type")
+	c.Assert(strings.Contains(strContentType, "text/html"), Equals, true)
 	os.Remove(fileName)
 	forceDeleteBucket(client, bucketName, c)
 }
@@ -4894,5 +4895,190 @@ func (s *OssBucketSuite) TestDeleteObjectsWithSpecialCharacter(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(exist, Equals, false)
 
+	forceDeleteBucket(client, bucketName, c)
+}
+
+// TestGetObjectRangeBehavior
+func (s *OssBucketSuite) TestGetObjectRangeBehavior(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	objectName := objectNamePrefix + randStr(8)
+	objectLen := 1000
+	objectValue := randStr(objectLen)
+
+	// Put
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Range 1
+	options := []Option{
+		RangeBehavior("standard"),
+		Range(1000, 2000),
+	}
+	resp, err := bucket.GetObject(objectName, options...)
+	c.Assert(resp, IsNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 416)
+
+	// Range 2
+	options = []Option{
+		RangeBehavior("standard"),
+		Range(0, 2000),
+	}
+	resp, err = bucket.GetObject(objectName, options...)
+	c.Assert(err, IsNil)
+	data, err := ioutil.ReadAll(resp)
+	resp.Close()
+	str := string(data)
+	c.Assert(len(str), Equals, 1000)
+	c.Assert(resp.(*Response).StatusCode, Equals, 206)
+
+	// Range 3
+	options = []Option{
+		RangeBehavior("standard"),
+		Range(500, 2000),
+	}
+	resp, err = bucket.GetObject(objectName, options...)
+	c.Assert(err, IsNil)
+	data, err = ioutil.ReadAll(resp)
+	resp.Close()
+	str = string(data)
+	c.Assert(len(str), Equals, 500)
+	c.Assert(resp.(*Response).StatusCode, Equals, 206)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+// RangeBehavior  is an option to set Range value, such as "standard"
+func MyRangeBehavior(value string) Option {
+	return SetHeader(HTTPHeaderOssRangeBehavior, value)
+}
+
+// TestUserSetHeader
+func (s *OssBucketSuite) TestSupportUserSetHeader(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	objectName := objectNamePrefix + randStr(8)
+	objectLen := 1000
+	objectValue := randStr(objectLen)
+
+	// Put
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Range 1
+	options := []Option{
+		MyRangeBehavior("standard"),
+		Range(1000, 2000),
+	}
+	resp, err := bucket.GetObject(objectName, options...)
+	c.Assert(resp, IsNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 416)
+
+	// Range 2
+	options = []Option{
+		MyRangeBehavior("standard"),
+		Range(0, 2000),
+	}
+	resp, err = bucket.GetObject(objectName, options...)
+	c.Assert(err, IsNil)
+	data, err := ioutil.ReadAll(resp)
+	resp.Close()
+	str := string(data)
+	c.Assert(len(str), Equals, 1000)
+	c.Assert(resp.(*Response).StatusCode, Equals, 206)
+
+	// Range 3
+	options = []Option{
+		MyRangeBehavior("standard"),
+		Range(500, 2000),
+	}
+	resp, err = bucket.GetObject(objectName, options...)
+	c.Assert(err, IsNil)
+	data, err = ioutil.ReadAll(resp)
+	resp.Close()
+	str = string(data)
+	c.Assert(len(str), Equals, 500)
+	c.Assert(resp.(*Response).StatusCode, Equals, 206)
+
+	forceDeleteBucket(client, bucketName, c)
+}
+
+// user can set param
+func MyVersionId(value string) Option {
+	return AddParam("versionId", value)
+}
+
+func (s *OssBucketSuite) TestSupportUserSetParam(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + randLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
+
+	// put object v1
+	objectName := objectNamePrefix + randStr(8)
+	contextV1 := randStr(100)
+	versionIdV1 := ""
+
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV1) > 0, Equals, true)
+
+	// put object v2
+	contextV2 := randStr(200)
+	versionIdV2 := ""
+	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+	c.Assert(len(versionIdV2) > 0, Equals, true)
+
+	// check v1 and v2
+	c.Assert(versionIdV1 != versionIdV2, Equals, true)
+
+	// get object v1
+	body, err := bucket.GetObject(objectName, MyVersionId(versionIdV1))
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	body.Close()
+	c.Assert(str, Equals, contextV1)
+
+	// get object v2
+	body, err = bucket.GetObject(objectName, MyVersionId(versionIdV2))
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	body.Close()
+	c.Assert(str, Equals, contextV2)
 	forceDeleteBucket(client, bucketName, c)
 }

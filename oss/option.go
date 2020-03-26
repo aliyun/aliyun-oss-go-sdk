@@ -260,6 +260,11 @@ func ForbidOverWrite(forbidWrite bool) Option {
 	}
 }
 
+// RangeBehavior  is an option to set Range value, such as "standard"
+func RangeBehavior(value string) Option {
+	return setHeader(HTTPHeaderOssRangeBehavior, value)
+}
+
 // Delimiter is an option to set delimiler parameter
 func Delimiter(value string) Option {
 	return addParam("delimiter", value)
@@ -425,6 +430,16 @@ func Process(value string) Option {
 // TrafficLimitParam is a option to set x-oss-traffic-limit
 func TrafficLimitParam(value int64) Option {
 	return addParam("x-oss-traffic-limit", strconv.FormatInt(value, 10))
+}
+
+// SetHeader Allow users to set personalized http headers
+func SetHeader(key string, value interface{}) Option {
+	return setHeader(key, value)
+}
+
+// AddParam Allow users to set personalized http params
+func AddParam(key string, value interface{}) Option {
+	return addParam(key, value)
 }
 
 func setHeader(key string, value interface{}) Option {
