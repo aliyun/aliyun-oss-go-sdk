@@ -2565,7 +2565,7 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
 	c.Assert(err, IsNil)
 
 	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "KMS")
-	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "123")
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
 
 	// put and get object failure

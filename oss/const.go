@@ -169,6 +169,7 @@ const (
 	HTTPHeaderOssTaggingDirective            = "X-Oss-Tagging-Directive"
 	HTTPHeaderOssTrafficLimit                = "X-Oss-Traffic-Limit"
 	HTTPHeaderOssForbidOverWrite             = "X-Oss-Forbid-Overwrite"
+	HTTPHeaderOssRangeBehavior               = "X-Oss-Range-Behavior"
 )
 
 // HTTP Param
@@ -200,7 +201,7 @@ const (
 
 	NullVersion = "null"
 
-	Version = "v2.0.7" // Go SDK version
+	Version = "v2.0.8" // Go SDK version
 )
 
 // FrameType

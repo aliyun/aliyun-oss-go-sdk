@@ -1,6 +1,10 @@
 package oss
 
-import . "gopkg.in/check.v1"
+import (
+	"strings"
+
+	. "gopkg.in/check.v1"
+)
 
 type OssUtilsSuite struct{}
 
@@ -81,14 +85,14 @@ func (s *OssUtilsSuite) TestUtilsSplitFile(c *C) {
 }
 
 func (s *OssUtilsSuite) TestUtilsFileExt(c *C) {
-	c.Assert(TypeByExtension("test.txt"), Equals, "text/plain; charset=utf-8")
+	c.Assert(strings.Contains(TypeByExtension("test.txt"), "text/plain; charset=utf-8"), Equals, true)
 	c.Assert(TypeByExtension("test.jpg"), Equals, "image/jpeg")
 	c.Assert(TypeByExtension("test.pdf"), Equals, "application/pdf")
 	c.Assert(TypeByExtension("test"), Equals, "")
-	c.Assert(TypeByExtension("/root/dir/test.txt"), Equals, "text/plain; charset=utf-8")
-	c.Assert(TypeByExtension("root/dir/test.txt"), Equals, "text/plain; charset=utf-8")
-	c.Assert(TypeByExtension("root\\dir\\test.txt"), Equals, "text/plain; charset=utf-8")
-	c.Assert(TypeByExtension("D:\\work\\dir\\test.txt"), Equals, "text/plain; charset=utf-8")
+	c.Assert(strings.Contains(TypeByExtension("/root/dir/test.txt"), "text/plain"), Equals, true)
+	c.Assert(strings.Contains(TypeByExtension("root/dir/test.txt"), "text/plain"), Equals, true)
+	c.Assert(strings.Contains(TypeByExtension("root\\dir\\test.txt"), "text/plain"), Equals, true)
+	c.Assert(strings.Contains(TypeByExtension("D:\\work\\dir\\test.txt"), "text/plain"), Equals, true)
 }
 
 func (s *OssUtilsSuite) TestGetPartEnd(c *C) {
