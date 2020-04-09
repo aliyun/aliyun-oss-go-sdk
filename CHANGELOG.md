@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.8 日期：2020-04-09
+### 变更内容
+- 增加：支持用户传入自定义的header和param参数
+- 增加：增加对X-Oss-Range-Behavior支持
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.0.7 日期：2020-03-11
 ### 变更内容
 - 增加：支持OSS V2 签名
