@@ -117,13 +117,13 @@ func (s *OssConnSuite) TestAuth(c *C) {
 }
 
 func (s *OssConnSuite) TestConnToolFunc(c *C) {
-	err := checkRespCode(202, []int{})
+	err := CheckRespCode(202, []int{})
 	c.Assert(err, NotNil)
 
-	err = checkRespCode(202, []int{404})
+	err = CheckRespCode(202, []int{404})
 	c.Assert(err, NotNil)
 
-	err = checkRespCode(202, []int{202, 404})
+	err = CheckRespCode(202, []int{202, 404})
 	c.Assert(err, IsNil)
 
 	srvErr, err := serviceErrFromXML([]byte(""), 312, "")

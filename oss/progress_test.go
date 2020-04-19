@@ -128,7 +128,7 @@ func (listener *OssProgressListener) ProgressChanged(event *ProgressEvent) {
 
 // TestPutObject
 func (s *OssProgressSuite) TestPutObject(c *C) {
-	objectName := randStr(8) + ".jpg"
+	objectName := RandStr(8) + ".jpg"
 	localFile := "../sample/The Go Programming Language.html"
 
 	fileInfo, err := os.Stat(localFile)
@@ -177,10 +177,10 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 
 // TestSignURL
 func (s *OssProgressSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extraHeaders []string) {
-	objectName := objectNamePrefix + randStr(8)
-	filePath := randLowStr(10)
-	content := randStr(20)
-	createFile(filePath, content, c)
+	objectName := objectNamePrefix + RandStr(8)
+	filePath := RandLowStr(10)
+	content := RandStr(20)
+	CreateFile(filePath, content, c)
 
 	oldType := s.bucket.Client.Config.AuthVersion
 	oldHeaders := s.bucket.Client.Config.AdditionalHeaders
@@ -256,7 +256,7 @@ func (s *OssProgressSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, ex
 	str, err = s.bucket.SignURL(objectName, HTTPGet, 10, Progress(&progressListener))
 	c.Assert(err, IsNil)
 
-	newFile := randStr(10)
+	newFile := RandStr(10)
 	progressListener.TotalRwBytes = 0
 	err = s.bucket.GetObjectToFileWithURL(str, newFile, Progress(&progressListener))
 	c.Assert(progressListener.TotalRwBytes, Equals, int64(len(content)))
@@ -284,7 +284,7 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 }
 
 func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/The Go Programming Language.html"
 
 	// Invalid endpoint
@@ -303,8 +303,8 @@ func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
 
 // TestAppendObject
 func (s *OssProgressSuite) TestAppendObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
-	objectValue := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(100)
 	var val = []byte(objectValue)
 	var nextPos int64
 	var midPos = 1 + rand.Intn(len(val)-1)
@@ -330,7 +330,7 @@ func (s *OssProgressSuite) TestAppendObject(c *C) {
 
 // TestMultipartUpload
 func (s *OssProgressSuite) TestMultipartUpload(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 
 	fileInfo, err := os.Stat(fileName)
@@ -371,7 +371,7 @@ func (s *OssProgressSuite) TestMultipartUpload(c *C) {
 
 // TestMultipartUploadFromFile
 func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
 	fileInfo, err := os.Stat(fileName)
 	c.Assert(err, IsNil)
@@ -405,7 +405,7 @@ func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
 
 // TestGetObject
 func (s *OssProgressSuite) TestGetObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "newpic-progress-1.jpg"
 
@@ -473,7 +473,7 @@ func (s *OssProgressSuite) TestGetObject(c *C) {
 
 // TestGetObjectNegative
 func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// PutObject
@@ -503,7 +503,7 @@ func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
 
 // TestUploadFile
 func (s *OssProgressSuite) TestUploadFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	fileInfo, err := os.Stat(fileName)
@@ -524,7 +524,7 @@ func (s *OssProgressSuite) TestUploadFile(c *C) {
 
 // TestDownloadFile
 func (s *OssProgressSuite) TestDownloadFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-progress-2.jpg"
 
@@ -555,7 +555,7 @@ func (s *OssProgressSuite) TestDownloadFile(c *C) {
 
 // TestCopyFile
 func (s *OssProgressSuite) TestCopyFile(c *C) {
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 

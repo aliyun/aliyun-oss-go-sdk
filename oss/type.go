@@ -446,17 +446,17 @@ type UploadPart struct {
 	ETag       string   `xml:"ETag"`       // ETag value of the part's data
 }
 
-type uploadParts []UploadPart
+type UploadParts []UploadPart
 
-func (slice uploadParts) Len() int {
+func (slice UploadParts) Len() int {
 	return len(slice)
 }
 
-func (slice uploadParts) Less(i, j int) bool {
+func (slice UploadParts) Less(i, j int) bool {
 	return slice[i].PartNumber < slice[j].PartNumber
 }
 
-func (slice uploadParts) Swap(i, j int) {
+func (slice UploadParts) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 

@@ -99,8 +99,10 @@ type Config struct {
 	UploadLimiter       *OssLimiter         // Bandwidth limit reader for upload
 	CredentialsProvider CredentialsProvider // User provides interface to get AccessKeyID, AccessKeySecret, SecurityToken
 	LocalAddr           net.Addr            // local client host info
+	UserSetUa           bool                // UserAgent is set by user or not
 	AuthVersion         AuthVersionType     //  v1 or v2 signature,default is v1
 	AdditionalHeaders   []string            //  special http headers needed to be sign
+	
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0

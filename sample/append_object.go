@@ -101,7 +101,7 @@ func AppendObjectSample() {
 
 	// Case 4: Get the next append position by GetObjectDetailedMeta
 	props, err := bucket.GetObjectDetailedMeta(objectKey)
-	nextPos, err = strconv.ParseInt(props.Get(oss.HTTPHeaderOssNextAppendPosition), 10, 0)
+	nextPos, err = strconv.ParseInt(props.Get(oss.HTTPHeaderOssNextAppendPosition), 10, 64)
 	if err != nil {
 		HandleError(err)
 	}

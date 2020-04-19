@@ -32,7 +32,7 @@ func (bucket Bucket) CopyFile(srcBucketName, srcObjectKey, destObjectKey string,
 	routines := getRoutines(options)
 
 	var strVersionId string
-	versionId, _ := findOption(options, "versionId", nil)
+	versionId, _ := FindOption(options, "versionId", nil)
 	if versionId != nil {
 		strVersionId = versionId.(string)
 	}
@@ -146,7 +146,7 @@ func (bucket Bucket) copyFile(srcBucketName, srcObjectKey, destBucketName, destO
 	partSize int64, options []Option, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	// choice valid options
 	headerOptions := ChoiceHeadObjectOption(options)
@@ -259,7 +259,7 @@ func (cp copyCheckpoint) isValid(meta http.Header) (bool, error) {
 		return false, nil
 	}
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return false, err
 	}
@@ -347,7 +347,7 @@ func (cp *copyCheckpoint) prepare(meta http.Header, srcBucket *Bucket, srcObject
 	cp.DestBucketName = destBucket.BucketName
 	cp.DestObjectKey = destObjectKey
 
-	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 0)
+	objectSize, err := strconv.ParseInt(meta.Get(HTTPHeaderContentLength), 10, 64)
 	if err != nil {
 		return err
 	}
@@ -390,7 +390,7 @@ func (bucket Bucket) copyFileWithCp(srcBucketName, srcObjectKey, destBucketName,
 	partSize int64, options []Option, cpFilePath string, routines int) error {
 	descBucket, err := bucket.Client.Bucket(destBucketName)
 	srcBucket, err := bucket.Client.Bucket(srcBucketName)
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 
 	// Load CP data
 	ccp := copyCheckpoint{}

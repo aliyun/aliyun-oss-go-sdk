@@ -128,7 +128,7 @@ func (s *OssBucketSuite) TearDownTest(c *C) {
 
 // TestPutObject
 func (s *OssBucketSuite) TestPutObjectOnly(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
 		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
 
@@ -167,7 +167,7 @@ func (s *OssBucketSuite) TestPutObjectOnly(c *C) {
 	c.Assert(err, IsNil)
 
 	// Put file
-	err = createFileAndWrite(objectName+".txt", []byte(objectValue))
+	err = CreateFileAndWrite(objectName+".txt", []byte(objectValue))
 	c.Assert(err, IsNil)
 	fd, err := os.Open(objectName + ".txt")
 	c.Assert(err, IsNil)
@@ -187,7 +187,7 @@ func (s *OssBucketSuite) TestPutObjectOnly(c *C) {
 	c.Assert(err, IsNil)
 
 	// Put with properties
-	objectName = objectNamePrefix + randStr(8)
+	objectName = objectNamePrefix + RandStr(8)
 	options := []Option{
 		Expires(futureDate),
 		ObjectACL(ACLPublicRead),
@@ -218,14 +218,14 @@ func (s *OssBucketSuite) TestPutObjectOnly(c *C) {
 }
 
 func (s *OssBucketSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extraHeaders []string) {
-	objectName := objectNamePrefix + randStr(8)
-	objectValue := randStr(20)
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(20)
 
-	filePath := randLowStr(10)
+	filePath := RandLowStr(10)
 	content := "复写object"
-	createFile(filePath, content, c)
+	CreateFile(filePath, content, c)
 
-	notExistfilePath := randLowStr(10)
+	notExistfilePath := RandLowStr(10)
 	os.Remove(notExistfilePath)
 
 	oldType := s.bucket.Client.Config.AuthVersion
@@ -346,7 +346,7 @@ func (s *OssBucketSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extr
 	c.Assert(err, IsNil)
 
 	// Get object to file with URL
-	newFile := randStr(10)
+	newFile := RandStr(10)
 	err = s.bucket.GetObjectToFileWithURL(str, newFile)
 	c.Assert(err, IsNil)
 	eq, err := compareFiles(filePath, newFile)
@@ -417,7 +417,7 @@ func (s *OssBucketSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extr
 	c.Assert(err, IsNil)
 
 	// Invalid URL parse
-	str = randStr(20)
+	str = RandStr(20)
 
 	err = s.bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
 	c.Assert(err, NotNil)
@@ -721,7 +721,7 @@ func (s *OssBucketSuite) TestQueryStringAuthV2(c *C) {
 
 	// set oss v2 signatrue
 	client.Config.AuthVersion = AuthV2
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -737,17 +737,17 @@ func (s *OssBucketSuite) TestQueryStringAuthV2(c *C) {
 	params := map[string]interface{}{}
 	params[QueryKey1] = "queryValue1"
 	params[QueryKey2] = "queryValue2"
-	objectKey := objectNamePrefix + randStr(8)
+	objectKey := objectNamePrefix + RandStr(8)
 	resp, _ := bucket.do("HEAD", objectKey, params, options, nil, nil)
 
 	// object not exist,no signature error
 	c.Assert(resp.StatusCode, Equals, 404)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 // TestPutObjectType
 func (s *OssBucketSuite) TestPutObjectType(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。"
 
 	// Put
@@ -793,7 +793,7 @@ func (s *OssBucketSuite) TestPutObjectType(c *C) {
 
 // TestPutObject
 func (s *OssBucketSuite) TestPutObjectKeyChars(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "白日依山尽，黄河入海流。欲穷千里目，更上一层楼。"
 
 	// Put
@@ -859,11 +859,11 @@ func (s *OssBucketSuite) TestPutObjectKeyChars(c *C) {
 
 // TestPutObjectNegative
 func (s *OssBucketSuite) TestPutObjectNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "大江东去，浪淘尽，千古风流人物。 "
 
 	// Put
-	objectName = objectNamePrefix + randStr(8)
+	objectName = objectNamePrefix + RandStr(8)
 	err := s.bucket.PutObject(objectName, strings.NewReader(objectValue),
 		Meta("meta-my", "myprop"))
 	c.Assert(err, IsNil)
@@ -897,7 +897,7 @@ func (s *OssBucketSuite) TestPutObjectNegative(c *C) {
 
 // TestPutObjectFromFile
 func (s *OssBucketSuite) TestPutObjectFromFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "newpic11.jpg"
 
@@ -954,9 +954,9 @@ func (s *OssBucketSuite) TestPutObjectFromFile(c *C) {
 
 // TestPutObjectFromFile
 func (s *OssBucketSuite) TestPutObjectFromFileType(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Put
 	err := s.bucket.PutObjectFromFile(objectName, localFile)
@@ -980,7 +980,7 @@ func (s *OssBucketSuite) TestPutObjectFromFileType(c *C) {
 
 // TestGetObject
 func (s *OssBucketSuite) TestGetObjectNormal(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "长忆观潮，满郭人争江上望。来疑沧海尽成空，万面鼓声中。弄潮儿向涛头立，手把红旗旗不湿。别来几向梦中看，梦觉尚心寒。"
 
 	// Put
@@ -1043,7 +1043,7 @@ func (s *OssBucketSuite) TestGetObjectNormal(c *C) {
 
 // TestGetObjectNegative
 func (s *OssBucketSuite) TestGetObjectToWriterNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "长忆观潮，满郭人争江上望。"
 
 	// Object not exist
@@ -1075,9 +1075,9 @@ func (s *OssBucketSuite) TestGetObjectToWriterNegative(c *C) {
 
 // TestGetObjectToFile
 func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "江南好，风景旧曾谙；日出江花红胜火，春来江水绿如蓝。能不忆江南？江南忆，最忆是杭州；山寺月中寻桂子，郡亭枕上看潮头。何日更重游！"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Put
 	var val = []byte(objectValue)
@@ -1161,7 +1161,7 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 
 // TestListObjects
 func (s *OssBucketSuite) TestListObjects(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// List empty bucket
 	lor, err := s.bucket.ListObjects()
@@ -1262,7 +1262,7 @@ func (s *OssBucketSuite) TestListObjectsEncodingType(c *C) {
 
 // TestIsBucketExist
 func (s *OssBucketSuite) TestIsObjectExist(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// Put three objects
 	err := s.bucket.PutObject(objectName+"1", strings.NewReader(""))
@@ -1304,7 +1304,7 @@ func (s *OssBucketSuite) TestIsObjectExist(c *C) {
 
 // TestDeleteObject
 func (s *OssBucketSuite) TestDeleteObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	err := s.bucket.PutObject(objectName, strings.NewReader(""))
 	c.Assert(err, IsNil)
@@ -1328,7 +1328,7 @@ func (s *OssBucketSuite) TestDeleteObject(c *C) {
 
 // TestDeleteObjects
 func (s *OssBucketSuite) TestDeleteObjectsNormal(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// Delete objects
 	err := s.bucket.PutObject(objectName, strings.NewReader(""))
@@ -1438,7 +1438,7 @@ func (s *OssBucketSuite) TestDeleteObjectsNormal(c *C) {
 
 // TestSetObjectMeta
 func (s *OssBucketSuite) TestSetObjectMeta(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	err := s.bucket.PutObject(objectName, strings.NewReader(""))
 	c.Assert(err, IsNil)
@@ -1476,7 +1476,7 @@ func (s *OssBucketSuite) TestSetObjectMeta(c *C) {
 
 // TestGetObjectMeta
 func (s *OssBucketSuite) TestGetObjectMeta(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// Put
 	err := s.bucket.PutObject(objectName, strings.NewReader(""))
@@ -1495,7 +1495,7 @@ func (s *OssBucketSuite) TestGetObjectMeta(c *C) {
 
 // TestGetObjectDetailedMeta
 func (s *OssBucketSuite) TestGetObjectDetailedMeta(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// Put
 	err := s.bucket.PutObject(objectName, strings.NewReader(""),
@@ -1540,7 +1540,7 @@ func (s *OssBucketSuite) TestGetObjectDetailedMeta(c *C) {
 
 // TestSetAndGetObjectAcl
 func (s *OssBucketSuite) TestSetAndGetObjectAcl(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	err := s.bucket.PutObject(objectName, strings.NewReader(""))
 	c.Assert(err, IsNil)
@@ -1580,7 +1580,7 @@ func (s *OssBucketSuite) TestSetAndGetObjectAcl(c *C) {
 
 // TestSetAndGetObjectAclNegative
 func (s *OssBucketSuite) TestSetAndGetObjectAclNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// Object not exist
 	err := s.bucket.SetObjectACL(objectName, ACLPublicRead)
@@ -1589,7 +1589,7 @@ func (s *OssBucketSuite) TestSetAndGetObjectAclNegative(c *C) {
 
 // TestCopyObject
 func (s *OssBucketSuite) TestCopyObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "男儿何不带吴钩，收取关山五十州。请君暂上凌烟阁，若个书生万户侯？"
 
 	err := s.bucket.PutObject(objectName, strings.NewReader(objectValue),
@@ -1718,7 +1718,7 @@ func (s *OssBucketSuite) TestCopyObject(c *C) {
 
 // TestCopyObjectToOrFrom
 func (s *OssBucketSuite) TestCopyObjectToOrFrom(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "男儿何不带吴钩，收取关山五十州。请君暂上凌烟阁，若个书生万户侯？"
 	destBucketName := bucketName + "-dest"
 	objectNameDest := objectName + "-dest"
@@ -1770,7 +1770,7 @@ func (s *OssBucketSuite) TestCopyObjectToOrFrom(c *C) {
 
 // TestCopyObjectToOrFromNegative
 func (s *OssBucketSuite) TestCopyObjectToOrFromNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	destBucket := bucketName + "-dest"
 	objectNameDest := objectName + "-dest"
 
@@ -1785,16 +1785,16 @@ func (s *OssBucketSuite) TestCopyObjectToOrFromNegative(c *C) {
 
 // TestAppendObject
 func (s *OssBucketSuite) TestAppendObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "昨夜雨疏风骤，浓睡不消残酒。试问卷帘人，却道海棠依旧。知否？知否？应是绿肥红瘦。"
 	var val = []byte(objectValue)
-	var localFile = randStr(8) + ".txt"
+	var localFile = RandStr(8) + ".txt"
 	var nextPos int64
 	var midPos = 1 + rand.Intn(len(val)-1)
 
-	var err = createFileAndWrite(localFile+"1", val[0:midPos])
+	var err = CreateFileAndWrite(localFile+"1", val[0:midPos])
 	c.Assert(err, IsNil)
-	err = createFileAndWrite(localFile+"2", val[midPos:])
+	err = CreateFileAndWrite(localFile+"2", val[midPos:])
 	c.Assert(err, IsNil)
 
 	// String append
@@ -1890,7 +1890,7 @@ func (s *OssBucketSuite) TestAppendObject(c *C) {
 
 // TestAppendObjectNegative
 func (s *OssBucketSuite) TestAppendObjectNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	nextPos := int64(0)
 
 	nextPos, err := s.bucket.AppendObject(objectName, strings.NewReader("ObjectValue"), nextPos)
@@ -1905,34 +1905,34 @@ func (s *OssBucketSuite) TestAppendObjectNegative(c *C) {
 
 // TestContentType
 func (s *OssBucketSuite) TestAddContentType(c *C) {
-	opts := addContentType(nil, "abc.txt")
-	typ, err := findOption(opts, HTTPHeaderContentType, "")
+	opts := AddContentType(nil, "abc.txt")
+	typ, err := FindOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
 
-	opts = addContentType(nil)
-	typ, err = findOption(opts, HTTPHeaderContentType, "")
+	opts = AddContentType(nil)
+	typ, err = FindOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(len(opts), Equals, 1)
 	c.Assert(strings.Contains(typ.(string), "application/octet-stream"), Equals, true)
 
-	opts = addContentType(nil, "abc.txt", "abc.pdf")
-	typ, err = findOption(opts, HTTPHeaderContentType, "")
+	opts = AddContentType(nil, "abc.txt", "abc.pdf")
+	typ, err = FindOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
 
-	opts = addContentType(nil, "abc", "abc.txt", "abc.pdf")
-	typ, err = findOption(opts, HTTPHeaderContentType, "")
+	opts = AddContentType(nil, "abc", "abc.txt", "abc.pdf")
+	typ, err = FindOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
 
-	opts = addContentType(nil, "abc", "abc", "edf")
-	typ, err = findOption(opts, HTTPHeaderContentType, "")
+	opts = AddContentType(nil, "abc", "abc", "edf")
+	typ, err = FindOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(typ.(string), "application/octet-stream"), Equals, true)
 
-	opts = addContentType([]Option{Meta("meta", "my")}, "abc", "abc.txt", "abc.pdf")
-	typ, err = findOption(opts, HTTPHeaderContentType, "")
+	opts = AddContentType([]Option{Meta("meta", "my")}, "abc", "abc.txt", "abc.pdf")
+	typ, err = FindOption(opts, HTTPHeaderContentType, "")
 	c.Assert(err, IsNil)
 	c.Assert(len(opts), Equals, 2)
 	c.Assert(strings.Contains(typ.(string), "text/plain"), Equals, true)
@@ -1946,19 +1946,19 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	bucket, err := client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 
-	c.Assert(bucket.getConfig().HTTPTimeout.ConnectTimeout, Equals, time.Second*11)
-	c.Assert(bucket.getConfig().HTTPTimeout.ReadWriteTimeout, Equals, time.Second*12)
-	c.Assert(bucket.getConfig().HTTPTimeout.HeaderTimeout, Equals, time.Second*12)
-	c.Assert(bucket.getConfig().HTTPTimeout.IdleConnTimeout, Equals, time.Second*12)
-	c.Assert(bucket.getConfig().HTTPTimeout.LongTimeout, Equals, time.Second*12*10)
+	c.Assert(bucket.GetConfig().HTTPTimeout.ConnectTimeout, Equals, time.Second*11)
+	c.Assert(bucket.GetConfig().HTTPTimeout.ReadWriteTimeout, Equals, time.Second*12)
+	c.Assert(bucket.GetConfig().HTTPTimeout.HeaderTimeout, Equals, time.Second*12)
+	c.Assert(bucket.GetConfig().HTTPTimeout.IdleConnTimeout, Equals, time.Second*12)
+	c.Assert(bucket.GetConfig().HTTPTimeout.LongTimeout, Equals, time.Second*12*10)
 
-	c.Assert(bucket.getConfig().SecurityToken, Equals, "token")
-	c.Assert(bucket.getConfig().IsCname, Equals, true)
-	c.Assert(bucket.getConfig().IsEnableMD5, Equals, false)
+	c.Assert(bucket.GetConfig().SecurityToken, Equals, "token")
+	c.Assert(bucket.GetConfig().IsCname, Equals, true)
+	c.Assert(bucket.GetConfig().IsEnableMD5, Equals, false)
 }
 
 func (s *OssBucketSuite) TestSTSToken(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
 
 	stsClient := sts.NewClient(stsaccessID, stsaccessKey, stsARN, "oss_test_sess")
@@ -2012,7 +2012,7 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 }
 
 func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := objectName + ".jpg"
 
 	client, err := New(endpoint, accessID, accessKey, SecurityToken("Invalid"))
@@ -2068,7 +2068,7 @@ func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
 }
 
 func (s *OssBucketSuite) TestUploadBigFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	bigFile := "D:\\tmp\\bigfile.zip"
 	newFile := "D:\\tmp\\newbigfile.zip"
 
@@ -2104,7 +2104,7 @@ func (s *OssBucketSuite) TestUploadBigFile(c *C) {
 }
 
 func (s *OssBucketSuite) TestSymlink(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	targetObjectName := objectName + "target"
 
 	err := s.bucket.DeleteObject(objectName)
@@ -2162,7 +2162,7 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 	c.Assert(err, IsNil)
 
 	// Put symlink again
-	objectName = objectNamePrefix + randStr(8)
+	objectName = objectNamePrefix + RandStr(8)
 	targetObjectName = objectName + "-target"
 
 	err = s.bucket.PutSymlink(objectName, targetObjectName)
@@ -2190,7 +2190,7 @@ func (s *OssBucketSuite) TestSymlink(c *C) {
 
 // TestRestoreObject
 func (s *OssBucketSuite) TestRestoreObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// List objects
 	lor, err := s.archiveBucket.ListObjects()
@@ -2238,12 +2238,12 @@ func (s *OssBucketSuite) TestRestoreObjectWithConfig(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName, StorageClass(StorageColdArchive))
 	c.Assert(err, IsNil)
 
 	bucket, err := client.Bucket(bucketName)
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// Put object
 	err = bucket.PutObject(objectName, strings.NewReader("123456789"), ObjectStorageClass(StorageColdArchive))
@@ -2255,31 +2255,31 @@ func (s *OssBucketSuite) TestRestoreObjectWithConfig(c *C) {
 	err = bucket.RestoreObjectDetail(objectName, restoreConfig)
 	c.Assert(err, IsNil)
 
-	objectName = objectNamePrefix + randStr(8)
+	objectName = objectNamePrefix + RandStr(8)
 	err = bucket.PutObject(objectName, strings.NewReader("123456789"), ObjectStorageClass(StorageColdArchive))
 	c.Assert(err, IsNil)
 	restoreConfig.Tier = string(RestoreBulk)
 	err = bucket.RestoreObjectDetail(objectName, restoreConfig)
 	c.Assert(err, IsNil)
 
-	objectName = objectNamePrefix + randStr(8)
+	objectName = objectNamePrefix + RandStr(8)
 	err = bucket.PutObject(objectName, strings.NewReader("123456789"), ObjectStorageClass(StorageColdArchive))
 	c.Assert(err, IsNil)
 	restoreConfig.Days = 0
 	err = bucket.RestoreObjectDetail(objectName, restoreConfig)
 	c.Assert(err, IsNil)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 // TestProcessObject
 func (s *OssBucketSuite) TestProcessObject(c *C) {
-	objectName := objectNamePrefix + randStr(8) + ".jpg"
+	objectName := objectNamePrefix + RandStr(8) + ".jpg"
 	err := s.bucket.PutObjectFromFile(objectName, "../sample/BingWallpaper-2015-11-07.jpg")
 	c.Assert(err, IsNil)
 
 	// If bucket-name not specified, it is saved to the current bucket by default.
-	destObjName := objectNamePrefix + randStr(8) + "-dest.jpg"
+	destObjName := objectNamePrefix + RandStr(8) + "-dest.jpg"
 	process := fmt.Sprintf("image/resize,w_100|sys/saveas,o_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)))
 	result, err := s.bucket.ProcessObject(objectName, process)
 	c.Assert(err, IsNil)
@@ -2288,7 +2288,7 @@ func (s *OssBucketSuite) TestProcessObject(c *C) {
 	c.Assert(result.Bucket, Equals, "")
 	c.Assert(result.Object, Equals, destObjName)
 
-	destObjName = objectNamePrefix + randStr(8) + "-dest.jpg"
+	destObjName = objectNamePrefix + RandStr(8) + "-dest.jpg"
 	process = fmt.Sprintf("image/resize,w_100|sys/saveas,o_%v,b_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)), base64.URLEncoding.EncodeToString([]byte(s.bucket.BucketName)))
 	result, err = s.bucket.ProcessObject(objectName, process)
 	c.Assert(err, IsNil)
@@ -2304,7 +2304,7 @@ func (s *OssBucketSuite) TestProcessObject(c *C) {
 }
 
 // Private
-func createFileAndWrite(fileName string, data []byte) error {
+func CreateFileAndWrite(fileName string, data []byte) error {
 	os.Remove(fileName)
 
 	fo, err := os.Create(fileName)
@@ -2474,10 +2474,10 @@ func (s *OssBucketSuite) getObject(objects []ObjectProperties, object string) (b
 }
 
 func (s *OssBucketSuite) detectUploadSpeed(bucket *Bucket, c *C) (upSpeed int) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// 1M byte
-	textBuffer := randStr(1024 * 1024)
+	textBuffer := RandStr(1024 * 1024)
 
 	// Put string
 	startT := time.Now()
@@ -2508,7 +2508,7 @@ func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
 	// set unlimited again
 	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2530,10 +2530,10 @@ func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
 	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 
 	// 1M byte
-	textBuffer := randStr(1024 * 1024)
+	textBuffer := RandStr(1024 * 1024)
 
 	// Put body
 	startT := time.Now()
@@ -2589,7 +2589,7 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 	// set unlimited
 	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2610,11 +2610,11 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 	c.Assert(err, IsNil)
 
 	// object1
-	objectNameFirst := objectNamePrefix + randStr(8)
-	objectNameSecond := objectNamePrefix + randStr(8)
+	objectNameFirst := objectNamePrefix + RandStr(8)
+	objectNameSecond := objectNamePrefix + RandStr(8)
 
 	// 1M byte
-	textBuffer := randStr(1024 * 1024)
+	textBuffer := RandStr(1024 * 1024)
 
 	objectCount := 2
 	notifyChan := make(chan int, objectCount)
@@ -2679,7 +2679,7 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 	// set unlimited
 	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2701,12 +2701,12 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "." + string(os.PathSeparator) + objectName
 
 	// 1M byte
 	fileSize := 0
-	textBuffer := randStr(1024 * 1024)
+	textBuffer := RandStr(1024 * 1024)
 	if detectSpeed < perTokenBandwidthSize {
 		ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
 		f, err := os.Stat(fileName)
@@ -2781,7 +2781,7 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	// set unlimited
 	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2803,12 +2803,12 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	err = client.LimitUploadSpeed(limitSpeed / perTokenBandwidthSize)
 	c.Assert(err, IsNil)
 
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "." + string(os.PathSeparator) + objectName
 
 	// 1M byte
 	fileSize := 0
-	textBuffer := randStr(1024 * 1024)
+	textBuffer := RandStr(1024 * 1024)
 	if detectSpeed < perTokenBandwidthSize {
 		ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
 		f, err := os.Stat(fileName)
@@ -2885,7 +2885,7 @@ func (s *OssBucketSuite) TestUploadObjectLimitSpeed(c *C) {
 	// set unlimited
 	client.LimitUploadSpeed(0)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2893,8 +2893,8 @@ func (s *OssBucketSuite) TestUploadObjectLimitSpeed(c *C) {
 	c.Assert(err, IsNil)
 
 	//first:upload a object
-	textBuffer := randStr(1024 * 100)
-	objectName := objectNamePrefix + randStr(8)
+	textBuffer := RandStr(1024 * 100)
+	objectName := objectNamePrefix + RandStr(8)
 	err = bucket.PutObject(objectName, strings.NewReader(textBuffer))
 	c.Assert(err, IsNil)
 
@@ -2942,7 +2942,7 @@ func (s *OssBucketSuite) TestUploadObjectWithWebpFormat(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -2950,8 +2950,8 @@ func (s *OssBucketSuite) TestUploadObjectWithWebpFormat(c *C) {
 	c.Assert(err, IsNil)
 
 	// create webp file
-	textBuffer := randStr(1024)
-	objectName := objectNamePrefix + randStr(8)
+	textBuffer := RandStr(1024)
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "." + string(os.PathSeparator) + objectName + ".webp"
 	ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
 	_, err = os.Stat(fileName)
@@ -2972,19 +2972,19 @@ func (s *OssBucketSuite) TestUploadObjectWithWebpFormat(c *C) {
 
 func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	// put object with tagging
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	tag1 := Tag{
-		Key:   randStr(8),
-		Value: randStr(9),
+		Key:   RandStr(8),
+		Value: RandStr(9),
 	}
 	tag2 := Tag{
-		Key:   randStr(10),
-		Value: randStr(11),
+		Key:   RandStr(10),
+		Value: RandStr(11),
 	}
 	tagging := Tagging{
 		Tags: []Tag{tag1, tag2},
 	}
-	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), SetTagging(tagging))
+	err := s.bucket.PutObject(objectName, strings.NewReader(RandStr(1024)), SetTagging(tagging))
 	c.Assert(err, IsNil)
 
 	headers, err := s.bucket.GetObjectDetailedMeta(objectName)
@@ -2993,7 +2993,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	c.Assert(taggingCount, Equals, 2)
 
 	// copy object with default option
-	destObjectName := objectNamePrefix + randStr(8)
+	destObjectName := objectNamePrefix + RandStr(8)
 	_, err = s.bucket.CopyObject(objectName, destObjectName)
 	c.Assert(err, IsNil)
 	headers, err = s.bucket.GetObjectDetailedMeta(destObjectName)
@@ -3012,8 +3012,8 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 
 	// put tagging
 	tag := Tag{
-		Key:   randStr(8),
-		Value: randStr(16),
+		Key:   RandStr(8),
+		Value: RandStr(16),
 	}
 	tagging.Tags = []Tag{tag}
 	err = s.bucket.PutObjectTagging(objectName, tagging)
@@ -3026,8 +3026,8 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 
 	//put tagging, the length of the key exceeds 128
 	tag = Tag{
-		Key:   randStr(129),
-		Value: randStr(16),
+		Key:   RandStr(129),
+		Value: RandStr(16),
 	}
 	tagging.Tags = []Tag{tag}
 	err = s.bucket.PutObjectTagging(objectName, tagging)
@@ -3035,8 +3035,8 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 
 	//put tagging, the length of the value exceeds 256
 	tag = Tag{
-		Key:   randStr(8),
-		Value: randStr(257),
+		Key:   RandStr(8),
+		Value: RandStr(257),
 	}
 	tagging.Tags = []Tag{tag}
 	err = s.bucket.PutObjectTagging(objectName, tagging)
@@ -3046,8 +3046,8 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	tagging.Tags = []Tag{}
 	for i := 0; i < 11; i++ {
 		tag = Tag{
-			Key:   randStr(8),
-			Value: randStr(16),
+			Key:   RandStr(8),
+			Value: RandStr(16),
 		}
 		tagging.Tags = append(tagging.Tags, tag)
 	}
@@ -3056,8 +3056,8 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 
 	//put tagging, invalid value of tag key
 	tag = Tag{
-		Key:   randStr(8) + "&",
-		Value: randStr(16),
+		Key:   RandStr(8) + "&",
+		Value: RandStr(16),
 	}
 	tagging.Tags = []Tag{tag}
 	err = s.bucket.PutObjectTagging(objectName, tagging)
@@ -3065,8 +3065,8 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 
 	//put tagging, invalid value of tag value
 	tag = Tag{
-		Key:   randStr(8),
-		Value: randStr(16) + "&",
+		Key:   RandStr(8),
+		Value: RandStr(16) + "&",
 	}
 	tagging.Tags = []Tag{tag}
 	err = s.bucket.PutObjectTagging(objectName, tagging)
@@ -3074,12 +3074,12 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 
 	//put tagging, repeated tag keys
 	tag1 = Tag{
-		Key:   randStr(8),
-		Value: randStr(16),
+		Key:   RandStr(8),
+		Value: RandStr(16),
 	}
 	tag2 = Tag{
 		Key:   tag1.Key,
-		Value: randStr(16),
+		Value: RandStr(16),
 	}
 	tagging.Tags = []Tag{tag1, tag2}
 	err = s.bucket.PutObjectTagging(objectName, tagging)
@@ -3091,21 +3091,21 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 
 func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 	// get object which has 2 tags
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	tag1 := Tag{
-		Key:   randStr(8),
-		Value: randStr(9),
+		Key:   RandStr(8),
+		Value: RandStr(9),
 	}
 	tag2 := Tag{
-		Key:   randStr(10),
-		Value: randStr(11),
+		Key:   RandStr(10),
+		Value: RandStr(11),
 	}
 
 	taggingInfo := Tagging{
 		Tags: []Tag{tag1, tag2},
 	}
 
-	err := s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), SetTagging(taggingInfo))
+	err := s.bucket.PutObject(objectName, strings.NewReader(RandStr(1024)), SetTagging(taggingInfo))
 	c.Assert(err, IsNil)
 
 	tagging, err := s.bucket.GetObjectTagging(objectName)
@@ -3129,8 +3129,8 @@ func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 	c.Assert(len(tagging.Tags), Equals, 0)
 
 	// get object which has no tag
-	objectName = objectNamePrefix + randStr(8)
-	err = s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)))
+	objectName = objectNamePrefix + RandStr(8)
+	err = s.bucket.PutObject(objectName, strings.NewReader(RandStr(1024)))
 	c.Assert(err, IsNil)
 	tagging, err = s.bucket.GetObjectTagging(objectName)
 	c.Assert(err, IsNil)
@@ -3169,19 +3169,19 @@ func (s *OssBucketSuite) TestGetObjectTagging(c *C) {
 
 func (s *OssBucketSuite) TestDeleteObjectTagging(c *C) {
 	// delete object tagging, the object is not exist
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	err := s.bucket.DeleteObjectTagging(objectName)
 	c.Assert(err, NotNil)
 
 	// delete object tagging
 	tag := Tag{
-		Key:   randStr(8),
-		Value: randStr(16),
+		Key:   RandStr(8),
+		Value: RandStr(16),
 	}
 	tagging := Tagging{
 		Tags: []Tag{tag},
 	}
-	err = s.bucket.PutObject(objectName, strings.NewReader(randStr(1024)), SetTagging(tagging))
+	err = s.bucket.PutObject(objectName, strings.NewReader(RandStr(1024)), SetTagging(tagging))
 	c.Assert(err, IsNil)
 	err = s.bucket.DeleteObjectTagging(objectName)
 	c.Assert(err, IsNil)
@@ -3201,14 +3201,14 @@ func (s *OssBucketSuite) TestUploadFileMimeShtml(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
 	bucket, err := client.Bucket(bucketName)
-	objectName := objectNamePrefix + randStr(8)
-	fileName := "oss-sdk-test-file-" + randLowStr(5) + ".shtml"
-	createFile(fileName, "123", c)
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "oss-sdk-test-file-" + RandLowStr(5) + ".shtml"
+	CreateFile(fileName, "123", c)
 
 	err = bucket.PutObjectFromFile(objectName, fileName)
 	c.Assert(err, IsNil)
@@ -3218,7 +3218,7 @@ func (s *OssBucketSuite) TestUploadFileMimeShtml(c *C) {
 	strContentType := headResult.Get("Content-Type")
 	c.Assert(strings.Contains(strContentType, "text/html"), Equals, true)
 	os.Remove(fileName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
@@ -3226,7 +3226,7 @@ func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3259,7 +3259,7 @@ func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionSuspended))
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
@@ -3267,7 +3267,7 @@ func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3284,8 +3284,8 @@ func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3295,7 +3295,7 @@ func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3331,7 +3331,7 @@ func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
 
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningHeadObject(c *C) {
@@ -3339,7 +3339,7 @@ func (s *OssBucketSuite) TestVersioningHeadObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3356,8 +3356,8 @@ func (s *OssBucketSuite) TestVersioningHeadObject(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3367,7 +3367,7 @@ func (s *OssBucketSuite) TestVersioningHeadObject(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3407,7 +3407,7 @@ func (s *OssBucketSuite) TestVersioningHeadObject(c *C) {
 
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningDeleteLatestVersionObject(c *C) {
@@ -3415,7 +3415,7 @@ func (s *OssBucketSuite) TestVersioningDeleteLatestVersionObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3432,8 +3432,8 @@ func (s *OssBucketSuite) TestVersioningDeleteLatestVersionObject(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3443,7 +3443,7 @@ func (s *OssBucketSuite) TestVersioningDeleteLatestVersionObject(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3482,7 +3482,7 @@ func (s *OssBucketSuite) TestVersioningDeleteLatestVersionObject(c *C) {
 
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
@@ -3490,7 +3490,7 @@ func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3507,8 +3507,8 @@ func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3518,7 +3518,7 @@ func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3557,7 +3557,7 @@ func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
 
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningDeleteDefaultVersionObject(c *C) {
@@ -3565,7 +3565,7 @@ func (s *OssBucketSuite) TestVersioningDeleteDefaultVersionObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3582,8 +3582,8 @@ func (s *OssBucketSuite) TestVersioningDeleteDefaultVersionObject(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3593,7 +3593,7 @@ func (s *OssBucketSuite) TestVersioningDeleteDefaultVersionObject(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3650,7 +3650,7 @@ func (s *OssBucketSuite) TestVersioningDeleteDefaultVersionObject(c *C) {
 
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV1))
 	err = bucket.DeleteObject(objectName, VersionId(versionIdV2))
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningListObjectVersions(c *C) {
@@ -3658,7 +3658,7 @@ func (s *OssBucketSuite) TestVersioningListObjectVersions(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3675,8 +3675,8 @@ func (s *OssBucketSuite) TestVersioningListObjectVersions(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3686,7 +3686,7 @@ func (s *OssBucketSuite) TestVersioningListObjectVersions(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3752,7 +3752,7 @@ func (s *OssBucketSuite) TestVersioningListObjectVersions(c *C) {
 	// delete versionId
 	bucket.DeleteObject(objectName, VersionId(versionIdV1))
 	bucket.DeleteObject(objectName, VersionId(versionIdV2))
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
@@ -3760,7 +3760,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3777,8 +3777,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName1 := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName1 := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3788,8 +3788,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	objectName2 := objectNamePrefix + randStr(8)
-	contextV2 := randStr(200)
+	objectName2 := objectNamePrefix + RandStr(8)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3824,7 +3824,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(len(listResult.ObjectDeleteMarkers), Equals, 0)
 	c.Assert(len(listResult.ObjectVersions), Equals, 0)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
@@ -3832,7 +3832,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3849,8 +3849,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName1 := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName1 := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3860,8 +3860,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	objectName2 := objectNamePrefix + randStr(8)
-	contextV2 := randStr(200)
+	objectName2 := objectNamePrefix + RandStr(8)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3913,7 +3913,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 // bucket has no versioning flag
@@ -3922,7 +3922,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteNormalObjects(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3931,8 +3931,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteNormalObjects(c *C) {
 	bucket, err := client.Bucket(bucketName)
 
 	// put object v1
-	objectName1 := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName1 := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3942,8 +3942,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteNormalObjects(c *C) {
 	c.Assert(len(versionIdV1), Equals, 0)
 
 	// put object v2
-	objectName2 := objectNamePrefix + randStr(8)
-	contextV2 := randStr(200)
+	objectName2 := objectNamePrefix + RandStr(8)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -3964,7 +3964,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteNormalObjects(c *C) {
 	_, ok = deleteMap[objectName2]
 	c.Assert(ok, Equals, true)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 	c.Assert(err, IsNil)
 }
 
@@ -3973,7 +3973,7 @@ func (s *OssBucketSuite) TestVersioningSymlink(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -3986,8 +3986,8 @@ func (s *OssBucketSuite) TestVersioningSymlink(c *C) {
 	c.Assert(err, IsNil)
 
 	// put object 1
-	objectName1 := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName1 := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -3997,8 +3997,8 @@ func (s *OssBucketSuite) TestVersioningSymlink(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object 2
-	objectName2 := objectNamePrefix + randStr(8)
-	contextV2 := randStr(200)
+	objectName2 := objectNamePrefix + RandStr(8)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -4009,7 +4009,7 @@ func (s *OssBucketSuite) TestVersioningSymlink(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	// put symlink for object 1
-	linkName := objectNamePrefix + randStr(8)
+	linkName := objectNamePrefix + RandStr(8)
 	err = bucket.PutSymlink(linkName, objectName1, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 	linkVersionIdV1 := GetVersionId(respHeader)
@@ -4035,7 +4035,7 @@ func (s *OssBucketSuite) TestVersioningSymlink(c *C) {
 	bucket.DeleteObject(linkName)
 	bucket.DeleteObject(objectName1)
 	bucket.DeleteObject(objectName2)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningObjectAcl(c *C) {
@@ -4043,7 +4043,7 @@ func (s *OssBucketSuite) TestVersioningObjectAcl(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4056,8 +4056,8 @@ func (s *OssBucketSuite) TestVersioningObjectAcl(c *C) {
 	c.Assert(err, IsNil)
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -4067,7 +4067,7 @@ func (s *OssBucketSuite) TestVersioningObjectAcl(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -4115,7 +4115,7 @@ func (s *OssBucketSuite) TestVersioningObjectAcl(c *C) {
 	c.Assert(err, NotNil)
 
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
@@ -4123,7 +4123,7 @@ func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4138,7 +4138,7 @@ func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
 	// append object
 	var nextPos int64 = 0
 	var respHeader http.Header
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("123"), nextPos, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 	c.Assert(GetVersionId(respHeader), Equals, NullVersion)
@@ -4177,7 +4177,7 @@ func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
 	c.Assert(int(nextPos), Equals, 9)
 
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
@@ -4185,7 +4185,7 @@ func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4198,8 +4198,8 @@ func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
 	c.Assert(err, IsNil)
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -4209,7 +4209,7 @@ func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -4219,7 +4219,7 @@ func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
 	// check v1 and v2
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
-	destObjectKey := objectNamePrefix + randStr(8)
+	destObjectKey := objectNamePrefix + RandStr(8)
 
 	// copyobject default
 	_, err = bucket.CopyObject(objectName, destObjectKey, GetResponseHeader(&respHeader))
@@ -4255,7 +4255,7 @@ func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
 	c.Assert(err, NotNil)
 
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
@@ -4263,7 +4263,7 @@ func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4275,10 +4275,10 @@ func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
 
-	objectName := objectNamePrefix + randStr(8)
-	var fileName = "test-file-" + randStr(8)
-	content := randStr(500 * 1024)
-	createFile(fileName, content, c)
+	objectName := objectNamePrefix + RandStr(8)
+	var fileName = "test-file-" + RandStr(8)
+	content := RandStr(500 * 1024)
+	CreateFile(fileName, content, c)
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
@@ -4333,7 +4333,7 @@ func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
 
 	os.Remove(fileName)
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
@@ -4341,7 +4341,7 @@ func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4354,8 +4354,8 @@ func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 	c.Assert(err, IsNil)
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -4365,7 +4365,7 @@ func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -4373,7 +4373,7 @@ func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 	c.Assert(len(versionIdV2) > 0, Equals, true)
 
 	// upload mutlipart object with v1
-	multiName := objectNamePrefix + randStr(8)
+	multiName := objectNamePrefix + RandStr(8)
 	var parts []UploadPart
 	imur, err := bucket.InitiateMultipartUpload(multiName)
 	c.Assert(err, IsNil)
@@ -4413,7 +4413,7 @@ func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 
 	bucket.DeleteObject(objectName)
 	bucket.DeleteObject(multiName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningRestoreObject(c *C) {
@@ -4421,7 +4421,7 @@ func (s *OssBucketSuite) TestVersioningRestoreObject(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName, StorageClass(StorageArchive))
 	c.Assert(err, IsNil)
 
@@ -4434,8 +4434,8 @@ func (s *OssBucketSuite) TestVersioningRestoreObject(c *C) {
 	c.Assert(err, IsNil)
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -4445,7 +4445,7 @@ func (s *OssBucketSuite) TestVersioningRestoreObject(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -4465,7 +4465,7 @@ func (s *OssBucketSuite) TestVersioningRestoreObject(c *C) {
 	c.Assert(GetVersionId(respHeader), Equals, versionIdV2)
 
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
@@ -4473,7 +4473,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName, StorageClass(StorageArchive))
 	c.Assert(err, IsNil)
 
@@ -4486,8 +4486,8 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 	c.Assert(err, IsNil)
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -4497,7 +4497,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -4533,7 +4533,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 	c.Assert(len(getResult.Tags), Equals, 0)
 
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestVersioningIsObjectExist(c *C) {
@@ -4541,7 +4541,7 @@ func (s *OssBucketSuite) TestVersioningIsObjectExist(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 	bucket, err := client.Bucket(bucketName)
@@ -4553,8 +4553,8 @@ func (s *OssBucketSuite) TestVersioningIsObjectExist(c *C) {
 	c.Assert(err, IsNil)
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -4564,7 +4564,7 @@ func (s *OssBucketSuite) TestVersioningIsObjectExist(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -4612,7 +4612,7 @@ func (s *OssBucketSuite) TestVersioningIsObjectExist(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(exist, Equals, true)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestOptionsMethod(c *C) {
@@ -4620,7 +4620,7 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4662,8 +4662,8 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	c.Assert(err, NotNil)
 
 	// put object
-	objectName := objectNamePrefix + randStr(8)
-	context := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	context := RandStr(100)
 	err = bucket.PutObject(objectName, strings.NewReader(context))
 	c.Assert(err, IsNil)
 
@@ -4690,7 +4690,7 @@ func (s *OssBucketSuite) TestOptionsMethod(c *C) {
 	c.Assert(err, NotNil)
 
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestBucketTrafficLimitObject1(c *C) {
@@ -4698,7 +4698,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimitObject1(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4709,7 +4709,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimitObject1(c *C) {
 	var traffic int64 = 819220 // 100KB
 	maxTraffic := traffic * 120 / 100
 
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 	fd, err := os.Open(localFile)
 	c.Assert(err, IsNil)
@@ -4747,7 +4747,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimitObject1(c *C) {
 	// c.Assert((costV < maxTraffic), Equals, true)
 
 	// get object to file
-	newFile := "test-file-" + randStr(10)
+	newFile := "test-file-" + RandStr(10)
 	start = time.Now().UnixNano() / 1000 / 1000
 	err = bucket.GetObjectToFile(objectName, newFile, TrafficLimitHeader(traffic))
 	c.Assert(err, IsNil)
@@ -4758,14 +4758,14 @@ func (s *OssBucketSuite) TestBucketTrafficLimitObject1(c *C) {
 	os.Remove(newFile)
 
 	// append object
-	newFile = "test-file-" + randStr(10)
-	objectKey := objectNamePrefix + randStr(8)
+	newFile = "test-file-" + RandStr(10)
+	objectKey := objectNamePrefix + RandStr(8)
 	var nextPos int64
 	fd, err = os.Open(localFile)
 	c.Assert(err, IsNil)
 	defer fd.Close()
 	start = time.Now().UnixNano() / 1000 / 1000
-	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(randStr(18)), nextPos)
+	nextPos, err = bucket.AppendObject(objectKey, strings.NewReader(RandStr(18)), nextPos)
 	c.Assert(err, IsNil)
 
 	var respAppendHeader http.Header
@@ -4798,7 +4798,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimitObject1(c *C) {
 	c.Assert((costV < maxTraffic), Equals, true)
 
 	// get object with url
-	newFile = "test-file-" + randStr(10)
+	newFile = "test-file-" + RandStr(10)
 	strURL, err = bucket.SignURL(objectName, HTTPGet, 60, TrafficLimitParam(traffic))
 	c.Assert(err, IsNil)
 	start = time.Now().UnixNano() / 1000 / 1000
@@ -4811,13 +4811,13 @@ func (s *OssBucketSuite) TestBucketTrafficLimitObject1(c *C) {
 	os.Remove(newFile)
 
 	// copy object
-	destObjectName := objectNamePrefix + randStr(8)
+	destObjectName := objectNamePrefix + RandStr(8)
 	_, err = bucket.CopyObject(objectName, destObjectName, TrafficLimitHeader(traffic))
 	c.Assert(err, IsNil)
 	err = bucket.DeleteObject(destObjectName)
 	c.Assert(err, IsNil)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestBucketTrafficLimitUpload(c *C) {
@@ -4825,7 +4825,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimitUpload(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -4835,10 +4835,10 @@ func (s *OssBucketSuite) TestBucketTrafficLimitUpload(c *C) {
 	maxTraffic := traffic * 120 / 100
 	contentLength := 500 * 1024
 
-	var fileName = "test-file-" + randStr(8)
-	objectName := objectNamePrefix + randStr(8)
-	content := randStr(contentLength)
-	createFile(fileName, content, c)
+	var fileName = "test-file-" + RandStr(8)
+	objectName := objectNamePrefix + RandStr(8)
+	content := RandStr(contentLength)
+	CreateFile(fileName, content, c)
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
@@ -4869,7 +4869,7 @@ func (s *OssBucketSuite) TestBucketTrafficLimitUpload(c *C) {
 	c.Assert((costV < maxTraffic), Equals, true)
 	os.Remove(fileName)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestPutObjectWithForbidOverWrite(c *C) {
@@ -4877,14 +4877,14 @@ func (s *OssBucketSuite) TestPutObjectWithForbidOverWrite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 	bucket, err := client.Bucket(bucketName)
 
 	contentLength := 1024
-	objectName := objectNamePrefix + randStr(8)
-	content := randStr(contentLength)
+	objectName := objectNamePrefix + RandStr(8)
+	content := RandStr(contentLength)
 
 	// first put success
 	err = bucket.PutObject(objectName, strings.NewReader(content), ForbidOverWrite(true))
@@ -4899,7 +4899,7 @@ func (s *OssBucketSuite) TestPutObjectWithForbidOverWrite(c *C) {
 	err = bucket.PutObject(objectName, strings.NewReader(content), ForbidOverWrite(false))
 	c.Assert(err, IsNil)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestCopyObjectWithForbidOverWrite(c *C) {
@@ -4907,14 +4907,14 @@ func (s *OssBucketSuite) TestCopyObjectWithForbidOverWrite(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 	bucket, err := client.Bucket(bucketName)
 
 	contentLength := 1024
-	objectName := objectNamePrefix + randStr(8)
-	content := randStr(contentLength)
+	objectName := objectNamePrefix + RandStr(8)
+	content := RandStr(contentLength)
 
 	err = bucket.PutObject(objectName, strings.NewReader(content))
 	c.Assert(err, IsNil)
@@ -4933,7 +4933,7 @@ func (s *OssBucketSuite) TestCopyObjectWithForbidOverWrite(c *C) {
 	_, err = bucket.CopyObject(objectName, copyObjectName, ForbidOverWrite(false))
 	c.Assert(err, IsNil)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 func (s *OssBucketSuite) TestDeleteObjectsWithSpecialCharacter(c *C) {
@@ -4941,19 +4941,19 @@ func (s *OssBucketSuite) TestDeleteObjectsWithSpecialCharacter(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 	bucket, err := client.Bucket(bucketName)
 
 	contentLength := 100
-	objectName1 := objectNamePrefix + randStr(8) + "<-->+&*\r%%"
-	objectName2 := objectNamePrefix + randStr(8) + "\r&*\r%%"
-	//objectName2 := objectNamePrefix + randStr(8) + "%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2Fetc%2Fprofile"
+	objectName1 := objectNamePrefix + RandStr(8) + "<-->+&*\r%%"
+	objectName2 := objectNamePrefix + RandStr(8) + "\r&*\r%%"
+	//objectName2 := objectNamePrefix + RandStr(8) + "%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2Fetc%2Fprofile"
 	//objectName2, err = url.QueryUnescape(objectName2)
 
 	c.Assert(err, IsNil)
-	content := randStr(contentLength)
+	content := RandStr(contentLength)
 
 	err = bucket.PutObject(objectName1, strings.NewReader(content))
 	c.Assert(err, IsNil)
@@ -4976,7 +4976,7 @@ func (s *OssBucketSuite) TestDeleteObjectsWithSpecialCharacter(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(exist, Equals, false)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 // TestGetObjectRangeBehavior
@@ -4985,14 +4985,14 @@ func (s *OssBucketSuite) TestGetObjectRangeBehavior(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 	bucket, err := client.Bucket(bucketName)
 
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectLen := 1000
-	objectValue := randStr(objectLen)
+	objectValue := RandStr(objectLen)
 
 	// Put
 	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
@@ -5033,7 +5033,7 @@ func (s *OssBucketSuite) TestGetObjectRangeBehavior(c *C) {
 	c.Assert(len(str), Equals, 500)
 	c.Assert(resp.(*Response).StatusCode, Equals, 206)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 // RangeBehavior  is an option to set Range value, such as "standard"
@@ -5047,14 +5047,14 @@ func (s *OssBucketSuite) TestSupportUserSetHeader(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 	bucket, err := client.Bucket(bucketName)
 
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	objectLen := 1000
-	objectValue := randStr(objectLen)
+	objectValue := RandStr(objectLen)
 
 	// Put
 	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
@@ -5095,7 +5095,7 @@ func (s *OssBucketSuite) TestSupportUserSetHeader(c *C) {
 	c.Assert(len(str), Equals, 500)
 	c.Assert(resp.(*Response).StatusCode, Equals, 206)
 
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }
 
 // user can set param
@@ -5108,7 +5108,7 @@ func (s *OssBucketSuite) TestSupportUserSetParam(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -5125,8 +5125,8 @@ func (s *OssBucketSuite) TestSupportUserSetParam(c *C) {
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, string(VersionEnabled))
 
 	// put object v1
-	objectName := objectNamePrefix + randStr(8)
-	contextV1 := randStr(100)
+	objectName := objectNamePrefix + RandStr(8)
+	contextV1 := RandStr(100)
 	versionIdV1 := ""
 
 	var respHeader http.Header
@@ -5136,7 +5136,7 @@ func (s *OssBucketSuite) TestSupportUserSetParam(c *C) {
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
 	// put object v2
-	contextV2 := randStr(200)
+	contextV2 := RandStr(200)
 	versionIdV2 := ""
 	err = bucket.PutObject(objectName, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
@@ -5161,5 +5161,5 @@ func (s *OssBucketSuite) TestSupportUserSetParam(c *C) {
 	c.Assert(err, IsNil)
 	body.Close()
 	c.Assert(str, Equals, contextV2)
-	forceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
 }

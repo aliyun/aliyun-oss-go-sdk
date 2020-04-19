@@ -251,6 +251,11 @@ func TrafficLimitHeader(value int64) Option {
 	return setHeader(HTTPHeaderOssTrafficLimit, strconv.FormatInt(value, 10))
 }
 
+// UserAgentHeader is an option to set HTTPHeaderUserAgent
+func UserAgentHeader(ua string) Option {
+	return setHeader(HTTPHeaderUserAgent, ua)
+}
+
 // ForbidOverWrite  is an option to set X-Oss-Forbid-Overwrite
 func ForbidOverWrite(forbidWrite bool) Option {
 	if forbidWrite {
@@ -490,7 +495,7 @@ func handleOptions(headers map[string]string, options []Option) error {
 	return nil
 }
 
-func getRawParams(options []Option) (map[string]interface{}, error) {
+func GetRawParams(options []Option) (map[string]interface{}, error) {
 	// Option
 	params := map[string]optionValue{}
 	for _, option := range options {
@@ -513,7 +518,7 @@ func getRawParams(options []Option) (map[string]interface{}, error) {
 	return paramsm, nil
 }
 
-func findOption(options []Option, param string, defaultVal interface{}) (interface{}, error) {
+func FindOption(options []Option, param string, defaultVal interface{}) (interface{}, error) {
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
@@ -529,7 +534,7 @@ func findOption(options []Option, param string, defaultVal interface{}) (interfa
 	return defaultVal, nil
 }
 
-func isOptionSet(options []Option, option string) (bool, interface{}, error) {
+func IsOptionSet(options []Option, option string) (bool, interface{}, error) {
 	params := map[string]optionValue{}
 	for _, option := range options {
 		if option != nil {
@@ -545,7 +550,7 @@ func isOptionSet(options []Option, option string) (bool, interface{}, error) {
 	return false, nil, nil
 }
 
-func deleteOption(options []Option, strKey string) []Option {
+func DeleteOption(options []Option, strKey string) []Option {
 	var outOption []Option
 	params := map[string]optionValue{}
 	for _, option := range options {
