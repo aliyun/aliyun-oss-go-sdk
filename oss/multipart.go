@@ -23,8 +23,8 @@ import (
 //
 func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option) (InitiateMultipartUploadResult, error) {
 	var imur InitiateMultipartUploadResult
-	opts := addContentType(options, objectKey)
-	params, _ := getRawParams(options)
+	opts := AddContentType(options, objectKey)
+	params, _ := GetRawParams(options)
 	_, ok := params["sequential"]
 	if ok {
 		// convert "" to nil
@@ -112,7 +112,7 @@ func (bucket Bucket) UploadPartFromFile(imur InitiateMultipartUploadResult, file
 // error    it's nil if the operation succeeds, otherwise it's an error object.
 //
 func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) (*UploadPartResult, error) {
-	listener := getProgressListener(options)
+	listener := GetProgressListener(options)
 	options = append(options, ContentLength(request.PartSize))
 	params := map[string]interface{}{}
 	params["partNumber"] = strconv.Itoa(request.PartNumber)
@@ -129,8 +129,8 @@ func (bucket Bucket) DoUploadPart(request *UploadPartRequest, options []Option) 
 		PartNumber: request.PartNumber,
 	}
 
-	if bucket.getConfig().IsEnableCRC {
-		err = checkCRC(resp, "DoUploadPart")
+	if bucket.GetConfig().IsEnableCRC {
+		err = CheckCRC(resp, "DoUploadPart")
 		if err != nil {
 			return &UploadPartResult{part}, err
 		}
@@ -161,14 +161,14 @@ func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucke
 
 	//first find version id
 	versionIdKey := "versionId"
-	versionId, _ := findOption(options, versionIdKey, nil)
+	versionId, _ := FindOption(options, versionIdKey, nil)
 	if versionId == nil {
 		opts = []Option{CopySource(srcBucketName, url.QueryEscape(srcObjectKey)),
 			CopySourceRange(startPosition, partSize)}
 	} else {
 		opts = []Option{CopySourceVersion(srcBucketName, url.QueryEscape(srcObjectKey), versionId.(string)),
 			CopySourceRange(startPosition, partSize)}
-		options = deleteOption(options, versionIdKey)
+		options = DeleteOption(options, versionIdKey)
 	}
 
 	opts = append(opts, options...)
@@ -204,7 +204,7 @@ func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 	parts []UploadPart, options ...Option) (CompleteMultipartUploadResult, error) {
 	var out CompleteMultipartUploadResult
 
-	sort.Sort(uploadParts(parts))
+	sort.Sort(UploadParts(parts))
 	cxml := completeMultipartUploadXML{}
 	cxml.Part = parts
 	bs, err := xml.Marshal(cxml)
@@ -240,7 +240,7 @@ func (bucket Bucket) AbortMultipartUpload(imur InitiateMultipartUploadResult, op
 		return err
 	}
 	defer resp.Body.Close()
-	return checkRespCode(resp.StatusCode, []int{http.StatusNoContent})
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // ListUploadedParts lists the uploaded parts.
@@ -255,7 +255,7 @@ func (bucket Bucket) ListUploadedParts(imur InitiateMultipartUploadResult, optio
 	options = append(options, EncodingType("url"))
 
 	params := map[string]interface{}{}
-	params, err := getRawParams(options)
+	params, err := GetRawParams(options)
 	if err != nil {
 		return out, err
 	}
@@ -287,7 +287,7 @@ func (bucket Bucket) ListMultipartUploads(options ...Option) (ListMultipartUploa
 	var out ListMultipartUploadResult
 
 	options = append(options, EncodingType("url"))
-	params, err := getRawParams(options)
+	params, err := GetRawParams(options)
 	if err != nil {
 		return out, err
 	}

@@ -89,7 +89,7 @@ func (s *OssCopySuite) TearDownTest(c *C) {
 
 // TestCopyRoutineWithoutRecovery is multi-routine copy without resumable recovery
 func (s *OssCopySuite) TestCopyRoutineWithoutRecovery(c *C) {
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-dest"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "copy-new-file.jpg"
@@ -222,7 +222,7 @@ func CopyErrorHooker(part copyPart) error {
 
 // TestCopyRoutineWithoutRecoveryNegative is a multiple routines copy without checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-dest"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
@@ -259,10 +259,10 @@ func (s *OssCopySuite) TestCopyRoutineWithoutRecoveryNegative(c *C) {
 
 // TestCopyRoutineWithRecovery is a multiple routines copy with resumable recovery
 func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-dest"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload source file
 	err := s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
@@ -425,7 +425,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 
 // TestCopyRoutineWithRecoveryNegative is a multiple routineed copy without checkpoint
 func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-dest"
 
 	// Source bucket does not exist
@@ -448,10 +448,10 @@ func (s *OssCopySuite) TestCopyRoutineWithRecoveryNegative(c *C) {
 // TestCopyFileCrossBucket is a cross bucket's direct copy.
 func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	destBucketName := bucketName + "-desc"
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-dest"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	destBucket, err := s.client.Bucket(destBucketName)
 	c.Assert(err, IsNil)
@@ -495,7 +495,7 @@ func (s *OssCopySuite) TestCopyFileCrossBucket(c *C) {
 	os.Remove(newFile)
 
 	// Delete target bucket
-	forceDeleteBucket(s.client, destBucketName, c)
+	ForceDeleteBucket(s.client, destBucketName, c)
 }
 
 func (s *OssCopySuite) TestVersioningCopyFileCrossBucket(c *C) {
@@ -503,7 +503,7 @@ func (s *OssCopySuite) TestVersioningCopyFileCrossBucket(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	bucketName := bucketNamePrefix + randLowStr(6)
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
@@ -516,13 +516,13 @@ func (s *OssCopySuite) TestVersioningCopyFileCrossBucket(c *C) {
 	c.Assert(err, IsNil)
 
 	// begin test
-	objectName := objectNamePrefix + randStr(8)
-	fileName := "test-file-" + randStr(8)
-	fileData := randStr(500 * 1024)
-	createFile(fileName, fileData, c)
-	newFile := "test-file-" + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := "test-file-" + RandStr(8)
 	destBucketName := bucketName + "-desc"
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-dest"
 
 	// Create dest bucket
@@ -584,17 +584,17 @@ func (s *OssCopySuite) TestVersioningCopyFileCrossBucket(c *C) {
 	os.Remove(newFile)
 	destBucket.DeleteObject(destObjectName)
 	bucket.DeleteObject(objectName)
-	forceDeleteBucket(client, bucketName, c)
-	forceDeleteBucket(client, destBucketName, c)
+	ForceDeleteBucket(client, bucketName, c)
+	ForceDeleteBucket(client, destBucketName, c)
 }
 
 // TestCopyFileChoiceOptions
 func (s *OssCopySuite) TestCopyFileChoiceOptions(c *C) {
 	destBucketName := bucketName + "-desc"
-	srcObjectName := objectNamePrefix + randStr(8)
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-dest"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	destBucket, err := s.client.Bucket(destBucketName)
 	c.Assert(err, IsNil)

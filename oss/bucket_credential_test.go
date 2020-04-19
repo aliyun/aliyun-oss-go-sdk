@@ -2,25 +2,26 @@
 package oss
 
 import (
-	"os"
-	"strings"
+	"bytes"
 	"io/ioutil"
 	"math/rand"
-	"bytes"
+	"os"
 	"strconv"
+	"strings"
+
 	. "gopkg.in/check.v1"
 )
 
 type OssCredentialBucketSuite struct {
-	client        *Client
-	creClient     *Client
-	bucket        *Bucket
-	creBucket     *Bucket
+	client    *Client
+	creClient *Client
+	bucket    *Bucket
+	creBucket *Bucket
 }
 
 var _ = Suite(&OssCredentialBucketSuite{})
 
-func (cs *OssCredentialBucketSuite)credentialSubUser(c *C) {
+func (cs *OssCredentialBucketSuite) credentialSubUser(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 	err = client.CreateBucket(credentialBucketName)
@@ -35,7 +36,7 @@ func (cs *OssCredentialBucketSuite)credentialSubUser(c *C) {
 					"oss:*"
 				],
 				"Effect":"Allow",
-				"Principal":["`+ credentialUID + `"],
+				"Principal":["` + credentialUID + `"],
 				"Resource":["acs:oss:*:*:` + credentialBucketName + `", "acs:oss:*:*:` + credentialBucketName + `/*"]
 			}
 		]
@@ -51,7 +52,7 @@ func (cs *OssCredentialBucketSuite)credentialSubUser(c *C) {
 
 // SetUpSuite runs once when the suite starts running.
 func (cs *OssCredentialBucketSuite) SetUpSuite(c *C) {
-	if credentialUID == ""{
+	if credentialUID == "" {
 		testLogger.Println("the cerdential UID is NULL, skip the credential test")
 		c.Skip("the credential Uid is null")
 	}
@@ -69,7 +70,7 @@ func (cs *OssCredentialBucketSuite) SetUpSuite(c *C) {
 }
 
 func (cs *OssCredentialBucketSuite) TearDownSuite(c *C) {
-	if credentialUID == ""{
+	if credentialUID == "" {
 		c.Skip("the credential Uid is null")
 	}
 	for _, bucket := range []*Bucket{cs.bucket} {
@@ -100,7 +101,7 @@ func (cs *OssCredentialBucketSuite) TearDownSuite(c *C) {
 				c.Assert(err, IsNil)
 			}
 			marker = Marker(lor.NextMarker)
-			if !lor.IsTruncated{
+			if !lor.IsTruncated {
 				break
 			}
 		}
@@ -114,13 +115,13 @@ func (cs *OssCredentialBucketSuite) TearDownSuite(c *C) {
 func (cs *OssCredentialBucketSuite) TestReqerPaymentNoRequester(c *C) {
 	// Set bucket is requester who send the request
 	reqPayConf := RequestPaymentConfiguration{
-		Payer:string(Requester),
+		Payer: string(Requester),
 	}
 	err := cs.client.SetBucketRequestPayment(credentialBucketName, reqPayConf)
 	c.Assert(err, IsNil)
 
-	key := objectNamePrefix + randStr(8)
-	objectValue := randStr(18)
+	key := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(18)
 
 	// Put object
 	err = cs.creBucket.PutObject(key, strings.NewReader(objectValue))
@@ -147,13 +148,13 @@ func (cs *OssCredentialBucketSuite) TestReqerPaymentNoRequester(c *C) {
 func (cs *OssCredentialBucketSuite) TestReqerPaymentWithRequester(c *C) {
 	// Set bucket is requester who send the request
 	reqPayConf := RequestPaymentConfiguration{
-		Payer:string(Requester),
+		Payer: string(Requester),
 	}
 	err := cs.client.SetBucketRequestPayment(credentialBucketName, reqPayConf)
 	c.Assert(err, IsNil)
 
-	key := objectNamePrefix + randStr(8)
-	objectValue := randStr(18)
+	key := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(18)
 
 	// Put object with a bucketowner
 	err = cs.creBucket.PutObject(key, strings.NewReader(objectValue), RequestPayer(BucketOwner))
@@ -190,13 +191,13 @@ func (cs *OssCredentialBucketSuite) TestReqerPaymentWithRequester(c *C) {
 func (cs *OssCredentialBucketSuite) TestOwnerPaymentNoRequester(c *C) {
 	// Set bucket is requester who send the request
 	reqPayConf := RequestPaymentConfiguration{
-		Payer:string(BucketOwner),
+		Payer: string(BucketOwner),
 	}
 	err := cs.client.SetBucketRequestPayment(credentialBucketName, reqPayConf)
 	c.Assert(err, IsNil)
 
-	key := objectNamePrefix + randStr(8)
-	objectValue := randStr(18)
+	key := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(18)
 
 	// Put object
 	err = cs.creBucket.PutObject(key, strings.NewReader(objectValue))
@@ -224,14 +225,14 @@ func (cs *OssCredentialBucketSuite) TestOwnerPaymentNoRequester(c *C) {
 func (cs *OssCredentialBucketSuite) TestOwnerPaymentWithRequester(c *C) {
 	// Set bucket is BucketOwner payer
 	reqPayConf := RequestPaymentConfiguration{
-		Payer:string(BucketOwner),
+		Payer: string(BucketOwner),
 	}
 
 	err := cs.client.SetBucketRequestPayment(credentialBucketName, reqPayConf)
 	c.Assert(err, IsNil)
 
-	key := objectNamePrefix + randStr(8)
-	objectValue := randStr(18)
+	key := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(18)
 
 	// Put object
 	err = cs.creBucket.PutObject(key, strings.NewReader(objectValue), RequestPayer(BucketOwner))
@@ -261,9 +262,9 @@ func (cs *OssCredentialBucketSuite) TestOwnerPaymentWithRequester(c *C) {
 
 // TestPutObjectFromFile
 func (cs *OssCredentialBucketSuite) TestPutObjectFromFile(c *C) {
-	objectName := objectNamePrefix + randStr(8)
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := randStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Put
 	err := cs.creBucket.PutObjectFromFile(objectName, localFile, RequestPayer(Requester))
@@ -322,8 +323,8 @@ func (cs *OssCredentialBucketSuite) TestPutObjectFromFile(c *C) {
 
 // TestCopyObject
 func (cs *OssCredentialBucketSuite) TestCopyObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
-	objectValue := randStr(18)
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(18)
 
 	err := cs.creBucket.PutObject(objectName, strings.NewReader(objectValue),
 		ACL(ACLPublicRead), Meta("my", "myprop"), RequestPayer(Requester))
@@ -452,8 +453,8 @@ func (cs *OssCredentialBucketSuite) TestCopyObject(c *C) {
 
 // TestCopyObjectToOrFrom
 func (cs *OssCredentialBucketSuite) TestCopyObjectToOrFrom(c *C) {
-	objectName := objectNamePrefix + randStr(8)
-	objectValue := randStr(18)
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(18)
 	sorBucketName := credentialBucketName + "-sor"
 	objectNameDest := objectName + "-Dest"
 
@@ -507,18 +508,18 @@ func (cs *OssCredentialBucketSuite) TestCopyObjectToOrFrom(c *C) {
 
 // TestAppendObject
 func (cs *OssCredentialBucketSuite) TestAppendObject(c *C) {
-	objectName := objectNamePrefix + randStr(8)
-	objectValue1 := randStr(18)
-	objectValue2 := randStr(18)
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue1 := RandStr(18)
+	objectValue2 := RandStr(18)
 	objectValue := objectValue1 + objectValue2
 	var val = []byte(objectValue)
-	var localFile = randStr(8) + ".txt"
+	var localFile = RandStr(8) + ".txt"
 	var nextPos int64
 	var midPos = 1 + rand.Intn(len(val)-1)
 
-	var err = createFileAndWrite(localFile+"1", val[0:midPos])
+	var err = CreateFileAndWrite(localFile+"1", val[0:midPos])
 	c.Assert(err, IsNil)
-	err = createFileAndWrite(localFile+"2", val[midPos:])
+	err = CreateFileAndWrite(localFile+"2", val[midPos:])
 	c.Assert(err, IsNil)
 
 	// String append
