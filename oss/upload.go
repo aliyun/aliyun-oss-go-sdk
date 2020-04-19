@@ -137,13 +137,26 @@ type workerArg struct {
 }
 
 // worker is the worker coroutine function
+type defaultUploadProgressListener struct {
+}
+
+// ProgressChanged no-ops
+func (listener *defaultUploadProgressListener) ProgressChanged(event *ProgressEvent) {
+}
+
 func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadPart, failed chan<- error, die <-chan bool) {
 	for chunk := range jobs {
 		if err := arg.hook(id, chunk); err != nil {
 			failed <- err
 			break
 		}
-		part, err := arg.bucket.UploadPartFromFile(arg.imur, arg.filePath, chunk.Offset, chunk.Size, chunk.Number, arg.options...)
+		p := Progress(&defaultUploadProgressListener{})
+		opts := make([]Option, len(arg.options)+1)
+		opts = append(opts, arg.options...)
+
+		// use defaultUploadProgressListener
+		opts = append(opts, p)
+		part, err := arg.bucket.UploadPartFromFile(arg.imur, arg.filePath, chunk.Offset, chunk.Size, chunk.Number, opts...)
 		if err != nil {
 			failed <- err
 			break
@@ -223,7 +236,7 @@ func (bucket Bucket) uploadFile(objectKey, filePath string, partSize int64, opti
 
 			// why RwBytes in ProgressEvent is 0 ?
 			// because read or write event has been notified in teeReader.Read()
-			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes, 0)
+			event = newProgressEvent(TransferDataEvent, completedBytes, totalBytes, chunks[part.PartNumber-1].Size)
 			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
@@ -511,7 +524,7 @@ func (bucket Bucket) uploadFileWithCp(objectKey, filePath string, partSize int64
 			ucp.updatePart(part)
 			ucp.dump(cpFilePath)
 			completedBytes += ucp.Parts[part.PartNumber-1].Chunk.Size
-			event = newProgressEvent(TransferDataEvent, completedBytes, ucp.FileStat.Size, 0)
+			event = newProgressEvent(TransferDataEvent, completedBytes, ucp.FileStat.Size, ucp.Parts[part.PartNumber-1].Chunk.Size)
 			publishProgress(listener, event)
 		case err := <-failed:
 			close(die)
