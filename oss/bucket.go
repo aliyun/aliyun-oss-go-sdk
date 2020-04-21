@@ -1190,7 +1190,7 @@ func (bucket Bucket) do(method, objectName string, params map[string]interface{}
 
 	// get response header
 	respHeader, _ := FindOption(options, responseHeader, nil)
-	if respHeader != nil {
+	if respHeader != nil && resp != nil {
 		pRespHeader := respHeader.(*http.Header)
 		*pRespHeader = resp.Headers
 	}

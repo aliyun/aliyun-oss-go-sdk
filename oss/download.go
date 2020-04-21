@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 // DownloadFile downloads files with multipart download.
@@ -102,10 +103,12 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 		// Resolve options
 		r := Range(part.Start, part.End)
 		p := Progress(&defaultDownloadProgressListener{})
-		opts := make([]Option, len(arg.options)+2)
+
+		var respHeader http.Header
+		opts := make([]Option, len(arg.options)+3)
 		// Append orderly, can not be reversed!
 		opts = append(opts, arg.options...)
-		opts = append(opts, r, p)
+		opts = append(opts, r, p, GetResponseHeader(&respHeader))
 
 		rd, err := arg.bucket.GetObject(arg.key, opts...)
 		if err != nil {
@@ -141,8 +144,11 @@ func downloadWorker(id int, arg downloadWorkerArg, jobs <-chan downloadPart, res
 			break
 		}
 
+		startT := time.Now().UnixNano() / 1000 / 1000 / 1000
 		_, err = io.Copy(fd, rd)
+		endT := time.Now().UnixNano() / 1000 / 1000 / 1000
 		if err != nil {
+			arg.bucket.Client.Config.WriteLog(Debug, "download part error,cost:%d second,part number:%d,request id:%s,error:%s.\n", endT-startT, part.Index, GetRequestId(respHeader), err.Error())
 			fd.Close()
 			failed <- err
 			break
@@ -458,8 +464,11 @@ func (cp *downloadCheckpoint) prepare(meta http.Header, bucket *Bucket, objectKe
 }
 
 func (cp *downloadCheckpoint) complete(cpFilePath, downFilepath string) error {
-	os.Remove(cpFilePath)
-	return os.Rename(downFilepath, cp.FilePath)
+	err := os.Rename(downFilepath, cp.FilePath)
+	if err != nil {
+		return err
+	}
+	return os.Remove(cpFilePath)
 }
 
 // downloadFileWithCp downloads files with checkpoint.

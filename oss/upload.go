@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -149,14 +150,19 @@ func worker(id int, arg workerArg, jobs <-chan FileChunk, results chan<- UploadP
 			failed <- err
 			break
 		}
+		var respHeader http.Header
 		p := Progress(&defaultUploadProgressListener{})
-		opts := make([]Option, len(arg.options)+1)
+		opts := make([]Option, len(arg.options)+2)
 		opts = append(opts, arg.options...)
 
 		// use defaultUploadProgressListener
-		opts = append(opts, p)
+		opts = append(opts, p, GetResponseHeader(&respHeader))
+
+		startT := time.Now().UnixNano() / 1000 / 1000 / 1000
 		part, err := arg.bucket.UploadPartFromFile(arg.imur, arg.filePath, chunk.Offset, chunk.Size, chunk.Number, opts...)
+		endT := time.Now().UnixNano() / 1000 / 1000 / 1000
 		if err != nil {
+			arg.bucket.Client.Config.WriteLog(Debug, "upload part error,cost:%d second,part number:%d,request id:%s,error:%s\n", endT-startT, chunk.Number, GetRequestId(respHeader), err.Error())
 			failed <- err
 			break
 		}
