@@ -1,4 +1,12 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.0 日期：2020-04-21
+### 变更内容
+- 增加：支持客户端加密、清单、冷归档功能
+- 增加：tcp连接增加keepalive心跳选项
+- 优化: 分块上传事件通知优化
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.0.8 日期：2020-04-09
 ### 变更内容
 - 增加：支持用户传入自定义的header和param参数
