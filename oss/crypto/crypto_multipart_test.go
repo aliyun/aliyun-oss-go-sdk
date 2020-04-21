@@ -477,14 +477,9 @@ func (s *OssCryptoBucketSuite) TestInitiateMultipartUpload(c *C) {
 	c.Assert(err, IsNil)
 
 	var cryptoContext PartCryptoContext
-	cryptoContext.DataSize = -1
-	cryptoContext.PartSize = (dataSize / 16 / 3) * 16
-	imurUpload, err := bucket.InitiateMultipartUpload(objectName, &cryptoContext)
-	c.Assert(err, IsNil)
-
 	cryptoContext.DataSize = dataSize
 	cryptoContext.PartSize = ivSize * 1024
-	imurUpload, err = bucket.InitiateMultipartUpload(objectName, &cryptoContext)
+	imurUpload, err := bucket.InitiateMultipartUpload(objectName, &cryptoContext)
 	c.Assert(err, IsNil)
 
 	err = bucket.AbortMultipartUpload(imurUpload)
@@ -536,16 +531,10 @@ func (s *OssCryptoBucketSuite) TestUploadPartError(c *C) {
 
 	fd, err := os.Open(fileName)
 	c.Assert(err, IsNil)
-
-	partCount := len(chunks)
 	for _, chunk := range chunks {
 		fd.Seek(chunk.Offset, os.SEEK_SET)
 		_, err := bucket.UploadPart(imur, fd, chunk.Size+1, chunk.Number, cryptoContext)
-		if chunk.Number < partCount {
-			c.Assert(err, IsNil)
-		} else {
-			c.Assert(err, NotNil)
-		}
+		c.Assert(err, NotNil)
 	}
 
 	for _, chunk := range chunks {

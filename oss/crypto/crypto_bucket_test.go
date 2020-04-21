@@ -726,11 +726,11 @@ func (s *OssCryptoBucketSuite) TestRangeGetObject(c *C) {
 	c.Assert(err, IsNil)
 
 	// range get
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 20; i++ {
 		math_rand.Seed(time.Now().UnixNano())
 		rangeStart := rand.Intn(contentLen)
 		rangeEnd := rangeStart + rand.Intn(contentLen-rangeStart)
-		if rangeEnd == rangeStart {
+		if rangeEnd == rangeStart || rangeStart >= contentLen-1 {
 			continue
 		}
 
@@ -1185,7 +1185,7 @@ func (s *OssCryptoBucketSuite) TestPutObjectEncryptionUserAgent(c *C) {
 	httpContent := string(contents)
 	c.Assert(strings.Contains(httpContent, EncryptionUaSuffix), Equals, true)
 
-    f.Close()
+	f.Close()
 	os.Remove(logName)
 	ForceDeleteBucket(client, bucketName, c)
 }
@@ -1220,7 +1220,7 @@ func (s *OssCryptoBucketSuite) TestPutObjectNormalUserAgent(c *C) {
 	httpContent := string(contents)
 	c.Assert(strings.Contains(httpContent, EncryptionUaSuffix), Equals, false)
 
-    f.Close()
+	f.Close()
 	os.Remove(logName)
 	ForceDeleteBucket(client, bucketName, c)
 }
