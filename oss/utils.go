@@ -16,6 +16,26 @@ import (
 	"time"
 )
 
+var sys_name string
+var sys_release string
+var sys_machine string
+
+func init() {
+	sys_name = runtime.GOOS
+	sys_release = "-"
+	sys_machine = runtime.GOARCH
+
+	if out, err := exec.Command("uname", "-s").CombinedOutput(); err == nil {
+		sys_name = string(bytes.TrimSpace(out))
+	}
+	if out, err := exec.Command("uname", "-r").CombinedOutput(); err == nil {
+		sys_release = string(bytes.TrimSpace(out))
+	}
+	if out, err := exec.Command("uname", "-m").CombinedOutput(); err == nil {
+		sys_machine = string(bytes.TrimSpace(out))
+	}
+}
+
 // userAgent gets user agent
 // It has the SDK version information, OS information and GO version
 func userAgent() string {
@@ -33,19 +53,7 @@ type sysInfo struct {
 // getSysInfo gets system info
 // gets the OS information and CPU type
 func getSysInfo() sysInfo {
-	name := runtime.GOOS
-	release := "-"
-	machine := runtime.GOARCH
-	if out, err := exec.Command("uname", "-s").CombinedOutput(); err == nil {
-		name = string(bytes.TrimSpace(out))
-	}
-	if out, err := exec.Command("uname", "-r").CombinedOutput(); err == nil {
-		release = string(bytes.TrimSpace(out))
-	}
-	if out, err := exec.Command("uname", "-m").CombinedOutput(); err == nil {
-		machine = string(bytes.TrimSpace(out))
-	}
-	return sysInfo{name: name, release: release, machine: machine}
+	return sysInfo{name: sys_name, release: sys_release, machine: sys_machine}
 }
 
 // GetRangeConfig gets the download range from the options.
