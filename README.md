@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/aliyun/aliyun-oss-go-sdk.svg?branch=master)](https://travis-ci.org/aliyun/aliyun-oss-go-sdk)
 [![Coverage Status](https://coveralls.io/repos/github/aliyun/aliyun-oss-go-sdk/badge.svg?branch=master)](https://coveralls.io/github/aliyun/aliyun-oss-go-sdk?branch=master)
 
-## [README of Chinese](https://github.com/aliyun/aliyun-oss-go-sdk/blob/master/README-CN.md)
+## [README in Chinese](https://github.com/aliyun/aliyun-oss-go-sdk/blob/master/README-CN.md)
 
 ## About
 > - This Go SDK is based on the official APIs of [Alibaba Cloud OSS](http://www.aliyun.com/product/oss/).
@@ -164,4 +164,5 @@ and copy the sample directory and sample.go to the src directory of your test pr
 > - [Guozhong Han](https://github.com/hangzws)
 
 ## License
-> - Apache License 2.0.
+> - MIT License, see [license file](LICENSE)
+
