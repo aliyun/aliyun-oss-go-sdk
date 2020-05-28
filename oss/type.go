@@ -1134,3 +1134,42 @@ type RestoreConfiguration struct {
 	Days    int32    `xml:"Days,omitempty"`
 	Tier    string   `xml:"JobParameters>Tier,omitempty"`
 }
+
+// AsyncFetchTaskConfiguration for SetBucketAsyncFetchTask
+type AsyncFetchTaskConfiguration struct {
+	XMLName       xml.Name `xml:"AsyncFetchTaskConfiguration"`
+	Url           string   `xml:"Url,omitempty"`
+	Object        string   `xml:"Object,omitempty"`
+	Host          string   `xml:"Host,omitempty"`
+	ContentMD5    string   `xml:"ContentMD5,omitempty"`
+	Callback      string   `xml:"Callback,omitempty"`
+	StorageClass  string   `xml:"StorageClass,omitempty"`
+	IgnoreSameKey bool     `xml:"IgnoreSameKey,omitempty"`
+}
+
+// AsyncFetchTaskResult for SetBucketAsyncFetchTask result
+type AsyncFetchTaskResult struct {
+	XMLName xml.Name `xml:"AsyncFetchTaskResult"`
+	TaskId  string   `xml:"TaskId,omitempty"`
+}
+
+// AsynFetchTaskInfo for GetBucketAsyncFetchTask result
+type AsynFetchTaskInfo struct {
+	XMLName  xml.Name      `xml:"AsyncFetchTaskInfo"`
+	TaskId   string        `xml:"TaskId,omitempty"`
+	State    string        `xml:"State,omitempty"`
+	ErrorMsg string        `xml:"ErrorMsg,omitempty"`
+	TaskInfo AsyncTaskInfo `xml:"TaskInfo,omitempty"`
+}
+
+// AsyncTaskInfo for async task information
+type AsyncTaskInfo struct {
+	XMLName       xml.Name `xml:"TaskInfo"`
+	Url           string   `xml:"Url,omitempty"`
+	Object        string   `xml:"Object,omitempty"`
+	Host          string   `xml:"Host,omitempty"`
+	ContentMD5    string   `xml:"ContentMD5,omitempty"`
+	Callback      string   `xml:"Callback,omitempty"`
+	StorageClass  string   `xml:"StorageClass,omitempty"`
+	IgnoreSameKey bool     `xml:"IgnoreSameKey,omitempty"`
+}
