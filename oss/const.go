@@ -58,6 +58,7 @@ type AlgorithmType string
 const (
 	KMSAlgorithm AlgorithmType = "KMS"
 	AESAlgorithm AlgorithmType = "AES256"
+	SM4Algorithm AlgorithmType = "SM4"
 )
 
 // StorageClassType bucket storage type
@@ -168,6 +169,9 @@ const (
 	HTTPHeaderOssServerSideEncryption        = "X-Oss-Server-Side-Encryption"
 	HTTPHeaderOssServerSideEncryptionKeyID   = "X-Oss-Server-Side-Encryption-Key-Id"
 	HTTPHeaderOssServerSideDataEncryption    = "X-Oss-Server-Side-Data-Encryption"
+	HTTPHeaderSSECAlgorithm                  = "X-Oss-Server-Side-Encryption-Customer-Algorithm"
+	HTTPHeaderSSECKey                        = "X-Oss-Server-Side-Encryption-Customer-Key"
+	HTTPHeaderSSECKeyMd5                     = "X-Oss-Server-Side-Encryption-Customer-Key-MD5"
 	HTTPHeaderOssCopySource                  = "X-Oss-Copy-Source"
 	HTTPHeaderOssCopySourceRange             = "X-Oss-Copy-Source-Range"
 	HTTPHeaderOssCopySourceIfMatch           = "X-Oss-Copy-Source-If-Match"

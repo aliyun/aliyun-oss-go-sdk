@@ -2422,7 +2422,7 @@ func (s *OssClientSuite) TestBucketEncyptionError(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
+func (s *OssClientSuite) TestBucketEncryptionPutAndGetAndDelete(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
@@ -2469,6 +2469,89 @@ func (s *OssClientSuite) TestBucketEncyptionPutAndGetAndDelete(c *C) {
 	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, "")
 	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
 	c.Assert(bucketResult.BucketInfo.Versioning, Equals, "")
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketEncryptionWithSm4(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// SetBucketEncryption:SM4 ,""
+	encryptionRule := ServerEncryptionRule{}
+	encryptionRule.SSEDefault.SSEAlgorithm = string(SM4Algorithm)
+
+	var responseHeader http.Header
+	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	// GetBucketEncryption
+	getResult, err := client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	// check encryption value
+	c.Assert(getResult.SSEDefault.SSEAlgorithm, Equals, string(SM4Algorithm))
+	c.Assert(getResult.SSEDefault.KMSMasterKeyID, Equals, "")
+	c.Assert(getResult.SSEDefault.KMSDataEncryption, Equals, "")
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, string(SM4Algorithm))
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSDataEncryption, Equals, "")
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketEncryptionWithKmsSm4(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// SetBucketEncryption:SM4 ,""
+	encryptionRule := ServerEncryptionRule{}
+	encryptionRule.SSEDefault.SSEAlgorithm = string(KMSAlgorithm)
+	encryptionRule.SSEDefault.KMSDataEncryption = string(SM4Algorithm)
+
+	var responseHeader http.Header
+	err = client.SetBucketEncryption(bucketName, encryptionRule, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId := GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	// GetBucketEncryption
+	getResult, err := client.GetBucketEncryption(bucketName, GetResponseHeader(&responseHeader))
+	c.Assert(err, IsNil)
+	requestId = GetRequestId(responseHeader)
+	c.Assert(len(requestId) > 0, Equals, true)
+
+	// check encryption value
+	c.Assert(getResult.SSEDefault.SSEAlgorithm, Equals, string(KMSAlgorithm))
+	c.Assert(getResult.SSEDefault.KMSMasterKeyID, Equals, "")
+	c.Assert(getResult.SSEDefault.KMSDataEncryption, Equals, string(SM4Algorithm))
+
+	// Get default bucket info
+	bucketResult, err := client.GetBucketInfo(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucketResult.BucketInfo.SseRule.SSEAlgorithm, Equals, string(KMSAlgorithm))
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSMasterKeyID, Equals, "")
+	c.Assert(bucketResult.BucketInfo.SseRule.KMSDataEncryption, Equals, string(SM4Algorithm))
 
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)

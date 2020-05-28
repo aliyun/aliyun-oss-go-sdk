@@ -745,7 +745,11 @@ func (client Client) GetBucketInfo(bucketName string, options ...Option) (GetBuc
 
 		if out.BucketInfo.SseRule.SSEAlgorithm == "None" {
 			out.BucketInfo.SseRule.SSEAlgorithm = ""
-		}
+        }
+        
+        if out.BucketInfo.SseRule.KMSDataEncryption == "None" {
+			out.BucketInfo.SseRule.KMSDataEncryption = ""
+        } 
 	}
 	return out, err
 }

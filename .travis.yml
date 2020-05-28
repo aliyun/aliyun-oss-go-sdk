@@ -16,9 +16,9 @@ script:
 - if [[ ! -n "$OSS_TEST_ACCESS_KEY_ID" ]]; then exit 0
   ; fi
   
-- cd oss
-- travis_wait 50 go test -v -covermode=count -coverprofile=coverage.out -timeout=50m
-- "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
+#- cd oss
+#- travis_wait 50 go test -v -covermode=count -coverprofile=coverage.out -timeout=50m
+#- "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
 
 env:
   global:

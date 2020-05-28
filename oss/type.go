@@ -310,9 +310,10 @@ type BucketInfo struct {
 }
 
 type SSERule struct {
-	XMLName        xml.Name `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
-	KMSMasterKeyID string   `xml:"KMSMasterKeyID"`           // Bucket KMSMasterKeyID
-	SSEAlgorithm   string   `xml:"SSEAlgorithm"`             // Bucket SSEAlgorithm
+	XMLName           xml.Name `xml:"ServerSideEncryptionRule"`    // Bucket ServerSideEncryptionRule
+	KMSMasterKeyID    string   `xml:"KMSMasterKeyID,omitempty"`    // Bucket KMSMasterKeyID
+	SSEAlgorithm      string   `xml:"SSEAlgorithm,omitempty"`      // Bucket SSEAlgorithm
+	KMSDataEncryption string   `xml:"KMSDataEncryption,omitempty"` //Bucket KMSDataEncryption
 }
 
 // ListObjectsResult defines the result from ListObjects request
@@ -828,9 +829,10 @@ type ServerEncryptionRule struct {
 
 // Server Encryption deafult rule for the bucket
 type SSEDefaultRule struct {
-	XMLName        xml.Name `xml:"ApplyServerSideEncryptionByDefault"`
-	SSEAlgorithm   string   `xml:"SSEAlgorithm"`
-	KMSMasterKeyID string   `xml:"KMSMasterKeyID"`
+	XMLName           xml.Name `xml:"ApplyServerSideEncryptionByDefault"`
+	SSEAlgorithm      string   `xml:"SSEAlgorithm,omitempty"`
+	KMSMasterKeyID    string   `xml:"KMSMasterKeyID,omitempty"`
+	KMSDataEncryption string   `xml:"KMSDataEncryption,,omitempty"`
 }
 
 type GetBucketEncryptionResult ServerEncryptionRule
