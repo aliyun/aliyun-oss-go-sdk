@@ -1,5 +1,3 @@
-// Bucket test
-
 package oss
 
 import (
@@ -5161,5 +5159,26 @@ func (s *OssBucketSuite) TestSupportUserSetParam(c *C) {
 	c.Assert(err, IsNil)
 	body.Close()
 	c.Assert(str, Equals, contextV2)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestPutObjectWithKmsSm4(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(1024)
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue), ServerSideEncryption("KMS"), ServerSideDataEncryption("SM4"))
+	headers, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(headers.Get(HTTPHeaderOssServerSideEncryption), Equals, "KMS")
+	c.Assert(headers.Get(HTTPHeaderOssServerSideDataEncryption), Equals, "SM4")
+	c.Assert(err, IsNil)
 	ForceDeleteBucket(client, bucketName, c)
 }

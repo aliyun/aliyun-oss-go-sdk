@@ -175,6 +175,26 @@ func ServerSideEncryptionKeyID(value string) Option {
 	return setHeader(HTTPHeaderOssServerSideEncryptionKeyID, value)
 }
 
+// ServerSideDataEncryption is an option to set X-Oss-Server-Side-Data-Encryption header
+func ServerSideDataEncryption(value string) Option {
+	return setHeader(HTTPHeaderOssServerSideDataEncryption, value)
+}
+
+// SSECAlgorithm is an option to set X-Oss-Server-Side-Encryption-Customer-Algorithm header
+func SSECAlgorithm(value string) Option {
+	return setHeader(HTTPHeaderSSECAlgorithm, value)
+}
+
+// SSECKey is an option to set X-Oss-Server-Side-Encryption-Customer-Key header
+func SSECKey(value string) Option {
+	return setHeader(HTTPHeaderSSECKey, value)
+}
+
+// SSECKeyMd5 is an option to set X-Oss-Server-Side-Encryption-Customer-Key-Md5 header
+func SSECKeyMd5(value string) Option {
+	return setHeader(HTTPHeaderSSECKeyMd5, value)
+}
+
 // ObjectACL is an option to set X-Oss-Object-Acl header
 func ObjectACL(acl ACLType) Option {
 	return setHeader(HTTPHeaderOssObjectACL, string(acl))
