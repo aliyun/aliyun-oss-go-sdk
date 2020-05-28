@@ -3307,3 +3307,42 @@ func (s *OssClientSuite) TestBucketInventoryNegative(c *C) {
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 }
+
+func (s *OssClientSuite) TestBucketAsyncTask(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandLowStr(6)
+
+	// set asyn task
+	asynConf := AsyncFetchTaskConfiguration{
+		Url:           "http://www.baidu.com",
+		Object:        objectName,
+		Host:          "",
+		ContentMD5:    "",
+		Callback:      "",
+		StorageClass:  "",
+		IgnoreSameKey: true,
+	}
+
+	asynResult, err := client.SetBucketAsyncTask(bucketName, asynConf)
+	c.Assert(err, IsNil)
+	c.Assert(len(asynResult.TaskId) > 0, Equals, true)
+
+	// get asyn task
+	asynTask, err := client.GetBucketAsyncTask(bucketName, asynResult.TaskId)
+	c.Assert(err, IsNil)
+	c.Assert(asynResult.TaskId, Equals, asynTask.TaskId)
+	c.Assert(len(asynTask.State) > 0, Equals, true)
+	c.Assert(asynConf.Url, Equals, asynTask.TaskInfo.Url)
+	c.Assert(asynConf.Object, Equals, asynTask.TaskInfo.Object)
+	c.Assert(asynConf.Callback, Equals, asynTask.TaskInfo.Callback)
+	c.Assert(asynConf.IgnoreSameKey, Equals, asynTask.TaskInfo.IgnoreSameKey)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
