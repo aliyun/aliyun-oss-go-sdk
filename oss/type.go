@@ -1146,7 +1146,7 @@ type AsyncFetchTaskConfiguration struct {
 	ContentMD5    string   `xml:"ContentMD5,omitempty"`
 	Callback      string   `xml:"Callback,omitempty"`
 	StorageClass  string   `xml:"StorageClass,omitempty"`
-	IgnoreSameKey bool     `xml:"IgnoreSameKey,omitempty"`
+	IgnoreSameKey bool     `xml:"IgnoreSameKey"`
 }
 
 // AsyncFetchTaskResult for SetBucketAsyncFetchTask result
@@ -1173,5 +1173,5 @@ type AsyncTaskInfo struct {
 	ContentMD5    string   `xml:"ContentMD5,omitempty"`
 	Callback      string   `xml:"Callback,omitempty"`
 	StorageClass  string   `xml:"StorageClass,omitempty"`
-	IgnoreSameKey bool     `xml:"IgnoreSameKey,omitempty"`
+	IgnoreSameKey bool     `xml:"IgnoreSameKey"`
 }

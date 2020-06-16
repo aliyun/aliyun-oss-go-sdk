@@ -3409,7 +3409,7 @@ func (s *OssClientSuite) TestBucketAsyncTask(c *C) {
 		ContentMD5:    "",
 		Callback:      "",
 		StorageClass:  "",
-		IgnoreSameKey: true,
+		IgnoreSameKey: false,
 	}
 
 	asynResult, err := client.SetBucketAsyncTask(bucketName, asynConf)
