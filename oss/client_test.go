@@ -3401,7 +3401,7 @@ func (s *OssClientSuite) TestBucketAsyncTask(c *C) {
 
 	objectName := objectNamePrefix + RandLowStr(6)
 
-	// set asyn task
+	// set asyn task,IgnoreSameKey is false
 	asynConf := AsyncFetchTaskConfiguration{
 		Url:           "http://www.baidu.com",
 		Object:        objectName,
@@ -3426,6 +3426,46 @@ func (s *OssClientSuite) TestBucketAsyncTask(c *C) {
 	c.Assert(asynConf.Callback, Equals, asynTask.TaskInfo.Callback)
 	c.Assert(asynConf.IgnoreSameKey, Equals, asynTask.TaskInfo.IgnoreSameKey)
 
+	// test again,IgnoreSameKey is true
+	asynConf.IgnoreSameKey = true
+	asynResult, err = client.SetBucketAsyncTask(bucketName, asynConf)
+	c.Assert(err, IsNil)
+	c.Assert(len(asynResult.TaskId) > 0, Equals, true)
+
+	asynTask, err = client.GetBucketAsyncTask(bucketName, asynResult.TaskId)
+	c.Assert(asynConf.IgnoreSameKey, Equals, asynTask.TaskInfo.IgnoreSameKey)
+
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestClientOptionHeader(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+
+	var respHeader http.Header
+	err = client.CreateBucket(bucketName, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// get bucket version success,use payer
+	options := []Option{RequestPayer(BucketOwner), GetResponseHeader(&respHeader)}
+	versioningResult, err := client.GetBucketVersioning(bucketName, options...)
+	c.Assert(versioningResult.Status, Equals, "Enabled")
+	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+
+	//list buckets,use payer
+	_, err = client.ListBuckets(options...)
+	c.Assert(err, IsNil)
+
+	ForceDeleteBucket(client, bucketName, c)
 }
