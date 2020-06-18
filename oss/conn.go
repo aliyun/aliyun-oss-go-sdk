@@ -68,6 +68,9 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) 
 			transport.Proxy = http.ProxyURL(proxyURL)
 		}
 		client = &http.Client{Transport: transport}
+		if !config.RedirectEnabled {
+			disableHTTPRedirect(client)
+		}
 	}
 
 	conn.config = config

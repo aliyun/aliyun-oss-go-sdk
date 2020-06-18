@@ -7,6 +7,7 @@ package oss
 import (
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -3468,4 +3469,76 @@ func (s *OssClientSuite) TestClientOptionHeader(c *C) {
 	c.Assert(err, IsNil)
 
 	ForceDeleteBucket(client, bucketName, c)
+}
+
+// compare with go1.7
+func compareVersion(goVersion string) bool {
+	nowVersion := runtime.Version()
+	nowVersion = strings.Replace(nowVersion, "go", "", -1)
+	pSlice1 := strings.Split(goVersion, ".")
+	pSlice2 := strings.Split(nowVersion, ".")
+	for k, v := range pSlice2 {
+		n2, _ := strconv.Atoi(string(v))
+		n1, _ := strconv.Atoi(string(pSlice1[k]))
+		if n2 > n1 {
+			return true
+		}
+		if n2 < n1 {
+			return false
+		}
+	}
+	return true
+}
+
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/redirectTo", http.StatusFound)
+}
+func targetHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "You have been redirected here!")
+}
+
+func (s *OssClientSuite) TestClientRedirect(c *C) {
+	// must go1.7.0 onward
+	if !compareVersion("1.7.0") {
+		return
+	}
+
+	// get port
+	rand.Seed(time.Now().Unix())
+	port := 10000 + rand.Intn(10000)
+
+	// start http server
+	httpAddr := fmt.Sprintf("127.0.0.1:%d", port)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/redirectTo", targetHandler)
+	mux.HandleFunc("/", homeHandler)
+	svr := &http.Server{
+		Addr:           httpAddr,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		Handler:        mux,
+	}
+
+	go func() {
+		svr.ListenAndServe()
+	}()
+
+	url := "http://" + httpAddr
+
+	// create client 1,redirect disable
+	client1, err := New(endpoint, accessID, accessKey, RedirectEnabled(false))
+	resp, err := client1.Conn.client.Get(url)
+	c.Assert(err, IsNil)
+	c.Assert(resp.StatusCode, Equals, http.StatusFound)
+	resp.Body.Close()
+
+	// create client2, redirect enabled
+	client2, err := New(endpoint, accessID, accessKey, RedirectEnabled(true))
+	resp, err = client2.Conn.client.Get(url)
+	c.Assert(err, IsNil)
+	c.Assert(resp.StatusCode, Equals, 200)
+	data, err := ioutil.ReadAll(resp.Body)
+	c.Assert(string(data), Equals, "You have been redirected here!")
+	resp.Body.Close()
 }

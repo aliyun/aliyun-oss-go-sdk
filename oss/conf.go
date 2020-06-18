@@ -102,7 +102,7 @@ type Config struct {
 	UserSetUa           bool                // UserAgent is set by user or not
 	AuthVersion         AuthVersionType     //  v1 or v2 signature,default is v1
 	AdditionalHeaders   []string            //  special http headers needed to be sign
-	
+	RedirectEnabled     bool                //  only effective from go1.7 onward, enable http redirect or not
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0
@@ -179,6 +179,7 @@ func getDefaultOssConfig() *Config {
 	config.CredentialsProvider = provider
 
 	config.AuthVersion = AuthV1
+	config.RedirectEnabled = true
 
 	return &config
 }
