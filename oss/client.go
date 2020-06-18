@@ -1542,6 +1542,13 @@ func AdditionalHeaders(headers []string) ClientOption {
 	}
 }
 
+// RedirectEnabled set http redirect enabled or not
+func RedirectEnabled(enabled bool) ClientOption {
+	return func(client *Client) {
+		client.Config.RedirectEnabled = enabled
+	}
+}
+
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
 	headers map[string]string, data io.Reader, options ...Option) (*Response, error) {
