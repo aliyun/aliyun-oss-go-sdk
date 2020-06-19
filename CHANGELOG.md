@@ -1,4 +1,9 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.2 日期：2020-06-19
+### 变更内容
+- 增加：支持禁止http跳转功能(go1.7.0版本及以上)
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.1 日期：2020-06-04
 ### 变更内容
 - 增加：支持国密byok
