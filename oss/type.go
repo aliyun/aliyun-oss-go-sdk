@@ -143,9 +143,6 @@ func verifyLifecycleRules(rules []LifecycleRule) error {
 				if (transition.Days != 0 && transition.CreatedBeforeDate != "") || (transition.Days == 0 && transition.CreatedBeforeDate == "") {
 					return fmt.Errorf("invalid transition lifecycle, must be set one of CreatedBeforeDate and Days")
 				}
-				if transition.StorageClass != StorageIA && transition.StorageClass != StorageArchive {
-					return fmt.Errorf("invalid transition lifecylce, the value of storage class must be IA or Archive")
-				}
 			}
 		} else if rule.Expiration == nil && abortMPU == nil && rule.NonVersionExpiration == nil && rule.NonVersionTransition == nil {
 			return fmt.Errorf("invalid rule, must set one of Expiration, AbortMultipartUplaod, NonVersionExpiration, NonVersionTransition and Transitions")
