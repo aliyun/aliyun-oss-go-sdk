@@ -9,13 +9,13 @@ install:
 - go get github.com/mattn/goveralls
 - go get gopkg.in/check.v1
 - go get github.com/satori/go.uuid
-- go get github.com/baiyubin/aliyun-sts-go-sdk/sts
+- go get github.com/zzjin/aliyun-sts-go-sdk/sts
 - if [[ $TRAVIS_GO_VERSION = '1.7' || $TRAVIS_GO_VERSION > '1.7' ]]; then go get golang.org/x/time/rate
   ; fi
 script:
 - if [[ ! -n "$OSS_TEST_ACCESS_KEY_ID" ]]; then exit 0
   ; fi
-  
+
 #- cd oss
 #- travis_wait 50 go test -v -covermode=count -coverprofile=coverage.out -timeout=50m
 #- "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"

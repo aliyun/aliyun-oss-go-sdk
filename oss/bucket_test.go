@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baiyubin/aliyun-sts-go-sdk/sts"
+	"github.com/zzjin/aliyun-sts-go-sdk/sts"
 
 	. "gopkg.in/check.v1"
 )
