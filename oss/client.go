@@ -345,6 +345,14 @@ func (client Client) GetBucketLifecycle(bucketName string) (GetBucketLifecycleRe
 	defer resp.Body.Close()
 
 	err = xmlUnmarshal(resp.Body, &out)
+
+	// NonVersionTransition is not suggested to use
+	// to keep compatible
+	for k, rule := range out.Rules {
+		if len(rule.NonVersionTransitions) > 0 {
+			out.Rules[k].NonVersionTransition = &(out.Rules[k].NonVersionTransitions[0])
+		}
+	}
 	return out, err
 }
 

@@ -44,16 +44,17 @@ type LifecycleConfiguration struct {
 
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
-	XMLName              xml.Name                       `xml:"Rule"`
-	ID                   string                         `xml:"ID,omitempty"`                   // The rule ID
-	Prefix               string                         `xml:"Prefix"`                         // The object key prefix
-	Status               string                         `xml:"Status"`                         // The rule status (enabled or not)
-	Tags                 []Tag                          `xml:"Tag,omitempty"`                  // the tags property
-	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
-	Transitions          []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
-	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
-	NonVersionExpiration *LifecycleVersionExpiration    `xml:"NoncurrentVersionExpiration,omitempty"`
-	NonVersionTransition *LifecycleVersionTransition    `xml:"NoncurrentVersionTransition,omitempty"`
+	XMLName               xml.Name                       `xml:"Rule"`
+	ID                    string                         `xml:"ID,omitempty"`                   // The rule ID
+	Prefix                string                         `xml:"Prefix"`                         // The object key prefix
+	Status                string                         `xml:"Status"`                         // The rule status (enabled or not)
+	Tags                  []Tag                          `xml:"Tag,omitempty"`                  // the tags property
+	Expiration            *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
+	Transitions           []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
+	AbortMultipartUpload  *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
+	NonVersionExpiration  *LifecycleVersionExpiration    `xml:"NoncurrentVersionExpiration,omitempty"`
+	NonVersionTransition  *LifecycleVersionTransition    `xml:"-"` // NonVersionTransition is not suggested to use
+	NonVersionTransitions []LifecycleVersionTransition   `xml:"NoncurrentVersionTransition,omitempty"`
 }
 
 // LifecycleExpiration defines the rule's expiration property
@@ -121,7 +122,7 @@ func verifyLifecycleRules(rules []LifecycleRule) error {
 	if len(rules) == 0 {
 		return fmt.Errorf("invalid rules, the length of rules is zero")
 	}
-	for _, rule := range rules {
+	for k, rule := range rules {
 		if rule.Status != "Enabled" && rule.Status != "Disabled" {
 			return fmt.Errorf("invalid rule, the value of status must be Enabled or Disabled")
 		}
@@ -135,17 +136,19 @@ func verifyLifecycleRules(rules []LifecycleRule) error {
 
 		transitions := rule.Transitions
 		if len(transitions) > 0 {
-			if len(transitions) > 2 {
-				return fmt.Errorf("invalid count of transition lifecycles, the count must than less than 3")
-			}
-
 			for _, transition := range transitions {
 				if (transition.Days != 0 && transition.CreatedBeforeDate != "") || (transition.Days == 0 && transition.CreatedBeforeDate == "") {
 					return fmt.Errorf("invalid transition lifecycle, must be set one of CreatedBeforeDate and Days")
 				}
 			}
-		} else if rule.Expiration == nil && abortMPU == nil && rule.NonVersionExpiration == nil && rule.NonVersionTransition == nil {
-			return fmt.Errorf("invalid rule, must set one of Expiration, AbortMultipartUplaod, NonVersionExpiration, NonVersionTransition and Transitions")
+		}
+
+		// NonVersionTransition is not suggested to use
+		// to keep compatible
+		if rule.NonVersionTransition != nil && len(rule.NonVersionTransitions) > 0 {
+			return fmt.Errorf("NonVersionTransition and NonVersionTransitions cannot both have values")
+		} else if rule.NonVersionTransition != nil {
+			rules[k].NonVersionTransitions = append(rules[k].NonVersionTransitions, *rule.NonVersionTransition)
 		}
 	}
 

@@ -235,7 +235,7 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	}
 	rules = []LifecycleRule{rule}
 	err = verifyLifecycleRules(rules)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	transition1 := LifecycleTransition{
 		Days:         30,
@@ -257,7 +257,7 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	}
 	rules = []LifecycleRule{rule}
 	err = verifyLifecycleRules(rules)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	rule = LifecycleRule{
 		ID:     "ruleID",
@@ -266,7 +266,7 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	}
 	rules = []LifecycleRule{rule}
 	err = verifyLifecycleRules(rules)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	rules = []LifecycleRule{}
 	err1 := verifyLifecycleRules(rules)
