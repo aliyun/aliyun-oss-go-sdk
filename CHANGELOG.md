@@ -1,4 +1,9 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.4 日期：2020-07-24
+### 变更内容
+- 修复：lifecycle配置支持输入LifecycleVersionTransition数组
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.3 日期：2020-07-10
 ### 变更内容
 - 修复：lifecycle支持冷归档(ColdArchive)

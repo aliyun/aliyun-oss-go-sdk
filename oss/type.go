@@ -44,17 +44,18 @@ type LifecycleConfiguration struct {
 
 // LifecycleRule defines Lifecycle rules
 type LifecycleRule struct {
-	XMLName               xml.Name                       `xml:"Rule"`
-	ID                    string                         `xml:"ID,omitempty"`                   // The rule ID
-	Prefix                string                         `xml:"Prefix"`                         // The object key prefix
-	Status                string                         `xml:"Status"`                         // The rule status (enabled or not)
-	Tags                  []Tag                          `xml:"Tag,omitempty"`                  // the tags property
-	Expiration            *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
-	Transitions           []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
-	AbortMultipartUpload  *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
-	NonVersionExpiration  *LifecycleVersionExpiration    `xml:"NoncurrentVersionExpiration,omitempty"`
-	NonVersionTransition  *LifecycleVersionTransition    `xml:"-"` // NonVersionTransition is not suggested to use
-	NonVersionTransitions []LifecycleVersionTransition   `xml:"NoncurrentVersionTransition,omitempty"`
+	XMLName              xml.Name                       `xml:"Rule"`
+	ID                   string                         `xml:"ID,omitempty"`                   // The rule ID
+	Prefix               string                         `xml:"Prefix"`                         // The object key prefix
+	Status               string                         `xml:"Status"`                         // The rule status (enabled or not)
+	Tags                 []Tag                          `xml:"Tag,omitempty"`                  // the tags property
+	Expiration           *LifecycleExpiration           `xml:"Expiration,omitempty"`           // The expiration property
+	Transitions          []LifecycleTransition          `xml:"Transition,omitempty"`           // The transition property
+	AbortMultipartUpload *LifecycleAbortMultipartUpload `xml:"AbortMultipartUpload,omitempty"` // The AbortMultipartUpload property
+	NonVersionExpiration *LifecycleVersionExpiration    `xml:"NoncurrentVersionExpiration,omitempty"`
+	// Deprecated: Use NonVersionTransitions instead.
+	NonVersionTransition  *LifecycleVersionTransition  `xml:"-"` // NonVersionTransition is not suggested to use
+	NonVersionTransitions []LifecycleVersionTransition `xml:"NoncurrentVersionTransition,omitempty"`
 }
 
 // LifecycleExpiration defines the rule's expiration property
