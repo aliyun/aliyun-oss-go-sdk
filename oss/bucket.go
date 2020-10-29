@@ -576,7 +576,7 @@ func (bucket Bucket) IsObjectExist(objectKey string, options ...Option) (bool, e
 //
 //            For common usage scenario, check out sample/list_object.go.
 //
-// ListObjectsResponse    the return value after operation succeeds (only valid when error is nil).
+// ListObjectsResult    the return value after operation succeeds (only valid when error is nil).
 //
 func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 	var out ListObjectsResult
@@ -599,6 +599,34 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 	}
 
 	err = decodeListObjectsResult(&out)
+	return out, err
+}
+
+// Recommend to use ListObjectsV2 to replace ListObjects
+// ListOListObjectsV2bjects lists the objects under the current bucket.
+// ListObjectsResultV2    the return value after operation succeeds (only valid when error is nil).
+func (bucket Bucket) ListObjectsV2(options ...Option) (ListObjectsResultV2, error) {
+	var out ListObjectsResultV2
+
+	options = append(options, EncodingType("url"))
+	options = append(options, ListType(2))
+	params, err := GetRawParams(options)
+	if err != nil {
+		return out, err
+	}
+
+	resp, err := bucket.do("GET", "", params, options, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	if err != nil {
+		return out, err
+	}
+
+	err = decodeListObjectsResultV2(&out)
 	return out, err
 }
 

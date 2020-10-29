@@ -1207,6 +1207,111 @@ func (s *OssBucketSuite) TestListObjects(c *C) {
 }
 
 // TestListObjects
+func (s *OssBucketSuite) TestListObjectsV2NotBatch(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// List empty bucket
+	lor, err := bucket.ListObjectsV2(StartAfter(""))
+	c.Assert(err, IsNil)
+	left := len(lor.Objects)
+
+	// Put three objects
+	err = bucket.PutObject(objectName+"1", strings.NewReader(""))
+	c.Assert(err, IsNil)
+	err = bucket.PutObject(objectName+"2", strings.NewReader(""))
+	c.Assert(err, IsNil)
+	err = bucket.PutObject(objectName+"3", strings.NewReader(""))
+	c.Assert(err, IsNil)
+
+	// List
+	lor, err = bucket.ListObjectsV2(FetchOwner(true))
+	c.Assert(err, IsNil)
+	c.Assert(len(lor.Objects), Equals, left+3)
+	c.Assert(len(lor.Objects[0].Owner.ID) > 0, Equals, true)
+	c.Assert(len(lor.Objects[0].Owner.DisplayName) > 0, Equals, true)
+
+	// List with prefix
+	lor, err = bucket.ListObjectsV2(Prefix(objectName + "2"))
+	c.Assert(err, IsNil)
+	c.Assert(len(lor.Objects), Equals, 1)
+	c.Assert(lor.Objects[0].Key, Equals, objectName+"2")
+
+	lor, err = bucket.ListObjectsV2(Prefix(objectName + "22"))
+	c.Assert(err, IsNil)
+	c.Assert(len(lor.Objects), Equals, 0)
+
+	// List with max keys
+	lor, err = bucket.ListObjectsV2(Prefix(objectName), MaxKeys(2))
+	c.Assert(err, IsNil)
+	c.Assert(len(lor.Objects), Equals, 2)
+
+	// List with marker
+	lor, err = bucket.ListObjectsV2(StartAfter(objectName+"1"), MaxKeys(1))
+	c.Assert(err, IsNil)
+	c.Assert(len(lor.Objects), Equals, 1)
+	c.Assert(lor.IsTruncated, Equals, true)
+	c.Assert(len(lor.NextContinuationToken) > 0, Equals, true)
+	c.Assert(lor.Objects[0].Key, Equals, objectName+"2")
+
+	lor, err = bucket.ListObjectsV2(Prefix(objectName), StartAfter(objectName+"1"), MaxKeys(2))
+	c.Assert(err, IsNil)
+	c.Assert(len(lor.Objects), Equals, 2)
+	c.Assert(lor.IsTruncated, Equals, false)
+	c.Assert(lor.NextContinuationToken, Equals, "")
+	ForceDeleteBucket(client, bucketName, c)
+	c.Assert(lor.Objects[0].Key, Equals, objectName+"2")
+	c.Assert(lor.Objects[1].Key, Equals, objectName+"3")
+}
+
+// TestListObjects
+func (s *OssBucketSuite) TestListObjectsV2BatchList(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// Put three objects
+	count := 17
+	objectName := "testobject-" + RandLowStr(6)
+	for i := 0; i < count; i++ {
+		err = bucket.PutObject(objectName+strconv.Itoa(i), strings.NewReader(""))
+		c.Assert(err, IsNil)
+	}
+
+	Objects := []ObjectProperties{}
+
+	// List Object
+	continuationToken := ""
+	prefix := ""
+	for {
+		lor, err := bucket.ListObjectsV2(Prefix(prefix), ContinuationToken(continuationToken), MaxKeys(3))
+		c.Assert(err, IsNil)
+		Objects = append(Objects, lor.Objects...)
+		continuationToken = lor.NextContinuationToken
+		if !lor.IsTruncated {
+			break
+		}
+	}
+	c.Assert(len(Objects), Equals, count)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+// TestListObjects
 func (s *OssBucketSuite) TestListObjectsEncodingType(c *C) {
 	prefix := objectNamePrefix + "床前明月光，疑是地上霜。举头望明月，低头思故乡。"
 
