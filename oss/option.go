@@ -365,6 +365,32 @@ func Sequential() Option {
 	return addParam("sequential", "")
 }
 
+// ListType is an option to set List-type parameter for ListObjectsV2
+func ListType(value int) Option {
+	return addParam("list-type", strconv.Itoa(value))
+}
+
+// StartAfter is an option to set start-after parameter for ListObjectsV2
+func StartAfter(value string) Option {
+	return addParam("start-after", value)
+}
+
+// ContinuationToken is an option to set Continuation-token parameter for ListObjectsV2
+func ContinuationToken(value string) Option {
+	if value == "" {
+		return addParam("continuation-token", nil)
+	}
+	return addParam("continuation-token", value)
+}
+
+// FetchOwner is an option to set Fetch-owner parameter for ListObjectsV2
+func FetchOwner(value bool) Option {
+	if value {
+		return addParam("fetch-owner", "true")
+	}
+	return addParam("fetch-owner", "false")
+}
+
 // DeleteObjectsQuiet false:DeleteObjects in verbose mode; true:DeleteObjects in quite mode. Default is false.
 func DeleteObjectsQuiet(isQuiet bool) Option {
 	return addArg(deleteObjectsQuiet, isQuiet)
