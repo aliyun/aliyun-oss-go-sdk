@@ -869,6 +869,25 @@ func (bucket Bucket) RestoreObjectDetail(objectKey string, restoreConfig Restore
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
 }
 
+// RestoreObjectXML support more features than RestoreObject
+func (bucket Bucket) RestoreObjectXML(objectKey, configXML string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(configXML))
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	options = append(options, ContentType(contentType))
+
+	params, _ := GetRawParams(options)
+	params["restore"] = nil
+
+	resp, err := bucket.do("POST", objectKey, params, options, buffer, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK, http.StatusAccepted})
+}
+
 // SignURL signs the URL. Users could access the object directly with this URL without getting the AK.
 //
 // objectKey    the target object to sign.

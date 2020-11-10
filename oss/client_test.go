@@ -1073,16 +1073,16 @@ func (s *OssClientSuite) TestSetBucketLifecycleAboutVersionObjectNew(c *C) {
 	}
 
 	versionExpiration := LifecycleVersionExpiration{
-		NoncurrentDays: 20,
+		NoncurrentDays: 40,
 	}
 
 	versionTransition1 := LifecycleVersionTransition{
-		NoncurrentDays: 10,
+		NoncurrentDays: 25,
 		StorageClass:   "IA",
 	}
 
 	versionTransition2 := LifecycleVersionTransition{
-		NoncurrentDays: 20,
+		NoncurrentDays: 30,
 		StorageClass:   "ColdArchive",
 	}
 
@@ -1105,10 +1105,10 @@ func (s *OssClientSuite) TestSetBucketLifecycleAboutVersionObjectNew(c *C) {
 	c.Assert(res.Rules[0].Expiration.Date, Equals, "")
 	c.Assert(*(res.Rules[0].Expiration.ExpiredObjectDeleteMarker), Equals, true)
 
-	c.Assert(res.Rules[0].NonVersionExpiration.NoncurrentDays, Equals, 20)
-	c.Assert(res.Rules[0].NonVersionTransition.NoncurrentDays, Equals, 10)
+	c.Assert(res.Rules[0].NonVersionExpiration.NoncurrentDays, Equals, 40)
+	c.Assert(res.Rules[0].NonVersionTransition.NoncurrentDays, Equals, 25)
 	c.Assert(res.Rules[0].NonVersionTransition.StorageClass, Equals, StorageClassType("IA"))
-	c.Assert(len(res.Rules[0].NonVersionTransitions),Equals, 2)
+	c.Assert(len(res.Rules[0].NonVersionTransitions), Equals, 2)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
