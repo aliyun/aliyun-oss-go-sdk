@@ -2375,6 +2375,30 @@ func (s *OssBucketSuite) TestRestoreObjectWithConfig(c *C) {
 	ForceDeleteBucket(client, bucketName, c)
 }
 
+// TestRestoreObjectWithXml
+func (s *OssBucketSuite) TestRestoreObjectWithXml(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName, StorageClass(StorageArchive))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	objectName := objectNamePrefix + RandStr(8)
+
+	// Put object
+	err = bucket.PutObject(objectName, strings.NewReader("123456789"), ObjectStorageClass(StorageArchive))
+	c.Assert(err, IsNil)
+
+	xmlConfig := `<RestoreRequest><Days>7</Days></RestoreRequest>`
+
+	err = bucket.RestoreObjectXML(objectName, xmlConfig)
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
 // TestProcessObject
 func (s *OssBucketSuite) TestProcessObject(c *C) {
 	objectName := objectNamePrefix + RandStr(8) + ".jpg"
