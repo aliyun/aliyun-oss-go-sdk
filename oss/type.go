@@ -199,8 +199,10 @@ type WebsiteXML struct {
 
 // IndexDocument defines the index page info
 type IndexDocument struct {
-	XMLName xml.Name `xml:"IndexDocument"`
-	Suffix  string   `xml:"Suffix"` // The file name for the index page
+	XMLName       xml.Name `xml:"IndexDocument"`
+	Suffix        string   `xml:"Suffix"`        // The file name for the index page
+	SupportSubDir bool     `xml:"SupportSubDir"` // whether or not subfolder homepage is enabled
+	Type          int      `xml:"Type"`          // the subfolder homepage behavior. 0 means Redirect, 1 means NoSuchKey, 2 means Index
 }
 
 // ErrorDocument defines the 404 error page info
