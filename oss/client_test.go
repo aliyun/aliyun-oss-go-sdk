@@ -3640,3 +3640,149 @@ func (s *OssClientSuite) TestClientRedirect(c *C) {
 	c.Assert(string(data), Equals, "You have been redirected here!")
 	resp.Body.Close()
 }
+
+// TestInitiateBucketWormSuccess
+func (s *OssClientSuite) TestInitiateBucketWormSuccess(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// InitiateBucketWorm
+	wormId, err := client.InitiateBucketWorm(bucketNameTest, 10)
+	c.Assert(err, IsNil)
+	c.Assert(len(wormId) > 0, Equals, true)
+
+	// GetBucketWorm
+	wormConfig, err := client.GetBucketWorm(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(wormConfig.WormId, Equals, wormId)
+	c.Assert(wormConfig.State, Equals, "InProgress")
+	c.Assert(wormConfig.RetentionPeriodInDays, Equals, 10)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestInitiateBucketWormFailure
+func (s *OssClientSuite) TestInitiateBucketWormFailure(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// bucket not exist
+	wormId, err := client.InitiateBucketWorm(bucketNameTest, 10)
+	c.Assert(err, NotNil)
+	c.Assert(len(wormId), Equals, 0)
+}
+
+// TestAbortBucketWorm
+func (s *OssClientSuite) TestAbortBucketWorm(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// InitiateBucketWorm
+	wormId, err := client.InitiateBucketWorm(bucketNameTest, 10)
+	c.Assert(err, IsNil)
+	c.Assert(len(wormId) > 0, Equals, true)
+
+	// GetBucketWorm success
+	wormConfig, err := client.GetBucketWorm(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(wormConfig.WormId, Equals, wormId)
+	c.Assert(wormConfig.State, Equals, "InProgress")
+	c.Assert(wormConfig.RetentionPeriodInDays, Equals, 10)
+
+	// abort worm
+	err = client.AbortBucketWorm(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// GetBucketWorm failure
+	_, err = client.GetBucketWorm(bucketNameTest)
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestCompleteBucketWorm
+func (s *OssClientSuite) TestCompleteBucketWorm(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-worm-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// InitiateBucketWorm
+	wormId, err := client.InitiateBucketWorm(bucketNameTest, 1)
+	c.Assert(err, IsNil)
+	c.Assert(len(wormId) > 0, Equals, true)
+
+	// GetBucketWorm
+	wormConfig, err := client.GetBucketWorm(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(wormConfig.WormId, Equals, wormId)
+	c.Assert(wormConfig.State, Equals, "InProgress")
+	c.Assert(wormConfig.RetentionPeriodInDays, Equals, 1)
+
+	// CompleteBucketWorm
+	err = client.CompleteBucketWorm(bucketNameTest, wormId)
+	c.Assert(err, IsNil)
+
+	// GetBucketWorm again
+	wormConfig, err = client.GetBucketWorm(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(wormConfig.WormId, Equals, wormId)
+	c.Assert(wormConfig.State, Equals, "Locked")
+	c.Assert(wormConfig.RetentionPeriodInDays, Equals, 1)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestExtendBucketWorm
+func (s *OssClientSuite) TestExtendBucketWorm(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-worm-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// InitiateBucketWorm
+	wormId, err := client.InitiateBucketWorm(bucketNameTest, 1)
+	c.Assert(err, IsNil)
+	c.Assert(len(wormId) > 0, Equals, true)
+
+	// CompleteBucketWorm
+	err = client.CompleteBucketWorm(bucketNameTest, wormId)
+	c.Assert(err, IsNil)
+
+	// GetBucketWorm
+	wormConfig, err := client.GetBucketWorm(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(wormConfig.WormId, Equals, wormId)
+	c.Assert(wormConfig.State, Equals, "Locked")
+	c.Assert(wormConfig.RetentionPeriodInDays, Equals, 1)
+
+	// CompleteBucketWorm
+	err = client.ExtendBucketWorm(bucketNameTest, 2, wormId)
+	c.Assert(err, IsNil)
+
+	// GetBucketWorm again
+	wormConfig, err = client.GetBucketWorm(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(wormConfig.WormId, Equals, wormId)
+	c.Assert(wormConfig.State, Equals, "Locked")
+	c.Assert(wormConfig.RetentionPeriodInDays, Equals, 2)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
