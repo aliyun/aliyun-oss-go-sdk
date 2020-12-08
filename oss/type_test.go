@@ -221,7 +221,7 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	}
 	rules = []LifecycleRule{rule}
 	err = verifyLifecycleRules(rules)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	transition = LifecycleTransition{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
