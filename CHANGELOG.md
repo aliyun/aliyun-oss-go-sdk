@@ -1,4 +1,9 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.6 日期：2021-01-13
+### 变更内容
+- 增加：增加worm接口
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.5 日期：2020-11-19
 ### 变更内容
 - 增加：增加ListObjectsV2接口
