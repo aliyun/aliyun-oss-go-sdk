@@ -45,7 +45,10 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"policy", "stat", "encryption", "versions", "versioning", "versionId", "requestPayment",
 	"x-oss-request-payer", "sequential",
 	"inventory", "inventoryId", "continuation-token", "asyncFetch",
-	"worm", "wormId", "wormExtend"}
+	"worm", "wormId", "wormExtend", "withHashContext",
+	"x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256",
+    "x-oss-hash-ctx", "x-oss-md5-ctx", 
+}
 
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) error {
