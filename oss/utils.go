@@ -510,3 +510,13 @@ func (drc *DiscardReadCloser) Close() error {
 	}
 	return nil
 }
+
+func ConvertEmptyValueToNil(params map[string]interface{}, keys []string) {
+	for _, key := range keys {
+		value, ok := params[key]
+		if ok && value == "" {
+			// convert "" to nil
+			params[key] = nil
+		}
+	}
+}

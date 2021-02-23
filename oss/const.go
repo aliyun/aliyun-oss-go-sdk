@@ -89,6 +89,14 @@ const (
 	RedundancyZRS DataRedundancyType = "ZRS"
 )
 
+//ObjecthashFuncType
+type ObjecthashFuncType string
+
+const (
+	HashFuncSha1   ObjecthashFuncType = "SHA-1"
+	HashFuncSha256 ObjecthashFuncType = "SHA-256"
+)
+
 // PayerType the type of request payer
 type PayerType string
 
@@ -193,6 +201,8 @@ const (
 	HTTPHeaderOssForbidOverWrite             = "X-Oss-Forbid-Overwrite"
 	HTTPHeaderOssRangeBehavior               = "X-Oss-Range-Behavior"
 	HTTPHeaderOssTaskID                      = "X-Oss-Task-Id"
+	HTTPHeaderOssHashCtx                     = "X-Oss-Hash-Ctx"
+	HTTPHeaderOssMd5Ctx                      = "X-Oss-Md5-Ctx"
 )
 
 // HTTP Param

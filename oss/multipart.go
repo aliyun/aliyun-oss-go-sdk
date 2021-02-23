@@ -25,11 +25,8 @@ func (bucket Bucket) InitiateMultipartUpload(objectKey string, options ...Option
 	var imur InitiateMultipartUploadResult
 	opts := AddContentType(options, objectKey)
 	params, _ := GetRawParams(options)
-	_, ok := params["sequential"]
-	if ok {
-		// convert "" to nil
-		params["sequential"] = nil
-	}
+	paramKeys := []string{"sequential", "withHashContext", "x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256"}
+	ConvertEmptyValueToNil(params, paramKeys)
 	params["uploads"] = nil
 
 	resp, err := bucket.do("POST", objectKey, params, opts, nil, nil)

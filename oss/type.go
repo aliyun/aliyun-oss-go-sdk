@@ -746,6 +746,7 @@ type createBucketConfiguration struct {
 	XMLName            xml.Name           `xml:"CreateBucketConfiguration"`
 	StorageClass       StorageClassType   `xml:"StorageClass,omitempty"`
 	DataRedundancyType DataRedundancyType `xml:"DataRedundancyType,omitempty"`
+	ObjectHashFunction ObjecthashFuncType `xml:"ObjectHashFunction,omitempty"`
 }
 
 // LiveChannelConfiguration defines the configuration for live-channel
