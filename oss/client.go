@@ -651,6 +651,28 @@ func (client Client) GetBucketWebsite(bucketName string) (GetBucketWebsiteResult
 	return out, err
 }
 
+// GetBucketWebsiteXml gets the bucket's website config xml config.
+//
+// bucketName    the bucket name
+//
+// string   the bucket's xml config, It's only valid when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketWebsiteXml(bucketName string) (string, error) {
+	params := map[string]interface{}{}
+	params["website"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	out := string(body)
+	return out, err
+}
+
 // SetBucketCORS sets the bucket's CORS rules
 //
 // For more information, please check out https://help.aliyun.com/document_detail/oss/user_guide/security_management/cors.html

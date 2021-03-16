@@ -1831,6 +1831,16 @@ func (s *OssClientSuite) TestSetBucketWebsiteXml(c *C) {
 	c.Assert(*res.RoutingRules[0].Redirect.MirrorFollowRedirect, Equals, true)
 	c.Assert(*res.RoutingRules[0].Redirect.MirrorCheckMd5, Equals, false)
 	c.Assert(*res.RoutingRules[0].Redirect.MirrorHeaders.PassAll, Equals, false)
+
+    // test GetBucketWebsite xml
+    xmlText, err:= client.GetBucketWebsiteXml(bucketNameTest)
+    c.Assert(err, IsNil)
+
+    c.Assert(strings.Contains(xmlText, "<Pass>myheader-key1</Pass>"), Equals, true)
+    c.Assert(strings.Contains(xmlText, "<Pass>myheader-key2</Pass>"), Equals, true)
+
+    err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
 }
 
 // TestSetBucketCORS
