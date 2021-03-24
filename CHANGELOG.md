@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.7 日期：2021-03-24
+### 变更内容
+- 增加：并行上传part支持设置md5以及hash context
+- 增加：GetBucketWebsiteXml
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.6 日期：2021-01-13
 ### 变更内容
 - 增加：增加worm接口
