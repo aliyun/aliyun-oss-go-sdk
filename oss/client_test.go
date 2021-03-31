@@ -1832,14 +1832,14 @@ func (s *OssClientSuite) TestSetBucketWebsiteXml(c *C) {
 	c.Assert(*res.RoutingRules[0].Redirect.MirrorCheckMd5, Equals, false)
 	c.Assert(*res.RoutingRules[0].Redirect.MirrorHeaders.PassAll, Equals, false)
 
-    // test GetBucketWebsite xml
-    xmlText, err:= client.GetBucketWebsiteXml(bucketNameTest)
-    c.Assert(err, IsNil)
+	// test GetBucketWebsite xml
+	xmlText, err := client.GetBucketWebsiteXml(bucketNameTest)
+	c.Assert(err, IsNil)
 
-    c.Assert(strings.Contains(xmlText, "<Pass>myheader-key1</Pass>"), Equals, true)
-    c.Assert(strings.Contains(xmlText, "<Pass>myheader-key2</Pass>"), Equals, true)
+	c.Assert(strings.Contains(xmlText, "<Pass>myheader-key1</Pass>"), Equals, true)
+	c.Assert(strings.Contains(xmlText, "<Pass>myheader-key2</Pass>"), Equals, true)
 
-    err = client.DeleteBucket(bucketNameTest)
+	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 }
 
@@ -3792,6 +3792,49 @@ func (s *OssClientSuite) TestExtendBucketWorm(c *C) {
 	c.Assert(wormConfig.WormId, Equals, wormId)
 	c.Assert(wormConfig.State, Equals, "Locked")
 	c.Assert(wormConfig.RetentionPeriodInDays, Equals, 2)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestBucketTransferAcc
+func (s *OssClientSuite) TestBucketTransferAcc(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	accConfig := TransferAccConfiguration{}
+	accConfig.Enabled = true
+
+	// SetBucketTransferAcc true
+	err = client.SetBucketTransferAcc(bucketNameTest, accConfig)
+	c.Assert(err, IsNil)
+
+	// GetBucketTransferAcc
+	accConfigRes, err := client.GetBucketTransferAcc(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(accConfigRes.Enabled, Equals, true)
+
+	// SetBucketTransferAcc false
+	accConfig.Enabled = false
+	err = client.SetBucketTransferAcc(bucketNameTest, accConfig)
+	c.Assert(err, IsNil)
+
+	// GetBucketTransferAcc
+	accConfigRes, err = client.GetBucketTransferAcc(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(accConfigRes.Enabled, Equals, false)
+
+	// DeleteBucketTransferAcc
+	err = client.DeleteBucketTransferAcc(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// GetBucketTransferAcc
+	_, err = client.GetBucketTransferAcc(bucketNameTest)
+	c.Assert(err, NotNil)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)

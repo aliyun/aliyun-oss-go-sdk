@@ -47,7 +47,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"inventory", "inventoryId", "continuation-token", "asyncFetch",
 	"worm", "wormId", "wormExtend", "withHashContext",
 	"x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256",
-	"x-oss-hash-ctx", "x-oss-md5-ctx", 
+	"x-oss-hash-ctx", "x-oss-md5-ctx", "transferAcceleration",
 }
 
 // init initializes Conn

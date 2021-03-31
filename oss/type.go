@@ -1246,3 +1246,9 @@ type WormConfiguration struct {
 	RetentionPeriodInDays int      `xml:"RetentionPeriodInDays"` // specify retention days
 	CreationDate          string   `xml:"CreationDate,omitempty"`
 }
+
+// TransferAccConfiguration define transfer acceleration configuration
+type TransferAccConfiguration struct {
+	XMLName xml.Name `xml:"TransferAccelerationConfiguration"`
+	Enabled bool     `xml:"Enabled"`
+}
