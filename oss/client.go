@@ -1527,6 +1527,67 @@ func (client Client) GetBucketWorm(bucketName string, options ...Option) (WormCo
 	return out, err
 }
 
+// SetBucketTransferAcc set bucket transfer acceleration configuration
+// bucketName the bucket name.
+// accConf bucket transfer acceleration configuration
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketTransferAcc(bucketName string, accConf TransferAccConfiguration, options ...Option) error {
+	bs, err := xml.Marshal(accConf)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := make(map[string]string)
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["transferAcceleration"] = nil
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketTransferAcc get bucket transfer acceleration configuration
+// bucketName the bucket name.
+// accConf bucket transfer acceleration configuration
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketTransferAcc(bucketName string, options ...Option) (TransferAccConfiguration, error) {
+	var out TransferAccConfiguration
+	params := map[string]interface{}{}
+	params["transferAcceleration"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// DeleteBucketTransferAcc delete bucket transfer acceleration configuration
+// bucketName the bucket name.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) DeleteBucketTransferAcc(bucketName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["transferAcceleration"] = nil
+	resp, err := client.do("DELETE", bucketName, params, nil, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
