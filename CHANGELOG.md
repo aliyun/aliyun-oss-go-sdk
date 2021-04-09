@@ -1,4 +1,9 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.8 日期：2021-04-09
+### 变更内容
+- 增加：支持传输加速设置
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.7 日期：2021-03-24
 ### 变更内容
 - 增加：并行上传part支持设置md5以及hash context
