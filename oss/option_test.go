@@ -279,7 +279,7 @@ func (s *OssOptionSuite) TestHandleParams(c *C) {
 	c.Assert(err, IsNil)
 
 	out = client.Conn.getURLParams(params)
-	c.Assert(out, Equals, "key-marker=")
+	c.Assert(out, Equals, "key-marker")
 }
 
 func (s *OssOptionSuite) TestFindOption(c *C) {

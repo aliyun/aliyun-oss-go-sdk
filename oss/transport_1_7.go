@@ -3,6 +3,7 @@
 package oss
 
 import (
+	"crypto/tls"
 	"net"
 	"net/http"
 	"time"
@@ -31,6 +32,12 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 		MaxIdleConnsPerHost:   httpMaxConns.MaxIdleConnsPerHost,
 		IdleConnTimeout:       httpTimeOut.IdleConnTimeout,
 		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
+	}
+
+	if config.InsecureSkipVerify {
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
 	}
 	return transport
 }
