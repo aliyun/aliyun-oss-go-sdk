@@ -3651,6 +3651,82 @@ func (s *OssClientSuite) TestClientRedirect(c *C) {
 	resp.Body.Close()
 }
 
+func verifyCertificatehandler(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("verifyCertificatehandler"))
+}
+
+func (s *OssClientSuite) TestClientSkipVerifyCertificateTestServer(c *C) {
+	// get port
+	rand.Seed(time.Now().Unix())
+	port := 10000 + rand.Intn(10000)
+
+	// start https server
+	httpAddr := fmt.Sprintf("127.0.0.1:%d", port)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", verifyCertificatehandler)
+	svr := &http.Server{
+		Addr:           httpAddr,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		Handler:        mux,
+	}
+
+	go func() {
+		svr.ListenAndServeTLS("../sample/test_cert.pem", "../sample/test_key.pem")
+	}()
+
+	// wait http server started
+	time.Sleep(3 * time.Second)
+
+	url := "https://" + httpAddr
+
+	// create client 1,not verify certificate
+	client1, err := New(endpoint, accessID, accessKey, InsecureSkipVerify(true))
+	resp, err := client1.Conn.client.Get(url)
+	c.Assert(err, IsNil)
+	c.Assert(resp.StatusCode, Equals, 200)
+	data, err := ioutil.ReadAll(resp.Body)
+	c.Assert(string(data), Equals, "verifyCertificatehandler")
+	resp.Body.Close()
+
+	// create client2, verify certificate
+	client2, err := New(endpoint, accessID, accessKey, InsecureSkipVerify(false))
+	resp, err = client2.Conn.client.Get(url)
+	c.Assert(err, NotNil)
+	fmt.Println(err)
+}
+
+func (s *OssClientSuite) TestClientSkipVerifyCertificateOssServer(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey, InsecureSkipVerify(true))
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectLen := 1000
+	objectValue := RandStr(objectLen)
+
+	// Put
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	//
+	resp, err := bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err := readBody(resp)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+
+	ForceDeleteBucket(client, bucketName, c)
+
+}
+
 // TestInitiateBucketWormSuccess
 func (s *OssClientSuite) TestInitiateBucketWormSuccess(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)

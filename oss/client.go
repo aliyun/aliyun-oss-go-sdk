@@ -1771,6 +1771,13 @@ func RedirectEnabled(enabled bool) ClientOption {
 	}
 }
 
+// skip verifying tls certificate file
+func InsecureSkipVerify(enabled bool) ClientOption {
+	return func(client *Client) {
+		client.Config.InsecureSkipVerify = enabled
+	}
+}
+
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
 	headers map[string]string, data io.Reader, options ...Option) (*Response, error) {

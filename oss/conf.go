@@ -103,6 +103,7 @@ type Config struct {
 	AuthVersion         AuthVersionType     //  v1 or v2 signature,default is v1
 	AdditionalHeaders   []string            //  special http headers needed to be sign
 	RedirectEnabled     bool                //  only effective from go1.7 onward, enable http redirect or not
+	InsecureSkipVerify  bool                //  for https, Whether to skip verifying the server certificate file
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0
@@ -180,6 +181,7 @@ func getDefaultOssConfig() *Config {
 
 	config.AuthVersion = AuthV1
 	config.RedirectEnabled = true
+	config.InsecureSkipVerify = false
 
 	return &config
 }
