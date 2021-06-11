@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/aliyun/aliyun-oss-go-sdk.svg?branch=master)](https://travis-ci.org/aliyun/aliyun-oss-go-sdk)
 [![Coverage Status](https://coveralls.io/repos/github/aliyun/aliyun-oss-go-sdk/badge.svg?branch=master)](https://coveralls.io/github/aliyun/aliyun-oss-go-sdk?branch=master)
 
-## [README of English](https://github.com/aliyun/aliyun-oss-go-sdk/blob/master/README.md)
+## [README in English](https://github.com/aliyun/aliyun-oss-go-sdk/blob/master/README.md)
 
 ## 关于
 > - 此Go SDK基于[阿里云对象存储服务](http://www.aliyun.com/product/oss/)官方API构建。
@@ -13,7 +13,7 @@
 > - 使用此SDK，用户可以方便地在任何应用、任何时间、任何地点上传，下载和管理数据。
 
 ## 版本
-> - 当前版本：1.9.5
+> - Current version: v2.1.8
 
 ## 运行环境
 > - Go 1.5及以上。
@@ -165,4 +165,5 @@
 > - [Guozhong Han](https://github.com/hangzws)
 
 ## License
-> - Apache License 2.0
+> - MIT License, see [license file](LICENSE)
+

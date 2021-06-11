@@ -1,6 +1,8 @@
 package oss
 
-import "io"
+import (
+	"io"
+)
 
 // ProgressEventType defines transfer progress event type
 type ProgressEventType int
@@ -20,6 +22,7 @@ const (
 type ProgressEvent struct {
 	ConsumedBytes int64
 	TotalBytes    int64
+	RwBytes       int64
 	EventType     ProgressEventType
 }
 
@@ -30,10 +33,11 @@ type ProgressListener interface {
 
 // -------------------- Private --------------------
 
-func newProgressEvent(eventType ProgressEventType, consumed, total int64) *ProgressEvent {
+func newProgressEvent(eventType ProgressEventType, consumed, total int64, rwBytes int64) *ProgressEvent {
 	return &ProgressEvent{
 		ConsumedBytes: consumed,
 		TotalBytes:    total,
+		RwBytes:       rwBytes,
 		EventType:     eventType}
 }
 
@@ -78,7 +82,7 @@ func (t *teeReader) Read(p []byte) (n int, err error) {
 
 	// Read encountered error
 	if err != nil && err != io.EOF {
-		event := newProgressEvent(TransferFailedEvent, t.consumedBytes, t.totalBytes)
+		event := newProgressEvent(TransferFailedEvent, t.consumedBytes, t.totalBytes, 0)
 		publishProgress(t.listener, event)
 	}
 
@@ -92,7 +96,7 @@ func (t *teeReader) Read(p []byte) (n int, err error) {
 		}
 		// Progress
 		if t.listener != nil {
-			event := newProgressEvent(TransferDataEvent, t.consumedBytes, t.totalBytes)
+			event := newProgressEvent(TransferDataEvent, t.consumedBytes, t.totalBytes, int64(n))
 			publishProgress(t.listener, event)
 		}
 		// Track

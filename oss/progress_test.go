@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
-	"time"
+	"sync/atomic"
 
 	. "gopkg.in/check.v1"
 )
@@ -27,7 +27,6 @@ func (s *OssProgressSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -39,23 +38,41 @@ func (s *OssProgressSuite) SetUpSuite(c *C) {
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssProgressSuite) TearDownSuite(c *C) {
 	// Abort multipart uploads
-	lmu, err := s.bucket.ListMultipartUploads()
-	c.Assert(err, IsNil)
-
-	for _, upload := range lmu.Uploads {
-		imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
-		err = s.bucket.AbortMultipartUpload(imur)
+	keyMarker := KeyMarker("")
+	uploadIDMarker := UploadIDMarker("")
+	for {
+		lmu, err := s.bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
+		for _, upload := range lmu.Uploads {
+			imur := InitiateMultipartUploadResult{Bucket: bucketName, Key: upload.Key, UploadID: upload.UploadID}
+			err = s.bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
+		keyMarker = KeyMarker(lmu.NextKeyMarker)
+		uploadIDMarker = UploadIDMarker(lmu.NextUploadIDMarker)
+		if !lmu.IsTruncated {
+			break
+		}
 	}
 
 	// Delete objects
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
-
-	for _, object := range lor.Objects {
-		err = s.bucket.DeleteObject(object.Key)
+	marker := Marker("")
+	for {
+		lor, err := s.bucket.ListObjects(marker)
 		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = s.bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
+		}
 	}
+
+	// Delete bucket
+	err := s.client.DeleteBucket(s.bucket.BucketName)
+	c.Assert(err, IsNil)
 
 	testLogger.Println("test progress completed")
 }
@@ -86,6 +103,7 @@ func (s *OssProgressSuite) TearDownTest(c *C) {
 
 // OssProgressListener is the progress listener
 type OssProgressListener struct {
+	TotalRwBytes int64
 }
 
 // ProgressChanged handles progress event
@@ -95,6 +113,7 @@ func (listener *OssProgressListener) ProgressChanged(event *ProgressEvent) {
 		testLogger.Printf("Transfer Started, ConsumedBytes: %d, TotalBytes %d.\n",
 			event.ConsumedBytes, event.TotalBytes)
 	case TransferDataEvent:
+		atomic.AddInt64(&listener.TotalRwBytes, event.RwBytes)
 		testLogger.Printf("Transfer Data, ConsumedBytes: %d, TotalBytes %d, %d%%.\n",
 			event.ConsumedBytes, event.TotalBytes, event.ConsumedBytes*100/event.TotalBytes)
 	case TransferCompletedEvent:
@@ -109,20 +128,27 @@ func (listener *OssProgressListener) ProgressChanged(event *ProgressEvent) {
 
 // TestPutObject
 func (s *OssProgressSuite) TestPutObject(c *C) {
-	objectName := objectNamePrefix + "tpo.html"
+	objectName := RandStr(8) + ".jpg"
 	localFile := "../sample/The Go Programming Language.html"
+
+	fileInfo, err := os.Stat(localFile)
+	c.Assert(err, IsNil)
 
 	// PutObject
 	fd, err := os.Open(localFile)
 	c.Assert(err, IsNil)
 	defer fd.Close()
 
-	err = s.bucket.PutObject(objectName, fd, Progress(&OssProgressListener{}))
+	progressListener := OssProgressListener{}
+	err = s.bucket.PutObject(objectName, fd, Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	// PutObjectFromFile
-	err = s.bucket.PutObjectFromFile(objectName, localFile, Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.PutObjectFromFile(objectName, localFile, Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	// DoPutObject
 	fd, err = os.Open(localFile)
@@ -134,72 +160,106 @@ func (s *OssProgressSuite) TestPutObject(c *C) {
 		Reader:    fd,
 	}
 
-	options := []Option{Progress(&OssProgressListener{})}
+	progressListener.TotalRwBytes = 0
+	options := []Option{Progress(&progressListener)}
 	_, err = s.bucket.DoPutObject(request, options)
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	// PutObject size is 0
-	err = s.bucket.PutObject(objectName, strings.NewReader(""), Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.PutObject(objectName, strings.NewReader(""), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(0))
 
 	testLogger.Println("OssProgressSuite.TestPutObject")
 }
 
 // TestSignURL
-func (s *OssProgressSuite) TestSignURL(c *C) {
-	objectName := objectNamePrefix + randStr(5)
-	filePath := randLowStr(10)
-	content := randStr(20)
-	createFile(filePath, content, c)
+func (s *OssProgressSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extraHeaders []string) {
+	objectName := objectNamePrefix + RandStr(8)
+	filePath := RandLowStr(10)
+	content := RandStr(20)
+	CreateFile(filePath, content, c)
+
+	oldType := s.bucket.Client.Config.AuthVersion
+	oldHeaders := s.bucket.Client.Config.AdditionalHeaders
+	s.bucket.Client.Config.AuthVersion = authVersion
+	s.bucket.Client.Config.AdditionalHeaders = extraHeaders
 
 	// Sign URL for put
-	str, err := s.bucket.SignURL(objectName, HTTPPut, 60, Progress(&OssProgressListener{}))
+	progressListener := OssProgressListener{}
+	str, err := s.bucket.SignURL(objectName, HTTPPut, 60, Progress(&progressListener))
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if s.bucket.Client.Config.AuthVersion == AuthV1 {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	}
 
 	// Put object with URL
 	fd, err := os.Open(filePath)
 	c.Assert(err, IsNil)
 	defer fd.Close()
 
-	err = s.bucket.PutObjectWithURL(str, fd, Progress(&OssProgressListener{}))
+	err = s.bucket.PutObjectWithURL(str, fd, Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(len(content)))
 
 	// Put object from file with URL
-	err = s.bucket.PutObjectFromFileWithURL(str, filePath, Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.PutObjectFromFileWithURL(str, filePath, Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(len(content)))
 
 	// DoPutObject
 	fd, err = os.Open(filePath)
 	c.Assert(err, IsNil)
 	defer fd.Close()
 
-	options := []Option{Progress(&OssProgressListener{})}
+	progressListener.TotalRwBytes = 0
+	options := []Option{Progress(&progressListener)}
 	_, err = s.bucket.DoPutObjectWithURL(str, fd, options)
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(len(content)))
 
 	// Sign URL for get
-	str, err = s.bucket.SignURL(objectName, HTTPGet, 60, Progress(&OssProgressListener{}))
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 60, Progress(&progressListener))
 	c.Assert(err, IsNil)
-	c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
-	c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	if s.bucket.Client.Config.AuthVersion == AuthV1 {
+		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
+	} else {
+		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
+		c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	}
 
 	// Get object with URL
-	body, err := s.bucket.GetObjectWithURL(str, Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	body, err := s.bucket.GetObjectWithURL(str, Progress(&progressListener))
 	c.Assert(err, IsNil)
 	str, err = readBody(body)
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, content)
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(len(content)))
 
 	// Get object to file with URL
-	str, err = s.bucket.SignURL(objectName, HTTPGet, 10, Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	str, err = s.bucket.SignURL(objectName, HTTPGet, 10, Progress(&progressListener))
 	c.Assert(err, IsNil)
 
-	newFile := randStr(10)
-	err = s.bucket.GetObjectToFileWithURL(str, newFile, Progress(&OssProgressListener{}))
+	newFile := RandStr(10)
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.GetObjectToFileWithURL(str, newFile, Progress(&progressListener))
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(len(content)))
 	c.Assert(err, IsNil)
 	eq, err := compareFiles(filePath, newFile)
 	c.Assert(err, IsNil)
@@ -212,10 +272,19 @@ func (s *OssProgressSuite) TestSignURL(c *C) {
 	c.Assert(err, IsNil)
 
 	testLogger.Println("OssProgressSuite.TestSignURL")
+
+	s.bucket.Client.Config.AuthVersion = oldType
+	s.bucket.Client.Config.AdditionalHeaders = oldHeaders
+}
+
+func (s *OssProgressSuite) TestSignURL(c *C) {
+	s.SignURLTestFunc(c, AuthV1, []string{})
+	s.SignURLTestFunc(c, AuthV2, []string{})
+	s.SignURLTestFunc(c, AuthV2, []string{"host", "range", "user-agent"})
 }
 
 func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
-	objectName := objectNamePrefix + "tpon.html"
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/The Go Programming Language.html"
 
 	// Invalid endpoint
@@ -234,15 +303,17 @@ func (s *OssProgressSuite) TestPutObjectNegative(c *C) {
 
 // TestAppendObject
 func (s *OssProgressSuite) TestAppendObject(c *C) {
-	objectName := objectNamePrefix + "tao"
-	objectValue := "昨夜雨疏风骤，浓睡不消残酒。试问卷帘人，却道海棠依旧。知否？知否？应是绿肥红瘦。"
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(100)
 	var val = []byte(objectValue)
 	var nextPos int64
 	var midPos = 1 + rand.Intn(len(val)-1)
 
 	// AppendObject
-	nextPos, err := s.bucket.AppendObject(objectName, bytes.NewReader(val[0:midPos]), nextPos, Progress(&OssProgressListener{}))
+	progressListener := OssProgressListener{}
+	nextPos, err := s.bucket.AppendObject(objectName, bytes.NewReader(val[0:midPos]), nextPos, Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, nextPos)
 
 	// DoAppendObject
 	request := &AppendObjectRequest{
@@ -259,8 +330,11 @@ func (s *OssProgressSuite) TestAppendObject(c *C) {
 
 // TestMultipartUpload
 func (s *OssProgressSuite) TestMultipartUpload(c *C) {
-	objectName := objectNamePrefix + "tmu.jpg"
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
+
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
@@ -271,6 +345,7 @@ func (s *OssProgressSuite) TestMultipartUpload(c *C) {
 	defer fd.Close()
 
 	// Initiate
+	progressListener := OssProgressListener{}
 	imur, err := s.bucket.InitiateMultipartUpload(objectName)
 	c.Assert(err, IsNil)
 
@@ -278,7 +353,7 @@ func (s *OssProgressSuite) TestMultipartUpload(c *C) {
 	var parts []UploadPart
 	for _, chunk := range chunks {
 		fd.Seek(chunk.Offset, os.SEEK_SET)
-		part, err := s.bucket.UploadPart(imur, fd, chunk.Size, chunk.Number, Progress(&OssProgressListener{}))
+		part, err := s.bucket.UploadPart(imur, fd, chunk.Size, chunk.Number, Progress(&progressListener))
 		c.Assert(err, IsNil)
 		parts = append(parts, part)
 	}
@@ -286,6 +361,7 @@ func (s *OssProgressSuite) TestMultipartUpload(c *C) {
 	// Complete
 	_, err = s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
@@ -295,8 +371,10 @@ func (s *OssProgressSuite) TestMultipartUpload(c *C) {
 
 // TestMultipartUploadFromFile
 func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
-	objectName := objectNamePrefix + "tmuff.jpg"
+	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
 
 	chunks, err := SplitFileByPartNum(fileName, 3)
 	c.Assert(err, IsNil)
@@ -306,9 +384,10 @@ func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
 	c.Assert(err, IsNil)
 
 	// UploadPart
+	progressListener := OssProgressListener{}
 	var parts []UploadPart
 	for _, chunk := range chunks {
-		part, err := s.bucket.UploadPartFromFile(imur, fileName, chunk.Offset, chunk.Size, chunk.Number, Progress(&OssProgressListener{}))
+		part, err := s.bucket.UploadPartFromFile(imur, fileName, chunk.Offset, chunk.Size, chunk.Number, Progress(&progressListener))
 		c.Assert(err, IsNil)
 		parts = append(parts, part)
 	}
@@ -316,6 +395,7 @@ func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
 	// Complete
 	_, err = s.bucket.CompleteMultipartUpload(imur, parts)
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
@@ -325,58 +405,75 @@ func (s *OssProgressSuite) TestMultipartUploadFromFile(c *C) {
 
 // TestGetObject
 func (s *OssProgressSuite) TestGetObject(c *C) {
-	objectName := objectNamePrefix + "tgo.jpg"
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "newpic-progress-1.jpg"
 
-	// PutObject
-	err := s.bucket.PutObjectFromFile(objectName, localFile, Progress(&OssProgressListener{}))
+	fileInfo, err := os.Stat(localFile)
 	c.Assert(err, IsNil)
 
+	progressListener := OssProgressListener{}
+	// PutObject
+	err = s.bucket.PutObjectFromFile(objectName, localFile, Progress(&progressListener))
+	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
+
 	// GetObject
-	body, err := s.bucket.GetObject(objectName, Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	body, err := s.bucket.GetObject(objectName, Progress(&progressListener))
 	c.Assert(err, IsNil)
 	_, err = ioutil.ReadAll(body)
 	c.Assert(err, IsNil)
 	body.Close()
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	// GetObjectToFile
-	err = s.bucket.GetObjectToFile(objectName, newFile, Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.GetObjectToFile(objectName, newFile, Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	// DoGetObject
+	progressListener.TotalRwBytes = 0
 	request := &GetObjectRequest{objectName}
-	options := []Option{Progress(&OssProgressListener{})}
+	options := []Option{Progress(&progressListener)}
 	result, err := s.bucket.DoGetObject(request, options)
 	c.Assert(err, IsNil)
 	_, err = ioutil.ReadAll(result.Response.Body)
 	c.Assert(err, IsNil)
 	result.Response.Body.Close()
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	// GetObject with range
-	body, err = s.bucket.GetObject(objectName, Range(1024, 4*1024), Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	body, err = s.bucket.GetObject(objectName, Range(1024, 4*1024), Progress(&progressListener))
 	c.Assert(err, IsNil)
-	_, err = ioutil.ReadAll(body)
+	text, err := ioutil.ReadAll(body)
 	c.Assert(err, IsNil)
 	body.Close()
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(len(text)))
 
 	// PutObject size is 0
-	err = s.bucket.PutObject(objectName, strings.NewReader(""), Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.PutObject(objectName, strings.NewReader(""), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(0))
 
 	// GetObject size is 0
-	body, err = s.bucket.GetObject(objectName, Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	body, err = s.bucket.GetObject(objectName, Progress(&progressListener))
 	c.Assert(err, IsNil)
 	_, err = ioutil.ReadAll(body)
 	c.Assert(err, IsNil)
 	body.Close()
+	c.Assert(progressListener.TotalRwBytes, Equals, int64(0))
 
 	testLogger.Println("OssProgressSuite.TestGetObject")
 }
 
 // TestGetObjectNegative
 func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
-	objectName := objectNamePrefix + "tgon.jpg"
+	objectName := objectNamePrefix + RandStr(8)
 	localFile := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// PutObject
@@ -406,55 +503,80 @@ func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
 
 // TestUploadFile
 func (s *OssProgressSuite) TestUploadFile(c *C) {
-	objectName := objectNamePrefix + "tuf.jpg"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
-	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(5), Progress(&OssProgressListener{}))
+	fileInfo, err := os.Stat(fileName)
 	c.Assert(err, IsNil)
 
-	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, objectName+".cp"), Progress(&OssProgressListener{}))
+	progressListener := OssProgressListener{}
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(5), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
+
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, objectName+".cp"), Progress(&progressListener))
+	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	testLogger.Println("OssProgressSuite.TestUploadFile")
 }
 
 // TestDownloadFile
 func (s *OssProgressSuite) TestDownloadFile(c *C) {
-	objectName := objectNamePrefix + "tdf.jpg"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "down-new-file-progress-2.jpg"
 
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
 	// Upload
-	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
 	c.Assert(err, IsNil)
 
-	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(5), Progress(&OssProgressListener{}))
+	progressListener := OssProgressListener{}
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Routines(5), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
-	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.DownloadFile(objectName, newFile, 1024*1024, Routines(3), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
-	err = s.bucket.DownloadFile(objectName, newFile, 50*1024, Routines(3), Checkpoint(true, ""), Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.DownloadFile(objectName, newFile, 50*1024, Routines(3), Checkpoint(true, ""), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	testLogger.Println("OssProgressSuite.TestDownloadFile")
 }
 
 // TestCopyFile
 func (s *OssProgressSuite) TestCopyFile(c *C) {
-	srcObjectName := objectNamePrefix + "tcf.jpg"
+	srcObjectName := objectNamePrefix + RandStr(8)
 	destObjectName := srcObjectName + "-copy"
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
 	// Upload
-	err := s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3))
+	progressListener := OssProgressListener{}
+	err = s.bucket.UploadFile(srcObjectName, fileName, 100*1024, Routines(3), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(5), Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 100*1024, Routines(5), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
-	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(3), Checkpoint(true, ""), Progress(&OssProgressListener{}))
+	progressListener.TotalRwBytes = 0
+	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(3), Checkpoint(true, ""), Progress(&progressListener))
 	c.Assert(err, IsNil)
+	c.Assert(progressListener.TotalRwBytes, Equals, fileInfo.Size())
 
 	testLogger.Println("OssProgressSuite.TestCopyFile")
 }

@@ -3,6 +3,7 @@ package oss
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -23,7 +24,6 @@ func (s *OssUploadSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -35,24 +35,42 @@ func (s *OssUploadSuite) SetUpSuite(c *C) {
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssUploadSuite) TearDownSuite(c *C) {
 	// Delete part
-	lmur, err := s.bucket.ListMultipartUploads()
-	c.Assert(err, IsNil)
-
-	for _, upload := range lmur.Uploads {
-		var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
-			Key: upload.Key, UploadID: upload.UploadID}
-		err = s.bucket.AbortMultipartUpload(imur)
+	keyMarker := KeyMarker("")
+	uploadIDMarker := UploadIDMarker("")
+	for {
+		lmur, err := s.bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
+		for _, upload := range lmur.Uploads {
+			var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
+				Key: upload.Key, UploadID: upload.UploadID}
+			err = s.bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
+		keyMarker = KeyMarker(lmur.NextKeyMarker)
+		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
+		if !lmur.IsTruncated {
+			break
+		}
 	}
 
 	// Delete objects
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
-
-	for _, object := range lor.Objects {
-		err = s.bucket.DeleteObject(object.Key)
+	marker := Marker("")
+	for {
+		lor, err := s.bucket.ListObjects(marker)
 		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = s.bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
+		}
 	}
+
+	// Delete bucket
+	err := s.client.DeleteBucket(s.bucket.BucketName)
+	c.Assert(err, IsNil)
 
 	testLogger.Println("test upload completed")
 }
@@ -71,9 +89,9 @@ func (s *OssUploadSuite) TearDownTest(c *C) {
 
 // TestUploadRoutineWithoutRecovery tests multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecovery(c *C) {
-	objectName := objectNamePrefix + "turwr"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "upload-new-file.jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Routines is not specified, by default single routine
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024)
@@ -206,7 +224,7 @@ func ErrorHooker(id int, chunk FileChunk) error {
 
 // TestUploadRoutineWithoutRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
-	objectName := objectNamePrefix + "turwrn"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	uploadPartHooker = ErrorHooker
@@ -230,7 +248,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithoutRecoveryNegative(c *C) {
 
 // TestUploadRoutineWithRecovery is multi-routine upload with resumable recovery
 func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
-	objectName := objectNamePrefix + "turtr"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 	newFile := "upload-new-file-2.jpg"
 
@@ -379,7 +397,7 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 
 // TestUploadRoutineWithRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
-	objectName := objectNamePrefix + "turrn"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
 
 	// The local file does not exist
@@ -405,10 +423,10 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 
 // TestUploadLocalFileChange tests the file is updated while being uploaded
 func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
-	objectName := objectNamePrefix + "tulfc"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	localFile := "BingWallpaper-2015-11-07.jpg"
-	newFile := "upload-new-file-3.jpg"
+	localFile := RandStr(8) + ".jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	os.Remove(localFile)
 	err := copyFile(fileName, localFile)
@@ -441,6 +459,32 @@ func (s *OssUploadSuite) TestUploadLocalFileChange(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestUploadPartArchiveObject
+func (s *OssUploadSuite) TestUploadPartArchiveObject(c *C) {
+	// create archive bucket
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName, StorageClass(StorageArchive))
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+	objectName := objectNamePrefix + RandStr(8)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	// Updating the file,archive object
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, ObjectStorageClass(StorageArchive))
+	c.Assert(err, IsNil)
+
+	// Updating the file,archive object,checkpoint
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, ObjectStorageClass(StorageArchive), Checkpoint(true, fileName+".cp"))
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
 func copyFile(src, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -456,4 +500,242 @@ func copyFile(src, dst string) error {
 
 	_, err = io.Copy(dstFile, srcFile)
 	return err
+}
+
+func (s *OssUploadSuite) TestVersioningUploadRoutineWithRecovery(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// begin test
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := "test-file-" + RandStr(8)
+
+	// Use default routines and default CP file path (fileName+.cp)Header
+	// First upload for 4 parts
+	var respHeader http.Header
+	uploadPartHooker = ErrorHooker
+	options := []Option{Checkpoint(true, fileName+".cp"), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	c.Assert(GetVersionId(respHeader), Equals, "")
+
+	uploadPartHooker = defaultUploadPart
+
+	// Second upload, finish the remaining part
+	options = []Option{Checkpoint(true, fileName+".cp"), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+	versionIdUp := GetVersionId(respHeader)
+	c.Assert(len(versionIdUp) > 0, Equals, true)
+
+	os.Remove(newFile)
+	var respHeaderDown http.Header
+	err = bucket.GetObjectToFile(objectName, newFile, GetResponseHeader(&respHeaderDown))
+	versionIdDown := GetVersionId(respHeaderDown)
+	c.Assert(err, IsNil)
+	c.Assert(versionIdUp, Equals, versionIdDown)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	bucket.DeleteObject(objectName)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+// TestUploadFileChoiceOptions
+func (s *OssUploadSuite) TestUploadFileChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	// UploadFile with properties
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, IsNil)
+
+	// GetMetaDetail
+	headerResp, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+
+	c.Assert(headerResp.Get("X-Oss-Server-Side-Encryption"), Equals, "AES256")
+	aclResult, err := bucket.GetObjectACL(objectName)
+	c.Assert(aclResult.ACL, Equals, "public-read")
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+// TestUploadFileWithCpChoiceOptions
+func (s *OssUploadSuite) TestUploadFileWithCpChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	// UploadFile with properties
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+		Checkpoint(true, fileName+".cp"), // with checkpoint
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, IsNil)
+
+	// GetMetaDetail
+	headerResp, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+
+	c.Assert(headerResp.Get("X-Oss-Server-Side-Encryption"), Equals, "AES256")
+	c.Assert(headerResp.Get("X-Oss-Storage-Class"), Equals, "Archive")
+
+	aclResult, err := bucket.GetObjectACL(objectName)
+	c.Assert(aclResult.ACL, Equals, "public-read")
+	c.Assert(err, IsNil)
+
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+// TestUploadFileWithForbidOverWrite
+func (s *OssUploadSuite) TestUploadFileWithForbidOverWrite(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	// UploadFile with properties
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+		ForbidOverWrite(true),
+		Checkpoint(true, fileName+".cp"),
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, IsNil)
+
+	// Updating the file with ForbidOverWrite(true)
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, NotNil)
+
+	// without Checkpoint
+	options = []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		ServerSideEncryption("AES256"),
+		ObjectStorageClass(StorageArchive),
+		ForbidOverWrite(true),
+	}
+
+	// Updating the file with ForbidOverWrite(true)
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, NotNil)
+
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+// TestUploadFileWithSequential
+func (s *OssUploadSuite) TestUploadFileWithSequential(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	var respHeader http.Header
+
+	// UploadFile with properties
+	options := []Option{
+		Sequential(),
+		GetResponseHeader(&respHeader),
+		Checkpoint(true, fileName+".cp"),
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, IsNil)
+
+	respHeader, err = bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+
+	strMD5 := respHeader.Get("Content-MD5")
+	c.Assert(len(strMD5) > 0, Equals, true)
+
+	ForceDeleteBucket(client, bucketName, c)
 }

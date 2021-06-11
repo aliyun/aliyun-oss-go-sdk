@@ -3,7 +3,9 @@ package oss
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	. "gopkg.in/check.v1"
@@ -23,7 +25,6 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 	s.client = client
 
 	s.client.CreateBucket(bucketName)
-	time.Sleep(5 * time.Second)
 
 	bucket, err := s.client.Bucket(bucketName)
 	c.Assert(err, IsNil)
@@ -35,24 +36,42 @@ func (s *OssDownloadSuite) SetUpSuite(c *C) {
 // TearDownSuite runs before each test or benchmark starts running
 func (s *OssDownloadSuite) TearDownSuite(c *C) {
 	// Delete part
-	lmur, err := s.bucket.ListMultipartUploads()
-	c.Assert(err, IsNil)
-
-	for _, upload := range lmur.Uploads {
-		var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
-			Key: upload.Key, UploadID: upload.UploadID}
-		err = s.bucket.AbortMultipartUpload(imur)
+	keyMarker := KeyMarker("")
+	uploadIDMarker := UploadIDMarker("")
+	for {
+		lmur, err := s.bucket.ListMultipartUploads(keyMarker, uploadIDMarker)
 		c.Assert(err, IsNil)
+		for _, upload := range lmur.Uploads {
+			var imur = InitiateMultipartUploadResult{Bucket: s.bucket.BucketName,
+				Key: upload.Key, UploadID: upload.UploadID}
+			err = s.bucket.AbortMultipartUpload(imur)
+			c.Assert(err, IsNil)
+		}
+		keyMarker = KeyMarker(lmur.NextKeyMarker)
+		uploadIDMarker = UploadIDMarker(lmur.NextUploadIDMarker)
+		if !lmur.IsTruncated {
+			break
+		}
 	}
 
 	// Delete objects
-	lor, err := s.bucket.ListObjects()
-	c.Assert(err, IsNil)
-
-	for _, object := range lor.Objects {
-		err = s.bucket.DeleteObject(object.Key)
+	marker := Marker("")
+	for {
+		lor, err := s.bucket.ListObjects(marker)
 		c.Assert(err, IsNil)
+		for _, object := range lor.Objects {
+			err = s.bucket.DeleteObject(object.Key)
+			c.Assert(err, IsNil)
+		}
+		marker = Marker(lor.NextMarker)
+		if !lor.IsTruncated {
+			break
+		}
 	}
+
+	// Delete bucket
+	err := s.client.DeleteBucket(s.bucket.BucketName)
+	c.Assert(err, IsNil)
 
 	testLogger.Println("test download completed")
 }
@@ -74,9 +93,9 @@ func (s *OssDownloadSuite) TearDownTest(c *C) {
 
 // TestDownloadRoutineWithoutRecovery multipart downloads without checkpoint
 func (s *OssDownloadSuite) TestDownloadRoutineWithoutRecovery(c *C) {
-	objectName := objectNamePrefix + "tdrwr"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file.jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -136,9 +155,9 @@ func DownErrorHooker(part downloadPart) error {
 
 // TestDownloadRoutineWithRecovery multi-routine resumable download
 func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
-	objectName := objectNamePrefix + "tdrtr"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-2.jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -197,7 +216,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	// Check
 	dcp = downloadCheckpoint{}
 	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
-	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, newFile)
+	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "",newFile)
 	err = dcp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(dcp.Magic, Equals, downloadCpMagic)
@@ -250,9 +269,9 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 // TestDownloadOption options
 func (s *OssDownloadSuite) TestDownloadOption(c *C) {
-	objectName := objectNamePrefix + "tdmo"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-3.jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload the file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -290,9 +309,9 @@ func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 
 // TestDownloadObjectChange tests the file is updated during the upload
 func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
-	objectName := objectNamePrefix + "tdloc"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-4.jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -318,9 +337,9 @@ func (s *OssDownloadSuite) TestDownloadObjectChange(c *C) {
 
 // TestDownloadNegative tests downloading negative
 func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
-	objectName := objectNamePrefix + "tdn"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-3.jpg"
+	newFile := RandStr(8) + ".jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -370,10 +389,10 @@ func (s *OssDownloadSuite) TestDownloadNegative(c *C) {
 
 // TestDownloadWithRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
-	objectName := objectNamePrefix + "tdwr"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-tdwr.jpg"
-	newFileGet := "down-new-file-tdwr-2.jpg"
+	newFile := RandStr(8) + ".jpg"
+	newFileGet := RandStr(8) + "-.jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
@@ -464,10 +483,10 @@ func (s *OssDownloadSuite) TestDownloadWithRange(c *C) {
 
 // TestDownloadWithCheckoutAndRange tests concurrent downloading with range specified and checkpoint enabled
 func (s *OssDownloadSuite) TestDownloadWithCheckoutAndRange(c *C) {
-	objectName := objectNamePrefix + "tdwcr"
+	objectName := objectNamePrefix + RandStr(8)
 	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
-	newFile := "down-new-file-tdwcr.jpg"
-	newFileGet := "down-new-file-tdwcr-2.jpg"
+	newFile := RandStr(8) + ".jpg"
+	newFileGet := RandStr(8) + "-get.jpg"
 
 	// Upload a file
 	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3), Checkpoint(true, fileName+".cp"))
@@ -655,4 +674,306 @@ func compareFilesWithRange(fileL string, offsetL int64, fileR string, offsetR in
 	}
 
 	return true, nil
+}
+
+func (s *OssDownloadSuite) TestVersioningDownloadWithoutCheckPoint(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// begin test
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+
+	newFile := RandStr(8) + ".jpg"
+	newFileGet := RandStr(8) + "-.jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+	versionId := GetVersionId(respHeader)
+	c.Assert(len(versionId) > 0, Equals, true)
+
+	fileSize, err := getFileSize(fileName)
+	c.Assert(err, IsNil)
+
+	// overwrite emtpy object
+	err = bucket.PutObject(objectName, strings.NewReader(""))
+	c.Assert(err, IsNil)
+
+	// Download with range, from 1024 to 4096
+	os.Remove(newFile)
+	options = []Option{Routines(3), Range(1024, 4095), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err := compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{Range(1024, 4095), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// Download with range, from 1024 to 4096
+	os.Remove(newFile)
+	options = []Option{Routines(3), NormalizedRange("1024-4095"), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err = compareFilesWithRange(fileName, 1024, newFile, 0, 3072)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{NormalizedRange("1024-4095"), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// Download with range, from 2048 to the end
+	os.Remove(newFile)
+	options = []Option{NormalizedRange("2048-"), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 1024*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err = compareFilesWithRange(fileName, 2048, newFile, 0, fileSize-2048)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{NormalizedRange("2048-"), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// Download with range, the last 4096
+	os.Remove(newFile)
+	options = []Option{Routines(3), NormalizedRange("-4096"), VersionId(versionId)}
+	err = bucket.DownloadFile(objectName, newFile, 1024, options...)
+	c.Assert(err, IsNil)
+
+	// Check
+	eq, err = compareFilesWithRange(fileName, fileSize-4096, newFile, 0, 4096)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFileGet)
+	options = []Option{NormalizedRange("-4096"), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(newFile, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// download whole file
+	os.Remove(newFileGet)
+	options = []Option{Routines(3), VersionId(versionId)}
+	err = bucket.GetObjectToFile(objectName, newFileGet, options...)
+	c.Assert(err, IsNil)
+
+	// Compare get and download
+	eq, err = compareFiles(fileName, newFileGet)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFileGet)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+
+	// begin test
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := RandStr(8) + ".jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+	versionId := GetVersionId(respHeader)
+	c.Assert(len(versionId) > 0, Equals, true)
+
+	// Resumable download with checkpoint dir
+	os.Remove(newFile)
+	downloadPartHooker = DownErrorHooker
+	options = []Option{CheckpointDir(true, "./"), VersionId(versionId)}
+
+	strPayer := getPayer(options)
+	c.Assert(strPayer, Equals, "")
+
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+
+	// download again
+	downloadPartHooker = defaultDownloadPartHook
+	options = []Option{CheckpointDir(true, "./"), VersionId(versionId), GetResponseHeader(&respHeader)}
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, versionId)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssDownloadSuite) TestdownloadFileChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// begin test
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := RandStr(8) + ".jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Resumable download with checkpoint dir
+	os.Remove(newFile)
+
+	// downloadFile with properties
+	options = []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+	}
+
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssDownloadSuite) TestdownloadFileWithCpChoiceOptions(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// begin test
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := RandStr(8) + ".jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	// Resumable download with checkpoint dir
+	os.Remove(newFile)
+
+	// DownloadFile with properties
+	options = []Option{
+		ObjectACL(ACLPublicRead),
+		RequestPayer(Requester),
+		TrafficLimitHeader(1024 * 1024 * 8),
+		CheckpointDir(true, "./"),
+	}
+
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
 }

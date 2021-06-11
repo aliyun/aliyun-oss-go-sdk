@@ -122,6 +122,19 @@ func PutObjectSample() {
 		HandleError(err)
 	}
 
+	// Case 9: Set the storage classes.OSS provides three storage classes: Standard, Infrequent Access, and Archive.
+	// Supported APIs: PutObject, CopyObject, UploadFile, AppendObject...
+	err = bucket.PutObject(objectKey, strings.NewReader(val), oss.ObjectStorageClass("IA"))
+	if err != nil {
+		HandleError(err)
+	}
+
+	// Upload a local file, and set the object's storage-class to 'Archive'.
+	err = bucket.UploadFile(objectKey, localFile, 100*1024, oss.ObjectStorageClass("Archive"))
+	if err != nil {
+		HandleError(err)
+	}
+
 	// Delete object and bucket
 	err = DeleteTestBucketAndObject(bucketName)
 	if err != nil {

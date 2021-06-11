@@ -23,9 +23,13 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.getURL("bucket", "object", "params").String(), Equals, "http://docs.github.com/object?params")
 	c.Assert(um.getURL("bucket", "object", "").String(), Equals, "http://docs.github.com/object")
 	c.Assert(um.getURL("", "object", "").String(), Equals, "http://docs.github.com/object")
-	c.Assert(um.getResource("bucket", "object", "subres"), Equals, "/bucket/object?subres")
-	c.Assert(um.getResource("bucket", "object", ""), Equals, "/bucket/object")
-	c.Assert(um.getResource("", "object", ""), Equals, "/")
+
+	var conn Conn
+	conn.config = getDefaultOssConfig()
+	conn.config.AuthVersion = AuthV1
+	c.Assert(conn.getResource("bucket", "object", "subres"), Equals, "/bucket/object?subres")
+	c.Assert(conn.getResource("bucket", "object", ""), Equals, "/bucket/object")
+	c.Assert(conn.getResource("", "object", ""), Equals, "/")
 
 	um.Init("https://docs.github.com", true, false)
 	c.Assert(um.Type, Equals, urlTypeCname)
@@ -45,9 +49,9 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.getURL("bucket", "object", "params").String(), Equals, "http://bucket.docs.github.com:8080/object?params")
 	c.Assert(um.getURL("bucket", "object", "").String(), Equals, "http://bucket.docs.github.com:8080/object")
 	c.Assert(um.getURL("", "object", "").String(), Equals, "http://docs.github.com:8080/")
-	c.Assert(um.getResource("bucket", "object", "subres"), Equals, "/bucket/object?subres")
-	c.Assert(um.getResource("bucket", "object", ""), Equals, "/bucket/object")
-	c.Assert(um.getResource("", "object", ""), Equals, "/")
+	c.Assert(conn.getResource("bucket", "object", "subres"), Equals, "/bucket/object?subres")
+	c.Assert(conn.getResource("bucket", "object", ""), Equals, "/bucket/object")
+	c.Assert(conn.getResource("", "object", ""), Equals, "/")
 
 	um.Init("https://docs.github.com:8080", false, true)
 	c.Assert(um.Type, Equals, urlTypeAliyun)
@@ -85,6 +89,7 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 func (s *OssConnSuite) TestAuth(c *C) {
 	endpoint := "https://github.com/"
 	cfg := getDefaultOssConfig()
+	cfg.AuthVersion = AuthV1
 	um := urlMaker{}
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
@@ -107,18 +112,18 @@ func (s *OssConnSuite) TestAuth(c *C) {
 	req.Header.Set("X-OSS-Magic", "abracadabra")
 	req.Header.Set("Content-Md5", "ODBGOERFMDMzQTczRUY3NUE3NzA5QzdFNUYzMDQxNEM=")
 
-	conn.signHeader(req, um.getResource("bucket", "object", ""))
+	conn.signHeader(req, conn.getResource("bucket", "object", ""))
 	testLogger.Println("AUTHORIZATION:", req.Header.Get(HTTPHeaderAuthorization))
 }
 
 func (s *OssConnSuite) TestConnToolFunc(c *C) {
-	err := checkRespCode(202, []int{})
+	err := CheckRespCode(202, []int{})
 	c.Assert(err, NotNil)
 
-	err = checkRespCode(202, []int{404})
+	err = CheckRespCode(202, []int{404})
 	c.Assert(err, NotNil)
 
-	err = checkRespCode(202, []int{202, 404})
+	err = CheckRespCode(202, []int{202, 404})
 	c.Assert(err, IsNil)
 
 	srvErr, err := serviceErrFromXML([]byte(""), 312, "")
@@ -147,6 +152,7 @@ func (s *OssConnSuite) TestConnToolFunc(c *C) {
 
 func (s *OssConnSuite) TestSignRtmpURL(c *C) {
 	cfg := getDefaultOssConfig()
+
 	um := urlMaker{}
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
@@ -174,11 +180,13 @@ func (s *OssConnSuite) TestGetRtmpSignedStr(c *C) {
 	um.Init(endpoint, false, false)
 	conn := Conn{cfg, &um, nil}
 
+	akIf := conn.config.GetCredentials()
+
 	//Anonymous
 	channelName := "test-get-rtmp-signed-str"
 	playlistName := "playlist.m3u8"
 	expiration := time.Now().Unix() + 3600
 	params := map[string]interface{}{}
-	signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, params)
+	signedStr := conn.getRtmpSignedStr(bucketName, channelName, playlistName, expiration, akIf.GetAccessKeySecret(), params)
 	c.Assert(signedStr, Equals, "")
 }

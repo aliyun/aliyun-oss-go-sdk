@@ -11,26 +11,25 @@ import (
 // CnameSample shows the cname usage
 func CnameSample() {
 	// New client
-	client, err := oss.New(endpoint4Cname, accessID4Cname, accessKey4Cname,
-		oss.UseCname(true))
+	client, err := oss.New(endpoint4Cname, accessID, accessKey, oss.UseCname(true))
 	if err != nil {
 		HandleError(err)
 	}
 
 	// Create bucket
-	err = client.CreateBucket(bucketName4Cname)
+	err = client.CreateBucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
 
 	// Set bucket ACL
-	err = client.SetBucketACL(bucketName4Cname, oss.ACLPrivate)
+	err = client.SetBucketACL(bucketName, oss.ACLPrivate)
 	if err != nil {
 		HandleError(err)
 	}
 
 	// Look up bucket ACL
-	gbar, err := client.GetBucketACL(bucketName4Cname)
+	gbar, err := client.GetBucketACL(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
@@ -42,7 +41,7 @@ func CnameSample() {
 		HandleError(err)
 	}
 
-	bucket, err := client.Bucket(bucketName4Cname)
+	bucket, err := client.Bucket(bucketName)
 	if err != nil {
 		HandleError(err)
 	}
@@ -74,7 +73,7 @@ func CnameSample() {
 	}
 
 	// Get object to file
-	err = bucket.GetObjectToFile(objectKey, newPicName)
+	err = bucket.GetObjectToFile(objectKey, localFile)
 	if err != nil {
 		HandleError(err)
 	}

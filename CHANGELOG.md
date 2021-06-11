@@ -1,4 +1,143 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.8 日期：2021-04-09
+### 变更内容
+- 增加：支持传输加速设置
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.7 日期：2021-03-24
+### 变更内容
+- 增加：并行上传part支持设置md5以及hash context
+- 增加：GetBucketWebsiteXml
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.6 日期：2021-01-13
+### 变更内容
+- 增加：增加worm接口
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.5 日期：2020-11-19
+### 变更内容
+- 增加：增加ListObjectsV2接口
+- 增加: 增加RestoreObjectXML接口
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.4 日期：2020-07-24
+### 变更内容
+- 修复：lifecycle配置支持输入LifecycleVersionTransition数组
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.3 日期：2020-07-10
+### 变更内容
+- 修复：lifecycle支持冷归档(ColdArchive)
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.2 日期：2020-06-19
+### 变更内容
+- 增加：支持禁止http跳转功能(go1.7.0版本及以上)
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.1 日期：2020-06-04
+### 变更内容
+- 增加：支持国密byok
+- 增加：支持异步任务的设置和读取
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.0 日期：2020-04-21
+### 变更内容
+- 增加：支持客户端加密、清单、冷归档功能
+- 增加：tcp连接增加keepalive心跳选项
+- 优化: 分块上传事件通知优化
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.8 日期：2020-04-09
+### 变更内容
+- 增加：支持用户传入自定义的header和param参数
+- 增加：增加对X-Oss-Range-Behavior支持
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.7 日期：2020-03-11
+### 变更内容
+- 增加：支持OSS V2 签名
+- 增加：增加SetBucketWebsiteXml接口,支持直接传入xml文件内容
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.6 日期：2020-02-15
+### 变更内容
+- 修复：CopyFile接口需要支持服务端加密功能
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.5 日期：2020-01-03
+### 变更内容
+- 增加：增加禁止同名覆盖选项X-Oss-Forbid-Overwrite
+- 增加：增加分块上传参数sequential, 支持分块上传返回md5校验值
+
+## 版本号：v2.0.4 日期：2019-11-13
+### 变更内容
+- 增加：SSR 对bucket 和 endpoint 做合法性校验，不符合要求要直接提示错误。
+- 增加：select object 功能merge
+- 增加：断点续传文件支持多版本
+- 增加：lifecycle 支持多版本
+- 修复：断点续传文件中的时间比较方式优化
+- 修复：修复断点上传不支持服务端加密的bug
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.3 日期：2019-09-17
+### 变更内容
+- 修复：不支持分块上传归档object
+- 增加：增加绑定客户端ip地址
+- 增加: 增加更多的mime type类型
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.2 日期：2019-08-06
+### 变更内容
+- 修复：proxy代理不支持https请求
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.1 日期：2019-07-11
+### 变更内容
+- 增加：增加qos相关api
+- 增加：增加payment相关api
+- 增加：增加自定义获取AccessKeyID、AccessKeySecret、SecurityToken
+- 增加: 增加http请求限速option
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.0.0 日期：2019-06-18
+### 变更内容
+- 增加：增加各个接口对versioning的支持
+- 增加：增加设置、查询、删除bucket policy接口
+- 增加: 增加设置website详细配置接口: SetBucketWebsiteDetail
+- 增加: 增加Bucket OptionsMethod 接口
+
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v1.9.8 日期：2019-05-25
+### 变更内容
+- 增加：增加设置、查询、删除bucket tagging接口
+
+# ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v1.9.7 日期：2019-05-22
+### 变更内容
+- 增加：增加设置、查询、删除object tagging接口
+- 增加：增加设置、查询、删除bucket encryption接口
+- 增加：增加获取bucket统计信息接口
+
+## 版本号：v1.9.6 日期：2019-04-15
+### 变更内容
+- 变更：扩展lifecycle功能，提供设置AbortMutipartUpload和Transitions两种规则的生命周期管理的处理
+- 修复：测试用例BucketName使用固定前缀+随机的字符串
+- 修复：测试用例ObjectName使用固定前缀+随机字符串
+- 修复：测试用例有关bucket相关的异步操作，统一定义sleep时间
+- 修复：测试集结束后，列出bucket内的所有对象并删除所有测试的对象
+- 修复：测试集结束后，列出bucket内的所有未上传完成的分片并删除所有测试过程中产生的为上传完成的分片
+- 修复：支持上传webp类型的对象时从对象的后缀名字自动解析对应的content-type并设置content-type
+- 变更：增加在put/copy/append等接口时时设置对象的存储类型的sample
+- 修复：sample示例中的配置项的值改为直接从环境变量读取
+
 ## 版本号：1.9.5 日期：2019-03-08
 ### 变更内容
 - 变更：增加了限速上传功能

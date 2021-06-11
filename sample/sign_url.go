@@ -3,6 +3,7 @@ package sample
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -54,10 +55,15 @@ func SignURLSample() {
 	if err != nil {
 		HandleError(err)
 	}
+	defer body.Close()
+
 	// Read content
 	data, err := ioutil.ReadAll(body)
-	body.Close()
-	data = data // use data
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(-1)
+	}
+	fmt.Println("data:", string(data))
 
 	err = bucket.GetObjectToFileWithURL(signedURL, "mynewfile-1.jpg")
 	if err != nil {
