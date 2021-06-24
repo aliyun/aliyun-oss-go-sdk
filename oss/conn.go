@@ -48,6 +48,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"worm", "wormId", "wormExtend", "withHashContext",
 	"x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256",
 	"x-oss-hash-ctx", "x-oss-md5-ctx", "transferAcceleration",
+	"regionList",
 }
 
 // init initializes Conn
@@ -182,7 +183,7 @@ func (conn Conn) getURLParams(params map[string]interface{}) string {
 			buf.WriteByte('&')
 		}
 		buf.WriteString(url.QueryEscape(k))
-		if params[k] != nil {
+		if params[k] != nil && params[k].(string) != "" {
 			buf.WriteString("=" + strings.Replace(url.QueryEscape(params[k].(string)), "+", "%20", -1))
 		}
 	}
@@ -218,7 +219,9 @@ func (conn Conn) getSubResource(params map[string]interface{}) string {
 		}
 		buf.WriteString(k)
 		if _, ok := signParams[k]; ok {
-			buf.WriteString("=" + signParams[k])
+			if signParams[k] != "" {
+				buf.WriteString("=" + signParams[k])
+			}
 		}
 	}
 	return buf.String()
