@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.9 日期：2021-07-09
+### 变更内容
+- 增加：支持跳过服务端证书校验
+- 增加：支持regionList参数
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.8 日期：2021-04-09
 ### 变更内容
 - 增加：支持传输加速设置
