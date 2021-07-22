@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"hash"
 	"hash/crc64"
@@ -421,6 +422,9 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) DeleteObject(objectKey string, options ...Option) error {
+	if objectKey == "" {
+		return errors.New("objectKey cannot be empty")
+	}
 	params, _ := GetRawParams(options)
 	resp, err := bucket.do("DELETE", objectKey, params, options, nil, nil)
 	if err != nil {
