@@ -1588,6 +1588,132 @@ func (client Client) DeleteBucketTransferAcc(bucketName string, options ...Optio
 	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+// PutBucketReplication put bucket replication configuration
+// bucketName    the bucket name.
+// xmlBody    the replication configuration.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) PutBucketReplication(bucketName string, xmlBody string) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlBody))
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["replication"] = nil
+	params["comp"] = "add"
+	resp, err := client.do("POST", bucketName, params, headers, buffer)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketReplication get bucket replication configuration
+// bucketName    the bucket name.
+// string    the replication configuration.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketReplication(bucketName string) (string, error) {
+	params := map[string]interface{}{}
+	params["replication"] = nil
+
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(data), err
+}
+
+// DeleteBucketReplication delete bucket replication configuration
+// bucketName    the bucket name.
+// ruleId    the ID of the replication configuration.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) DeleteBucketReplication(bucketName string, ruleId string) error {
+	replicationxml := ReplicationXML{}
+	replicationxml.ID = ruleId
+
+	bs, err := xml.Marshal(replicationxml)
+	if err != nil {
+		return err
+	}
+
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["replication"] = nil
+	params["comp"] = "delete"
+	resp, err := client.do("POST", bucketName, params, headers, buffer)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketReplicationLocation get the locations of the target bucket that can be copied to
+// bucketName    the bucket name.
+// string    the locations of the target bucket that can be copied to.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketReplicationLocation(bucketName string) (string, error) {
+	params := map[string]interface{}{}
+	params["replicationLocation"] = nil
+
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(data), err
+}
+
+// GetBucketReplicationProgress get the replication progress of bucket
+// bucketName    the bucket name.
+// ruleId    the ID of the replication configuration.
+// string    the replication progress of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) GetBucketReplicationProgress(bucketName string, ruleId string) (string, error) {
+	params := map[string]interface{}{}
+	params["replicationProgress"] = nil
+	if ruleId != "" {
+		params["rule-id"] = ruleId
+	}
+
+	resp, err := client.do("GET", bucketName, params, nil, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(data), err
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
