@@ -5311,3 +5311,57 @@ func (s *OssBucketSuite) TestPutObjectWithKmsSm4(c *C) {
 	c.Assert(err, IsNil)
 	ForceDeleteBucket(client, bucketName, c)
 }
+
+func (s *OssBucketSuite) TestGetSingleObjectLimitSpeed(c *C) {
+	// create client and bucket
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.LimitDownloadSpeed(1)
+	if err != nil {
+		// go version is less than go1.7,not support limit download speed
+		// doesn't run this test
+		return
+	}
+
+	// set limit download speed as 100KB/s
+	limitSpeed := 100
+	client.LimitDownloadSpeed(limitSpeed)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	// 1M byte
+	textBuffer := RandStr(1024 * 1024)
+
+	// Put body
+	err = bucket.PutObject(objectName, strings.NewReader(textBuffer))
+	c.Assert(err, IsNil)
+
+	// get object to file
+	tempFile := "test-go-sdk-" + RandStr(8)
+	startT := time.Now()
+	err = bucket.GetObjectToFile(objectName, tempFile)
+	endT := time.Now()
+	c.Assert(err, IsNil)
+
+	realSpeed := int64(len(textBuffer)) / (endT.UnixNano()/1000/1000/1000 - startT.UnixNano()/1000/1000/1000)
+	c.Assert(float64(realSpeed/1024) < float64(limitSpeed)*1.15, Equals, true)
+	c.Assert(float64(realSpeed/1024) > float64(limitSpeed)*0.85, Equals, true)
+
+	// Get object and compare content
+	fileBody, err := ioutil.ReadFile(tempFile)
+	c.Assert(err, IsNil)
+	c.Assert(textBuffer, Equals, string(fileBody))
+
+	bucket.DeleteObject(objectName)
+	client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+	os.Remove(tempFile)
+}
