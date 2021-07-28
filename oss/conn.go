@@ -515,14 +515,35 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 	}
 	srvCRC, _ = strconv.ParseUint(resp.Header.Get(HTTPHeaderOssCRC64), 10, 64)
 
+	realBody := resp.Body
+	if conn.isDownloadLimitResponse(resp) {
+		limitReader := &LimitSpeedReader{
+			reader:     realBody,
+			ossLimiter: conn.config.DownloadLimiter,
+		}
+		realBody = limitReader
+	}
+
 	// 2xx, successful
 	return &Response{
 		StatusCode: resp.StatusCode,
 		Headers:    resp.Header,
-		Body:       resp.Body,
+		Body:       realBody,
 		ClientCRC:  cliCRC,
 		ServerCRC:  srvCRC,
 	}, nil
+}
+
+// isUploadLimitReq: judge limit upload speed or not
+func (conn Conn) isDownloadLimitResponse(resp *http.Response) bool {
+	if resp == nil || conn.config.DownloadLimitSpeed == 0 || conn.config.DownloadLimiter == nil {
+		return false
+	}
+
+	if strings.EqualFold(resp.Request.Method,"GET") {
+		return true
+	}
+	return false
 }
 
 // LoggerHTTPReq Print the header information of the http request

@@ -1598,6 +1598,16 @@ func (client Client) LimitUploadSpeed(upSpeed int) error {
 	return client.Config.LimitUploadSpeed(upSpeed)
 }
 
+// LimitDownloadSpeed set download bandwidth limit speed,default is 0,unlimited
+// downSpeed KB/s, 0 is unlimited,default is 0
+// error it's nil if success, otherwise failure
+func (client Client) LimitDownloadSpeed(upSpeed int) error {
+	if client.Config == nil {
+		return fmt.Errorf("client config is nil")
+	}
+	return client.Config.LimitDownloadSpeed(upSpeed)
+}
+
 // UseCname sets the flag of using CName. By default it's false.
 //
 // isUseCname    true: the endpoint has the CName, false: the endpoint does not have cname. Default is false.

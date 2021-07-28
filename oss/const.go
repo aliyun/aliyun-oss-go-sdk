@@ -234,7 +234,7 @@ const (
 
 	NullVersion = "null"
 
-	Version = "v2.1.9" // Go SDK version
+	Version = "v2.1.10" // Go SDK version
 )
 
 // FrameType
