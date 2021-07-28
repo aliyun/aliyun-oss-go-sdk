@@ -1252,3 +1252,9 @@ type TransferAccConfiguration struct {
 	XMLName xml.Name `xml:"TransferAccelerationConfiguration"`
 	Enabled bool     `xml:"Enabled"`
 }
+
+// ReplicationXML defines simple replication xml, and ReplicationXML is used for "DeleteBucketReplication" in client.go
+type ReplicationXML struct {
+	XMLName xml.Name `xml:"ReplicationRules"`
+	ID      string   `xml:"ID,omitempty"`
+}

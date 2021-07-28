@@ -78,6 +78,24 @@ var (
 	timeoutInOperation = 3 * time.Second
 )
 
+// structs for replication get test
+type GetResult struct {
+	Rules []Rule `xml:"Rule"`
+}
+
+type Rule struct {
+	Action                      string          `xml:"Action,omitempty"`                      // The replication action (ALL or PUT)
+	ID                          string          `xml:"ID,omitempty"`                          // The rule ID
+	Destination                 DestinationType `xml:"Destination"`                           // Container for storing target bucket information
+	HistoricalObjectReplication string          `xml:"HistoricalObjectReplication,omitempty"` // Whether to copy copy historical data (enabled or not)
+	Status                      string          `xml:"Status,omitempty"`                      // The replication status (starting, doing or closing)
+}
+
+type DestinationType struct {
+	Bucket   string `xml:"Bucket"`
+	Location string `xml:"Location"`
+}
+
 func RandStr(n int) string {
 	b := make([]rune, n)
 	randMarker := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -3913,5 +3931,451 @@ func (s *OssClientSuite) TestBucketTransferAcc(c *C) {
 	c.Assert(err, NotNil)
 
 	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestBucketReplicationPutAndGet
+func (s *OssClientSuite) TestBucketReplicationPutAndGet(c *C) {
+	var sourceBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	sourceRegion := "hangzhou"
+	sourceEndpoint := "oss-cn-" + sourceRegion + ".aliyuncs.com"
+
+	client1, err := New(sourceEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client1.CreateBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var destinationBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	destinationRegion := "beijing"
+	destinationEndpoint := "oss-cn-" + destinationRegion + ".aliyuncs.com"
+
+	client2, err := New(destinationEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client2.CreateBucket(destinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	putXml := `<?xml version="1.0" encoding="UTF-8"?>
+	<ReplicationConfiguration>
+	  <Rule>
+		<Action>PUT</Action>
+		<Destination>
+		  <Bucket>` + destinationBucketNameTest + `</Bucket>
+		  <Location>oss-cn-` + destinationRegion + `</Location>
+		</Destination>
+		<HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+	  </Rule>
+	</ReplicationConfiguration>`
+
+	// replication command and put method test
+	err = client1.PutBucketReplication(sourceBucketNameTest, putXml)
+	c.Assert(err, IsNil)
+
+	time.Sleep(5 * time.Second)
+
+	data, err := client1.GetBucketReplication(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var result GetResult
+	err = xml.Unmarshal([]byte(data), &result)
+	c.Assert(err, IsNil)
+
+	c.Assert(result.Rules[0].Status, Equals, "starting")
+	c.Assert(result.Rules[0].Destination.Location, Equals, "oss-cn-"+destinationRegion)
+	c.Assert(result.Rules[0].Destination.Bucket, Equals, destinationBucketNameTest)
+	c.Assert(result.Rules[0].HistoricalObjectReplication, Equals, "enabled")
+
+	err = client1.DeleteBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client2.DeleteBucket(destinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+}
+
+// TestBucketReplicationDelete
+func (s *OssClientSuite) TestBucketReplicationDeleteSuccess(c *C) {
+	var sourceBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	sourceRegion := "hangzhou"
+	sourceEndpoint := "oss-cn-" + sourceRegion + ".aliyuncs.com"
+
+	client1, err := New(sourceEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client1.CreateBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var destinationBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	destinationRegion := "beijing"
+	destinationEndpoint := "oss-cn-" + destinationRegion + ".aliyuncs.com"
+
+	client2, err := New(destinationEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client2.CreateBucket(destinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	putXml := `<?xml version="1.0" encoding="UTF-8"?>
+	<ReplicationConfiguration>
+	  <Rule>
+		<Action>PUT</Action>
+		<Destination>
+		  <Bucket>` + destinationBucketNameTest + `</Bucket>
+		  <Location>oss-cn-` + destinationRegion + `</Location>
+		</Destination>
+		<HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+	  </Rule>
+	</ReplicationConfiguration>`
+
+	// replication command and put method test
+	err = client1.PutBucketReplication(sourceBucketNameTest, putXml)
+	c.Assert(err, IsNil)
+
+	time.Sleep(5 * time.Second)
+
+	data, err := client1.GetBucketReplication(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var result GetResult
+	err = xml.Unmarshal([]byte(data), &result)
+	c.Assert(err, IsNil)
+
+	c.Assert(result.Rules[0].Status, Equals, "starting")
+	c.Assert(result.Rules[0].Destination.Location, Equals, "oss-cn-"+destinationRegion)
+	c.Assert(result.Rules[0].Destination.Bucket, Equals, destinationBucketNameTest)
+	c.Assert(result.Rules[0].HistoricalObjectReplication, Equals, "enabled")
+
+	ruleID := result.Rules[0].ID
+
+	err = client1.DeleteBucketReplication(sourceBucketNameTest, ruleID)
+	c.Assert(err, IsNil)
+
+	// get again
+	afterDeleteData, err := client1.GetBucketReplication(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var afterDeleteResult GetResult
+	err = xml.Unmarshal([]byte(afterDeleteData), &afterDeleteResult)
+	c.Assert(err, IsNil)
+	c.Assert(afterDeleteResult.Rules[0].Status, Equals, "closing")
+
+	err = client1.DeleteBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client2.DeleteBucket(destinationBucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestBucketReplicationDelete
+func (s *OssClientSuite) TestBucketReplicationDeleteWithEmptyRuleID(c *C) {
+	var sourceBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	sourceRegion := "hangzhou"
+	sourceEndpoint := "oss-cn-" + sourceRegion + ".aliyuncs.com"
+
+	client1, err := New(sourceEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client1.CreateBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var destinationBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	destinationRegion := "beijing"
+	destinationEndpoint := "oss-cn-" + destinationRegion + ".aliyuncs.com"
+
+	client2, err := New(destinationEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client2.CreateBucket(destinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	putXml := `<?xml version="1.0" encoding="UTF-8"?>
+	<ReplicationConfiguration>
+	  <Rule>
+		<Action>PUT</Action>
+		<Destination>
+		  <Bucket>` + destinationBucketNameTest + `</Bucket>
+		  <Location>oss-cn-` + destinationRegion + `</Location>
+		</Destination>
+		<HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+	  </Rule>
+	</ReplicationConfiguration>`
+
+	// replication command and put method test
+	err = client1.PutBucketReplication(sourceBucketNameTest, putXml)
+	c.Assert(err, IsNil)
+
+	time.Sleep(5 * time.Second)
+
+	data, err := client1.GetBucketReplication(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var result GetResult
+	err = xml.Unmarshal([]byte(data), &result)
+	c.Assert(err, IsNil)
+
+	c.Assert(result.Rules[0].Status, Equals, "starting")
+	c.Assert(result.Rules[0].Destination.Location, Equals, "oss-cn-"+destinationRegion)
+	c.Assert(result.Rules[0].Destination.Bucket, Equals, destinationBucketNameTest)
+	c.Assert(result.Rules[0].HistoricalObjectReplication, Equals, "enabled")
+
+	ruleID := ""
+
+	err = client1.DeleteBucketReplication(sourceBucketNameTest, ruleID)
+	c.Assert(err, NotNil)
+
+	// get again
+	afterDeleteData, err := client1.GetBucketReplication(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var afterDeleteResult GetResult
+	err = xml.Unmarshal([]byte(afterDeleteData), &afterDeleteResult)
+	c.Assert(err, IsNil)
+	c.Assert(afterDeleteResult.Rules[0].Status, Equals, "starting")
+
+	err = client1.DeleteBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client2.DeleteBucket(destinationBucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+// TestBucketReplicationGetLocation
+func (s *OssClientSuite) TestBucketReplicationGetLocation(c *C) {
+	var sourceBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	sourceRegion := "hangzhou"
+	sourceEndpoint := "oss-cn-" + sourceRegion + ".aliyuncs.com"
+
+	client1, err := New(sourceEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client1.CreateBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	data, err := client1.GetBucketReplicationLocation(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	c.Assert(strings.Contains(data, "<ReplicationLocation>"), Equals, true)
+
+	err = client1.DeleteBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketReplicationGetProgressWithRuleID(c *C) {
+	var sourceBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	sourceRegion := "hangzhou"
+	sourceEndpoint := "oss-cn-" + sourceRegion + ".aliyuncs.com"
+
+	client1, err := New(sourceEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client1.CreateBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var firstDestinationBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	firstDestinationRegion := "beijing"
+	firstDestinationEndpoint := "oss-cn-" + firstDestinationRegion + ".aliyuncs.com"
+
+	client2, err := New(firstDestinationEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client2.CreateBucket(firstDestinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var secondDestinationBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	secondDestinationRegion := "shenzhen"
+	secondDestinationEndpoint := "oss-cn-" + secondDestinationRegion + ".aliyuncs.com"
+
+	client3, err := New(secondDestinationEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client3.CreateBucket(secondDestinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	firstPutXml := `<?xml version="1.0" encoding="UTF-8"?>
+	<ReplicationConfiguration>
+	  <Rule>
+		<Action>PUT</Action>
+		<Destination>
+		  <Bucket>` + firstDestinationBucketNameTest + `</Bucket>
+		  <Location>oss-cn-` + firstDestinationRegion + `</Location>
+		</Destination>
+		<HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+	  </Rule>
+	</ReplicationConfiguration>`
+
+	// replication command and put method test
+	err = client1.PutBucketReplication(sourceBucketNameTest, firstPutXml)
+	c.Assert(err, IsNil)
+
+	secondPutXml := `<?xml version="1.0" encoding="UTF-8"?>
+	<ReplicationConfiguration>
+	  <Rule>
+		<Action>PUT</Action>
+		<Destination>
+		  <Bucket>` + secondDestinationBucketNameTest + `</Bucket>
+		  <Location>oss-cn-` + secondDestinationRegion + `</Location>
+		</Destination>
+		<HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+	  </Rule>
+	</ReplicationConfiguration>`
+
+	// replication command and put method test
+	err = client1.PutBucketReplication(sourceBucketNameTest, secondPutXml)
+	c.Assert(err, IsNil)
+
+	time.Sleep(5 * time.Second)
+
+	data, err := client1.GetBucketReplication(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var result GetResult
+	err = xml.Unmarshal([]byte(data), &result)
+	c.Assert(err, IsNil)
+
+	var index int
+	for i := 0; i <= 1; i++ {
+		if result.Rules[i].Destination.Location == "oss-cn-"+secondDestinationRegion {
+			index = i
+			break
+		}
+	}
+
+	ruleID := result.Rules[index].ID
+
+	progressData, err := client1.GetBucketReplicationProgress(sourceBucketNameTest, ruleID)
+	c.Assert(err, IsNil)
+
+	var progressResult GetResult
+	err = xml.Unmarshal([]byte(progressData), &progressResult)
+	c.Assert(err, IsNil)
+
+	c.Assert(progressResult.Rules[0].ID, Equals, ruleID)
+	c.Assert(progressResult.Rules[0].Status, Equals, "starting")
+	c.Assert(progressResult.Rules[0].Destination.Location, Equals, "oss-cn-"+secondDestinationRegion)
+	c.Assert(progressResult.Rules[0].Destination.Bucket, Equals, secondDestinationBucketNameTest)
+	c.Assert(progressResult.Rules[0].HistoricalObjectReplication, Equals, "enabled")
+
+	err = client1.DeleteBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client2.DeleteBucket(firstDestinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client3.DeleteBucket(secondDestinationBucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketReplicationGetProgressWithEmptyRuleID(c *C) {
+	var sourceBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	sourceRegion := "hangzhou"
+	sourceEndpoint := "oss-cn-" + sourceRegion + ".aliyuncs.com"
+
+	client1, err := New(sourceEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client1.CreateBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var firstDestinationBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	firstDestinationRegion := "beijing"
+	firstDestinationEndpoint := "oss-cn-" + firstDestinationRegion + ".aliyuncs.com"
+
+	client2, err := New(firstDestinationEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client2.CreateBucket(firstDestinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	var secondDestinationBucketNameTest = bucketNamePrefix + "-replication-" + RandLowStr(6)
+
+	secondDestinationRegion := "shenzhen"
+	secondDestinationEndpoint := "oss-cn-" + secondDestinationRegion + ".aliyuncs.com"
+
+	client3, err := New(secondDestinationEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client3.CreateBucket(secondDestinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	firstPutXml := `<?xml version="1.0" encoding="UTF-8"?>
+	<ReplicationConfiguration>
+	  <Rule>
+		<Action>PUT</Action>
+		<Destination>
+		  <Bucket>` + firstDestinationBucketNameTest + `</Bucket>
+		  <Location>oss-cn-` + firstDestinationRegion + `</Location>
+		</Destination>
+		<HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+	  </Rule>
+	</ReplicationConfiguration>`
+
+	// replication command and put method test
+	err = client1.PutBucketReplication(sourceBucketNameTest, firstPutXml)
+	c.Assert(err, IsNil)
+
+	secondPutXml := `<?xml version="1.0" encoding="UTF-8"?>
+	<ReplicationConfiguration>
+	  <Rule>
+		<Action>PUT</Action>
+		<Destination>
+		  <Bucket>` + secondDestinationBucketNameTest + `</Bucket>
+		  <Location>oss-cn-` + secondDestinationRegion + `</Location>
+		</Destination>
+		<HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+	  </Rule>
+	</ReplicationConfiguration>`
+
+	// replication command and put method test
+	err = client1.PutBucketReplication(sourceBucketNameTest, secondPutXml)
+	c.Assert(err, IsNil)
+
+	time.Sleep(5 * time.Second)
+
+	data, err := client1.GetBucketReplicationProgress(sourceBucketNameTest, "")
+	c.Assert(err, IsNil)
+
+	var result GetResult
+	err = xml.Unmarshal([]byte(data), &result)
+	c.Assert(err, IsNil)
+
+	var firstIndex int
+	for i := 0; i <= 1; i++ {
+		if result.Rules[i].Destination.Location == ("oss-cn-" + firstDestinationRegion) {
+			firstIndex = i
+			break
+		}
+	}
+	secondIndex := 1 - firstIndex
+
+	c.Assert(result.Rules[firstIndex].Status, Equals, "starting")
+	c.Assert(result.Rules[firstIndex].Destination.Location, Equals, "oss-cn-"+firstDestinationRegion)
+	c.Assert(result.Rules[firstIndex].Destination.Bucket, Equals, firstDestinationBucketNameTest)
+	c.Assert(result.Rules[firstIndex].HistoricalObjectReplication, Equals, "enabled")
+
+	c.Assert(result.Rules[secondIndex].Status, Equals, "starting")
+	c.Assert(result.Rules[secondIndex].Destination.Location, Equals, "oss-cn-"+secondDestinationRegion)
+	c.Assert(result.Rules[secondIndex].Destination.Bucket, Equals, secondDestinationBucketNameTest)
+	c.Assert(result.Rules[secondIndex].HistoricalObjectReplication, Equals, "enabled")
+
+	err = client1.DeleteBucket(sourceBucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client2.DeleteBucket(firstDestinationBucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client3.DeleteBucket(secondDestinationBucketNameTest)
 	c.Assert(err, IsNil)
 }

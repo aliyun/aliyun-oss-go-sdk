@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -119,6 +120,7 @@ func (cs *OssCredentialBucketSuite) TestReqerPaymentNoRequester(c *C) {
 	}
 	err := cs.client.SetBucketRequestPayment(credentialBucketName, reqPayConf)
 	c.Assert(err, IsNil)
+	time.Sleep(time.Second * 5)
 
 	key := objectNamePrefix + RandStr(8)
 	objectValue := RandStr(18)
@@ -152,6 +154,7 @@ func (cs *OssCredentialBucketSuite) TestReqerPaymentWithRequester(c *C) {
 	}
 	err := cs.client.SetBucketRequestPayment(credentialBucketName, reqPayConf)
 	c.Assert(err, IsNil)
+	time.Sleep(time.Second * 5)
 
 	key := objectNamePrefix + RandStr(8)
 	objectValue := RandStr(18)
