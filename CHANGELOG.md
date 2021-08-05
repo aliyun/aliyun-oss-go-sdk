@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.10 日期：2021-08-05
+### 变更内容
+- 增加：支持限速下载
+- 增加：增加同步边管理接口
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.9 日期：2021-07-09
 ### 变更内容
 - 增加：支持跳过服务端证书校验
