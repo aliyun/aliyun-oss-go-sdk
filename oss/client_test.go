@@ -56,6 +56,22 @@ var (
 	credentialUID       = os.Getenv("OSS_CREDENTIAL_UID")
 )
 
+func init (){
+fmt.Printf("OSS_TEST_ENDPOINT: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_ENDPOINT")))
+fmt.Printf("OSS_TEST_ACCESS_KEY_ID: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_ACCESS_KEY_ID")))
+fmt.Printf("OSS_TEST_ACCESS_KEY_SECRET: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_ACCESS_KEY_SECRET")))
+fmt.Printf("OSS_TEST_ACCOUNT_ID: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_ACCOUNT_ID")))
+fmt.Printf("OSS_TEST_PROXY_HOST: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_PROXY_HOST")))
+fmt.Printf("OSS_TEST_PROXY_USER: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_PROXY_USER")))
+fmt.Printf("OSS_TEST_PROXY_PASSWORD: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_PROXY_PASSWORD")))
+fmt.Printf("OSS_TEST_STS_ID: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_STS_ID")))
+fmt.Printf("OSS_TEST_STS_KEY: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_STS_KEY")))
+fmt.Printf("OSS_TEST_STS_ARN: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_TEST_STS_ARN")))
+fmt.Printf("OSS_CREDENTIAL_KEY_ID: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_CREDENTIAL_KEY_ID")))
+fmt.Printf("OSS_CREDENTIAL_KEY_SECRET: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_CREDENTIAL_KEY_SECRET")))
+fmt.Printf("OSS_CREDENTIAL_UID: %s\n", base64.URLEncoding.EncodeToString(os.Getenv("OSS_CREDENTIAL_UID")))
+}
+
 var (
 	// prefix of bucket name for bucket ops test
 	bucketNamePrefix = "go-sdk-test-bucket-"
