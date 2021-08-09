@@ -4379,3 +4379,19 @@ func (s *OssClientSuite) TestBucketReplicationGetProgressWithEmptyRuleID(c *C) {
 	err = client3.DeleteBucket(secondDestinationBucketNameTest)
 	c.Assert(err, IsNil)
 }
+
+func (s *OssClientSuite) TestGetBucketCName(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	xmlBody, err := client.GetBucketCname(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(xmlBody, bucketName), Equals, true)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
