@@ -983,6 +983,92 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestSetBucketLifecycleOverLap
+func (s *OssClientSuite) TestSetBucketLifecycleOverLap(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+
+	// rule1's prefix and rule2's prefix are overlap
+	var rule1 = BuildLifecycleRuleByDate("rule1", "one", true, 2015, 11, 11)
+	rule1.Prefix = "prefix1"
+	var rule2 = BuildLifecycleRuleByDays("rule2", "two", true, 3)
+	rule2.Prefix = "prefix1/prefix2"
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// overlap is error
+	var rules = []LifecycleRule{rule1, rule2}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, NotNil)
+
+	//enable overlap,success
+	options := []Option{AllowSameActionOverLap(true)}
+	err = client.SetBucketLifecycle(bucketNameTest, rules, options...)
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+
+}
+
+// TestSetBucketLifecycleXml
+func (s *OssClientSuite) TestSetBucketLifecycleXml(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	xmlBody := `<?xml version="1.0" encoding="UTF-8"?>
+    <LifecycleConfiguration>
+      <Rule>
+        <ID>RuleID1</ID>
+        <Prefix>Prefix</Prefix>
+        <Status>Enabled</Status>
+        <Expiration>
+          <Days>65</Days>
+        </Expiration>
+        <Transition>
+          <Days>45</Days>
+          <StorageClass>IA</StorageClass>
+        </Transition>
+        <AbortMultipartUpload>
+          <Days>30</Days>
+        </AbortMultipartUpload>
+      </Rule>
+      <Rule>
+        <ID>RuleID2</ID>
+        <Prefix>Prefix/SubPrefix</Prefix>
+        <Status>Enabled</Status>
+        <Expiration>
+          <Days>60</Days>
+        </Expiration>
+        <Transition>
+          <Days>40</Days>
+          <StorageClass>Archive</StorageClass>
+        </Transition>
+        <AbortMultipartUpload>
+          <Days>40</Days>
+        </AbortMultipartUpload>
+      </Rule>
+    </LifecycleConfiguration>`
+
+	// overlap is error
+	err = client.SetBucketLifecycleXml(bucketNameTest, xmlBody)
+	c.Assert(err, NotNil)
+
+	// enable overlap,success
+	options := []Option{AllowSameActionOverLap(true)}
+	err = client.SetBucketLifecycleXml(bucketNameTest, xmlBody, options...)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
 // TestSetBucketLifecycleAboutVersionObject
 func (s *OssClientSuite) TestSetBucketLifecycleAboutVersionObject(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
