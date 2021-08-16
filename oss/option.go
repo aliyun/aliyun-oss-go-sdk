@@ -678,3 +678,12 @@ func GetDeleteMark(header http.Header) bool {
 func GetQosDelayTime(header http.Header) string {
 	return header.Get("x-oss-qos-delay-time")
 }
+
+// ForbidOverWrite  is an option to set X-Oss-Forbid-Overwrite
+func AllowSameActionOverLap(enabled bool) Option {
+	if enabled {
+		return setHeader(HTTPHeaderAllowSameActionOverLap, "true")
+	} else {
+		return setHeader(HTTPHeaderAllowSameActionOverLap, "false")
+	}
+}
