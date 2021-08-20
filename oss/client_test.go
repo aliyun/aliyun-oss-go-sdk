@@ -2162,6 +2162,8 @@ func (s *OssClientSuite) TestGetBucketInfo(c *C) {
 	c.Assert(strings.HasSuffix(res.BucketInfo.ExtranetEndpoint, ".com"), Equals, true)
 	c.Assert(strings.HasSuffix(res.BucketInfo.IntranetEndpoint, ".com"), Equals, true)
 	c.Assert(res.BucketInfo.CreationDate, NotNil)
+	c.Assert(res.BucketInfo.TransferAcceleration, Equals, "Disabled")
+	c.Assert(res.BucketInfo.CrossRegionReplication, Equals, "Disabled")
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)

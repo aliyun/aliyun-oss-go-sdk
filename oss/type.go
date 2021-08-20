@@ -296,18 +296,20 @@ type GetBucketInfoResult struct {
 
 // BucketInfo defines Bucket information
 type BucketInfo struct {
-	XMLName          xml.Name  `xml:"Bucket"`
-	Name             string    `xml:"Name"`                     // Bucket name
-	Location         string    `xml:"Location"`                 // Bucket datacenter
-	CreationDate     time.Time `xml:"CreationDate"`             // Bucket creation time
-	ExtranetEndpoint string    `xml:"ExtranetEndpoint"`         // Bucket external endpoint
-	IntranetEndpoint string    `xml:"IntranetEndpoint"`         // Bucket internal endpoint
-	ACL              string    `xml:"AccessControlList>Grant"`  // Bucket ACL
-	RedundancyType   string    `xml:"DataRedundancyType"`       // Bucket DataRedundancyType
-	Owner            Owner     `xml:"Owner"`                    // Bucket owner
-	StorageClass     string    `xml:"StorageClass"`             // Bucket storage class
-	SseRule          SSERule   `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
-	Versioning       string    `xml:"Versioning"`               // Bucket Versioning
+	XMLName                xml.Name  `xml:"Bucket"`
+	Name                   string    `xml:"Name"`                     // Bucket name
+	Location               string    `xml:"Location"`                 // Bucket datacenter
+	CreationDate           time.Time `xml:"CreationDate"`             // Bucket creation time
+	ExtranetEndpoint       string    `xml:"ExtranetEndpoint"`         // Bucket external endpoint
+	IntranetEndpoint       string    `xml:"IntranetEndpoint"`         // Bucket internal endpoint
+	ACL                    string    `xml:"AccessControlList>Grant"`  // Bucket ACL
+	RedundancyType         string    `xml:"DataRedundancyType"`       // Bucket DataRedundancyType
+	Owner                  Owner     `xml:"Owner"`                    // Bucket owner
+	StorageClass           string    `xml:"StorageClass"`             // Bucket storage class
+	SseRule                SSERule   `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
+	Versioning             string    `xml:"Versioning"`               // Bucket Versioning
+	TransferAcceleration   string    `xml:"TransferAcceleration"`     // bucket TransferAcceleration
+	CrossRegionReplication string    `xml:"CrossRegionReplication"`   // bucket CrossRegionReplication
 }
 
 type SSERule struct {
