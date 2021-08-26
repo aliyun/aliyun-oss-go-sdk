@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.1.11 日期：2021-08-26
+### 变更内容
+- 增加：增加cname查询接口
+- 增加：增加SetBucketLifecycleXml接口
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.1.10 日期：2021-08-05
 ### 变更内容
 - 增加：支持限速下载
