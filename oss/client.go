@@ -97,6 +97,10 @@ func (client Client) Bucket(bucketName string) (*Bucket, error) {
 	}, nil
 }
 
+func (client Client) SetTransport(roundTripper http.RoundTripper) {
+	client.Conn.client.Transport = roundTripper
+}
+
 // CreateBucket creates a bucket.
 //
 // bucketName    the bucket name, it's globably unique and immutable. The bucket name can only consist of lowercase letters, numbers and dash ('-').
