@@ -2424,7 +2424,7 @@ func (s *OssBucketSuite) TestProcessObject(c *C) {
 	c.Assert(result.Bucket, Equals, s.bucket.BucketName)
 	c.Assert(result.Object, Equals, destObjName)
 
-	//no support process
+	// no support process
 	process = fmt.Sprintf("image/resize,w_100|saveas,o_%v,b_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)), base64.URLEncoding.EncodeToString([]byte(s.bucket.BucketName)))
 	result, err = s.bucket.ProcessObject(objectName, process)
 	c.Assert(err, NotNil)
@@ -2642,14 +2642,14 @@ func (s *OssBucketSuite) TestPutSingleObjectLimitSpeed(c *C) {
 	bucket, err := client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 
-	//detect speed:byte/s
+	// detect speed:byte/s
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 
 	var limitSpeed = 0
 	if detectSpeed <= perTokenBandwidthSize*2 {
 		limitSpeed = perTokenBandwidthSize
 	} else {
-		//this situation, the test works better
+		// this situation, the test works better
 		limitSpeed = detectSpeed / 2
 	}
 
@@ -2723,7 +2723,7 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 	bucket, err := client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 
-	//detect speed:byte/s
+	// detect speed:byte/s
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 	var limitSpeed = 0
 	if detectSpeed <= perTokenBandwidthSize*2 {
@@ -2746,7 +2746,7 @@ func (s *OssBucketSuite) TestPutManyObjectLimitSpeed(c *C) {
 	objectCount := 2
 	notifyChan := make(chan int, objectCount)
 
-	//start routin
+	// start routin
 	startT := time.Now()
 	go putObjectRoutin(bucket, objectNameFirst, &textBuffer, notifyChan)
 	go putObjectRoutin(bucket, objectNameSecond, &textBuffer, notifyChan)
@@ -2813,14 +2813,14 @@ func (s *OssBucketSuite) TestPutMultipartObjectLimitSpeed(c *C) {
 	bucket, err := client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 
-	//detect speed:byte/s
+	// detect speed:byte/s
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 
 	var limitSpeed = 0
 	if detectSpeed <= perTokenBandwidthSize*2 {
 		limitSpeed = perTokenBandwidthSize
 	} else {
-		//this situation, the test works better
+		// this situation, the test works better
 		limitSpeed = detectSpeed / 2
 	}
 
@@ -2915,14 +2915,14 @@ func (s *OssBucketSuite) TestPutObjectFromFileLimitSpeed(c *C) {
 	bucket, err := client.Bucket(bucketName)
 	c.Assert(err, IsNil)
 
-	//detect speed:byte/s
+	// detect speed:byte/s
 	detectSpeed := s.detectUploadSpeed(bucket, c)
 
 	var limitSpeed = 0
 	if detectSpeed <= perTokenBandwidthSize*2 {
 		limitSpeed = perTokenBandwidthSize
 	} else {
-		//this situation, the test works better
+		// this situation, the test works better
 		limitSpeed = detectSpeed / 2
 	}
 
@@ -3151,7 +3151,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	c.Assert(taggingResult.Tags[0].Key, Equals, tag.Key)
 	c.Assert(taggingResult.Tags[0].Value, Equals, tag.Value)
 
-	//put tagging, the length of the key exceeds 128
+	// put tagging, the length of the key exceeds 128
 	tag = Tag{
 		Key:   RandStr(129),
 		Value: RandStr(16),
@@ -3160,7 +3160,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	err = s.bucket.PutObjectTagging(objectName, tagging)
 	c.Assert(err, NotNil)
 
-	//put tagging, the length of the value exceeds 256
+	// put tagging, the length of the value exceeds 256
 	tag = Tag{
 		Key:   RandStr(8),
 		Value: RandStr(257),
@@ -3169,7 +3169,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	err = s.bucket.PutObjectTagging(objectName, tagging)
 	c.Assert(err, NotNil)
 
-	//put tagging, the lens of tags exceed 10
+	// put tagging, the lens of tags exceed 10
 	tagging.Tags = []Tag{}
 	for i := 0; i < 11; i++ {
 		tag = Tag{
@@ -3181,7 +3181,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	err = s.bucket.PutObjectTagging(objectName, tagging)
 	c.Assert(err, NotNil)
 
-	//put tagging, invalid value of tag key
+	// put tagging, invalid value of tag key
 	tag = Tag{
 		Key:   RandStr(8) + "&",
 		Value: RandStr(16),
@@ -3190,7 +3190,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	err = s.bucket.PutObjectTagging(objectName, tagging)
 	c.Assert(err, NotNil)
 
-	//put tagging, invalid value of tag value
+	// put tagging, invalid value of tag value
 	tag = Tag{
 		Key:   RandStr(8),
 		Value: RandStr(16) + "&",
@@ -3199,7 +3199,7 @@ func (s *OssBucketSuite) TestPutObjectTagging(c *C) {
 	err = s.bucket.PutObjectTagging(objectName, tagging)
 	c.Assert(err, NotNil)
 
-	//put tagging, repeated tag keys
+	// put tagging, repeated tag keys
 	tag1 = Tag{
 		Key:   RandStr(8),
 		Value: RandStr(16),
@@ -3316,7 +3316,7 @@ func (s *OssBucketSuite) TestDeleteObjectTagging(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(taggingResult.Tags), Equals, 0)
 
-	//delete object tagging again
+	// delete object tagging again
 	err = s.bucket.DeleteObjectTagging(objectName)
 	c.Assert(err, IsNil)
 
@@ -3926,7 +3926,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	// check v1 and v2
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
-	//batch delete objects
+	// batch delete objects
 	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
 		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
@@ -3998,7 +3998,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	// check v1 and v2
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
-	//batch delete objects
+	// batch delete objects
 	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: ""},
 		DeleteObject{Key: objectName2, VersionId: ""}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
@@ -4077,7 +4077,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteNormalObjects(c *C) {
 	versionIdV2 = GetVersionId(respHeader)
 	c.Assert(len(versionIdV2), Equals, 0)
 
-	//batch delete objects
+	// batch delete objects
 	keys := []string{objectName1, objectName2}
 	deleteResult, err := bucket.DeleteObjects(keys)
 	c.Assert(len(deleteResult.DeletedObjects), Equals, 2)
@@ -4432,7 +4432,7 @@ func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
 	_, err = bucket.CompleteMultipartUpload(imur, parts, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 
-	//get versionId
+	// get versionId
 	versionIdV1 := GetVersionId(respHeader)
 	c.Assert(len(versionIdV1) > 0, Equals, true)
 
@@ -4512,7 +4512,7 @@ func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 	_, err = bucket.CompleteMultipartUpload(imur, parts, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 
-	//get versionId
+	// get versionId
 	partVersionIdV1 := GetVersionId(respHeader)
 	c.Assert(len(partVersionIdV1) > 0, Equals, true)
 
@@ -4529,7 +4529,7 @@ func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 	_, err = bucket.CompleteMultipartUpload(imur, parts, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 
-	//get versionId
+	// get versionId
 	partVersionIdV2 := GetVersionId(respHeader)
 	c.Assert(len(partVersionIdV2) > 0, Equals, true)
 
@@ -5076,8 +5076,8 @@ func (s *OssBucketSuite) TestDeleteObjectsWithSpecialCharacter(c *C) {
 	contentLength := 100
 	objectName1 := objectNamePrefix + RandStr(8) + "<-->+&*\r%%"
 	objectName2 := objectNamePrefix + RandStr(8) + "\r&*\r%%"
-	//objectName2 := objectNamePrefix + RandStr(8) + "%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2Fetc%2Fprofile"
-	//objectName2, err = url.QueryUnescape(objectName2)
+	// objectName2 := objectNamePrefix + RandStr(8) + "%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2F%C0%AE%C0%AE%2Fetc%2Fprofile"
+	// objectName2, err = url.QueryUnescape(objectName2)
 
 	c.Assert(err, IsNil)
 	content := RandStr(contentLength)

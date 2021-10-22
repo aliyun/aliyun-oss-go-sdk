@@ -158,7 +158,7 @@ func (s *OssBucketLiveChannelSuite) TestGetLiveChannelInfo(c *C) {
 
 	getCfg, err := s.bucket.GetLiveChannelInfo(channelName)
 	c.Assert(err, IsNil)
-	c.Assert("enabled", Equals, getCfg.Status) //The default value is enabled
+	c.Assert("enabled", Equals, getCfg.Status) // The default value is enabled
 	c.Assert("HLS", Equals, getCfg.Target.Type)
 	c.Assert(10, Equals, getCfg.Target.FragDuration)
 	c.Assert(4, Equals, getCfg.Target.FragCount)

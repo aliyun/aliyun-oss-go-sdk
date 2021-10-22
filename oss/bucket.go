@@ -234,7 +234,7 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 func (bucket Bucket) CopyObject(srcObjectKey, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
 
-	//first find version id
+	// first find version id
 	versionIdKey := "versionId"
 	versionId, _ := FindOption(options, versionIdKey, nil)
 	if versionId == nil {
@@ -292,7 +292,7 @@ func (bucket Bucket) CopyObjectFrom(srcBucketName, srcObjectKey, destObjectKey s
 func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, options ...Option) (CopyObjectResult, error) {
 	var out CopyObjectResult
 
-	//first find version id
+	// first find version id
 	versionIdKey := "versionId"
 	versionId, _ := FindOption(options, versionIdKey, nil)
 	if versionId == nil {
@@ -703,7 +703,7 @@ func (bucket Bucket) GetObjectDetailedMeta(objectKey string, options ...Option) 
 func (bucket Bucket) GetObjectMeta(objectKey string, options ...Option) (http.Header, error) {
 	params, _ := GetRawParams(options)
 	params["objectMeta"] = nil
-	//resp, err := bucket.do("GET", objectKey, "?objectMeta", "", nil, nil, nil)
+	// resp, err := bucket.do("GET", objectKey, "?objectMeta", "", nil, nil, nil)
 	resp, err := bucket.do("HEAD", objectKey, params, options, nil, nil)
 	if err != nil {
 		return nil, err

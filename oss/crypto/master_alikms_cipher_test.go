@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"time"
 
-	kms "github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 	. "gopkg.in/check.v1"
 )
 

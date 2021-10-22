@@ -314,7 +314,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	err = ccp.load(fileName + ".cp")
 	c.Assert(err, NotNil)
 
-	//multicopy with empty checkpoint path
+	// multicopy with empty checkpoint path
 	copyPartHooker = CopyErrorHooker
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Checkpoint(true, ""))
 	c.Assert(err, NotNil)
@@ -324,7 +324,7 @@ func (s *OssCopySuite) TestCopyRoutineWithRecovery(c *C) {
 	err = ccp.load(destObjectName + ".cp")
 	c.Assert(err, NotNil)
 
-	//multi copy with checkpoint dir
+	// multi copy with checkpoint dir
 	copyPartHooker = CopyErrorHooker
 	err = s.bucket.CopyFile(bucketName, srcObjectName, destObjectName, 1024*100, Routines(2), CheckpointDir(true, "./"))
 	c.Assert(err, NotNil)

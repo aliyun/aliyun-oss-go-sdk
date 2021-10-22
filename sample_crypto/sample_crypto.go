@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	kms "github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss/crypto"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
+	osscrypto "github.com/aliyun/aliyun-oss-go-sdk/v2/oss/crypto"
 )
 
 func SampleRsaNormalObject() {
@@ -121,7 +121,7 @@ func SampleRsaMultiPartObject() {
 	// The expected number of parts, the actual number of parts is subject to subsequent calculations.
 	expectPartCount := int64(10)
 
-	//Currently aes ctr encryption block size requires 16 byte alignment
+	// Currently aes ctr encryption block size requires 16 byte alignment
 	cryptoContext.PartSize = (fileSize / expectPartCount / 16) * 16
 
 	imur, err := cryptoBucket.InitiateMultipartUpload("<yourObjectName>", &cryptoContext)

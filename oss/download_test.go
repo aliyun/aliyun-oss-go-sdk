@@ -186,7 +186,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, newFile+".cp"))
 	c.Assert(err, IsNil)
-	//download success, checkpoint file has been deleted
+	// download success, checkpoint file has been deleted
 	err = dcp.load(newFile + ".cp")
 	c.Assert(err, NotNil)
 
@@ -216,7 +216,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	// Check
 	dcp = downloadCheckpoint{}
 	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
-	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "",newFile)
+	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "", newFile)
 	err = dcp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(dcp.Magic, Equals, downloadCpMagic)
@@ -231,7 +231,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 
 	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, CheckpointDir(true, "./"))
 	c.Assert(err, IsNil)
-	//download success, checkpoint file has been deleted
+	// download success, checkpoint file has been deleted
 	err = dcp.load(cpFilePath)
 	c.Assert(err, NotNil)
 

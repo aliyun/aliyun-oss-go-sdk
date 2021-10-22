@@ -609,7 +609,7 @@ func (s *OssBucketMultipartSuite) TestListMultipartUploads(c *C) {
 		}
 	}
 	c.Assert(len(lmpu.Uploads), Equals, checkNum)
-	//testLogger.Println("UploadIDMarker", lmpu.Uploads)
+	// testLogger.Println("UploadIDMarker", lmpu.Uploads)
 
 	for _, imur := range imurs {
 		err = s.bucket.AbortMultipartUpload(imur)

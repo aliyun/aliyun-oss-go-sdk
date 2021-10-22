@@ -488,7 +488,7 @@ func (s *OssProgressSuite) TestGetObjectNegative(c *C) {
 	n, err := body.Read(buf)
 	c.Assert(err, IsNil)
 
-	//time.Sleep(70 * time.Second) TODO
+	// time.Sleep(70 * time.Second) TODO
 
 	// Read should fail
 	for err == nil {

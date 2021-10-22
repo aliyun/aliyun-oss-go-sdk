@@ -20,7 +20,7 @@ const (
 	AesCtrAlgorithm  string = "AES/CTR/NoPadding"
 )
 
-// user agent tag for client encryption
 const (
+	// EncryptionUaSuffix user agent tag for client encryption
 	EncryptionUaSuffix string = "OssEncryptionClient"
 )

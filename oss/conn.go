@@ -157,7 +157,7 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	}
 
 	if conn.config.LogLevel >= Debug {
-		//print out http resp
+		// print out http resp
 		conn.LoggerHTTPResp(req, resp)
 	}
 
@@ -318,7 +318,7 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	}
 
 	if conn.config.LogLevel >= Debug {
-		//print out http resp
+		// print out http resp
 		conn.LoggerHTTPResp(req, resp)
 	}
 
@@ -540,7 +540,7 @@ func (conn Conn) isDownloadLimitResponse(resp *http.Response) bool {
 		return false
 	}
 
-	if strings.EqualFold(resp.Request.Method,"GET") {
+	if strings.EqualFold(resp.Request.Method, "GET") {
 		return true
 	}
 	return false
@@ -729,7 +729,7 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
 		um.NetLoc = endpoint
 	}
 
-	//use url.Parse() to get real host
+	// use url.Parse() to get real host
 	strUrl := um.Scheme + "://" + um.NetLoc
 	url, err := url.Parse(strUrl)
 	if err != nil {

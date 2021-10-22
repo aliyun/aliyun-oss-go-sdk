@@ -260,7 +260,7 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	client.DeleteBucket(bucketNameTest)
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
-	//sleep 3 seconds after create bucket
+	// sleep 3 seconds after create bucket
 	time.Sleep(timeoutInOperation)
 
 	// verify bucket is exist
@@ -791,7 +791,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	//invalid status of lifecyclerule
+	// invalid status of lifecyclerule
 	expiration := LifecycleExpiration{
 		Days: 30,
 	}
@@ -805,7 +805,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, NotNil)
 
-	//invalid value of CreatedBeforeDate
+	// invalid value of CreatedBeforeDate
 	expiration = LifecycleExpiration{
 		CreatedBeforeDate: RandStr(10),
 	}
@@ -819,7 +819,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, NotNil)
 
-	//invalid value of Days
+	// invalid value of Days
 	abortMPU := LifecycleAbortMultipartUpload{
 		Days: -30,
 	}
@@ -1004,7 +1004,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleOverLap(c *C) {
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, NotNil)
 
-	//enable overlap,success
+	// enable overlap,success
 	options := []Option{AllowSameActionOverLap(true)}
 	err = client.SetBucketLifecycle(bucketNameTest, rules, options...)
 	c.Assert(err, IsNil)
@@ -1231,14 +1231,14 @@ func (s *OssClientSuite) TestDeleteBucketLifecycle(c *C) {
 
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
-	//time.Sleep(timeoutInOperation)
+	// time.Sleep(timeoutInOperation)
 
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
-	//time.Sleep(timeoutInOperation)
+	// time.Sleep(timeoutInOperation)
 
 	res, err := client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -1248,12 +1248,12 @@ func (s *OssClientSuite) TestDeleteBucketLifecycle(c *C) {
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
 
-	//time.Sleep(timeoutInOperation)
+	// time.Sleep(timeoutInOperation)
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, NotNil)
 
 	// Eliminate effect of cache
-	//time.Sleep(timeoutInOperation)
+	// time.Sleep(timeoutInOperation)
 
 	// Delete when not set
 	err = client.DeleteBucketLifecycle(bucketNameTest)
@@ -2494,7 +2494,7 @@ func (s *OssClientSuite) TestHttpLogNotSignUrl(c *C) {
 	c.Assert(err, IsNil)
 
 	httpContent := string(contents)
-	//fmt.Println(httpContent)
+	// fmt.Println(httpContent)
 
 	c.Assert(strings.Contains(httpContent, "signStr"), Equals, true)
 	c.Assert(strings.Contains(httpContent, "Method:"), Equals, true)
@@ -2555,7 +2555,7 @@ func (s *OssClientSuite) HttpLogSignUrlTestFunc(c *C, authVersion AuthVersionTyp
 	c.Assert(err, IsNil)
 
 	httpContent := string(contents)
-	//fmt.Println(httpContent)
+	// fmt.Println(httpContent)
 
 	c.Assert(strings.Contains(httpContent, "signStr"), Equals, true)
 	c.Assert(strings.Contains(httpContent, "Method:"), Equals, true)
@@ -3291,7 +3291,7 @@ func (s *OssClientSuite) TestClientSetLocalIpError(c *C) {
 }
 
 func (s *OssClientSuite) TestClientSetLocalIpSuccess(c *C) {
-	//get local ip
+	// get local ip
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	c.Assert(err, IsNil)
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
@@ -3420,7 +3420,7 @@ func (s *OssClientSuite) TestSetBucketInventory(c *C) {
 	err = client.SetBucketInventory(bucketName, invConfig)
 	c.Assert(err, IsNil)
 
-	//case 4: use two type encryption
+	// case 4: use two type encryption
 	invConfig.Id = "report4"
 	invEncryption.SseKms = &invSseKms
 	invEncryption.SseOss = &invSseOss
@@ -3678,7 +3678,7 @@ func (s *OssClientSuite) TestClientOptionHeader(c *C) {
 	c.Assert(versioningResult.Status, Equals, "Enabled")
 	c.Assert(GetRequestId(respHeader) != "", Equals, true)
 
-	//list buckets,use payer
+	// list buckets,use payer
 	_, err = client.ListBuckets(options...)
 	c.Assert(err, IsNil)
 

@@ -8,15 +8,14 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	math_rand "math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	kms "github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
 	. "gopkg.in/check.v1"
 )
 
@@ -691,7 +690,7 @@ func (s *OssCryptoBucketSuite) TestRsaBucketDecrptObjectWithKmsError(c *C) {
 	var options []CryptoBucketOption
 
 	// kms client is nil
-	//options = append(options, SetAliKmsClient(kmsClient))
+	// options = append(options, SetAliKmsClient(kmsClient))
 
 	options = append(options, SetMasterCipherManager(&masterManager))
 
@@ -727,7 +726,7 @@ func (s *OssCryptoBucketSuite) TestRangeGetObject(c *C) {
 
 	// range get
 	for i := 0; i < 20; i++ {
-		math_rand.Seed(time.Now().UnixNano())
+		rand.Seed(time.Now().UnixNano())
 		rangeStart := rand.Intn(contentLen)
 		rangeEnd := rangeStart + rand.Intn(contentLen-rangeStart)
 		if rangeEnd == rangeStart || rangeStart >= contentLen-1 {

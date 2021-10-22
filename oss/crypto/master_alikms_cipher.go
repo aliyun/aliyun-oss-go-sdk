@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	kms "github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
 )
 
 // CreateMasterAliKms Create master key interface implemented by ali kms
