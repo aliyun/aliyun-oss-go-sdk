@@ -49,6 +49,33 @@ func (bucket Bucket) PutObject(objectKey string, reader io.Reader, options ...Op
 	return err
 }
 
+// PutObject creates a new object and it will overwrite the original one if it exists already.
+//
+// objectKey    the object key in UTF-8 encoding. The length must be between 1 and 1023, and cannot start with "/" or "\".
+// reader    io.Reader instance for reading the data for uploading
+// options    the options for uploading the object. The valid options here are CacheControl, ContentDisposition, ContentEncoding
+//            Expires, ServerSideEncryption, ObjectACL and Meta. Refer to the link below for more details.
+//            https://help.aliyun.com/document_detail/oss/api-reference/object/PutObject.html
+// 
+// oss.Response  always return oss.Response
+// error         it's nil if no error, otherwise it's an error object.
+//
+func (bucket Bucket) PutObjectV2(objectKey string, reader io.Reader, options ...Option) (*Response, error) {
+	opts := AddContentType(options, objectKey)
+
+	request := &PutObjectRequest{
+		ObjectKey: objectKey,
+		Reader:    reader,
+	}
+	resp, err := bucket.DoPutObject(request, opts)
+	if err != nil {
+		return nil,err
+	}
+	defer resp.Body.Close()
+
+	return resp,err
+}
+
 // PutObjectFromFile creates a new object from the local file.
 //
 // objectKey    object key.
