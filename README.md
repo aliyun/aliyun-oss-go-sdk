@@ -20,8 +20,8 @@
 
 ## Installing
 ### Install the SDK through GitHub
-> - Run the 'go get github.com/aliyun/aliyun-oss-go-sdk/oss/v2' command to get the remote code package.
-> - Use 'import "github.com/aliyun/aliyun-oss-go-sdk/oss/v2"' in your code to introduce OSS Go SDK package.
+> - Run the 'go get github.com/aliyun/aliyun-oss-go-sdk/v2/oss' command to get the remote code package.
+> - Use 'import "github.com/aliyun/aliyun-oss-go-sdk/v2/oss"' in your code to introduce OSS Go SDK package.
 
 ## Getting Started
 ### List Bucket
