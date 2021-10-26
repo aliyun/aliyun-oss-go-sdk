@@ -20,8 +20,8 @@
 
 ## 安装方法
 ### GitHub安装
-> - 执行命令`go get github.com/aliyun/aliyun-oss-go-sdk/oss`获取远程代码包。
-> - 在您的代码中使用`import "github.com/aliyun/aliyun-oss-go-sdk/oss"`引入OSS Go SDK的包。
+> - 执行命令`go get github.com/aliyun/aliyun-oss-go-sdk/v2/oss`获取远程代码包。
+> - 在您的代码中使用`import "github.com/aliyun/aliyun-oss-go-sdk/v2/oss"`引入OSS Go SDK的包。
 
 ## 快速使用
 #### 获取存储空间列表（List Bucket）
