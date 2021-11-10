@@ -4483,3 +4483,26 @@ func (s *OssClientSuite) TestGetBucketCName(c *C) {
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 }
+
+func (s *OssClientSuite) TestCreateBucketXml(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	xmlBody := `
+        <?xml version="1.0" encoding="UTF-8"?>
+        <CreateBucketConfiguration>
+            <StorageClass>IA</StorageClass>
+        </CreateBucketConfiguration>
+        `
+	err = client.CreateBucketXml(bucketName,xmlBody)
+	c.Assert(err, IsNil)
+
+	//check
+	bucketInfo,_:= client.GetBucketInfo(bucketName)
+	c.Assert(bucketInfo.BucketInfo.StorageClass, Equals, "IA")
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+

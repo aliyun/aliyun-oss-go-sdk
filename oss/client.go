@@ -148,6 +148,24 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// create bucket xml
+func (client Client) CreateBucketXml(bucketName string, xmlBody string, options ...Option) error {
+    buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlBody))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+	    return err
+	}
+	
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // ListBuckets lists buckets of the current account under the given endpoint, with optional filters.
 //
 // options    specifies the filters such as Prefix, Marker and MaxKeys. Prefix is the bucket name's prefix filter.
