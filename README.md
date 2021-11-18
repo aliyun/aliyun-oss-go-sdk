@@ -1,4 +1,4 @@
-﻿# Alibaba Cloud OSS SDK for Go
+# Alibaba Cloud OSS SDK for Go
 
 [![GitHub Version](https://badge.fury.io/gh/aliyun%2Faliyun-oss-go-sdk.svg)](https://badge.fury.io/gh/aliyun%2Faliyun-oss-go-sdk)
 [![Build Status](https://travis-ci.org/aliyun/aliyun-oss-go-sdk.svg?branch=master)](https://travis-ci.org/aliyun/aliyun-oss-go-sdk)
@@ -13,7 +13,7 @@
 > - With this SDK, you can upload, download and manage data on any app anytime and anywhere conveniently. 
 
 ## Version
-> - Current version: v2.1.11
+> - Current version: v2.2.0
 
 ## Running Environment
 > - Go 1.5 or above. 
