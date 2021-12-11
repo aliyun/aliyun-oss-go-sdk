@@ -35,6 +35,13 @@ func Test_ClientTransPort_CreateBucket(t *testing.T) {
 		t.Logf("CreateBucket Success")
 	}
 
+	// set bucket ack
+	err = client.SetBucketACL("abc", ACLPrivate)
+	if err != nil {
+		t.Fatalf("SetBucketACL Error %v", err)
+	} else {
+		t.Logf("SetBucketACL Success")
+	}
 }
 
 func Test_ClientTransPort_DeleteBucket(t *testing.T) {
