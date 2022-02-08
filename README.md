@@ -143,6 +143,34 @@
     }
 ```
 
+### Context support (go1.7+)
+
+```go
+    client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
+    if err != nil {
+        // HandleError(err)
+    }
+
+    
+    bucket, err := client.Bucket("my-bucket")
+    if err != nil {
+        // HandleError(err)
+    }
+
+
+    ctx := context.WithTimeout(context.Background(), time.Second) 
+    // context api is not the golang idiomatic way, instead we use the http.Request approach
+    // for more detail, please check https://github.com/aliyun/aliyun-oss-go-sdk/issues/100
+    err = bucket.WithContext(ctx).DeleteObject("my-object")
+    if err != nil {
+        // HandleError(err)
+    }
+```
+
+
+
+
+
 ##  Complete Example
 More example projects can be found at 'src\github.com\aliyun\aliyun-oss-go-sdk\sample' under the installation path of the OSS Go SDK (the first path of the GOPATH variable). The directory contains example projects. 
 Or you can refer to the example objects in the sample directory under 'https://github.com/aliyun/aliyun-oss-go-sdk'.
