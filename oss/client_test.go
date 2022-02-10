@@ -1004,10 +1004,10 @@ func (s *OssClientSuite) TestSetBucketLifecycleOverLap(c *C) {
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, NotNil)
 
-	//enable overlap,success
+	//enable overlap,error
 	options := []Option{AllowSameActionOverLap(true)}
 	err = client.SetBucketLifecycle(bucketNameTest, rules, options...)
-	c.Assert(err, IsNil)
+	c.Assert(err, NotNil)
 	err = client.DeleteBucket(bucketNameTest)
 
 }
@@ -1060,10 +1060,10 @@ func (s *OssClientSuite) TestSetBucketLifecycleXml(c *C) {
 	err = client.SetBucketLifecycleXml(bucketNameTest, xmlBody)
 	c.Assert(err, NotNil)
 
-	// enable overlap,success
+	// enable overlap,error
 	options := []Option{AllowSameActionOverLap(true)}
 	err = client.SetBucketLifecycleXml(bucketNameTest, xmlBody, options...)
-	c.Assert(err, IsNil)
+	c.Assert(err, NotNil)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -3738,6 +3738,8 @@ func (s *OssClientSuite) TestClientRedirect(c *C) {
 		svr.ListenAndServe()
 	}()
 
+	time.Sleep(3 * time.Second)
+
 	url := "http://" + httpAddr
 
 	// create client 1,redirect disable
@@ -3755,6 +3757,8 @@ func (s *OssClientSuite) TestClientRedirect(c *C) {
 	data, err := ioutil.ReadAll(resp.Body)
 	c.Assert(string(data), Equals, "You have been redirected here!")
 	resp.Body.Close()
+
+	svr.Close()
 }
 
 func verifyCertificatehandler(w http.ResponseWriter, req *http.Request) {
@@ -4495,14 +4499,94 @@ func (s *OssClientSuite) TestCreateBucketXml(c *C) {
             <StorageClass>IA</StorageClass>
         </CreateBucketConfiguration>
         `
-	err = client.CreateBucketXml(bucketName,xmlBody)
+	err = client.CreateBucketXml(bucketName, xmlBody)
 	c.Assert(err, IsNil)
 
 	//check
-	bucketInfo,_:= client.GetBucketInfo(bucketName)
+	bucketInfo, _ := client.GetBucketInfo(bucketName)
 	c.Assert(bucketInfo.BucketInfo.StorageClass, Equals, "IA")
 	err = client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 }
 
+func emptyBodytargetHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(HTTPHeaderOssRequestID, "123456")
+	w.WriteHeader(309)
+	fmt.Fprintf(w, "")
+}
 
+func serviceErrorBodytargetHandler(w http.ResponseWriter, r *http.Request) {
+	err := ServiceError{
+		Code:       "510",
+		Message:    "service response error",
+		RequestID:  "ABCDEF",
+		HostID:     "127.0.0.1",
+		Endpoint:   "127.0.0.1",
+		StatusCode: 510,
+	}
+	data, _ := xml.MarshalIndent(&err, "", " ")
+	w.Header().Set(HTTPHeaderOssRequestID, "ABCDEF")
+	w.WriteHeader(510)
+	fmt.Fprintf(w, string(data))
+}
+func unkownErrorBodytargetHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(509)
+	fmt.Fprintf(w, "unkown response error")
+}
+
+func (s *OssClientSuite) TestExtendHttpResponseStatusCode(c *C) {
+	// get port
+	rand.Seed(time.Now().Unix())
+	port := 10000 + rand.Intn(10000)
+
+	// start http server
+	httpAddr := fmt.Sprintf("127.0.0.1:%d", port)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/empty-body/empty-body", emptyBodytargetHandler)
+	mux.HandleFunc("/service-error/service-error", serviceErrorBodytargetHandler)
+	mux.HandleFunc("/unkown-error/unkown-error", unkownErrorBodytargetHandler)
+	svr := &http.Server{
+		Addr:           httpAddr,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		Handler:        mux,
+	}
+
+	go func() {
+		svr.ListenAndServe()
+	}()
+
+	time.Sleep(5 * time.Second)
+
+	testEndpoint := httpAddr
+	client, err := New(testEndpoint, accessID, accessKey)
+
+	//emptyBodytargetHandler
+	bucket, err := client.Bucket("empty-body")
+	_, err = bucket.GetObject("empty-body")
+	fmt.Println(err)
+	serviceErr, isSuc := err.(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.StatusCode, Equals, 309)
+	c.Assert(serviceErr.RequestID, Equals, "123456")
+
+	//serviceErrorBodytargetHandler
+	bucket, err = client.Bucket("service-error")
+	_, err = bucket.GetObject("service-error")
+	serviceErr, isSuc = (err).(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.StatusCode, Equals, 510)
+	c.Assert(serviceErr.RequestID, Equals, "ABCDEF")
+
+	//unkownErrorBodytargetHandler
+	bucket, err = client.Bucket("unkown-error")
+	_, err = bucket.GetObject("unkown-error")
+	serviceErr, isSuc = err.(ServiceError)
+	c.Assert(isSuc, Equals, false)
+	prefix := "unkown response body, status = 509"
+	ok := strings.Contains(err.Error(), prefix)
+	c.Assert(ok, Equals, true)
+
+	svr.Close()
+}

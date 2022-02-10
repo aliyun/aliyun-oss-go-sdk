@@ -4268,11 +4268,13 @@ func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
 	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("123"), nextPos, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
-	c.Assert(GetVersionId(respHeader), Equals, NullVersion)
+	versionId := GetVersionId(respHeader)
+	c.Assert(versionId == NullVersion, Equals, false)
 
 	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("456"), nextPos, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
-	c.Assert(GetVersionId(respHeader), Equals, NullVersion)
+	versionId = GetVersionId(respHeader)
+	c.Assert(versionId == NullVersion, Equals, false)
 
 	// delete object
 	err = bucket.DeleteObject(objectName, GetResponseHeader(&respHeader))
@@ -4282,16 +4284,16 @@ func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
 	_, err = bucket.GetObject(objectName)
 	c.Assert(err, NotNil)
 
-	// get null version success
-	body, err := bucket.GetObject(objectName, VersionId(NullVersion))
+	// get version success
+	body, err := bucket.GetObject(objectName, VersionId(versionId))
 	c.Assert(err, IsNil)
 	str, err := readBody(body)
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, "123456")
 
-	// append object again:failure
-	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("789"), nextPos, GetResponseHeader(&respHeader))
-	c.Assert(err, NotNil)
+	// append object again:success
+	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("789"), 0, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
 
 	// delete deletemark
 	options := []Option{VersionId(markVersionId), GetResponseHeader(&respHeader)}
@@ -4301,7 +4303,7 @@ func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
 	// append object again:success
 	nextPos, err = bucket.AppendObject(objectName, strings.NewReader("789"), nextPos, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
-	c.Assert(int(nextPos), Equals, 9)
+	c.Assert(int(nextPos), Equals, 6)
 
 	bucket.DeleteObject(objectName)
 	ForceDeleteBucket(client, bucketName, c)

@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"io/ioutil"
 	"strings"
 
 	. "gopkg.in/check.v1"
@@ -255,5 +256,58 @@ func (s *OssUtilsSuite) TestUtilCheckBucketName(c *C) {
 	c.Assert(err, IsNil)
 
 	err = CheckBucketName("abc123-def1")
+	c.Assert(err, IsNil)
+}
+
+func (s *OssUtilsSuite) TestGetRangeString(c *C) {
+	rangeInfo := UnpackedRange{}
+	rangeInfo.HasStart = true
+	rangeInfo.HasEnd = true
+	rangeInfo.Start = 10
+	rangeInfo.End = 20
+	rangeStr := GetRangeString(rangeInfo)
+	c.Assert(rangeStr, Equals, "10-20")
+
+	rangeInfo.HasStart = true
+	rangeInfo.HasEnd = false
+	rangeInfo.Start = 10
+	rangeInfo.End = 20
+	rangeStr = GetRangeString(rangeInfo)
+	c.Assert(rangeStr, Equals, "10-")
+
+	rangeInfo.HasStart = false
+	rangeInfo.HasEnd = true
+	rangeInfo.Start = 10
+	rangeInfo.End = 20
+	rangeStr = GetRangeString(rangeInfo)
+	c.Assert(rangeStr, Equals, "-20")
+
+	rangeInfo.HasStart = false
+	rangeInfo.HasEnd = false
+	rangeInfo.Start = 10
+	rangeInfo.End = 20
+	rangeStr = GetRangeString(rangeInfo)
+	c.Assert(rangeStr, Equals, "")
+}
+
+func (s *OssUtilsSuite) TestLimitReadCloser(c *C) {
+	//test LimitReadCloser
+	str := RandStr(1024)
+	r := strings.NewReader(str)
+	lrc := LimitReadCloser(r, 1024)
+
+	rb := make([]byte, 1024)
+	n, err := lrc.Read(rb)
+	c.Assert(n, Equals, 1024)
+	c.Assert(err, IsNil)
+
+	//test DiscardReadCloser
+	r = strings.NewReader(str)
+	drc := DiscardReadCloser{
+		RC:      ioutil.NopCloser(r),
+		Discard: 100,
+	}
+	n, err = drc.Read(rb)
+	c.Assert(n, Equals, 1024-100)
 	c.Assert(err, IsNil)
 }

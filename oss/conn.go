@@ -471,67 +471,99 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 	var srvCRC uint64
 
 	statusCode := resp.StatusCode
-	if statusCode >= 400 && statusCode <= 505 {
-		// 4xx and 5xx indicate that the operation has error occurred
-		var respBody []byte
-		respBody, err := readResponseBody(resp)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(respBody) == 0 {
-			err = ServiceError{
-				StatusCode: statusCode,
-				RequestID:  resp.Header.Get(HTTPHeaderOssRequestID),
+	if statusCode/100 != 2 {
+		if statusCode >= 400 && statusCode <= 505 {
+			// 4xx and 5xx indicate that the operation has error occurred
+			var respBody []byte
+			respBody, err := readResponseBody(resp)
+			if err != nil {
+				return nil, err
 			}
-		} else {
-			// Response contains storage service error object, unmarshal
-			srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
-				resp.Header.Get(HTTPHeaderOssRequestID))
-			if errIn != nil { // error unmarshaling the error response
-				err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+
+			if len(respBody) == 0 {
+				err = ServiceError{
+					StatusCode: statusCode,
+					RequestID:  resp.Header.Get(HTTPHeaderOssRequestID),
+				}
 			} else {
-				err = srvErr
+				// Response contains storage service error object, unmarshal
+				srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
+					resp.Header.Get(HTTPHeaderOssRequestID))
+				if errIn != nil { // error unmarshaling the error response
+					err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+				} else {
+					err = srvErr
+				}
 			}
+
+			return &Response{
+				StatusCode: resp.StatusCode,
+				Headers:    resp.Header,
+				Body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body
+			}, err
+		} else if statusCode >= 300 && statusCode <= 307 {
+			// OSS use 3xx, but response has no body
+			err := fmt.Errorf("oss: service returned %d,%s", resp.StatusCode, resp.Status)
+			return &Response{
+				StatusCode: resp.StatusCode,
+				Headers:    resp.Header,
+				Body:       resp.Body,
+			}, err
+		} else {
+			// (0,300) [308,400) [506,)
+			// Other extended http StatusCode
+			var respBody []byte
+			respBody, err := readResponseBody(resp)
+			if err != nil {
+				return &Response{StatusCode: resp.StatusCode, Headers: resp.Header, Body: ioutil.NopCloser(bytes.NewReader(respBody))}, err
+			}
+
+			if len(respBody) == 0 {
+				err = ServiceError{
+					StatusCode: statusCode,
+					RequestID:  resp.Header.Get(HTTPHeaderOssRequestID),
+				}
+			} else {
+				// Response contains storage service error object, unmarshal
+				srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
+					resp.Header.Get(HTTPHeaderOssRequestID))
+				if errIn != nil { // error unmarshaling the error response
+					err = fmt.Errorf("unkown response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+				} else {
+					err = srvErr
+				}
+			}
+
+			return &Response{
+				StatusCode: resp.StatusCode,
+				Headers:    resp.Header,
+				Body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body
+			}, err
+		}
+	} else {
+		if conn.config.IsEnableCRC && crc != nil {
+			cliCRC = crc.Sum64()
+		}
+		srvCRC, _ = strconv.ParseUint(resp.Header.Get(HTTPHeaderOssCRC64), 10, 64)
+
+		realBody := resp.Body
+		if conn.isDownloadLimitResponse(resp) {
+			limitReader := &LimitSpeedReader{
+				reader:     realBody,
+				ossLimiter: conn.config.DownloadLimiter,
+			}
+			realBody = limitReader
 		}
 
+		// 2xx, successful
 		return &Response{
 			StatusCode: resp.StatusCode,
 			Headers:    resp.Header,
-			Body:       ioutil.NopCloser(bytes.NewReader(respBody)), // restore the body
-		}, err
-	} else if statusCode >= 300 && statusCode <= 307 {
-		// OSS use 3xx, but response has no body
-		err := fmt.Errorf("oss: service returned %d,%s", resp.StatusCode, resp.Status)
-		return &Response{
-			StatusCode: resp.StatusCode,
-			Headers:    resp.Header,
-			Body:       resp.Body,
-		}, err
+			Body:       realBody,
+			ClientCRC:  cliCRC,
+			ServerCRC:  srvCRC,
+		}, nil
 	}
-
-	if conn.config.IsEnableCRC && crc != nil {
-		cliCRC = crc.Sum64()
-	}
-	srvCRC, _ = strconv.ParseUint(resp.Header.Get(HTTPHeaderOssCRC64), 10, 64)
-
-	realBody := resp.Body
-	if conn.isDownloadLimitResponse(resp) {
-		limitReader := &LimitSpeedReader{
-			reader:     realBody,
-			ossLimiter: conn.config.DownloadLimiter,
-		}
-		realBody = limitReader
-	}
-
-	// 2xx, successful
-	return &Response{
-		StatusCode: resp.StatusCode,
-		Headers:    resp.Header,
-		Body:       realBody,
-		ClientCRC:  cliCRC,
-		ServerCRC:  srvCRC,
-	}, nil
 }
 
 // isUploadLimitReq: judge limit upload speed or not
@@ -540,7 +572,7 @@ func (conn Conn) isDownloadLimitResponse(resp *http.Response) bool {
 		return false
 	}
 
-	if strings.EqualFold(resp.Request.Method,"GET") {
+	if strings.EqualFold(resp.Request.Method, "GET") {
 		return true
 	}
 	return false
