@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.2.1 日期：2022-02-18
+### 变更内容
+- 增加：对http response status code进行符合标准规范的判断
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.2.0 日期：2021-11-08
 ### 变更内容
 - 增加：增加CreateBucketXml接口
