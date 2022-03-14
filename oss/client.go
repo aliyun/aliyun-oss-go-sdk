@@ -150,7 +150,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 
 // create bucket xml
 func (client Client) CreateBucketXml(bucketName string, xmlBody string, options ...Option) error {
-    buffer := new(bytes.Buffer)
+	buffer := new(bytes.Buffer)
 	buffer.Write([]byte(xmlBody))
 	contentType := http.DetectContentType(buffer.Bytes())
 	headers := map[string]string{}
@@ -159,9 +159,9 @@ func (client Client) CreateBucketXml(bucketName string, xmlBody string, options 
 	params := map[string]interface{}{}
 	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
 	if err != nil {
-	    return err
+		return err
 	}
-	
+
 	defer resp.Body.Close()
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
@@ -395,6 +395,20 @@ func (client Client) GetBucketLifecycle(bucketName string, options ...Option) (G
 			out.Rules[k].NonVersionTransition = &(out.Rules[k].NonVersionTransitions[0])
 		}
 	}
+	return out, err
+}
+
+func (client Client) GetBucketLifecycleXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["lifecycle"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
 	return out, err
 }
 
@@ -752,6 +766,23 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule, opti
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+func (client Client) SetBucketCORSXml(bucketName string, xmlBody string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlBody))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["cors"] = nil
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // DeleteBucketCORS deletes the bucket's static website settings.
 //
 // bucketName    the bucket name.
@@ -787,6 +818,20 @@ func (client Client) GetBucketCORS(bucketName string, options ...Option) (GetBuc
 	defer resp.Body.Close()
 
 	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+func (client Client) GetBucketCORSXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["cors"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
 	return out, err
 }
 

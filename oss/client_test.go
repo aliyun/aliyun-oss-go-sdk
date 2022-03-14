@@ -1065,6 +1065,9 @@ func (s *OssClientSuite) TestSetBucketLifecycleXml(c *C) {
 	err = client.SetBucketLifecycleXml(bucketNameTest, xmlBody, options...)
 	c.Assert(err, NotNil)
 
+	strXml, err := client.GetBucketLifecycleXml(bucketNameTest, options...)
+	c.Assert(len(strXml) > 0, Equals, true)
+
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 }
@@ -2029,6 +2032,19 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	err = client.SetBucketCORS(bucketNameTest, []CORSRule{rule1, rule2})
 	c.Assert(err, IsNil)
 
+	time.Sleep(timeoutInOperation)
+	gbcr, err = client.GetBucketCORS(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(gbcr.CORSRules), Equals, 2)
+
+	// GetBucketCORSXml
+	xmlBody, err := client.GetBucketCORSXml(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.SetBucketCORSXml(bucketNameTest, xmlBody)
+	c.Assert(err, IsNil)
+
+	// get again
 	time.Sleep(timeoutInOperation)
 	gbcr, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
