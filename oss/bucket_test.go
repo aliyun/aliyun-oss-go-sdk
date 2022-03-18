@@ -22,9 +22,10 @@ import (
 )
 
 type OssBucketSuite struct {
-	client        *Client
-	bucket        *Bucket
-	archiveBucket *Bucket
+	cloudBoxControlClient *Client
+	client                *Client
+	bucket                *Bucket
+	archiveBucket         *Bucket
 }
 
 var _ = Suite(&OssBucketSuite{})
@@ -36,24 +37,48 @@ var (
 
 // SetUpSuite runs once when the suite starts running.
 func (s *OssBucketSuite) SetUpSuite(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
-	c.Assert(err, IsNil)
-	s.client = client
+	if cloudboxControlEndpoint == "" {
+		client, err := New(endpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.client = client
 
-	s.client.CreateBucket(bucketName)
+		s.client.CreateBucket(bucketName)
 
-	err = s.client.CreateBucket(archiveBucketName, StorageClass(StorageArchive))
-	c.Assert(err, IsNil)
+		err = s.client.CreateBucket(archiveBucketName, StorageClass(StorageArchive))
+		c.Assert(err, IsNil)
 
-	bucket, err := s.client.Bucket(bucketName)
-	c.Assert(err, IsNil)
-	s.bucket = bucket
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
 
-	archiveBucket, err := s.client.Bucket(archiveBucketName)
-	c.Assert(err, IsNil)
-	s.archiveBucket = archiveBucket
+		archiveBucket, err := s.client.Bucket(archiveBucketName)
+		c.Assert(err, IsNil)
+		s.archiveBucket = archiveBucket
 
-	testLogger.Println("test bucket started")
+		testLogger.Println("test bucket started")
+	} else {
+		client, err := New(cloudboxEndpoint, accessID, accessKey)
+		s.client = client
+		c.Assert(err, IsNil)
+
+		controlClient, err := New(cloudboxControlEndpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.cloudBoxControlClient = controlClient
+
+		controlClient.CreateBucket(bucketName)
+		//err = controlClient.CreateBucket(archiveBucketName, StorageClass(StorageArchive))
+		//c.Assert(err, IsNil)
+
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
+
+		//archiveBucket, err := s.client.Bucket(archiveBucketName)
+		//c.Assert(err, IsNil)
+		//s.archiveBucket = archiveBucket
+
+		testLogger.Println("test bucket started")
+	}
 }
 
 // TearDownSuite runs before each test or benchmark starts running.
@@ -93,8 +118,13 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 		}
 
 		// Delete bucket
-		err := s.client.DeleteBucket(bucket.BucketName)
-		c.Assert(err, IsNil)
+		if s.cloudBoxControlClient != nil {
+			err := s.cloudBoxControlClient.DeleteBucket(bucket.BucketName)
+			c.Assert(err, IsNil)
+		} else {
+			err := s.client.DeleteBucket(bucket.BucketName)
+			c.Assert(err, IsNil)
+		}
 	}
 
 	testLogger.Println("test bucket completed")
@@ -240,7 +270,7 @@ func (s *OssBucketSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extr
 		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
-	} else {
+	} else if s.bucket.Client.Config.AuthVersion == AuthV2 {
 		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
@@ -740,6 +770,63 @@ func (s *OssBucketSuite) TestQueryStringAuthV2(c *C) {
 
 	// object not exist,no signature error
 	c.Assert(resp.StatusCode, Equals, 404)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestQueryStringAuthV4(c *C) {
+	// set oss v4 signatrue
+	options := []ClientOption{
+		Region(envRegion),
+		AuthVersion(AuthV4),
+	}
+
+	client, err := New(endpoint, accessID, accessKey, options...)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, _ := client.Bucket(bucketName)
+
+	// build QueryString
+	QueryKey1 := "abc"
+	QueryKey2 := "|abc"
+	c.Assert(strings.Compare(QueryKey1, QueryKey2) < 0, Equals, true)
+	c.Assert(strings.Compare(url.QueryEscape(QueryKey1), url.QueryEscape(QueryKey2)) > 0, Equals, true)
+
+	bucketOptions := []Option{}
+	params := map[string]interface{}{}
+	params[QueryKey1] = "queryValue1"
+	params[QueryKey2] = "queryValue2"
+	objectKey := objectNamePrefix + RandStr(8)
+	resp, _ := bucket.do("HEAD", objectKey, params, bucketOptions, nil, nil)
+
+	// object not exist,no signature error
+	c.Assert(resp.StatusCode, Equals, 404)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestQueryStringAuthV4_AdditionalHeader(c *C) {
+	// set oss v4 signatrue
+	options := []ClientOption{
+		Region(envRegion),
+		AuthVersion(AuthV4),
+		AdditionalHeaders([]string{"Date"}),
+	}
+
+	client, err := New(endpoint, accessID, accessKey, options...)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, _ := client.Bucket(bucketName)
+	object := RandLowStr(6) + "+=/123/abc?key=value"
+
+	err = bucket.PutObject(object, strings.NewReader(""))
+	c.Assert(err, IsNil)
 	ForceDeleteBucket(client, bucketName, c)
 }
 
@@ -5366,4 +5453,57 @@ func (s *OssBucketSuite) TestGetSingleObjectLimitSpeed(c *C) {
 	client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 	os.Remove(tempFile)
+}
+
+// TestPutObject
+func (s *OssBucketSuite) TestCloudBoxObject(c *C) {
+
+	c.Assert(len(cloudboxControlEndpoint) > 0, Equals, true)
+
+	var bucketName = bucketNamePrefix + "cloudbox-" + RandLowStr(6)
+
+	// control client
+	clientControl, err := New(cloudboxControlEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// Create bucket
+	xmlBody := ""
+	err = clientControl.CreateBucketXml(bucketName, xmlBody)
+	c.Assert(err, IsNil)
+
+	// data client
+	options := []ClientOption{
+		Region(envRegion),
+		AuthVersion(AuthV4),
+	}
+
+	client, _ := New(endpoint, accessID, accessKey, options...)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(1024 * 10)
+
+	// put object
+	var respHeader http.Header
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+
+	// check equal
+	body, err := bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+
+	// delete object
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// check not exist
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+
+	clientControl.DeleteBucket(bucketName)
 }

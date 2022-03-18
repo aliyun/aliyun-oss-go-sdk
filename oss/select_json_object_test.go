@@ -1,35 +1,52 @@
 package oss
 
 import (
-	. "gopkg.in/check.v1"
-	"os"
 	"io/ioutil"
-	"strings"
 	"net/http"
+	"os"
+	"strings"
+
+	. "gopkg.in/check.v1"
 )
 
 type OssSelectJsonSuite struct {
-	client *Client
-	bucket *Bucket
+	cloudBoxControlClient *Client
+	client                *Client
+	bucket                *Bucket
 }
 
 var _ = Suite(&OssSelectJsonSuite{})
 
 func (s *OssSelectJsonSuite) SetUpSuite(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
-	c.Assert(err, IsNil)
-	s.client = client
-	s.client.Config.LogLevel = Error // Debug
-	err = s.client.CreateBucket(bucketName)
-	c.Assert(err, IsNil)
-	bucket, err := s.client.Bucket(bucketName)
-	c.Assert(err, IsNil)
-	s.bucket = bucket
+	if cloudboxControlEndpoint == "" {
+		client, err := New(endpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.client = client
+		s.client.Config.LogLevel = Error // Debug
+		err = s.client.CreateBucket(bucketName)
+		c.Assert(err, IsNil)
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
+	} else {
+		client, err := New(cloudboxEndpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.client = client
+
+		controlClient, err := New(cloudboxControlEndpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.cloudBoxControlClient = controlClient
+		controlClient.CreateBucket(bucketName)
+
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
+	}
 
 	testLogger.Println("test select json started")
 }
 
-func(s *OssSelectJsonSuite) TearDownSuite(c *C){
+func (s *OssSelectJsonSuite) TearDownSuite(c *C) {
 	// Delete objects
 	marker := Marker("")
 	for {
@@ -45,8 +62,14 @@ func(s *OssSelectJsonSuite) TearDownSuite(c *C){
 		}
 	}
 
-	err := s.client.DeleteBucket(bucketName)
-	c.Assert(err, IsNil)
+	// Delete bucket
+	if s.cloudBoxControlClient != nil {
+		err := s.cloudBoxControlClient.DeleteBucket(s.bucket.BucketName)
+		c.Assert(err, IsNil)
+	} else {
+		err := s.client.DeleteBucket(s.bucket.BucketName)
+		c.Assert(err, IsNil)
+	}
 
 	testLogger.Println("test select json completed")
 }
@@ -59,18 +82,18 @@ func (s *OssSelectJsonSuite) TearDownTest(c *C) {
 	testLogger.Println("test func", c.TestName(), "succeed")
 }
 
-func (s *OssSelectJsonSuite) TestCreateSelectJsonObjectMeta(c *C){
+func (s *OssSelectJsonSuite) TestCreateSelectJsonObjectMeta(c *C) {
 	key := "sample_json_lines.json"
 	err := s.bucket.PutObjectFromFile(key, "../sample/sample_json_lines.json")
 	c.Assert(err, IsNil)
 	jsonMeta := JsonMetaRequest{
-		InputSerialization: InputSerialization {
-			JSON: JSON {
-				JSONType:"LINES",
+		InputSerialization: InputSerialization{
+			JSON: JSON{
+				JSONType: "LINES",
 			},
 		},
 	}
-	res,err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
+	res, err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
 	c.Assert(err, IsNil)
 	c.Assert(res.RowsCount, Equals, int64(100))
 
@@ -78,7 +101,7 @@ func (s *OssSelectJsonSuite) TestCreateSelectJsonObjectMeta(c *C){
 	c.Assert(err, IsNil)
 }
 
-func (s *OssSelectJsonSuite) TestSelectJsonDocument(c *C){
+func (s *OssSelectJsonSuite) TestSelectJsonDocument(c *C) {
 	key := "sample_json.json"
 	err := s.bucket.PutObjectFromFile(key, "../sample/sample_json.json")
 	c.Assert(err, IsNil)
@@ -102,10 +125,10 @@ func (s *OssSelectJsonSuite) TestSelectJsonDocument(c *C){
 	_, err = body.Read(p1)
 	c.Assert(err, IsNil)
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
-	str,err := readJsonDocument("../sample/sample_json.json")
 	c.Assert(err, IsNil)
-	c.Assert(string(p) + string(p1) + string(rets), Equals, str)
+	str, err := readJsonDocument("../sample/sample_json.json")
+	c.Assert(err, IsNil)
+	c.Assert(string(p)+string(p1)+string(rets), Equals, str)
 
 	err = s.bucket.DeleteObject(key)
 	c.Assert(err, IsNil)
@@ -124,13 +147,13 @@ func (s *OssSelectJsonSuite) TestSelectJsonLines(c *C) {
 	body, err := s.bucket.SelectObject(key, selReq, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
 	defer body.Close()
-	
+
 	requestId := GetRequestId(responseHeader)
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
-	str,err := readJsonDocument("../sample/sample_json.json")
+	c.Assert(err, IsNil)
+	str, err := readJsonDocument("../sample/sample_json.json")
 	c.Assert(string(rets), Equals, str)
 
 	err = s.bucket.DeleteObject(key)
@@ -141,15 +164,15 @@ func (s *OssSelectJsonSuite) TestSelectJsonLinesIntoFile(c *C) {
 	key := "sample_json_lines.json"
 	err := s.bucket.PutObjectFromFile(key, "../sample/sample_json_lines.json")
 	c.Assert(err, IsNil)
-	
+
 	jsonMeta := JsonMetaRequest{
-		InputSerialization: InputSerialization {
-			JSON: JSON {
-				JSONType:"LINES",
+		InputSerialization: InputSerialization{
+			JSON: JSON{
+				JSONType: "LINES",
 			},
 		},
 	}
-	res,err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
+	res, err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
 	c.Assert(err, IsNil)
 	c.Assert(res.RowsCount, Equals, int64(100))
 
@@ -166,7 +189,7 @@ func (s *OssSelectJsonSuite) TestSelectJsonLinesIntoFile(c *C) {
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	_, err = os.Stat(outfile)
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	err = os.Remove(outfile)
 	c.Assert(err, IsNil)
 
@@ -192,7 +215,7 @@ func (s *OssSelectJsonSuite) TestSelectJsonDocumentIntoFile(c *C) {
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	_, err = os.Stat(outfile)
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	err = os.Remove(outfile)
 	c.Assert(err, IsNil)
 
@@ -210,13 +233,13 @@ func (s *OssSelectJsonSuite) TestSelectJsonLinesLike(c *C) {
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "LINES"
 
 	jsonMeta := JsonMetaRequest{
-		InputSerialization: InputSerialization {
-			JSON: JSON {
-				JSONType:"LINES",
+		InputSerialization: InputSerialization{
+			JSON: JSON{
+				JSONType: "LINES",
 			},
 		},
 	}
-	res,err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
+	res, err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
 	c.Assert(err, IsNil)
 	c.Assert(res.RowsCount, Equals, int64(100))
 
@@ -224,13 +247,13 @@ func (s *OssSelectJsonSuite) TestSelectJsonLinesLike(c *C) {
 	body, err := s.bucket.SelectObject(key, selReq, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
 	defer body.Close()
-	
+
 	requestId := GetRequestId(responseHeader)
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
-	str,err := readJsonLinesLike("../sample/sample_json.json")
+	c.Assert(err, IsNil)
+	str, err := readJsonLinesLike("../sample/sample_json.json")
 	c.Assert(string(rets), Equals, str)
 
 	err = s.bucket.DeleteObject(key)
@@ -242,13 +265,13 @@ func (s *OssSelectJsonSuite) TestSelectJsonLinesRange(c *C) {
 	err := s.bucket.PutObjectFromFile(key, "../sample/sample_json_lines.json")
 	c.Assert(err, IsNil)
 	jsonMeta := JsonMetaRequest{
-		InputSerialization: InputSerialization {
-			JSON: JSON {
-				JSONType:"LINES",
+		InputSerialization: InputSerialization{
+			JSON: JSON{
+				JSONType: "LINES",
 			},
 		},
 	}
-	res,err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
+	res, err := s.bucket.CreateSelectJsonObjectMeta(key, jsonMeta)
 	c.Assert(err, IsNil)
 	c.Assert(res.RowsCount, Equals, int64(100))
 
@@ -257,18 +280,18 @@ func (s *OssSelectJsonSuite) TestSelectJsonLinesRange(c *C) {
 	selReq.OutputSerializationSelect.JsonBodyOutput.RecordDelimiter = ","
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "LINES"
 	selReq.InputSerializationSelect.JsonBodyInput.Range = "0-1"
-	
+
 	var responseHeader http.Header
 	body, err := s.bucket.SelectObject(key, selReq, GetResponseHeader(&responseHeader))
 	c.Assert(err, IsNil)
 	defer body.Close()
-	
+
 	requestId := GetRequestId(responseHeader)
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
-	str,err := readJsonLinesRange("../sample/sample_json.json", 0, 2)
+	c.Assert(err, IsNil)
+	str, err := readJsonLinesRange("../sample/sample_json.json", 0, 2)
 	c.Assert(string(rets), Equals, str)
 
 	err = s.bucket.DeleteObject(key)
@@ -292,13 +315,13 @@ func (s *OssSelectJsonSuite) TestSelectJsonDocumentIntAggregation(c *C) {
 	`
 	selReq.OutputSerializationSelect.JsonBodyOutput.RecordDelimiter = ","
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "Document"
-	
+
 	body, err := s.bucket.SelectObject(key, selReq)
 	c.Assert(err, IsNil)
 	defer body.Close()
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	c.Assert(string(rets), Equals, "{\"_1\":1011723,\"_2\":1011723,\"_3\":1011723},")
 
 	err = s.bucket.DeleteObject(key)
@@ -320,13 +343,13 @@ func (s *OssSelectJsonSuite) TestSelectJsonDocumentFloatAggregation(c *C) {
 	`
 	selReq.OutputSerializationSelect.JsonBodyOutput.RecordDelimiter = ","
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "Document"
-	
+
 	body, err := s.bucket.SelectObject(key, selReq)
 	c.Assert(err, IsNil)
 	defer body.Close()
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	testLogger.Println(string(rets))
 	// avg, max, min, err := readJsonFloatAggregation("../sample/sample_json.json")
 	// fmt.Println(string(rets), "\n", avg, max, min)
@@ -369,15 +392,15 @@ func (s *OssSelectJsonSuite) TestSelectJsonDocumentConcat(c *C) {
 	`
 	selReq.OutputSerializationSelect.JsonBodyOutput.RecordDelimiter = ","
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "Document"
-	
+
 	body, err := s.bucket.SelectObject(key, selReq)
 	c.Assert(err, IsNil)
 	defer body.Close()
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	str, err := readJsonDocumentConcat("../sample/sample_json.json")
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	c.Assert(string(rets), Equals, str)
 
 	err = s.bucket.DeleteObject(key)
@@ -403,15 +426,15 @@ func (s *OssSelectJsonSuite) TestSelectJsonComplicateConcat(c *C) {
 	`
 	selReq.OutputSerializationSelect.JsonBodyOutput.RecordDelimiter = ","
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "LINES"
-	
+
 	body, err := s.bucket.SelectObject(key, selReq)
 	c.Assert(err, IsNil)
 	defer body.Close()
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	str, err := readJsonComplicateConcat("../sample/sample_json.json")
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	c.Assert(string(rets), Equals, str)
 
 	err = s.bucket.DeleteObject(key)
@@ -426,7 +449,7 @@ func (s *OssSelectJsonSuite) TestSelectJsonLineInvalidSql(c *C) {
 	selReq := SelectRequest{}
 	selReq.OutputSerializationSelect.JsonBodyOutput.RecordDelimiter = ","
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "LINES"
-	
+
 	selReq.Expression = `select * from ossobject where avg(cast(person.birthday as int)) > 2016`
 	_, err = s.bucket.SelectObject(key, selReq)
 	c.Assert(err, NotNil)
@@ -474,13 +497,13 @@ func (s *OssSelectJsonSuite) TestSelectJsonParseNumAsString(c *C) {
 	bo := true
 	selReq.InputSerializationSelect.JsonBodyInput.ParseJSONNumberAsString = &bo
 	selReq.InputSerializationSelect.JsonBodyInput.JSONType = "DOCUMENT"
-	
+
 	body, err := s.bucket.SelectObject(key, selReq)
 	c.Assert(err, IsNil)
 	defer body.Close()
 
 	rets, err := ioutil.ReadAll(body)
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	c.Assert(string(rets), Equals, "{\"a\":123456789.123456789}\n")
 
 	err = s.bucket.DeleteObject(key)

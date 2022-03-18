@@ -54,6 +54,13 @@ var (
 	credentialAccessID  = os.Getenv("OSS_CREDENTIAL_KEY_ID")
 	credentialAccessKey = os.Getenv("OSS_CREDENTIAL_KEY_SECRET")
 	credentialUID       = os.Getenv("OSS_CREDENTIAL_UID")
+
+	// cloud box endpoint
+	cloudboxControlEndpoint = os.Getenv("OSS_TEST_CLOUDBOX_CONTROL_ENDPOINT")
+	cloudboxEndpoint        = os.Getenv("OSS_TEST_CLOUDBOX_ENDPOINT")
+
+	// for v4 signature
+	envRegion = os.Getenv("OSS_TEST_REGION")
 )
 
 var (
@@ -2348,7 +2355,7 @@ func (s *OssClientSuite) ProxyTestFunc(c *C, authVersion AuthVersionType, extraH
 		c.Assert(strings.Contains(str, HTTPParamExpires+"="), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamAccessKeyID+"="), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamSignature+"="), Equals, true)
-	} else {
+	} else if bucket.Client.Config.AuthVersion == AuthV2 {
 		c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS2"), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
 		c.Assert(strings.Contains(str, HTTPParamAccessKeyIDV2+"="), Equals, true)
@@ -4589,4 +4596,43 @@ func (s *OssClientSuite) TestExtendHttpResponseStatusCode(c *C) {
 	c.Assert(ok, Equals, true)
 
 	svr.Close()
+}
+
+func (s *OssClientSuite) TestCloudBoxCreateAndDeleteBucket(c *C) {
+
+	c.Assert(len(cloudboxControlEndpoint) > 0, Equals, true)
+
+	var bucketNameTest = bucketNamePrefix + "cloudbox-" + RandLowStr(6)
+
+	client, err := New(cloudboxControlEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// Create
+	client.DeleteBucket(bucketNameTest)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	//sleep 3 seconds after create bucket
+	time.Sleep(timeoutInOperation)
+
+	// verify bucket is exist
+	found, err := client.IsBucketExist(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(found, Equals, true)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	_, err = client.GetBucketACL(bucketNameTest)
+	c.Assert(err, NotNil)
+}
+
+func (s *OssClientSuite) TestCloudBoxListCloudBox(c *C) {
+	client, err := New(cloudboxControlEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	boxRes, err := client.ListCloudBoxes()
+	c.Assert(err, IsNil)
+	c.Assert(len(boxRes.CloudBoxes) > 0, Equals, true)
 }
