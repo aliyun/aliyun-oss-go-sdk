@@ -12,23 +12,41 @@ import (
 )
 
 type OssDownloadSuite struct {
-	client *Client
-	bucket *Bucket
+	cloudBoxControlClient *Client
+	client                *Client
+	bucket                *Bucket
 }
 
 var _ = Suite(&OssDownloadSuite{})
 
 // SetUpSuite runs once when the suite starts running
 func (s *OssDownloadSuite) SetUpSuite(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
-	c.Assert(err, IsNil)
-	s.client = client
+	if cloudboxControlEndpoint == "" {
+		client, err := New(endpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.client = client
 
-	s.client.CreateBucket(bucketName)
+		s.client.CreateBucket(bucketName)
 
-	bucket, err := s.client.Bucket(bucketName)
-	c.Assert(err, IsNil)
-	s.bucket = bucket
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
+
+		testLogger.Println("test crc started")
+	} else {
+		client, err := New(cloudboxEndpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.client = client
+
+		controlClient, err := New(cloudboxControlEndpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.cloudBoxControlClient = controlClient
+		controlClient.CreateBucket(bucketName)
+
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
+	}
 
 	testLogger.Println("test download started")
 }
@@ -70,8 +88,13 @@ func (s *OssDownloadSuite) TearDownSuite(c *C) {
 	}
 
 	// Delete bucket
-	err := s.client.DeleteBucket(s.bucket.BucketName)
-	c.Assert(err, IsNil)
+	if s.cloudBoxControlClient != nil {
+		err := s.cloudBoxControlClient.DeleteBucket(s.bucket.BucketName)
+		c.Assert(err, IsNil)
+	} else {
+		err := s.client.DeleteBucket(s.bucket.BucketName)
+		c.Assert(err, IsNil)
+	}
 
 	testLogger.Println("test download completed")
 }
@@ -216,7 +239,7 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	// Check
 	dcp = downloadCheckpoint{}
 	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
-	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "",newFile)
+	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "", newFile)
 	err = dcp.load(cpFilePath)
 	c.Assert(err, IsNil)
 	c.Assert(dcp.Magic, Equals, downloadCpMagic)

@@ -91,7 +91,14 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 	urlParams := conn.getURLParams(params)
 	subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
-	resource := conn.getResource(bucketName, objectName, subResource)
+
+	resource := ""
+	if conn.config.AuthVersion != AuthV4 {
+		resource = conn.getResource(bucketName, objectName, subResource)
+	} else {
+		resource = conn.getResourceV4(bucketName, objectName, subResource)
+	}
+
 	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
 }
 
@@ -196,7 +203,7 @@ func (conn Conn) getSubResource(params map[string]interface{}) string {
 	keys := make([]string, 0, len(params))
 	signParams := make(map[string]string)
 	for k := range params {
-		if conn.config.AuthVersion == AuthV2 {
+		if conn.config.AuthVersion == AuthV2 || conn.config.AuthVersion == AuthV4 {
 			encodedKey := url.QueryEscape(k)
 			keys = append(keys, encodedKey)
 			if params[k] != nil && params[k] != "" {
@@ -253,6 +260,25 @@ func (conn Conn) getResource(bucketName, objectName, subResource string) string 
 	return fmt.Sprintf("/%s/%s%s", bucketName, objectName, subResource)
 }
 
+// getResource gets canonicalized resource
+func (conn Conn) getResourceV4(bucketName, objectName, subResource string) string {
+	if subResource != "" {
+		subResource = "?" + subResource
+	}
+
+	if bucketName == "" {
+		return fmt.Sprintf("/%s", subResource)
+	}
+
+	if objectName != "" {
+		objectName = url.QueryEscape(objectName)
+		objectName = strings.Replace(objectName, "+", "%20", -1)
+		objectName = strings.Replace(objectName, "%2F", "/", -1)
+		return fmt.Sprintf("/%s/%s%s", bucketName, objectName, subResource)
+	}
+	return fmt.Sprintf("/%s/%s", bucketName, subResource)
+}
+
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
 	method = strings.ToUpper(method)
@@ -281,10 +307,11 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		req.Header.Set("Proxy-Authorization", basic)
 	}
 
-	date := time.Now().UTC().Format(http.TimeFormat)
-	req.Header.Set(HTTPHeaderDate, date)
+	stNow := time.Now().UTC()
+	req.Header.Set(HTTPHeaderDate, stNow.Format(http.TimeFormat))
 	req.Header.Set(HTTPHeaderHost, req.Host)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
+	req.Header.Set(HttpHeaderOssContentSha256, DefaultContentSha256)
 
 	akIf := conn.config.GetCredentials()
 	if akIf.GetSecurityToken() != "" {
@@ -848,5 +875,39 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 		}
 	}
 
+	return host, path
+}
+
+// buildURL builds URL
+func (um urlMaker) buildURLV4(bucket, object string) (string, string) {
+	var host = ""
+	var path = ""
+
+	object = url.QueryEscape(object)
+	object = strings.Replace(object, "+", "%20", -1)
+
+	// no escape /
+	object = strings.Replace(object, "%2F", "/", -1)
+
+	if um.Type == urlTypeCname {
+		host = um.NetLoc
+		path = "/" + object
+	} else if um.Type == urlTypeIP {
+		if bucket == "" {
+			host = um.NetLoc
+			path = "/"
+		} else {
+			host = um.NetLoc
+			path = fmt.Sprintf("/%s/%s", bucket, object)
+		}
+	} else {
+		if bucket == "" {
+			host = um.NetLoc
+			path = "/"
+		} else {
+			host = bucket + "." + um.NetLoc
+			path = fmt.Sprintf("/%s/%s", bucket, object)
+		}
+	}
 	return host, path
 }

@@ -520,3 +520,15 @@ func ConvertEmptyValueToNil(params map[string]interface{}, keys []string) {
 		}
 	}
 }
+
+func EscapeLFString(str string) string {
+	var log bytes.Buffer
+	for i := 0; i < len(str); i++ {
+		if str[i] != '\n' {
+			log.WriteByte(str[i])
+		} else {
+			log.WriteString("\\n")
+		}
+	}
+	return log.String()
+}

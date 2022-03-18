@@ -14,23 +14,39 @@ import (
 )
 
 type OssProgressSuite struct {
-	client *Client
-	bucket *Bucket
+	cloudBoxControlClient *Client
+	client                *Client
+	bucket                *Bucket
 }
 
 var _ = Suite(&OssProgressSuite{})
 
 // SetUpSuite runs once when the suite starts running
 func (s *OssProgressSuite) SetUpSuite(c *C) {
-	client, err := New(endpoint, accessID, accessKey)
-	c.Assert(err, IsNil)
-	s.client = client
+	if cloudboxControlEndpoint == "" {
+		client, err := New(endpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.client = client
 
-	s.client.CreateBucket(bucketName)
+		s.client.CreateBucket(bucketName)
 
-	bucket, err := s.client.Bucket(bucketName)
-	c.Assert(err, IsNil)
-	s.bucket = bucket
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
+	} else {
+		client, err := New(cloudboxEndpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.client = client
+
+		controlClient, err := New(cloudboxControlEndpoint, accessID, accessKey)
+		c.Assert(err, IsNil)
+		s.cloudBoxControlClient = controlClient
+		controlClient.CreateBucket(bucketName)
+
+		bucket, err := s.client.Bucket(bucketName)
+		c.Assert(err, IsNil)
+		s.bucket = bucket
+	}
 
 	testLogger.Println("test progress started")
 }
@@ -71,8 +87,13 @@ func (s *OssProgressSuite) TearDownSuite(c *C) {
 	}
 
 	// Delete bucket
-	err := s.client.DeleteBucket(s.bucket.BucketName)
-	c.Assert(err, IsNil)
+	if s.cloudBoxControlClient != nil {
+		err := s.cloudBoxControlClient.DeleteBucket(s.bucket.BucketName)
+		c.Assert(err, IsNil)
+	} else {
+		err := s.client.DeleteBucket(s.bucket.BucketName)
+		c.Assert(err, IsNil)
+	}
 
 	testLogger.Println("test progress completed")
 }
