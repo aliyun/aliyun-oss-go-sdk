@@ -68,7 +68,7 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 		option(client)
 	}
 
-	if config.AuthVersion != AuthV1 && config.AuthVersion != AuthV2 {
+	if config.AuthVersion != AuthV1 && config.AuthVersion != AuthV2 && config.AuthVersion != AuthV4 {
 		return nil, fmt.Errorf("Init client Error, invalid Auth version: %v", config.AuthVersion)
 	}
 
@@ -76,6 +76,13 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	err = conn.init(config, url, client.HTTPClient)
 
 	return client, err
+}
+
+// SetRegion set region for client
+//
+// region    the region,such as cn-hangzhou
+func (client *Client) SetRegion(region string) {
+	client.Config.Region = region
 }
 
 // Bucket gets the bucket instance.
@@ -183,6 +190,36 @@ func (client Client) ListBuckets(options ...Option) (ListBucketsResult, error) {
 	if err != nil {
 		return out, err
 	}
+
+	resp, err := client.do("GET", "", params, nil, nil, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// ListCloudBoxes lists cloud boxes of the current account under the given endpoint, with optional filters.
+//
+// options    specifies the filters such as Prefix, Marker and MaxKeys. Prefix is the bucket name's prefix filter.
+//            And marker makes sure the returned buckets' name are greater than it in lexicographic order.
+//            Maxkeys limits the max keys to return, and by default it's 100 and up to 1000.
+//            For the common usage scenario, please check out list_bucket.go in the sample.
+// ListBucketsResponse    the response object if error is nil.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) ListCloudBoxes(options ...Option) (ListCloudBoxResult, error) {
+	var out ListCloudBoxResult
+
+	params, err := GetRawParams(options)
+	if err != nil {
+		return out, err
+	}
+
+	params["cloudboxes"] = nil
 
 	resp, err := client.do("GET", "", params, nil, nil, options...)
 	if err != nil {
@@ -2014,6 +2051,13 @@ func RedirectEnabled(enabled bool) ClientOption {
 func InsecureSkipVerify(enabled bool) ClientOption {
 	return func(client *Client) {
 		client.Config.InsecureSkipVerify = enabled
+	}
+}
+
+// skip verifying tls certificate file
+func Region(region string) ClientOption {
+	return func(client *Client) {
+		client.Config.Region = region
 	}
 }
 

@@ -102,10 +102,11 @@ type Config struct {
 	CredentialsProvider CredentialsProvider // User provides interface to get AccessKeyID, AccessKeySecret, SecurityToken
 	LocalAddr           net.Addr            // local client host info
 	UserSetUa           bool                // UserAgent is set by user or not
-	AuthVersion         AuthVersionType     //  v1 or v2 signature,default is v1
+	AuthVersion         AuthVersionType     //  v1 or v2, v4 signature,default is v1
 	AdditionalHeaders   []string            //  special http headers needed to be sign
 	RedirectEnabled     bool                //  only effective from go1.7 onward, enable http redirect or not
 	InsecureSkipVerify  bool                //  for https, Whether to skip verifying the server certificate file
+	Region              string              //  such as cn-hangzhou
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0
