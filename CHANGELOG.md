@@ -1,4 +1,10 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.2.2 日期：2022-03-24
+### 变更内容
+- 增加：add GetBucketCORSXml,SetBucketCORSXml,GetBucketLifecycleXml
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.2.1 日期：2022-02-18
 ### 变更内容
 - 增加：对http response status code进行符合标准规范的判断
