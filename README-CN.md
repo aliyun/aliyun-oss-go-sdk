@@ -143,6 +143,30 @@
     }
 ```
 
+### context包支持 （Context support 需要go1.7+版本）
+
+```go
+    client, err := oss.New("Endpoint", "AccessKeyId", "AccessKeySecret")
+    if err != nil {
+        // HandleError(err)
+    }
+
+    
+    bucket, err := client.Bucket("my-bucket")
+    if err != nil {
+        // HandleError(err)
+    }
+
+
+    ctx := context.WithTimeout(context.Background(), time.Second)
+    // context api 没有采用golang常见的申明风格 （因为需要支持go1.6以下版本）
+    // 这里参考http.Request的实现，详见https://github.com/aliyun/aliyun-oss-go-sdk/issues/100
+    err = bucket.WithContext(ctx).DeleteObject("my-object")
+    if err != nil {
+        // HandleError(err)
+    }
+```
+
 #### 其它
 更多的示例程序，请参看OSS Go SDK安装路径（即GOPATH变量中的第一个路径）下的`src\github.com\aliyun\aliyun-oss-go-sdk\sample`，该目录下为示例程序，
 或者参看`https://github.com/aliyun/aliyun-oss-go-sdk`下sample目录中的示例文件。

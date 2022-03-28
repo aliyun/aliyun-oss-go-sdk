@@ -17,11 +17,7 @@ import (
 	"time"
 )
 
-// Bucket implements the operations of object.
-type Bucket struct {
-	Client     Client
-	BucketName string
-}
+
 
 // PutObject creates a new object and it will overwrite the original one if it exists already.
 //
@@ -1218,32 +1214,6 @@ func (bucket Bucket) Do(method, objectName string, params map[string]interface{}
 	return bucket.do(method, objectName, params, options, data, listener)
 }
 
-// Private
-func (bucket Bucket) do(method, objectName string, params map[string]interface{}, options []Option,
-	data io.Reader, listener ProgressListener) (*Response, error) {
-	headers := make(map[string]string)
-	err := handleOptions(headers, options)
-	if err != nil {
-		return nil, err
-	}
-
-	err = CheckBucketName(bucket.BucketName)
-	if len(bucket.BucketName) > 0 && err != nil {
-		return nil, err
-	}
-
-	resp, err := bucket.Client.Conn.Do(method, bucket.BucketName, objectName,
-		params, headers, data, 0, listener)
-
-	// get response header
-	respHeader, _ := FindOption(options, responseHeader, nil)
-	if respHeader != nil && resp != nil {
-		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
-	}
-
-	return resp, err
-}
 
 func (bucket Bucket) doURL(method HTTPMethod, signedURL string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
