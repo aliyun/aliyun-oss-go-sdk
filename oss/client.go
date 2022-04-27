@@ -80,9 +80,23 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 // SetRegion set region for client
 //
-// region    the region,such as cn-hangzhou
+// region    the region, such as cn-hangzhou
 func (client *Client) SetRegion(region string) {
 	client.Config.Region = region
+}
+
+// SetCloudBoxId set CloudBoxId for client
+//
+// cloudBoxId    the id of cloudBox
+func (client *Client) SetCloudBoxId(cloudBoxId string) {
+	client.Config.CloudBoxId = cloudBoxId
+}
+
+// SetProduct set Product type for client
+//
+// Product    product type
+func (client *Client) SetProduct(product string) {
+	client.Config.Product = product
 }
 
 // Bucket gets the bucket instance.
@@ -2009,10 +2023,24 @@ func InsecureSkipVerify(enabled bool) ClientOption {
 	}
 }
 
-// skip verifying tls certificate file
+// Region  set region
 func Region(region string) ClientOption {
 	return func(client *Client) {
 		client.Config.Region = region
+	}
+}
+
+// CloudBoxId  set cloudBox id
+func CloudBoxId(cloudBoxId string) ClientOption {
+	return func(client *Client) {
+		client.Config.CloudBoxId = cloudBoxId
+	}
+}
+
+// Product  set product type
+func Product(product string) ClientOption {
+	return func(client *Client) {
+		client.Config.Product = product
 	}
 }
 

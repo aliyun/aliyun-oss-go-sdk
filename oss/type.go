@@ -32,21 +32,20 @@ type BucketProperties struct {
 // ListCloudBoxesResult defines the result object from ListBuckets request
 type ListCloudBoxResult struct {
 	XMLName     xml.Name             `xml:"ListCloudBoxResult"`
-	Prefix      string               `xml:"Prefix"`               // The prefix in this query
-	Marker      string               `xml:"Marker"`               // The marker filter
-	MaxKeys     int                  `xml:"MaxKeys"`              // The max entry count to return. This information is returned when IsTruncated is true.
-	IsTruncated bool                 `xml:"IsTruncated"`          // Flag true means there's remaining cloudboxes to return.
-	NextMarker  string               `xml:"NextMarker"`           // The marker filter for the next list call
-	Owner       string               `xml:"Owner"`                // The owner information
-	CloudBoxes  []CloudBoxProperties `xml:"CloudBoxess>CloudBox"` // The cloudbox list
+	Prefix      string               `xml:"Prefix"`              // The prefix in this query
+	Marker      string               `xml:"Marker"`              // The marker filter
+	MaxKeys     int                  `xml:"MaxKeys"`             // The max entry count to return. This information is returned when IsTruncated is true.
+	IsTruncated bool                 `xml:"IsTruncated"`         // Flag true means there's remaining cloudboxes to return.
+	NextMarker  string               `xml:"NextMarker"`          // The marker filter for the next list call
+	Owner       string               `xml:"Owner"`               // The owner information
+	CloudBoxes  []CloudBoxProperties `xml:"CloudBoxes>CloudBox"` // The cloudbox list
 }
 
 // CloudBoxProperties defines cloudbox properties
 type CloudBoxProperties struct {
 	XMLName         xml.Name `xml:"CloudBox"`
-	Id              string   `xml:"Id"`
+	ID              string   `xml:"ID"`
 	Name            string   `xml:"Name"`
-	Owner           string   `xml:"Owner"`
 	Region          string   `xml:"Region"`
 	ControlEndpoint string   `xml:"ControlEndpoint"`
 	DataEndpoint    string   `xml:"DataEndpoint"`
