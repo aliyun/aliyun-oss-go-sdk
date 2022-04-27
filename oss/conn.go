@@ -48,7 +48,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"worm", "wormId", "wormExtend", "withHashContext",
 	"x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256",
 	"x-oss-hash-ctx", "x-oss-md5-ctx", "transferAcceleration",
-	"regionList",
+	"regionList", "cloudboxes",
 }
 
 // init initializes Conn
@@ -311,7 +311,10 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	req.Header.Set(HTTPHeaderDate, stNow.Format(http.TimeFormat))
 	req.Header.Set(HTTPHeaderHost, req.Host)
 	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
-	req.Header.Set(HttpHeaderOssContentSha256, DefaultContentSha256)
+
+	if conn.config.AuthVersion == AuthV4 {
+		req.Header.Set(HttpHeaderOssContentSha256, DefaultContentSha256)
+	}
 
 	akIf := conn.config.GetCredentials()
 	if akIf.GetSecurityToken() != "" {

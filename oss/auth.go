@@ -87,14 +87,17 @@ func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
 			strDay = t.Format("20060102")
 		}
 
+		signHeaderProduct := conn.config.GetSignProduct()
+		signHeaderRegion := conn.config.GetSignRegion()
+
 		additionalList, _ := conn.getAdditionalHeaderKeysV4(req)
 		if len(additionalList) > 0 {
-			authorizationFmt := "OSS4-HMAC-SHA256 Credential=%v/%v/%v/oss/aliyun_v4_request,AdditionalHeaders=%v,Signature=%v"
+			authorizationFmt := "OSS4-HMAC-SHA256 Credential=%v/%v/%v/" + signHeaderProduct + "/aliyun_v4_request,AdditionalHeaders=%v,Signature=%v"
 			additionnalHeadersStr := strings.Join(additionalList, ";")
-			authorizationStr = fmt.Sprintf(authorizationFmt, akIf.GetAccessKeyID(), strDay, conn.config.Region, additionnalHeadersStr, conn.getSignedStrV4(req, canonicalizedResource, akIf.GetAccessKeySecret()))
+			authorizationStr = fmt.Sprintf(authorizationFmt, akIf.GetAccessKeyID(), strDay, signHeaderRegion, additionnalHeadersStr, conn.getSignedStrV4(req, canonicalizedResource, akIf.GetAccessKeySecret()))
 		} else {
-			authorizationFmt := "OSS4-HMAC-SHA256 Credential=%v/%v/%v/oss/aliyun_v4_request,Signature=%v"
-			authorizationStr = fmt.Sprintf(authorizationFmt, akIf.GetAccessKeyID(), strDay, conn.config.Region, conn.getSignedStrV4(req, canonicalizedResource, akIf.GetAccessKeySecret()))
+			authorizationFmt := "OSS4-HMAC-SHA256 Credential=%v/%v/%v/" + signHeaderProduct + "/aliyun_v4_request,Signature=%v"
+			authorizationStr = fmt.Sprintf(authorizationFmt, akIf.GetAccessKeyID(), strDay, signHeaderRegion, conn.getSignedStrV4(req, canonicalizedResource, akIf.GetAccessKeySecret()))
 		}
 	} else if conn.config.AuthVersion == AuthV2 {
 		additionalList, _ := conn.getAdditionalHeaderKeys(req)
@@ -249,7 +252,10 @@ func (conn Conn) getSignedStrV4(req *http.Request, canonicalizedResource string,
 	t, _ := time.Parse(dateFormat, signDate)
 	strDay := t.Format("20060102")
 
-	signStr = "OSS4-HMAC-SHA256" + "\n" + signDate + "\n" + strDay + "/" + conn.config.Region + "/oss/aliyun_v4_request" + "\n" + hashedRequest
+	signedStrV4Product := conn.config.GetSignProduct()
+	signedStrV4Region := conn.config.GetSignRegion()
+
+	signStr = "OSS4-HMAC-SHA256" + "\n" + signDate + "\n" + strDay + "/" + signedStrV4Region + "/" + signedStrV4Product + "/aliyun_v4_request" + "\n" + hashedRequest
 	if conn.config.LogLevel >= Debug {
 		conn.config.WriteLog(Debug, "[Req:%p]signStr:%s\n", req, EscapeLFString(signStr))
 	}
@@ -259,11 +265,11 @@ func (conn Conn) getSignedStrV4(req *http.Request, canonicalizedResource string,
 	h1Key := h1.Sum(nil)
 
 	h2 := hmac.New(func() hash.Hash { return sha256.New() }, h1Key)
-	io.WriteString(h2, conn.config.Region)
+	io.WriteString(h2, signedStrV4Region)
 	h2Key := h2.Sum(nil)
 
 	h3 := hmac.New(func() hash.Hash { return sha256.New() }, h2Key)
-	io.WriteString(h3, "oss")
+	io.WriteString(h3, signedStrV4Product)
 	h3Key := h3.Sum(nil)
 
 	h4 := hmac.New(func() hash.Hash { return sha256.New() }, h3Key)
