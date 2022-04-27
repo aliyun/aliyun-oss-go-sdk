@@ -107,6 +107,8 @@ type Config struct {
 	RedirectEnabled     bool                //  only effective from go1.7 onward, enable http redirect or not
 	InsecureSkipVerify  bool                //  for https, Whether to skip verifying the server certificate file
 	Region              string              //  such as cn-hangzhou
+	CloudBoxId          string              //
+	Product             string              //  oss or oss-cloudbox, default is oss
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0
@@ -162,6 +164,22 @@ func (config *Config) GetCredentials() Credentials {
 	return config.CredentialsProvider.GetCredentials()
 }
 
+// for get Sign Product
+func (config *Config) GetSignProduct() string {
+	if config.CloudBoxId != "" {
+		return "oss-cloudbox"
+	}
+	return "oss"
+}
+
+// for get Sign Region
+func (config *Config) GetSignRegion() string {
+	if config.CloudBoxId != "" {
+		return config.CloudBoxId
+	}
+	return config.Region
+}
+
 // getDefaultOssConfig gets the default configuration.
 func getDefaultOssConfig() *Config {
 	config := Config{}
@@ -203,6 +221,8 @@ func getDefaultOssConfig() *Config {
 	config.AuthVersion = AuthV1
 	config.RedirectEnabled = true
 	config.InsecureSkipVerify = false
+
+	config.Product = "oss"
 
 	return &config
 }
