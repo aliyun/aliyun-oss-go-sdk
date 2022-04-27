@@ -61,6 +61,9 @@ var (
 
 	// for v4 signature
 	envRegion = os.Getenv("OSS_TEST_REGION")
+
+	// for cloud box ID
+	cloudBoxID = os.Getenv("OSS_TEST_CLOUDBOX_ID")
 )
 
 var (
@@ -4598,7 +4601,7 @@ func (s *OssClientSuite) TestExtendHttpResponseStatusCode(c *C) {
 	svr.Close()
 }
 
-func (s *OssClientSuite) TestCloudBoxCreateAndDeleteBucket(c *C) {
+func (s *OssClientSuite) TestCloudBoxCreateAndDeleteBucketV1(c *C) {
 
 	c.Assert(len(cloudboxControlEndpoint) > 0, Equals, true)
 
@@ -4628,8 +4631,62 @@ func (s *OssClientSuite) TestCloudBoxCreateAndDeleteBucket(c *C) {
 	c.Assert(err, NotNil)
 }
 
-func (s *OssClientSuite) TestCloudBoxListCloudBox(c *C) {
+func (s *OssClientSuite) TestCloudBoxCreateAndDeleteBucketV4(c *C) {
+
+	c.Assert(len(cloudboxControlEndpoint) > 0, Equals, true)
+
+	var bucketNameTest = bucketNamePrefix + "cloudbox-" + RandLowStr(6)
+
+	// set oss v4 signatrue
+	options := []ClientOption{
+		Region(envRegion),
+		AuthVersion(AuthV4),
+		CloudBoxId(cloudBoxID),
+	}
+
+	client, err := New(cloudboxControlEndpoint, accessID, accessKey, options...)
+
+	c.Assert(err, IsNil)
+
+	// Create
+	client.DeleteBucket(bucketNameTest)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	//sleep 3 seconds after create bucket
+	time.Sleep(timeoutInOperation)
+
+	// verify bucket is exist
+	found, err := client.IsBucketExist(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(found, Equals, true)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	_, err = client.GetBucketACL(bucketNameTest)
+	c.Assert(err, NotNil)
+}
+
+func (s *OssClientSuite) TestCloudBoxListCloudBoxV1(c *C) {
 	client, err := New(cloudboxControlEndpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	boxRes, err := client.ListCloudBoxes()
+	c.Assert(err, IsNil)
+	c.Assert(len(boxRes.CloudBoxes) > 0, Equals, true)
+}
+
+func (s *OssClientSuite) TestCloudBoxListCloudBoxV4(c *C) {
+	// set oss v4 signatrue
+	options := []ClientOption{
+		Region(envRegion),
+		AuthVersion(AuthV4),
+		CloudBoxId(cloudBoxID),
+	}
+
+	client, err := New(cloudboxControlEndpoint, accessID, accessKey, options...)
 	c.Assert(err, IsNil)
 
 	boxRes, err := client.ListCloudBoxes()

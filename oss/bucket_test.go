@@ -57,7 +57,7 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 
 		testLogger.Println("test bucket started")
 	} else {
-		client, err := New(cloudboxEndpoint, accessID, accessKey)
+		client, err := New(endpoint, accessID, accessKey)
 		s.client = client
 		c.Assert(err, IsNil)
 
@@ -5475,6 +5475,7 @@ func (s *OssBucketSuite) TestCloudBoxObject(c *C) {
 	options := []ClientOption{
 		Region(envRegion),
 		AuthVersion(AuthV4),
+		CloudBoxId(cloudBoxID),
 	}
 
 	client, _ := New(endpoint, accessID, accessKey, options...)
