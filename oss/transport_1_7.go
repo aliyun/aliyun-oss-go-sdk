@@ -30,9 +30,9 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 		},
 		MaxIdleConns:          httpMaxConns.MaxIdleConns,
 		MaxIdleConnsPerHost:   httpMaxConns.MaxIdleConnsPerHost,
+		MaxConnsPerHost:       httpMaxConns.MaxConnsPerHost,
 		IdleConnTimeout:       httpTimeOut.IdleConnTimeout,
 		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
-		MaxConnsPerHost:       httpMaxConns.MaxConnsPerHost,
 	}
 
 	if config.InsecureSkipVerify {
