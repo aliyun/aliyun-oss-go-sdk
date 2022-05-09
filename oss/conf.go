@@ -34,6 +34,7 @@ type HTTPTimeout struct {
 type HTTPMaxConns struct {
 	MaxIdleConns        int
 	MaxIdleConnsPerHost int
+	MaxConnsPerHost     int
 }
 
 // CredentialInf is interface for get AccessKeyID,AccessKeySecret,SecurityToken
