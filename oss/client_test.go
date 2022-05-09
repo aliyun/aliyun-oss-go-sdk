@@ -2890,6 +2890,34 @@ func (s *OssClientSuite) TestBucketEncyptionPutObjectError(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssClientSuite) TestMaxConnsPutObjectSuccess(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucket.GetConfig().HTTPMaxConns.MaxIdleConns, Equals, 100)
+	c.Assert(bucket.GetConfig().HTTPMaxConns.MaxIdleConnsPerHost, Equals, 100)
+	c.Assert(bucket.GetConfig().HTTPMaxConns.MaxConnsPerHost, Equals, 0)
+
+	// put object
+	objectName := objectNamePrefix + RandLowStr(5)
+	err = bucket.PutObject(objectName, strings.NewReader(RandStr(10)))
+	c.Assert(err, IsNil)
+
+	bucket.DeleteObject(objectName)
+	err = bucket.PutObject(objectName, strings.NewReader(RandStr(10)))
+	c.Assert(err, IsNil)
+	bucket.DeleteObject(objectName)
+
+	client.DeleteBucket(bucketName)
+}
+
 func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
