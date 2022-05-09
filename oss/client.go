@@ -1868,6 +1868,20 @@ func Timeout(connectTimeoutSec, readWriteTimeout int64) ClientOption {
 	}
 }
 
+// MaxConns sets the HTTP max connections for a client.
+//
+// maxIdleConns    controls the maximum number of idle (keep-alive) connections across all hosts. Default is 100.
+// maxIdleConnsPerHost    controls the maximum idle (keep-alive) connections to keep per-host. Default is 100.
+// maxConnsPerHost    limits the total number of connections per host. Default is no limit.
+//
+func MaxConns(maxIdleConns, maxIdleConnsPerHost, maxConnsPerHost int) ClientOption {
+	return func(client *Client) {
+		client.Config.HTTPMaxConns.MaxIdleConns = maxIdleConns
+		client.Config.HTTPMaxConns.MaxIdleConnsPerHost = maxIdleConnsPerHost
+		client.Config.HTTPMaxConns.MaxConnsPerHost = maxConnsPerHost
+	}
+}
+
 // SecurityToken sets the temporary user's SecurityToken.
 //
 // token    STS token

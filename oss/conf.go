@@ -34,6 +34,7 @@ type HTTPTimeout struct {
 type HTTPMaxConns struct {
 	MaxIdleConns        int
 	MaxIdleConnsPerHost int
+	MaxConnsPerHost     int
 }
 
 // CredentialInf is interface for get AccessKeyID,AccessKeySecret,SecurityToken
@@ -182,6 +183,7 @@ func getDefaultOssConfig() *Config {
 	config.HTTPTimeout.IdleConnTimeout = time.Second * 50  // 50s
 	config.HTTPMaxConns.MaxIdleConns = 100
 	config.HTTPMaxConns.MaxIdleConnsPerHost = 100
+	config.HTTPMaxConns.MaxConnsPerHost = 0
 
 	config.IsUseProxy = false
 	config.ProxyHost = ""
