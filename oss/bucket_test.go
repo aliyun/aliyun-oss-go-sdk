@@ -2043,8 +2043,7 @@ func (s *OssBucketSuite) TestAddContentType(c *C) {
 
 func (s *OssBucketSuite) TestGetConfig(c *C) {
 	client, err := New(endpoint, accessID, accessKey, UseCname(true),
-		Timeout(11, 12), SecurityToken("token"), EnableMD5(false),
-		MaxConns(10, 10, 100))
+		Timeout(11, 12), SecurityToken("token"), EnableMD5(false))
 	c.Assert(err, IsNil)
 
 	bucket, err := client.Bucket(bucketName)
@@ -2055,10 +2054,6 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.GetConfig().HTTPTimeout.HeaderTimeout, Equals, time.Second*12)
 	c.Assert(bucket.GetConfig().HTTPTimeout.IdleConnTimeout, Equals, time.Second*12)
 	c.Assert(bucket.GetConfig().HTTPTimeout.LongTimeout, Equals, time.Second*12*10)
-
-	c.Assert(bucket.GetConfig().HTTPMaxConns.MaxIdleConns, Equals, 10)
-	c.Assert(bucket.GetConfig().HTTPMaxConns.MaxIdleConnsPerHost, Equals, 10)
-	c.Assert(bucket.GetConfig().HTTPMaxConns.MaxConnsPerHost, Equals, 100)
 
 	c.Assert(bucket.GetConfig().SecurityToken, Equals, "token")
 	c.Assert(bucket.GetConfig().IsCname, Equals, true)
