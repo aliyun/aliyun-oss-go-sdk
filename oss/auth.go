@@ -159,7 +159,7 @@ func (conn Conn) getSignedStr(req *http.Request, canonicalizedResource string, k
 	}
 
 	if conn.config.LogLevel >= Debug {
-		conn.config.WriteLog(Debug, "[Req:%p]canonicalReuqest:%s\n", req, EscapeLFString(signStr))
+		conn.config.WriteLog(Debug, "[Req:%p]signStr:%s\n", req, EscapeLFString(signStr))
 	}
 
 	io.WriteString(h, signStr)
@@ -245,7 +245,7 @@ func (conn Conn) getSignedStrV4(req *http.Request, canonicalizedResource string,
 	hashedRequest := hex.EncodeToString(rh.Sum(nil))
 
 	if conn.config.LogLevel >= Debug {
-		conn.config.WriteLog(Debug, "[Req:%p]canonicalReuqest:%s\n", req, EscapeLFString(canonicalReuqest))
+		conn.config.WriteLog(Debug, "[Req:%p]signStr:%s\n", req, EscapeLFString(canonicalReuqest))
 	}
 
 	// get day,eg 20210914

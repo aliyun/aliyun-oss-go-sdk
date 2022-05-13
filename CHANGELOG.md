@@ -1,4 +1,11 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.2.3 日期：2022-05-13
+### 变更内容
+- 增加：support cloud-box
+- 增加：support v4 signature
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.2.2 日期：2022-03-24
 ### 变更内容
 - 增加：add GetBucketCORSXml,SetBucketCORSXml,GetBucketLifecycleXml

@@ -1075,8 +1075,8 @@ func (s *OssClientSuite) TestSetBucketLifecycleXml(c *C) {
 	err = client.SetBucketLifecycleXml(bucketNameTest, xmlBody, options...)
 	c.Assert(err, NotNil)
 
-	strXml, err := client.GetBucketLifecycleXml(bucketNameTest, options...)
-	c.Assert(len(strXml) > 0, Equals, true)
+	_, err = client.GetBucketLifecycleXml(bucketNameTest, options...)
+	c.Assert(err, NotNil)
 
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
