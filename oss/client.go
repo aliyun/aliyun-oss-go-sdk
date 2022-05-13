@@ -2135,7 +2135,9 @@ func (client Client) do(method, bucketName string, params map[string]interface{}
 	respHeader, _ := FindOption(options, responseHeader, nil)
 	if respHeader != nil {
 		pRespHeader := respHeader.(*http.Header)
-		*pRespHeader = resp.Headers
+		if resp != nil {
+			*pRespHeader = resp.Headers
+		}
 	}
 
 	return resp, err
