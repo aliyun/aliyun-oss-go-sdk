@@ -1868,6 +1868,129 @@ func (client Client) GetBucketCname(bucketName string, options ...Option) (strin
 	return string(data), err
 }
 
+// CreateBucketCnameToken create a token for the cname.
+// bucketName    the bucket name.
+// cname    a custom domain name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) CreateBucketCnameToken(bucketName string, cname string, options ...Option) (CreateBucketCnameTokenResult, error) {
+	var out CreateBucketCnameTokenResult
+	params := map[string]interface{}{}
+	params["cname"] = nil
+	params["comp"] = "token"
+
+	rxml := CnameConfigurationXML{}
+	rxml.Domain = cname
+
+	bs, err := xml.Marshal(rxml)
+	if err != nil {
+		return out, err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("POST", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// GetBucketCnameToken get a token for the cname
+// bucketName    the bucket name.
+// cname    a custom domain name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketCnameToken(bucketName string, cname string, options ...Option) (GetBucketCnameTokenResult, error) {
+	var out GetBucketCnameTokenResult
+	params := map[string]interface{}{}
+	params["cname"] = cname
+	params["comp"] = "token"
+
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// PutBucketCname map a custom domain name to a bucket
+// bucketName    the bucket name.
+// xmlBody the cname configuration in xml foramt
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketCnameXml(bucketName string, xmlBody string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["cname"] = nil
+	params["comp"] = "add"
+
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlBody))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("POST", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// PutBucketCname map a custom domain name to a bucket
+// bucketName    the bucket name.
+// cname    a custom domain name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketCname(bucketName string, cname string, options ...Option) error {
+	rxml := CnameConfigurationXML{}
+	rxml.Domain = cname
+
+	bs, err := xml.Marshal(rxml)
+	if err != nil {
+		return err
+	}
+	return client.PutBucketCnameXml(bucketName, string(bs), options...)
+}
+
+// DeleteBucketCname remove the mapping of the custom domain name from a bucket.
+// bucketName    the bucket name.
+// cname    a custom domain name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DeleteBucketCname(bucketName string, cname string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["cname"] = nil
+	params["comp"] = "delete"
+
+	rxml := CnameConfigurationXML{}
+	rxml.Domain = cname
+
+	bs, err := xml.Marshal(rxml)
+	if err != nil {
+		return err
+	}
+	buffer := new(bytes.Buffer)
+	buffer.Write(bs)
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("POST", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
