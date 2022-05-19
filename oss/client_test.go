@@ -4526,7 +4526,7 @@ func (s *OssClientSuite) TestBucketReplicationGetProgressWithEmptyRuleID(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s *OssClientSuite) TestGetBucketCName(c *C) {
+func (s *OssClientSuite) TestBucketCName(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
@@ -4534,11 +4534,29 @@ func (s *OssClientSuite) TestGetBucketCName(c *C) {
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
+	cbResult, err := client.CreateBucketCnameToken(bucketName, "www.example.com")
+	c.Assert(err, IsNil)
+	c.Assert(cbResult.Bucket, Equals, bucketName)
+	c.Assert(cbResult.Cname, Equals, "www.example.com")
+
+	gbResult, err := client.GetBucketCnameToken(bucketName, "www.example.com")
+	c.Assert(err, IsNil)
+	c.Assert(gbResult.Bucket, Equals, bucketName)
+	c.Assert(gbResult.Cname, Equals, "www.example.com")
+
+	err = client.PutBucketCname(bucketName, "www.example.com")
+	serviceErr, isSuc := err.(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.Code, Equals, "NeedVerifyDomainOwnership")
+
 	xmlBody, err := client.GetBucketCname(bucketName)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(xmlBody, bucketName), Equals, true)
 
-	err = client.DeleteBucket(bucketName)
+	err = client.DeleteBucketCname(bucketName, "www.example.com")
+	c.Assert(err, IsNil)
+
+	client.DeleteBucket(bucketName)
 	c.Assert(err, IsNil)
 }
 
