@@ -1283,3 +1283,24 @@ type ReplicationXML struct {
 	XMLName xml.Name `xml:"ReplicationRules"`
 	ID      string   `xml:"ID,omitempty"`
 }
+
+// CnameConfigurationXML define cname configuration
+type CnameConfigurationXML struct {
+	XMLName xml.Name `xml:"BucketCnameConfiguration"`
+	Domain  string   `xml:"Cname>Domain"`
+}
+
+// CnameTokenXML define cname token information
+type CnameTokenXML struct {
+	XMLName    xml.Name `xml:"CnameToken"`
+	Bucket     string   `xml:"Bucket,omitempty"`
+	Cname      string   `xml:"Cname,omitempty"`
+	Token      string   `xml:"Token,omitempty"`
+	ExpireTime string   `xml:"ExpireTime,omitempty"`
+}
+
+// CreateBucketCnameTokenResult defines result object for CreateBucketCnameToken request
+type CreateBucketCnameTokenResult CnameTokenXML
+
+// GetBucketCnameTokenResult defines result object for GetBucketCnameToken request
+type GetBucketCnameTokenResult CnameTokenXML
