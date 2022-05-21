@@ -3660,6 +3660,96 @@ func (s *OssClientSuite) TestBucketInventoryNegative(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssClientSuite) TestBucketInventoryXmlSuccess(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bl := true
+	invConfig := InventoryConfiguration{
+		Id:        "report1",
+		IsEnabled: &bl,
+		Prefix:    "filterPrefix/",
+		OSSBucketDestination: OSSBucketDestination{
+			Format:    "CSV",
+			AccountId: accountID,
+			RoleArn:   stsARN,
+			Bucket:    "acs:oss:::" + bucketName,
+			Prefix:    "prefix1",
+		},
+		Frequency:              "Daily",
+		IncludedObjectVersions: "All",
+		OptionalFields: OptionalFields{
+			Field: []string{
+				"Size", "LastModifiedDate", "ETag", "StorageClass", "IsMultipartUploaded", "EncryptionStatus",
+			},
+		},
+	}
+
+	tagBucket := "acs:oss:::" + bucketName
+
+	var xmlBody []byte
+	xmlBody, _ = xml.Marshal(invConfig)
+
+	// set enventory
+	err = client.SetBucketInventoryXml(bucketName, string(xmlBody))
+	c.Assert(err, IsNil)
+
+	// get enventory
+	xmlGet, err := client.GetBucketInventoryXml(bucketName, "report1")
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(xmlGet, tagBucket), Equals, true)
+
+	// list enventory
+	xmlList, err := client.ListBucketInventoryXml(bucketName, "", Marker("report1"))
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(xmlList, tagBucket), Equals, true)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssClientSuite) TestBucketInventoryXmlError(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// not xml format
+	xmlBody := `
+	<InventoryConfiguration>
+	<Id>report1</Id>
+	<IsEnabled>true</IsEnabled>
+	`
+	err = client.SetBucketInventoryXml(bucketName, xmlBody)
+	c.Assert(err, NotNil)
+
+	// no id
+	xmlBody = `
+	<InventoryConfiguration>
+	<IsEnabled>true</IsEnabled>
+	<Filter>
+	   <Prefix>filterPrefix/</Prefix>
+		  <LastModifyBeginTimeStamp>1637883649</LastModifyBeginTimeStamp>
+		  <LastModifyEndTimeStamp>1638347592</LastModifyEndTimeStamp>
+		  <LowerSizeBound>1024</LowerSizeBound>
+		  <UpperSizeBound>1048576</UpperSizeBound>
+	   <StorageClass>Standard,IA</StorageClass>
+	</Filter>
+ </InventoryConfiguration>
+	`
+	err = client.SetBucketInventoryXml(bucketName, xmlBody)
+	c.Assert(err, NotNil)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
 func (s *OssClientSuite) TestBucketAsyncTask(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)

@@ -1354,7 +1354,7 @@ func (client Client) DeleteBucketQosInfo(bucketName string, options ...Option) e
 //
 // Set the Bucket inventory.
 //
-// bucketName tht bucket name.
+// bucketName the bucket name.
 //
 // inventoryConfig the inventory configuration.
 //
@@ -1390,6 +1390,47 @@ func (client Client) SetBucketInventory(bucketName string, inventoryConfig Inven
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// SetBucketInventoryXml API operation for Object Storage Service
+//
+// Set the Bucket inventory
+//
+// bucketName the bucket name.
+//
+// xmlBody the inventory configuration.
+//
+// error    it's nil if no error, otherwise it's an error.
+//
+func (client Client) SetBucketInventoryXml(bucketName string, xmlBody string, options ...Option) error {
+	var inventoryConfig InventoryConfiguration
+	err := xml.Unmarshal([]byte(xmlBody), &inventoryConfig)
+	if err != nil {
+		return err
+	}
+
+	if inventoryConfig.Id == "" {
+		return fmt.Errorf("inventory id is empty in xml")
+	}
+
+	params := map[string]interface{}{}
+	params["inventoryId"] = inventoryConfig.Id
+	params["inventory"] = nil
+
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlBody))
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := make(map[string]string)
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // GetBucketInventory API operation for Object Storage Service
 //
 // Get the Bucket inventory.
@@ -1415,6 +1456,33 @@ func (client Client) GetBucketInventory(bucketName string, strInventoryId string
 	defer resp.Body.Close()
 
 	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// GetBucketInventoryXml API operation for Object Storage Service
+//
+// Get the Bucket inventory.
+//
+// bucketName tht bucket name.
+//
+// strInventoryId the inventory id.
+//
+// InventoryConfiguration the inventory configuration.
+//
+// error    it's nil if no error, otherwise it's an error.
+//
+func (client Client) GetBucketInventoryXml(bucketName string, strInventoryId string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["inventory"] = nil
+	params["inventoryId"] = strInventoryId
+
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
 	return out, err
 }
 
@@ -1447,6 +1515,37 @@ func (client Client) ListBucketInventory(bucketName, continuationToken string, o
 	defer resp.Body.Close()
 
 	err = xmlUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+// ListBucketInventoryXml API operation for Object Storage Service
+//
+// List the Bucket inventory.
+//
+// bucketName tht bucket name.
+//
+// continuationToken the users token.
+//
+// ListInventoryConfigurationsResult list all inventory configuration by .
+//
+// error    it's nil if no error, otherwise it's an error.
+//
+func (client Client) ListBucketInventoryXml(bucketName, continuationToken string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["inventory"] = nil
+	if continuationToken == "" {
+		params["continuation-token"] = nil
+	} else {
+		params["continuation-token"] = continuationToken
+	}
+
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
 	return out, err
 }
 

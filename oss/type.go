@@ -37,7 +37,7 @@ type ListCloudBoxResult struct {
 	MaxKeys     int                  `xml:"MaxKeys"`             // The max entry count to return. This information is returned when IsTruncated is true.
 	IsTruncated bool                 `xml:"IsTruncated"`         // Flag true means there's remaining cloudboxes to return.
 	NextMarker  string               `xml:"NextMarker"`          // The marker filter for the next list call
-	Owner       string               `xml:"Owner"`               // The owner information
+	Owner       string               `xml:"Owner>DisplayName"`   // The owner information
 	CloudBoxes  []CloudBoxProperties `xml:"CloudBoxes>CloudBox"` // The cloudbox list
 }
 
