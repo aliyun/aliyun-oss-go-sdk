@@ -1,4 +1,11 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.2.4 日期：2022-05-25
+### 变更内容
+- 增加：add cname api
+- 增加：add inventory api for xml config
+
+
+# ChangeLog - Aliyun OSS SDK for Go
 ## 版本号：v2.2.3 日期：2022-05-13
 ### 变更内容
 - 增加：support cloud-box
