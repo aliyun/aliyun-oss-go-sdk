@@ -802,7 +802,7 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
 	host, _, err := net.SplitHostPort(um.NetLoc)
 	if err != nil {
 		host = um.NetLoc
-		if host[0] == '[' && host[len(host)-1] == ']' {
+		if len(host) > 0 && host[0] == '[' && host[len(host)-1] == ']' {
 			host = host[1 : len(host)-1]
 		}
 	}
