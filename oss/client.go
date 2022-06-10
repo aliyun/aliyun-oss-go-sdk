@@ -2325,6 +2325,12 @@ func Product(product string) ClientOption {
 	}
 }
 
+// Public
+func (client Client) Do(method, bucketName string, params map[string]interface{},
+	headers map[string]string, data io.Reader, options ...Option) (*Response, error) {
+		return client.do(method, bucketName, params, headers, data, options...)
+}
+
 // Private
 func (client Client) do(method, bucketName string, params map[string]interface{},
 	headers map[string]string, data io.Reader, options ...Option) (*Response, error) {
