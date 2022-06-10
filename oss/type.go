@@ -333,6 +333,7 @@ type BucketInfo struct {
 	Versioning             string    `xml:"Versioning"`               // Bucket Versioning
 	TransferAcceleration   string    `xml:"TransferAcceleration"`     // bucket TransferAcceleration
 	CrossRegionReplication string    `xml:"CrossRegionReplication"`   // bucket CrossRegionReplication
+	ResourceGroupId        string    `xml:"ResourceGroupId"`          // bucket ResourceGroupId
 }
 
 type SSERule struct {
