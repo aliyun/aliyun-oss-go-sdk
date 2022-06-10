@@ -49,6 +49,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256",
 	"x-oss-hash-ctx", "x-oss-md5-ctx", "transferAcceleration",
 	"regionList", "cloudboxes", "resourcegroup",
+	"x-oss-ac-source-ip", "x-oss-ac-subnet-mask", "x-oss-ac-vpc-id", "x-oss-ac-forward-allow",
 }
 
 // init initializes Conn
