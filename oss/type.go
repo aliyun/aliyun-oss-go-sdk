@@ -340,6 +340,7 @@ type ObjectProperties struct {
 	Owner        Owner     `xml:"Owner"`        // Object owner information
 	LastModified time.Time `xml:"LastModified"` // Object last modified time
 	StorageClass string    `xml:"StorageClass"` // Object storage class (Standard, IA, Archive)
+	RestoreInfo  string    `xml:"RestoreInfo,omitempty"`  // Object restoreInfo
 }
 
 // ListObjectsResultV2 defines the result from ListObjectsV2 request
@@ -394,6 +395,7 @@ type ObjectVersionProperties struct {
 	ETag         string    `xml:"ETag"`         // Object ETag
 	StorageClass string    `xml:"StorageClass"` // Object storage class (Standard, IA, Archive)
 	Owner        Owner     `xml:"Owner"`        // bucket owner element
+	RestoreInfo  string    `xml:"RestoreInfo,omitempty"`  // Object restoreInfo
 }
 
 // Owner defines Bucket/Object's owner
