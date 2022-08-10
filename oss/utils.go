@@ -376,6 +376,11 @@ func ChoiceCompletePartOption(options []Option) []Option {
 		}
 	}
 
+	notification, _ := FindOption(options, HttpHeaderOssNotification, nil)
+	if notification != nil {
+		outOption = append(outOption, SetHeader(HttpHeaderOssNotification, notification))
+	}
+
 	return outOption
 }
 
