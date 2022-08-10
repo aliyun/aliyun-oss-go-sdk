@@ -206,6 +206,7 @@ const (
 	HTTPHeaderAllowSameActionOverLap         = "X-Oss-Allow-Same-Action-Overlap"
 	HttpHeaderOssDate                        = "X-Oss-Date"
 	HttpHeaderOssContentSha256               = "X-Oss-Content-Sha256"
+	HttpHeaderOssNotification                = "X-Oss-Notification"
 )
 
 // HTTP Param
