@@ -1304,3 +1304,92 @@ type CreateBucketCnameTokenResult CnameTokenXML
 
 // GetBucketCnameTokenResult defines result object for GetBucketCnameToken request
 type GetBucketCnameTokenResult CnameTokenXML
+
+// GetMetaQueryStatusResult defines result for GetMetaQueryStatus result
+type GetMetaQueryStatusResult GetMetaQueryStatusResultXml
+
+// GetMetaQueryStatusResultXml define get meta query status information
+type GetMetaQueryStatusResultXml struct {
+	XMLName    xml.Name `xml:"MetaQueryStatus"`
+	State      string   `xml:"State"`
+	Phase      string   `xml:"Phase"`
+	CreateTime string   `xml:"CreateTime"`
+	UpdateTime string   `xml:"UpdateTime"`
+}
+
+// DoMetaQuery defines meta query struct
+type MetaQuery struct {
+	XMLName      xml.Name                      `xml:"MetaQuery"`
+	NextToken    string                        `xml:"NextToken,omitempty"`
+	MaxResults   int64                         `xml:"MaxResults,omitempty"`
+	Query        string                        `xml:"Query"`
+	Sort         string                        `xml:"Sort,omitempty"`
+	Order        string                        `xml:"Order,omitempty"`
+	Aggregations []MetaQueryAggregationRequest `xml:"Aggregations>Aggregation,omitempty"`
+}
+
+// MetaQueryAggregationRequest defines meta query aggregation request
+type MetaQueryAggregationRequest struct {
+	XMLName   xml.Name `xml:"Aggregation"`
+	Field     string   `xml:"Field,omitempty"`
+	Operation string   `xml:"Operation,omitempty"`
+}
+
+//MetaQueryAggregationResponse defines meta query aggregation response
+type MetaQueryAggregationResponse struct {
+	XMLName   xml.Name         `xml:"Aggregation"`
+	Field     string           `xml:"Field,omitempty"`
+	Operation string           `xml:"Operation,omitempty"`
+	Value     float64          `xml:"Value,omitempty"`
+	Groups    []MetaQueryGroup `xml:"Groups>Group,omitempty"`
+}
+
+// DoMetaQueryResult defines result for DoMetaQuery result
+type DoMetaQueryResult DoMetaQueryResultXml
+
+// DoMetaQueryResultXml defines do meta query information
+type DoMetaQueryResultXml struct {
+	XMLName      xml.Name                       `xml:"MetaQuery"`
+	NextToken    string                         `xml:"NextToken,omitempty"`                 // next token
+	Files        []MetaQueryFile                `xml:"Files>File,omitempty"`                // file
+	Aggregations []MetaQueryAggregationResponse `xml:"Aggregations>Aggregation,omitempty"'` // Aggregation
+}
+
+// MetaQueryFile defines do meta query result file information
+type MetaQueryFile struct {
+	XMLName                               xml.Name            `xml:"File"`
+	Filename                              string              `xml:"Filename"`                                        //file name
+	Size                                  int64               `xml:"Size"`                                            // file size
+	FileModifiedTime                      string              `xml:"FileModifiedTime"`                                // file Modified Time
+	OssObjectType                         string              `xml:"OSSObjectType"`                                   // Oss Object Type
+	OssStorageClass                       string              `xml:"OSSStorageClass"`                                 // Oss Storage Class
+	ObjectACL                             string              `xml:"ObjectACL"`                                       // Object Acl
+	ETag                                  string              `xml:"ETag"`                                            // ETag
+	OssCRC64                              string              `xml:"OSSCRC64"`                                        // Oss CRC64
+	OssTaggingCount                       int64               `xml:"OSSTaggingCount,omitempty"`                       // Oss Tagging Count
+	OssTagging                            []MetaQueryTagging  `xml:"OSSTagging>Tagging,omitempty"`                    // Tagging
+	OssUserMeta                           []MetaQueryUserMeta `xml:"OSSUserMeta>UserMeta,omitempty"`                  // UserMeta
+	ServerSideEncryption                  string              `xml:"ServerSideEncryption,omitempty"`                  //Server Side Encryption
+	ServerSideEncryptionCustomerAlgorithm string              `xml:"ServerSideEncryptionCustomerAlgorithm,omitempty"` // Server Side Encryption Customer Algorithm
+}
+
+// MetaQueryTagging defines do meta query result tagging information
+type MetaQueryTagging struct {
+	XMLName xml.Name `xml:"Tagging"`
+	Key     string   `xml:"Key"`
+	Value   string   `xml:"Value"`
+}
+
+// MetaQueryUserMeta defines do meta query result user meta information
+type MetaQueryUserMeta struct {
+	XMLName xml.Name `xml:"UserMeta"`
+	Key     string   `xml:"Key"`
+	Value   string   `xml:"Value"`
+}
+
+// MetaQueryGroup defines do meta query result group information
+type MetaQueryGroup struct {
+	XMLName xml.Name `xml:"Group"`
+	Value   string   `xml:"Value"`
+	Count   int64    `xml:"Count"`
+}

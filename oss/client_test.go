@@ -1695,7 +1695,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 				Pass:   []string{"myheader-key1", "myheader-key2"},
 				Remove: []string{"myheader-key3", "myheader-key4"},
 				Set: []MirrorHeaderSet{
-					MirrorHeaderSet{
+					{
 						Key:   "myheader-key5",
 						Value: "myheader-value5",
 					},
@@ -1706,13 +1706,13 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 
 	// Define array routing rule
 	ruleArrOk := []RoutingRule{
-		RoutingRule{
+		{
 			RuleNumber: 2,
 			Condition: Condition{
 				KeyPrefixEquals:             "abc/",
 				HTTPErrorCodeReturnedEquals: 404,
 				IncludeHeader: []IncludeHeader{
-					IncludeHeader{
+					{
 						Key:    "host",
 						Equals: "test.oss-cn-beijing-internal.aliyuncs.com",
 					},
@@ -1727,7 +1727,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 				HttpRedirectCode: 301,
 			},
 		},
-		RoutingRule{
+		{
 			RuleNumber: 3,
 			Condition: Condition{
 				KeyPrefixEquals:             "",
@@ -1745,7 +1745,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 					Pass:    []string{"myheader-key1", "myheader-key2"},
 					Remove:  []string{"myheader-key3", "myheader-key4"},
 					Set: []MirrorHeaderSet{
-						MirrorHeaderSet{
+						{
 							Key:   "myheader-key5",
 							Value: "myheader-value5",
 						},
@@ -1816,14 +1816,14 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 	}
 	// Define array error routing rule
 	rulesErrArr := []RoutingRule{
-		RoutingRule{
+		{
 			RuleNumber: 1,
 			Redirect: Redirect{
 				RedirectType:    "Mirror",
 				PassQueryString: &btrue,
 			},
 		},
-		RoutingRule{
+		{
 			RuleNumber: 2,
 			Redirect: Redirect{
 				RedirectType:    "Mirror",
@@ -1850,7 +1850,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteDetail(c *C) {
 				Pass:   []string{"myheader-key1", "myheader-key2"},
 				Remove: []string{"myheader-key3", "myheader-key4"},
 				Set: []MirrorHeaderSet{
-					MirrorHeaderSet{
+					{
 						Key:   "myheader-key5",
 						Value: "myheader-value5",
 					},
@@ -1918,7 +1918,7 @@ func (s *OssClientSuite) TestSetBucketWebsiteXml(c *C) {
 				Pass:   []string{"myheader-key1", "myheader-key2"},
 				Remove: []string{"myheader-key3", "myheader-key4"},
 				Set: []MirrorHeaderSet{
-					MirrorHeaderSet{
+					{
 						Key:   "myheader-key5",
 						Value: "myheader-value5",
 					},
@@ -2930,7 +2930,7 @@ func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
 
 	// Bucket Tagging
 	var tagging Tagging
-	tagging.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
+	tagging.Tags = []Tag{{Key: "testkey2", Value: "testvalue2"}}
 	err = client.SetBucketTagging(bucketName, tagging, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 	c.Assert(GetRequestId(respHeader) != "", Equals, true)
@@ -2968,7 +2968,7 @@ func (s *OssClientSuite) TestListBucketsTagging(c *C) {
 
 	// Bucket Tagging
 	var tagging Tagging
-	tagging.Tags = []Tag{Tag{Key: "testkey", Value: "testvalue"}}
+	tagging.Tags = []Tag{{Key: "testkey", Value: "testvalue"}}
 	err = client.SetBucketTagging(bucketName1, tagging)
 	c.Assert(err, IsNil)
 
@@ -4844,4 +4844,79 @@ func (s *OssClientSuite) TestCloudBoxListCloudBoxV4(c *C) {
 	boxRes, err := client.ListCloudBoxes()
 	c.Assert(err, IsNil)
 	c.Assert(len(boxRes.CloudBoxes) > 0, Equals, true)
+}
+
+// TestBucketMetaQuery
+func (s *OssClientSuite) TestBucketMetaQuery(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Open meta query
+	err = client.OpenMetaQuery(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// get meta query status
+	result, err := client.GetMetaQueryStatus(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(result.State != "", Equals, true)
+	c.Assert(result.CreateTime != "", Equals, true)
+	c.Assert(result.UpdateTime != "", Equals, true)
+
+	// do meta query
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	objectName := ""
+	objectValue := ""
+	for i := 0; i < 15; i++ {
+		objectName = objectNamePrefix + RandLowStr(6) + ".txt"
+		objectValue = RandLowStr(1000)
+		err = bucket.PutObject(objectName, strings.NewReader(objectValue))
+		c.Assert(err, IsNil)
+	}
+	time.Sleep(240 * time.Second)
+	query := MetaQuery{
+		NextToken:  "",
+		MaxResults: 20,
+		Query:      `{"Field": "Size","Value": "888","Operation": "gt"}`,
+		Sort:       "Size",
+		Order:      "asc",
+	}
+	queryResult, err := client.DoMetaQuery(bucketNameTest, query)
+	c.Assert(err, IsNil)
+	c.Assert(queryResult.NextToken, Equals, "")
+	c.Assert(len(queryResult.Files), Equals, 15)
+	// do meta query use aggregate
+	queryTwo := MetaQuery{
+		NextToken:  "",
+		MaxResults: 100,
+		Query:      `{"Field": "Size","Value": "888","Operation": "gt"}`,
+		Sort:       "Size",
+		Order:      "asc",
+		Aggregations: []MetaQueryAggregationRequest{
+			{
+				Field:     "Size",
+				Operation: "sum",
+			},
+			{
+				Field:     "Size",
+				Operation: "max",
+			},
+			{
+				Field:     "Size",
+				Operation: "group",
+			},
+		},
+	}
+	queryTwoResult, err := client.DoMetaQuery(bucketNameTest, queryTwo)
+	c.Assert(err, IsNil)
+	c.Assert(queryResult.NextToken, Equals, "")
+	c.Assert(len(queryTwoResult.Files), Equals, 0)
+	c.Assert(len(queryTwoResult.Aggregations) > 0, Equals, true)
+	// Close meta query
+	err = client.CloseMetaQuery(bucketNameTest)
+	c.Assert(err, IsNil)
 }

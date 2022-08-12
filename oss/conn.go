@@ -48,7 +48,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"worm", "wormId", "wormExtend", "withHashContext",
 	"x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256",
 	"x-oss-hash-ctx", "x-oss-md5-ctx", "transferAcceleration",
-	"regionList", "cloudboxes",
+	"regionList", "cloudboxes", "metaQuery",
 }
 
 // init initializes Conn
