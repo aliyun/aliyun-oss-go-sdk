@@ -16,8 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baiyubin/aliyun-sts-go-sdk/sts"
-
 	. "gopkg.in/check.v1"
 )
 
@@ -2147,59 +2145,59 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.GetConfig().IsEnableMD5, Equals, false)
 }
 
-func (s *OssBucketSuite) TestSTSToken(c *C) {
-	objectName := objectNamePrefix + RandStr(8)
-	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
-
-	stsClient := sts.NewClient(stsaccessID, stsaccessKey, stsARN, "oss_test_sess")
-
-	resp, err := stsClient.AssumeRole(1800)
-	c.Assert(err, IsNil)
-
-	client, err := New(endpoint, resp.Credentials.AccessKeyId, resp.Credentials.AccessKeySecret,
-		SecurityToken(resp.Credentials.SecurityToken))
-	c.Assert(err, IsNil)
-
-	bucket, err := client.Bucket(bucketName)
-	c.Assert(err, IsNil)
-
-	// Put
-	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
-	c.Assert(err, IsNil)
-
-	// Get
-	body, err := bucket.GetObject(objectName)
-	c.Assert(err, IsNil)
-	str, err := readBody(body)
-	c.Assert(err, IsNil)
-	c.Assert(str, Equals, objectValue)
-
-	// List
-	lor, err := bucket.ListObjects()
-	c.Assert(err, IsNil)
-	testLogger.Println("Objects:", lor.Objects)
-
-	// Put with URL
-	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
-	c.Assert(err, IsNil)
-
-	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
-	c.Assert(err, IsNil)
-
-	// Get with URL
-	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
-	c.Assert(err, IsNil)
-
-	body, err = bucket.GetObjectWithURL(signedURL)
-	c.Assert(err, IsNil)
-	str, err = readBody(body)
-	c.Assert(err, IsNil)
-	c.Assert(str, Equals, objectValue)
-
-	// Delete
-	err = bucket.DeleteObject(objectName)
-	c.Assert(err, IsNil)
-}
+//func (s *OssBucketSuite) TestSTSToken(c *C) {
+//	objectName := objectNamePrefix + RandStr(8)
+//	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
+//
+//	stsClient := sts.NewClient(stsaccessID, stsaccessKey, stsARN, "oss_test_sess")
+//
+//	resp, err := stsClient.AssumeRole(1800)
+//	c.Assert(err, IsNil)
+//
+//	client, err := New(endpoint, resp.Credentials.AccessKeyId, resp.Credentials.AccessKeySecret,
+//		SecurityToken(resp.Credentials.SecurityToken))
+//	c.Assert(err, IsNil)
+//
+//	bucket, err := client.Bucket(bucketName)
+//	c.Assert(err, IsNil)
+//
+//	// Put
+//	err = bucket.PutObject(objectName, strings.NewReader(objectValue))
+//	c.Assert(err, IsNil)
+//
+//	// Get
+//	body, err := bucket.GetObject(objectName)
+//	c.Assert(err, IsNil)
+//	str, err := readBody(body)
+//	c.Assert(err, IsNil)
+//	c.Assert(str, Equals, objectValue)
+//
+//	// List
+//	lor, err := bucket.ListObjects()
+//	c.Assert(err, IsNil)
+//	testLogger.Println("Objects:", lor.Objects)
+//
+//	// Put with URL
+//	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
+//	c.Assert(err, IsNil)
+//
+//	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue))
+//	c.Assert(err, IsNil)
+//
+//	// Get with URL
+//	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
+//	c.Assert(err, IsNil)
+//
+//	body, err = bucket.GetObjectWithURL(signedURL)
+//	c.Assert(err, IsNil)
+//	str, err = readBody(body)
+//	c.Assert(err, IsNil)
+//	c.Assert(str, Equals, objectValue)
+//
+//	// Delete
+//	err = bucket.DeleteObject(objectName)
+//	c.Assert(err, IsNil)
+//}
 
 func (s *OssBucketSuite) TestSTSTonekNegative(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
