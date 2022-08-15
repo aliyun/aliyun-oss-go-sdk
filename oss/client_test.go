@@ -2305,7 +2305,7 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
 
 	client, err := New(endpoint, accessID, accessKey, UseCname(true),
-		Timeout(11, 12), SecurityToken("token"), Proxy(proxyHost))
+		Timeout(11, 12), SecurityToken("token"), Proxy("http://127.0.0.1:8120"))
 	c.Assert(err, IsNil)
 
 	// CreateBucket timeout
@@ -2322,15 +2322,15 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	c.Assert(client.Conn.config.IsCname, Equals, true)
 
 	c.Assert(client.Conn.config.IsUseProxy, Equals, true)
-	c.Assert(client.Config.ProxyHost, Equals, proxyHost)
+	c.Assert(client.Config.ProxyHost, Equals, "http://127.0.0.1:8120")
 
-	client, err = New(endpoint, accessID, accessKey, AuthProxy(proxyHost, proxyUser, proxyPasswd))
+	client, err = New(endpoint, accessID, accessKey, AuthProxy("http://127.0.0.1:8120", "user", "passwd"))
 
 	c.Assert(client.Conn.config.IsUseProxy, Equals, true)
-	c.Assert(client.Config.ProxyHost, Equals, proxyHost)
+	c.Assert(client.Config.ProxyHost, Equals, "http://127.0.0.1:8120")
 	c.Assert(client.Conn.config.IsAuthProxy, Equals, true)
-	c.Assert(client.Conn.config.ProxyUser, Equals, proxyUser)
-	c.Assert(client.Conn.config.ProxyPassword, Equals, proxyPasswd)
+	c.Assert(client.Conn.config.ProxyUser, Equals, "user")
+	c.Assert(client.Conn.config.ProxyPassword, Equals, "passwd")
 
 	client, err = New(endpoint, accessID, accessKey, UserAgent("go sdk user agent"))
 	c.Assert(client.Conn.config.UserAgent, Equals, "go sdk user agent")
