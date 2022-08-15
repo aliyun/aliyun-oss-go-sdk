@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"encoding/xml"
 	"net/url"
 	"sort"
 
@@ -23,12 +24,12 @@ func (s *OssTypeSuite) TestDecodeDeleteObjectsResult(c *C) {
 	err := decodeDeleteObjectsResult(&res)
 	c.Assert(err, IsNil)
 
-	res.DeletedObjectsDetail = []DeletedKeyInfo{DeletedKeyInfo{Key: ""}}
+	res.DeletedObjectsDetail = []DeletedKeyInfo{{Key: ""}}
 	err = decodeDeleteObjectsResult(&res)
 	c.Assert(err, IsNil)
 	c.Assert(res.DeletedObjectsDetail[0].Key, Equals, "")
 
-	res.DeletedObjectsDetail = []DeletedKeyInfo{DeletedKeyInfo{Key: goURLStr}, DeletedKeyInfo{Key: chnURLStr}}
+	res.DeletedObjectsDetail = []DeletedKeyInfo{{Key: goURLStr}, {Key: chnURLStr}}
 	err = decodeDeleteObjectsResult(&res)
 	c.Assert(err, IsNil)
 	c.Assert(res.DeletedObjectsDetail[0].Key, Equals, goStr)
@@ -388,4 +389,143 @@ func (s *OssTypeSuite) TestValidateLifecleRules(c *C) {
 	rules = []LifecycleRule{rule}
 	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
+}
+
+// test get meta query statsu result
+func (s *OssTypeSuite) TestGetMetaQueryStatusResult(c *C) {
+	var res GetMetaQueryStatusResult
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<MetaQueryStatus>
+  <State>Running</State>
+  <Phase>FullScanning</Phase>
+  <CreateTime>2021-08-02T10:49:17.289372919+08:00</CreateTime>
+  <UpdateTime>2021-08-02T10:49:17.289372919+08:00</UpdateTime>
+</MetaQueryStatus>`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.State, Equals, "Running")
+	c.Assert(res.Phase, Equals, "FullScanning")
+	c.Assert(res.CreateTime, Equals, "2021-08-02T10:49:17.289372919+08:00")
+	c.Assert(res.UpdateTime, Equals, "2021-08-02T10:49:17.289372919+08:00")
+}
+
+// test do meta query request xml
+func (s *OssTypeSuite) TestDoMetaQueryRequest(c *C) {
+	var res MetaQuery
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<MetaQuery>
+  <NextToken>MTIzNDU2Nzg6aW1tdGVzdDpleGFtcGxlYnVja2V0OmRhdGFzZXQwMDE6b3NzOi8vZXhhbXBsZWJ1Y2tldC9zYW1wbGVvYmplY3QxLmpwZw==</NextToken>
+  <MaxResults>5</MaxResults>
+  <Query>{"Field": "Size","Value": "1048576","Operation": "gt"}</Query>
+  <Sort>Size</Sort>
+  <Order>asc</Order>
+  <Aggregations>
+    <Aggregation>
+      <Field>Size</Field>
+      <Operation>sum</Operation>
+    </Aggregation>
+    <Aggregation>
+      <Field>Size</Field>
+      <Operation>max</Operation>
+    </Aggregation>
+  </Aggregations>
+</MetaQuery>`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.NextToken, Equals, "MTIzNDU2Nzg6aW1tdGVzdDpleGFtcGxlYnVja2V0OmRhdGFzZXQwMDE6b3NzOi8vZXhhbXBsZWJ1Y2tldC9zYW1wbGVvYmplY3QxLmpwZw==")
+	c.Assert(res.MaxResults, Equals, int64(5))
+	c.Assert(res.Query, Equals, `{"Field": "Size","Value": "1048576","Operation": "gt"}`)
+	c.Assert(res.Sort, Equals, "Size")
+	c.Assert(res.Order, Equals, "asc")
+	c.Assert(res.Aggregations[0].Field, Equals, "Size")
+	c.Assert(res.Aggregations[1].Operation, Equals, "max")
+}
+
+// test do meta query result
+func (s *OssTypeSuite) TestDoMetaQueryResult(c *C) {
+	var res DoMetaQueryResult
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<MetaQuery>
+  <NextToken>MTIzNDU2Nzg6aW1tdGVzdDpleGFtcGxlYnVja2V0OmRhdGFzZXQwMDE6b3NzOi8vZXhhbXBsZWJ1Y2tldC9zYW1wbGVvYmplY3QxLmpwZw==</NextToken>
+  <Files>
+    <File>
+      <Filename>exampleobject.txt</Filename>
+      <Size>120</Size>
+      <FileModifiedTime>2021-06-29T14:50:13.011643661+08:00</FileModifiedTime>
+      <OSSObjectType>Normal</OSSObjectType>
+      <OSSStorageClass>Standard</OSSStorageClass>
+      <ObjectACL>default</ObjectACL>
+      <ETag>"fba9dede5f27731c9771645a3986****"</ETag>
+      <OSSCRC64>4858A48BD1466884</OSSCRC64>
+      <OSSTaggingCount>2</OSSTaggingCount>
+      <OSSTagging>
+        <Tagging>
+          <Key>owner</Key>
+          <Value>John</Value>
+        </Tagging>
+        <Tagging>
+          <Key>type</Key>
+          <Value>document</Value>
+        </Tagging>
+      </OSSTagging>
+      <OSSUserMeta>
+        <UserMeta>
+          <Key>x-oss-meta-location</Key>
+          <Value>hangzhou</Value>
+        </UserMeta>
+      </OSSUserMeta>
+    </File>
+  </Files>
+</MetaQuery>`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.NextToken, Equals, "MTIzNDU2Nzg6aW1tdGVzdDpleGFtcGxlYnVja2V0OmRhdGFzZXQwMDE6b3NzOi8vZXhhbXBsZWJ1Y2tldC9zYW1wbGVvYmplY3QxLmpwZw==")
+	c.Assert(res.Files[0].Filename, Equals, "exampleobject.txt")
+	c.Assert(res.Files[0].Size, Equals, int64(120))
+	c.Assert(res.Files[0].FileModifiedTime, Equals, "2021-06-29T14:50:13.011643661+08:00")
+	c.Assert(res.Files[0].OssObjectType, Equals, "Normal")
+	c.Assert(res.Files[0].OssCRC64, Equals, "4858A48BD1466884")
+	c.Assert(res.Files[0].OssObjectType, Equals, "Normal")
+	c.Assert(res.Files[0].OssStorageClass, Equals, "Standard")
+	c.Assert(res.Files[0].ObjectACL, Equals, "default")
+	c.Assert(res.Files[0].OssTagging[1].Key, Equals, "type")
+	c.Assert(res.Files[0].OssTagging[1].Value, Equals, "document")
+	c.Assert(res.Files[0].OssUserMeta[0].Value, Equals, "hangzhou")
+
+	// test aggregations
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<MetaQuery>
+    <NextToken></NextToken>
+    <Aggregations>
+        <Aggregation>
+            <Field>Size</Field>
+            <Operation>sum</Operation>
+            <Value>839794720</Value>
+        </Aggregation>
+        <Aggregation>
+            <Field>Size</Field>
+            <Operation>group</Operation>
+            <Groups>
+                <Group>
+                    <Value>518</Value>
+                    <Count>1</Count>
+                </Group>
+                <Group>
+                    <Value>581</Value>
+                    <Count>1</Count>
+                </Group>
+            </Groups>
+        </Aggregation>
+    </Aggregations>
+</MetaQuery>
+`)
+	err = xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.NextToken, Equals, "")
+	c.Assert(res.Aggregations[0].Field, Equals, "Size")
+	c.Assert(res.Aggregations[0].Operation, Equals, "sum")
+	c.Assert(res.Aggregations[0].Value, Equals, float64(839794720))
+	c.Assert(res.Aggregations[1].Operation, Equals, "group")
+	c.Assert(res.Aggregations[1].Groups[1].Value, Equals, "581")
+	c.Assert(res.Aggregations[1].Groups[1].Count, Equals, int64(1))
 }
