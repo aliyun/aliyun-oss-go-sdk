@@ -365,6 +365,7 @@ type ObjectProperties struct {
 	Owner        Owner     `xml:"Owner"`        // Object owner information
 	LastModified time.Time `xml:"LastModified"` // Object last modified time
 	StorageClass string    `xml:"StorageClass"` // Object storage class (Standard, IA, Archive)
+	RestoreInfo  string    `xml:"RestoreInfo,omitempty"`  // Object restoreInfo
 }
 
 // ListObjectsResultV2 defines the result from ListObjectsV2 request
@@ -419,6 +420,7 @@ type ObjectVersionProperties struct {
 	ETag         string    `xml:"ETag"`         // Object ETag
 	StorageClass string    `xml:"StorageClass"` // Object storage class (Standard, IA, Archive)
 	Owner        Owner     `xml:"Owner"`        // bucket owner element
+	RestoreInfo  string    `xml:"RestoreInfo,omitempty"`  // Object restoreInfo
 }
 
 // Owner defines Bucket/Object's owner
@@ -914,10 +916,22 @@ type GetBucketEncryptionResult ServerEncryptionRule
 type GetBucketTaggingResult Tagging
 
 type BucketStat struct {
-	XMLName              xml.Name `xml:"BucketStat"`
-	Storage              int64    `xml:"Storage"`
-	ObjectCount          int64    `xml:"ObjectCount"`
-	MultipartUploadCount int64    `xml:"MultipartUploadCount"`
+	XMLName              xml.Name   `xml:"BucketStat"`
+	Storage              int64      `xml:"Storage"`
+	ObjectCount          int64      `xml:"ObjectCount"`
+	MultipartUploadCount int64      `xml:"MultipartUploadCount"`
+	LiveChannelCount     int64      `xml:"LiveChannelCount"`
+	LastModifiedTime     int64      `xml:"LastModifiedTime"`
+	StandardStorage      int64      `xml:"StandardStorage"`
+	StandardObjectCount  int64      `xml:"StandardObjectCount"`
+	InfrequentAccessStorage int64   `xml:"InfrequentAccessStorage"`
+	InfrequentAccessRealStorage int64 `xml:"InfrequentAccessRealStorage"`
+	InfrequentAccessObjectCount int64 `xml:"InfrequentAccessObjectCount"`
+	ArchiveStorage              int64 `xml:"ArchiveRealStorage"`
+	ArchiveObjectCount          int64 `xml:"ArchiveObjectCount"`
+	ColdArchiveStorage          int64 `xml:"ColdArchiveStorage"`
+	ColdArchiveRealStorage      int64 `xml:"ColdArchiveRealStorage"`
+	ColdArchiveObjectCount      int64 `xml:"ColdArchiveObjectCount"`
 }
 type GetBucketStatResult BucketStat
 

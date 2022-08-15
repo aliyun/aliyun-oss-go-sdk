@@ -2,7 +2,11 @@ package oss
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha1"
+	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -15,8 +19,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/baiyubin/aliyun-sts-go-sdk/sts"
 
 	. "gopkg.in/check.v1"
 )
@@ -2151,10 +2153,9 @@ func (s *OssBucketSuite) TestSTSToken(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
 
-	stsClient := sts.NewClient(stsaccessID, stsaccessKey, stsARN, "oss_test_sess")
-
-	resp, err := stsClient.AssumeRole(1800)
+	resp, err := stsAssumeRole(stsaccessID, stsaccessKey, stsARN, "oss_test_sess", 1800)
 	c.Assert(err, IsNil)
+	fmt.Print(resp)
 
 	client, err := New(endpoint, resp.Credentials.AccessKeyId, resp.Credentials.AccessKeySecret,
 		SecurityToken(resp.Credentials.SecurityToken))
@@ -5507,4 +5508,94 @@ func (s *OssBucketSuite) TestCloudBoxObject(c *C) {
 	c.Assert(err, NotNil)
 
 	clientControl.DeleteBucket(bucketName)
+}
+
+type CredentialsForSts struct {
+	AccessKeyId     string
+	AccessKeySecret string
+	Expiration      time.Time
+	SecurityToken   string
+}
+
+type AssumedRoleUserForSts struct {
+	Arn           string
+	AssumedRoleId string
+}
+
+type ResponseForSts struct {
+	Credentials     CredentialsForSts
+	AssumedRoleUser AssumedRoleUserForSts
+	RequestId       string
+}
+
+func stsAssumeRole(accessKeyId string, accessKeySecret string, roleArn string, sessionName string, expiredTime uint) (*ResponseForSts, error) {
+	// StsSignVersion sts sign version
+	StsSignVersion := "1.0"
+	// StsAPIVersion sts api version
+	StsAPIVersion := "2015-04-01"
+	// StsHost sts host
+	StsHost := "https://sts.aliyuncs.com/"
+	// TimeFormat time fomrat
+	TimeFormat := "2006-01-02T15:04:05Z"
+	// RespBodyFormat  respone body format
+	RespBodyFormat := "JSON"
+	// PercentEncode '/'
+	PercentEncode := "%2F"
+	// HTTPGet http get method
+	HTTPGet := "GET"
+	rand.Seed(time.Now().UnixNano())
+	uuid := fmt.Sprintf("Nonce-%d", rand.Intn(10000))
+	queryStr := "SignatureVersion=" + StsSignVersion
+	queryStr += "&Format=" + RespBodyFormat
+	queryStr += "&Timestamp=" + url.QueryEscape(time.Now().UTC().Format(TimeFormat))
+	queryStr += "&RoleArn=" + url.QueryEscape(roleArn)
+	queryStr += "&RoleSessionName=" + sessionName
+	queryStr += "&AccessKeyId=" + accessKeyId
+	queryStr += "&SignatureMethod=HMAC-SHA1"
+	queryStr += "&Version=" + StsAPIVersion
+	queryStr += "&Action=AssumeRole"
+	queryStr += "&SignatureNonce=" + uuid
+	queryStr += "&DurationSeconds=" + strconv.FormatUint((uint64)(expiredTime), 10)
+
+	// Sort query string
+	queryParams, err := url.ParseQuery(queryStr)
+	if err != nil {
+		return nil, err
+	}
+
+	strToSign := HTTPGet + "&" + PercentEncode + "&" + url.QueryEscape(queryParams.Encode())
+
+	// Generate signature
+	hashSign := hmac.New(sha1.New, []byte(accessKeySecret+"&"))
+	hashSign.Write([]byte(strToSign))
+	signature := base64.StdEncoding.EncodeToString(hashSign.Sum(nil))
+
+	// Build url
+	assumeURL := StsHost + "?" + queryStr + "&Signature=" + url.QueryEscape(signature)
+
+	// Send Request
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	resp, err := client.Get(assumeURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	// Handle Response
+	if resp.StatusCode != http.StatusOK {
+		return nil, err
+	}
+
+	result := ResponseForSts{}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
