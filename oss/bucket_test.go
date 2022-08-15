@@ -5544,7 +5544,7 @@ func stsAssumeRole(accessKeyId string, accessKeySecret string, roleArn string, s
 	// HTTPGet http get method
 	HTTPGet := "GET"
 	rand.Seed(time.Now().UnixNano())
-	uuid := fmt.Sprintf("%d-%d", time.Now().UnixMilli(), rand.Intn(10000))
+	uuid := fmt.Sprintf("Nonce-%d", rand.Intn(10000))
 	queryStr := "SignatureVersion=" + StsSignVersion
 	queryStr += "&Format=" + RespBodyFormat
 	queryStr += "&Timestamp=" + url.QueryEscape(time.Now().UTC().Format(TimeFormat))
