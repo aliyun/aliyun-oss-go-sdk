@@ -18,6 +18,7 @@ type OssSelectJsonSuite struct {
 var _ = Suite(&OssSelectJsonSuite{})
 
 func (s *OssSelectJsonSuite) SetUpSuite(c *C) {
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	if cloudboxControlEndpoint == "" {
 		client, err := New(endpoint, accessID, accessKey)
 		c.Assert(err, IsNil)
@@ -508,4 +509,8 @@ func (s *OssSelectJsonSuite) TestSelectJsonParseNumAsString(c *C) {
 
 	err = s.bucket.DeleteObject(key)
 	c.Assert(err, IsNil)
+}
+
+func escaped_slashs(value string) string {
+	return strings.Replace(value, "/", "\\/", -1)
 }

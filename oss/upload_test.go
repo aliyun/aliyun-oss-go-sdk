@@ -20,6 +20,7 @@ var _ = Suite(&OssUploadSuite{})
 
 // SetUpSuite runs once when the suite starts running
 func (s *OssUploadSuite) SetUpSuite(c *C) {
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	if cloudboxControlEndpoint == "" {
 		client, err := New(endpoint, accessID, accessKey)
 		c.Assert(err, IsNil)
@@ -92,7 +93,7 @@ func (s *OssUploadSuite) TearDownSuite(c *C) {
 		err := s.client.DeleteBucket(s.bucket.BucketName)
 		c.Assert(err, IsNil)
 	}
-	
+
 	testLogger.Println("test upload completed")
 }
 

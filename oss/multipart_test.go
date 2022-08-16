@@ -21,6 +21,7 @@ var _ = Suite(&OssBucketMultipartSuite{})
 
 // SetUpSuite runs once when the suite starts running
 func (s *OssBucketMultipartSuite) SetUpSuite(c *C) {
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	if cloudboxControlEndpoint == "" {
 		client, err := New(endpoint, accessID, accessKey)
 		c.Assert(err, IsNil)
@@ -256,7 +257,7 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopy(c *C) {
 	c.Assert(err, IsNil)
 	var parts []UploadPart
 	for _, chunk := range chunks {
-		part, err := s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
+		part, err := s.bucket.UploadPartCopy(imur, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
 		c.Assert(err, IsNil)
 		parts = append(parts, part)
 	}
@@ -307,7 +308,7 @@ func (s *OssBucketMultipartSuite) TestListUploadedParts(c *C) {
 	imurCopy, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var partsCopy []UploadPart
 	for _, chunk := range chunks {
-		part, err := s.bucket.UploadPartCopy(imurCopy, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
+		part, err := s.bucket.UploadPartCopy(imurCopy, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
 		c.Assert(err, IsNil)
 		partsCopy = append(partsCopy, part)
 	}
@@ -373,7 +374,7 @@ func (s *OssBucketMultipartSuite) TestAbortMultipartUpload(c *C) {
 	imurCopy, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var partsCopy []UploadPart
 	for _, chunk := range chunks {
-		part, err := s.bucket.UploadPartCopy(imurCopy, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
+		part, err := s.bucket.UploadPartCopy(imurCopy, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
 		c.Assert(err, IsNil)
 		partsCopy = append(partsCopy, part)
 	}
@@ -428,13 +429,13 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 	imur, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var parts []UploadPart
 	for _, chunk := range chunks {
-		_, err = s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
+		_, err = s.bucket.UploadPartCopy(imur, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
 			CopySourceIfModifiedSince(futureDate))
 		c.Assert(err, NotNil)
 	}
 
 	for _, chunk := range chunks {
-		_, err = s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
+		_, err = s.bucket.UploadPartCopy(imur, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
 			CopySourceIfUnmodifiedSince(futureDate))
 		c.Assert(err, IsNil)
 	}
@@ -444,13 +445,13 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyWithConstraints(c *C) {
 	testLogger.Println("GetObjectDetailedMeta:", meta)
 
 	for _, chunk := range chunks {
-		_, err = s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
+		_, err = s.bucket.UploadPartCopy(imur, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
 			CopySourceIfNoneMatch(meta.Get("Etag")))
 		c.Assert(err, NotNil)
 	}
 
 	for _, chunk := range chunks {
-		part, err := s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
+		part, err := s.bucket.UploadPartCopy(imur, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number),
 			CopySourceIfMatch(meta.Get("Etag")))
 		c.Assert(err, IsNil)
 		parts = append(parts, part)
@@ -520,12 +521,12 @@ func (s *OssBucketMultipartSuite) TestUploadPartCopyOutofOrder(c *C) {
 	imur, err := s.bucket.InitiateMultipartUpload(objectDest)
 	var parts []UploadPart
 	for _, chunk := range chunks {
-		_, err := s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
+		_, err := s.bucket.UploadPartCopy(imur, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
 		c.Assert(err, IsNil)
 	}
 	// Double copy
 	for _, chunk := range chunks {
-		part, err := s.bucket.UploadPartCopy(imur, bucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
+		part, err := s.bucket.UploadPartCopy(imur, s.bucket.BucketName, objectSrc, chunk.Offset, chunk.Size, (int)(chunk.Number))
 		c.Assert(err, IsNil)
 		parts = append(parts, part)
 	}
@@ -692,7 +693,7 @@ func (s *OssBucketMultipartSuite) TestMultipartNegative(c *C) {
 	_, err = s.bucket.UploadPartFromFile(imur, fileName, 0, 1024, 1)
 	c.Assert(err, NotNil)
 
-	_, err = s.bucket.UploadPartCopy(imur, bucketName, fileName, 0, 1024, 1)
+	_, err = s.bucket.UploadPartCopy(imur, s.bucket.BucketName, fileName, 0, 1024, 1)
 	c.Assert(err, NotNil)
 
 	err = s.bucket.AbortMultipartUpload(imur)
@@ -717,10 +718,10 @@ func (s *OssBucketMultipartSuite) TestMultipartNegative(c *C) {
 	_, err = s.bucket.UploadPartFromFile(imur, fileName, 0, 102400, 10001)
 	c.Assert(err, NotNil)
 
-	_, err = s.bucket.UploadPartCopy(imur, bucketName, fileName, 0, 1024, 1)
+	_, err = s.bucket.UploadPartCopy(imur, s.bucket.BucketName, fileName, 0, 1024, 1)
 	c.Assert(err, NotNil)
 
-	_, err = s.bucket.UploadPartCopy(imur, bucketName, fileName, 0, 1024, 1000)
+	_, err = s.bucket.UploadPartCopy(imur, s.bucket.BucketName, fileName, 0, 1024, 1000)
 	c.Assert(err, NotNil)
 
 	err = s.bucket.AbortMultipartUpload(imur)

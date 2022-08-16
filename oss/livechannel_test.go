@@ -18,6 +18,7 @@ var _ = Suite(&OssBucketLiveChannelSuite{})
 
 // SetUpSuite Run once when the suite starts running
 func (s *OssBucketLiveChannelSuite) SetUpSuite(c *C) {
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	if cloudboxControlEndpoint == "" {
 		client, err := New(endpoint, accessID, accessKey)
 		c.Assert(err, IsNil)
@@ -108,8 +109,8 @@ func (s *OssBucketLiveChannelSuite) TestCreateLiveChannel(c *C) {
 	result, err := s.bucket.CreateLiveChannel(channelName, config)
 	c.Assert(err, IsNil)
 
-	playURL := getPlayURL(bucketName, channelName, playlistName)
-	publishURL := getPublishURL(bucketName, channelName)
+	playURL := getPlayURL(s.bucket.BucketName, channelName, playlistName)
+	publishURL := getPublishURL(s.bucket.BucketName, channelName)
 	c.Assert(result.PlayUrls[0], Equals, playURL)
 	c.Assert(result.PublishUrls[0], Equals, publishURL)
 
