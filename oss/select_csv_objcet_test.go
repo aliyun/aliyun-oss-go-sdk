@@ -19,6 +19,7 @@ type OssSelectCsvSuite struct {
 var _ = Suite(&OssSelectCsvSuite{})
 
 func (s *OssSelectCsvSuite) SetUpSuite(c *C) {
+	bucketName := bucketNamePrefix + RandLowStr(6)
 	if cloudboxControlEndpoint == "" {
 		client, err := New(endpoint, accessID, accessKey)
 		c.Assert(err, IsNil)
