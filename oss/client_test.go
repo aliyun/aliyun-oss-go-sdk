@@ -3028,6 +3028,7 @@ func (s *OssBucketSuite) TestGetBucketVersioning(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// get bucket version success
 	versioningResult, err := client.GetBucketVersioning(bucketName, GetResponseHeader(&respHeader))
@@ -3817,6 +3818,7 @@ func (s *OssClientSuite) TestClientOptionHeader(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// get bucket version success,use payer
 	options := []Option{RequestPayer(BucketOwner), GetResponseHeader(&respHeader)}

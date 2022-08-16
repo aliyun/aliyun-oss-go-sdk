@@ -3460,6 +3460,7 @@ func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
 	err = client.SetBucketVersioning(bucketName, versioningConfig, GetResponseHeader(&respHeader))
 	c.Assert(err, IsNil)
 	c.Assert(GetRequestId(respHeader) != "", Equals, true)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err = client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3469,6 +3470,7 @@ func (s *OssBucketSuite) TestVersioningBucketVerison(c *C) {
 	versioningConfig.Status = string(VersionSuspended)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err = client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3493,6 +3495,7 @@ func (s *OssBucketSuite) TestVersioningPutAndGetObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3565,6 +3568,7 @@ func (s *OssBucketSuite) TestVersioningHeadObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3641,6 +3645,7 @@ func (s *OssBucketSuite) TestVersioningDeleteLatestVersionObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3716,6 +3721,7 @@ func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3791,6 +3797,7 @@ func (s *OssBucketSuite) TestVersioningDeleteDefaultVersionObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3884,6 +3891,7 @@ func (s *OssBucketSuite) TestVersioningListObjectVersions(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3986,6 +3994,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -4058,6 +4067,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -4199,6 +4209,7 @@ func (s *OssBucketSuite) TestVersioningSymlink(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// put object 1
 	objectName1 := objectNamePrefix + RandStr(8)
@@ -4269,6 +4280,7 @@ func (s *OssBucketSuite) TestVersioningObjectAcl(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// put object v1
 	objectName := objectNamePrefix + RandStr(8)
@@ -4349,6 +4361,7 @@ func (s *OssBucketSuite) TestVersioningAppendObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// append object
 	var nextPos int64 = 0
@@ -4413,6 +4426,7 @@ func (s *OssBucketSuite) TestVersioningCopyObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// put object v1
 	objectName := objectNamePrefix + RandStr(8)
@@ -4491,6 +4505,7 @@ func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	objectName := objectNamePrefix + RandStr(8)
 	var fileName = "test-file-" + RandStr(8)
@@ -4649,6 +4664,7 @@ func (s *OssBucketSuite) TestVersioningRestoreObject(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// put object v1
 	objectName := objectNamePrefix + RandStr(8)
@@ -4701,6 +4717,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// put object v1
 	objectName := objectNamePrefix + RandStr(8)
@@ -4768,6 +4785,7 @@ func (s *OssBucketSuite) TestVersioningIsObjectExist(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// put object v1
 	objectName := objectNamePrefix + RandStr(8)
@@ -5336,6 +5354,7 @@ func (s *OssBucketSuite) TestSupportUserSetParam(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)

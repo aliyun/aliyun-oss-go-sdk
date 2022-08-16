@@ -716,6 +716,7 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithoutCheckPoint(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// begin test
 	objectName := objectNamePrefix + RandStr(8)
@@ -859,6 +860,7 @@ func (s *OssDownloadSuite) TestVersioningDownloadWithCheckPoint(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	// begin test
 	objectName := objectNamePrefix + RandStr(8)
