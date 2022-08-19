@@ -1,4 +1,15 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.2.5 日期：2022-08-19
+### 变更内容
+- 增加：add meta data indexing api
+- 删除：remove github.com/baiyubin/aliyun-sts-go-sdk/sts deps.
+- 修改：remove chartset info in text/* mime type.
+- 增加：add restore info in listObjects/listObjectVersions
+- 增加：add x-oss-ac-* into subresource list.
+- 修改：fix select object bug.
+- 增加：getBucketStat api returns more info
+- 增加：support X-Oss-Notification header in CompleteMultipartUpload api.
+
 ## 版本号：v2.2.4 日期：2022-05-25
 ### 变更内容
 - 增加：add cname api

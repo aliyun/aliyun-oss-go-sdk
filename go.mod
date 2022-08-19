@@ -1,6 +1,6 @@
 module github.com/aliyun/aliyun-oss-go-sdk
 
-go 1.15
+go 1.13
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.123
