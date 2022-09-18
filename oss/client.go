@@ -4,7 +4,9 @@ package oss
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -74,6 +76,46 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 	// Create HTTP connection
 	err = conn.init(config, url, client.HTTPClient)
+
+	return client, err
+}
+
+// NewRamRole creates a new client. Dynamic identity management and authorization for cloud applications
+// docs https://help.aliyun.com/document_detail/93746.html
+func NewRamRole(endpoint, roleName string, options ...ClientOption) (*Client, error) {
+	client, err := New(endpoint, "", "", options...)
+	if err != nil {
+		return nil, err
+	}
+
+	toUrl := client.Conn.url.getURL("", "", "").String() + "/latest/meta-data/ram/security-credentials/" + roleName
+
+	get, err := client.Conn.client.Get(toUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer get.Body.Close()
+
+	all, err := ioutil.ReadAll(get.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var ramRole RamRole
+	if err = json.Unmarshal(all, &ramRole); err != nil {
+		return nil, err
+	}
+
+	if ramRole.Code != "Success" {
+		return nil, errors.New("get ecs ram role code not is success")
+	}
+
+	if ramRole.AccessKeyId == "" || ramRole.AccessKeySecret == "" {
+		return nil, errors.New("get ecs ram role AccessKeyId AccessKeySecret is empty")
+	}
+	client.Config.AccessKeyID = ramRole.AccessKeyId
+	client.Config.AccessKeySecret = ramRole.AccessKeySecret
+	client.Config.SecurityToken = ramRole.SecurityToken
 
 	return client, err
 }
