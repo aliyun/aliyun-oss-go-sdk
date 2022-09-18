@@ -794,12 +794,12 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
 
 	//use url.Parse() to get real host
 	strUrl := um.Scheme + "://" + um.NetLoc
-	url, err := url.Parse(strUrl)
+	parseUrl, err := url.Parse(strUrl)
 	if err != nil {
 		return err
 	}
 
-	um.NetLoc = url.Host
+	um.NetLoc = parseUrl.Host
 	host, _, err := net.SplitHostPort(um.NetLoc)
 	if err != nil {
 		host = um.NetLoc
@@ -808,8 +808,7 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
 		}
 	}
 
-	ip := net.ParseIP(host)
-	if ip != nil {
+	if ip := net.ParseIP(host); ip != nil {
 		um.Type = urlTypeIP
 	} else if isCname {
 		um.Type = urlTypeCname
@@ -824,10 +823,8 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
 // getURL gets URL
 func (um urlMaker) getURL(bucket, object, params string) *url.URL {
 	host, path := um.buildURL(bucket, object)
-	addr := ""
-	if params == "" {
-		addr = fmt.Sprintf("%s://%s%s", um.Scheme, host, path)
-	} else {
+	addr := fmt.Sprintf("%s://%s%s", um.Scheme, host, path)
+	if params != "" {
 		addr = fmt.Sprintf("%s://%s%s?%s", um.Scheme, host, path, params)
 	}
 	uri, _ := url.ParseRequestURI(addr)

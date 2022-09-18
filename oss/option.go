@@ -566,7 +566,7 @@ func addArg(key string, value interface{}) Option {
 }
 
 func handleOptions(headers map[string]string, options []Option) error {
-	params := map[string]optionValue{}
+	params := make(map[string]optionValue, len(options))
 	for _, option := range options {
 		if option != nil {
 			if err := option(params); err != nil {
@@ -585,7 +585,7 @@ func handleOptions(headers map[string]string, options []Option) error {
 
 func GetRawParams(options []Option) (map[string]interface{}, error) {
 	// Option
-	params := map[string]optionValue{}
+	params := make(map[string]optionValue, len(options))
 	for _, option := range options {
 		if option != nil {
 			if err := option(params); err != nil {
@@ -607,7 +607,7 @@ func GetRawParams(options []Option) (map[string]interface{}, error) {
 }
 
 func FindOption(options []Option, param string, defaultVal interface{}) (interface{}, error) {
-	params := map[string]optionValue{}
+	params := make(map[string]optionValue, len(options))
 	for _, option := range options {
 		if option != nil {
 			if err := option(params); err != nil {
@@ -623,7 +623,7 @@ func FindOption(options []Option, param string, defaultVal interface{}) (interfa
 }
 
 func IsOptionSet(options []Option, option string) (bool, interface{}, error) {
-	params := map[string]optionValue{}
+	params := make(map[string]optionValue, len(options))
 	for _, option := range options {
 		if option != nil {
 			if err := option(params); err != nil {
