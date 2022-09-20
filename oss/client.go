@@ -82,13 +82,18 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 // NewRamRole creates a new client. Dynamic identity management and authorization for cloud applications
 // docs https://help.aliyun.com/document_detail/93746.html
-func NewRamRole(endpoint, roleName string, options ...ClientOption) (*Client, error) {
+func NewRamRole(endpoint, ecsEndpoint, roleName string, options ...ClientOption) (*Client, error) {
+	url := &urlMaker{}
+	if err := url.Init(ecsEndpoint, false, false); err != nil {
+		return nil, err
+	}
+
 	client, err := New(endpoint, "", "", options...)
 	if err != nil {
 		return nil, err
 	}
 
-	toUrl := client.Conn.url.getURL("", "", "").String() + "/latest/meta-data/ram/security-credentials/" + roleName
+	toUrl := url.getURL("", "", "").String() + "/latest/meta-data/ram/security-credentials/" + roleName
 
 	get, err := client.Conn.client.Get(toUrl)
 	if err != nil {
