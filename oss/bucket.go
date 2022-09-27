@@ -901,6 +901,11 @@ func (bucket Bucket) RestoreObjectXML(objectKey, configXML string, options ...Op
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec int64, options ...Option) (string, error) {
+	err := CheckObjectName(objectKey)
+	if err != nil {
+		return "", err
+	}
+
 	if expiredInSec < 0 {
 		return "", fmt.Errorf("invalid expires: %d, expires must bigger than 0", expiredInSec)
 	}
