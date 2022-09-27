@@ -440,6 +440,13 @@ func CheckBucketName(bucketName string) error {
 	return nil
 }
 
+func CheckObjectName(objectName string) error {
+	if len(objectName) == 0 {
+		return fmt.Errorf("object name is empty")
+	}
+	return nil
+}
+
 func GetReaderLen(reader io.Reader) (int64, error) {
 	var contentLength int64
 	var err error
