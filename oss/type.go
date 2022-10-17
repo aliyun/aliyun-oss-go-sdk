@@ -927,7 +927,8 @@ type BucketStat struct {
 	InfrequentAccessStorage     int64    `xml:"InfrequentAccessStorage"`
 	InfrequentAccessRealStorage int64    `xml:"InfrequentAccessRealStorage"`
 	InfrequentAccessObjectCount int64    `xml:"InfrequentAccessObjectCount"`
-	ArchiveStorage              int64    `xml:"ArchiveRealStorage"`
+	ArchiveStorage              int64    `xml:"ArchiveStorage"`
+	ArchiveRealStorage          int64    `xml:"ArchiveRealStorage"`
 	ArchiveObjectCount          int64    `xml:"ArchiveObjectCount"`
 	ColdArchiveStorage          int64    `xml:"ColdArchiveStorage"`
 	ColdArchiveRealStorage      int64    `xml:"ColdArchiveRealStorage"`

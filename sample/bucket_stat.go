@@ -28,6 +28,7 @@ func BucketStatSample() {
 	fmt.Println("Bucket Stat Infrequent Access Real Storage:", stat.InfrequentAccessRealStorage)
 	fmt.Println("Bucket Stat Infrequent Access Object Count:", stat.InfrequentAccessObjectCount)
 	fmt.Println("Bucket Stat Archive Storage:", stat.ArchiveStorage)
+	fmt.Println("Bucket Stat Archive Real Storage:", stat.ArchiveRealStorage)
 	fmt.Println("Bucket Stat Archive Object Count:", stat.ArchiveObjectCount)
 	fmt.Println("Bucket Stat Cold Archive Storage:", stat.ColdArchiveStorage)
 	fmt.Println("Bucket Stat Cold Archive Real Storage:", stat.ColdArchiveRealStorage)
