@@ -1193,8 +1193,14 @@ func (client Client) GetBucketTagging(bucketName string, options ...Option) (Get
 // error      nil if success, otherwise error
 //
 func (client Client) DeleteBucketTagging(bucketName string, options ...Option) error {
+	key, _ := FindOption(options, "tagging", nil)
 	params := map[string]interface{}{}
-	params["tagging"] = nil
+	if key == nil {
+		params["tagging"] = nil
+	} else {
+		params["tagging"] = key.(string)
+	}
+
 	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
 	if err != nil {
 		return err
