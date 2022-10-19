@@ -529,3 +529,31 @@ func (s *OssTypeSuite) TestDoMetaQueryResult(c *C) {
 	c.Assert(res.Aggregations[1].Groups[1].Value, Equals, "581")
 	c.Assert(res.Aggregations[1].Groups[1].Count, Equals, int64(1))
 }
+
+// test delete object struct turn to xml string
+func (s *OssTypeSuite) TestDeleteObjectToXml(c *C) {
+	versionIds := make([]DeleteObject, 0)
+	versionIds = append(versionIds, DeleteObject{Key: "\f", VersionId: "1111"})
+	dxml := deleteXML{}
+	dxml.Objects = versionIds
+	dxml.Quiet = false
+	str := marshalDeleteObjectToXml(dxml)
+	str2 := "<Delete><Quiet>false</Quiet><Object><Key>\f</Key><VersionId>1111</VersionId></Object></Delete>"
+	c.Assert(str, Equals, str2)
+
+	versionIds = append(versionIds, DeleteObject{Key: "A ' < > \" & ~ ` ! @ # $ % ^ & * ( ) [] {} - _ + = / | \\ ? . , : ; A", VersionId: "2222"})
+	dxml.Objects = versionIds
+	dxml.Quiet = false
+	str = marshalDeleteObjectToXml(dxml)
+	str2 = "<Delete><Quiet>false</Quiet><Object><Key>\f</Key><VersionId>1111</VersionId></Object><Object><Key>A &#39; &lt; &gt; &#34; &amp; ~ ` ! @ # $ % ^ &amp; * ( ) [] {} - _ + = / | \\ ? . , : ; A</Key><VersionId>2222</VersionId></Object></Delete>"
+	c.Assert(str, Equals, str2)
+
+	versionIds = make([]DeleteObject, 0)
+	versionIds = append(versionIds, DeleteObject{Key: "\v", VersionId: "1122"})
+	dxml.Objects = versionIds
+	dxml.Quiet = false
+	str = marshalDeleteObjectToXml(dxml)
+	str2 = "<Delete><Quiet>false</Quiet><Object><Key>\v</Key><VersionId>1122</VersionId></Object></Delete>"
+	c.Assert(str, Equals, str2)
+
+}

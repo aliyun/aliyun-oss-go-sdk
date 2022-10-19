@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -766,6 +767,26 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 		}
 	}
 	return nil
+}
+
+//marshalDeleteObjectToXml deleteXML struct to xml
+func marshalDeleteObjectToXml(dxml deleteXML) string {
+	var builder strings.Builder
+	builder.Write([]byte(fmt.Sprintf("<Delete><Quiet>%t</Quiet>", dxml.Quiet)))
+	if len(dxml.Objects) > 0 {
+		for _, object := range dxml.Objects {
+			builder.Write([]byte("<Object>"))
+			if object.Key != "" {
+				builder.Write([]byte(fmt.Sprintf("<Key>%s</Key>", EscapeXml(object.Key))))
+			}
+			if object.VersionId != "" {
+				builder.Write([]byte(fmt.Sprintf("<VersionId>%s</VersionId>", object.VersionId)))
+			}
+			builder.Write([]byte("</Object>"))
+		}
+	}
+	builder.Write([]byte(`</Delete>`))
+	return builder.String()
 }
 
 // createBucketConfiguration defines the configuration for creating a bucket.

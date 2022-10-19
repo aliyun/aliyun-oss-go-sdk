@@ -9,6 +9,7 @@ import (
 	"hash"
 	"hash/crc64"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -449,46 +450,24 @@ func (bucket Bucket) DeleteObjects(objectKeys []string, options ...Option) (Dele
 	for _, key := range objectKeys {
 		dxml.Objects = append(dxml.Objects, DeleteObject{Key: key})
 	}
-
 	isQuiet, _ := FindOption(options, deleteObjectsQuiet, false)
 	dxml.Quiet = isQuiet.(bool)
-
-	bs, err := xml.Marshal(dxml)
+	xmlData := marshalDeleteObjectToXml(dxml)
+	body, err := bucket.DeleteMultipleObjectsXml(xmlData, options...)
 	if err != nil {
 		return out, err
 	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
-
-	contentType := http.DetectContentType(buffer.Bytes())
-	options = append(options, ContentType(contentType))
-	sum := md5.Sum(bs)
-	b64 := base64.StdEncoding.EncodeToString(sum[:])
-	options = append(options, ContentMD5(b64))
-
-	params := map[string]interface{}{}
-	params["delete"] = nil
-	params["encoding-type"] = "url"
-
-	resp, err := bucket.do("POST", "", params, options, buffer, nil)
-	if err != nil {
-		return out, err
-	}
-	defer resp.Body.Close()
-
 	deletedResult := DeleteObjectVersionsResult{}
 	if !dxml.Quiet {
-		if err = xmlUnmarshal(resp.Body, &deletedResult); err == nil {
+		if err = xmlUnmarshal(strings.NewReader(body), &deletedResult); err == nil {
 			err = decodeDeleteObjectsResult(&deletedResult)
 		}
 	}
-
 	// Keep compatibility:need convert to struct DeleteObjectsResult
 	out.XMLName = deletedResult.XMLName
 	for _, v := range deletedResult.DeletedObjectsDetail {
 		out.DeletedObjects = append(out.DeletedObjects, v.Key)
 	}
-
 	return out, err
 }
 
@@ -505,38 +484,48 @@ func (bucket Bucket) DeleteObjectVersions(objectVersions []DeleteObject, options
 	out := DeleteObjectVersionsResult{}
 	dxml := deleteXML{}
 	dxml.Objects = objectVersions
-
 	isQuiet, _ := FindOption(options, deleteObjectsQuiet, false)
 	dxml.Quiet = isQuiet.(bool)
-
-	bs, err := xml.Marshal(dxml)
+	xmlData := marshalDeleteObjectToXml(dxml)
+	body, err := bucket.DeleteMultipleObjectsXml(xmlData, options...)
 	if err != nil {
 		return out, err
 	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
-
-	contentType := http.DetectContentType(buffer.Bytes())
-	options = append(options, ContentType(contentType))
-	sum := md5.Sum(bs)
-	b64 := base64.StdEncoding.EncodeToString(sum[:])
-	options = append(options, ContentMD5(b64))
-
-	params := map[string]interface{}{}
-	params["delete"] = nil
-	params["encoding-type"] = "url"
-
-	resp, err := bucket.do("POST", "", params, options, buffer, nil)
-	if err != nil {
-		return out, err
-	}
-	defer resp.Body.Close()
-
 	if !dxml.Quiet {
-		if err = xmlUnmarshal(resp.Body, &out); err == nil {
+		if err = xmlUnmarshal(strings.NewReader(body), &out); err == nil {
 			err = decodeDeleteObjectsResult(&out)
 		}
 	}
+	return out, err
+}
+
+// DeleteMultipleObjectsXml deletes multiple object or deletes multiple object versions.
+//
+// xmlData    the object keys and versions to delete as the xml format.
+// options    the options for deleting objects.
+//
+// string the result response body.
+// error    it's nil if no error, otherwise it's an error.
+//
+func (bucket Bucket) DeleteMultipleObjectsXml(xmlData string, options ...Option) (string, error) {
+	buffer := new(bytes.Buffer)
+	bs := []byte(xmlData)
+	buffer.Write(bs)
+	options = append(options, ContentType("application/xml"))
+	sum := md5.Sum(bs)
+	b64 := base64.StdEncoding.EncodeToString(sum[:])
+	options = append(options, ContentMD5(b64))
+	params := map[string]interface{}{}
+	params["delete"] = nil
+	params["encoding-type"] = "url"
+	resp, err := bucket.do("POST", "", params, options, buffer, nil)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
 	return out, err
 }
 
