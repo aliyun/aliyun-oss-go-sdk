@@ -530,6 +530,48 @@ func (s *OssTypeSuite) TestDoMetaQueryResult(c *C) {
 	c.Assert(res.Aggregations[1].Groups[1].Count, Equals, int64(1))
 }
 
+// test get bucket stat result
+func (s *OssTypeSuite) TestGetBucketStatResult(c *C) {
+	var res GetBucketStatResult
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<BucketStat>
+  <Storage>1600</Storage>
+  <ObjectCount>230</ObjectCount>
+  <MultipartUploadCount>40</MultipartUploadCount>
+  <LiveChannelCount>4</LiveChannelCount>
+  <LastModifiedTime>1643341269</LastModifiedTime>
+  <StandardStorage>430</StandardStorage>
+  <StandardObjectCount>66</StandardObjectCount>
+  <InfrequentAccessStorage>2359296</InfrequentAccessStorage>
+  <InfrequentAccessRealStorage>360</InfrequentAccessRealStorage>
+  <InfrequentAccessObjectCount>54</InfrequentAccessObjectCount>
+  <ArchiveStorage>2949120</ArchiveStorage>
+  <ArchiveRealStorage>450</ArchiveRealStorage>
+  <ArchiveObjectCount>74</ArchiveObjectCount>
+  <ColdArchiveStorage>2359296</ColdArchiveStorage>
+  <ColdArchiveRealStorage>360</ColdArchiveRealStorage>
+  <ColdArchiveObjectCount>36</ColdArchiveObjectCount>
+</BucketStat>`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.Storage, Equals, int64(1600))
+	c.Assert(res.ObjectCount, Equals, int64(230))
+	c.Assert(res.MultipartUploadCount, Equals, int64(40))
+	c.Assert(res.LiveChannelCount, Equals, int64(4))
+	c.Assert(res.LastModifiedTime, Equals, int64(1643341269))
+	c.Assert(res.StandardStorage, Equals, int64(430))
+	c.Assert(res.StandardObjectCount, Equals, int64(66))
+	c.Assert(res.InfrequentAccessStorage, Equals, int64(2359296))
+	c.Assert(res.InfrequentAccessRealStorage, Equals, int64(360))
+	c.Assert(res.InfrequentAccessObjectCount, Equals, int64(54))
+	c.Assert(res.ArchiveStorage, Equals, int64(2949120))
+	c.Assert(res.ArchiveRealStorage, Equals, int64(450))
+	c.Assert(res.ArchiveObjectCount, Equals, int64(74))
+	c.Assert(res.ColdArchiveStorage, Equals, int64(2359296))
+	c.Assert(res.ColdArchiveRealStorage, Equals, int64(360))
+	c.Assert(res.ColdArchiveObjectCount, Equals, int64(36))
+}
+
 // test delete object struct turn to xml string
 func (s *OssTypeSuite) TestDeleteObjectToXml(c *C) {
 	versionIds := make([]DeleteObject, 0)
@@ -555,5 +597,4 @@ func (s *OssTypeSuite) TestDeleteObjectToXml(c *C) {
 	str = marshalDeleteObjectToXml(dxml)
 	str2 = "<Delete><Quiet>false</Quiet><Object><Key>\v</Key><VersionId>1122</VersionId></Object></Delete>"
 	c.Assert(str, Equals, str2)
-
 }

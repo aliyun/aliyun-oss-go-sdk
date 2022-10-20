@@ -647,6 +647,21 @@ func (s *OssBucketSuite) TestSignURLWithEscapedKey(c *C) {
 	s.SignURLWithEscapedKeyTestFunc(c, AuthV2, []string{"host", "range", "user-agent"})
 }
 
+func (s *OssBucketSuite) TestSignURLWithEmptyObjectName(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+	_, err = bucket.SignURL("", "GET", 3600)
+	c.Assert(err, NotNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
 func (s *OssBucketSuite) SignURLWithEscapedKeyAndPorxyTestFunc(c *C, authVersion AuthVersionType, extraHeaders []string) {
 	// Key with '/'
 	objectName := "zyimg/86/e8/653b5dc97bb0022051a84c632bc4"
