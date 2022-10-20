@@ -311,3 +311,15 @@ func (s *OssUtilsSuite) TestLimitReadCloser(c *C) {
 	c.Assert(n, Equals, 1024-100)
 	c.Assert(err, IsNil)
 }
+
+func (s *OssUtilsSuite) TestEscapeXml(c *C) {
+	str := "\x00\x01\x02\x03\x04\x05\x06\a\b\t\n\v\f\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"
+	str = EscapeXml(str)
+	esc := string([]byte("&#x00;")) + string([]byte("&#x01;")) + string([]byte("&#x02;")) + string([]byte("&#x03;")) + string([]byte("&#x04;")) + string([]byte("&#x05;")) + string([]byte("&#x06;")) + string([]byte("&#x07;")) + string([]byte("&#x08;")) + string([]byte("&#x9;")) + string(string([]byte("&#xA;"))+string([]byte("&#x0B;"))+string([]byte("&#x0C;"))+string([]byte("&#xD;"))+string([]byte("&#x0E;"))+string([]byte("&#x0F;"))+string([]byte("&#x10;"))+string([]byte("&#x11;"))+string([]byte("&#x12;"))+string([]byte("&#x13;"))+string([]byte("&#x14;"))+string([]byte("&#x15;"))+string([]byte("&#x16;"))+string([]byte("&#x17;"))+string([]byte("&#x18;"))+string([]byte("&#x19;"))+string([]byte("&#x1A;"))+string([]byte("&#x1B;"))+string([]byte("&#x1C;"))+string([]byte("&#x1D;"))+string([]byte("&#x1E;"))+string([]byte("&#x1F;")))
+	c.Assert(str, Equals, esc)
+
+	str = "<>&\"'"
+	str = EscapeXml(str)
+	esc = string(escLT) + string(escGT) + string(escAmp) + string(escQuot) + string(escApos)
+	c.Assert(str, Equals, esc)
+}
