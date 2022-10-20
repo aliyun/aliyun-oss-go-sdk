@@ -5,6 +5,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -768,6 +770,33 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 	return nil
 }
 
+// marshalDeleteObjectToXml deleteXML struct to xml
+func marshalDeleteObjectToXml(dxml deleteXML) string {
+	var builder strings.Builder
+	builder.WriteString("<Delete>")
+	builder.WriteString("<Quiet>")
+	builder.WriteString(strconv.FormatBool(dxml.Quiet))
+	builder.WriteString("</Quiet>")
+	if len(dxml.Objects) > 0 {
+		for _, object := range dxml.Objects {
+			builder.WriteString("<Object>")
+			if object.Key != "" {
+				builder.WriteString("<Key>")
+				builder.WriteString(EscapeXml(object.Key))
+				builder.WriteString("</Key>")
+			}
+			if object.VersionId != "" {
+				builder.WriteString("<VersionId>")
+				builder.WriteString(object.VersionId)
+				builder.WriteString("</VersionId>")
+			}
+			builder.WriteString("</Object>")
+		}
+	}
+	builder.WriteString("</Delete>")
+	return builder.String()
+}
+
 // createBucketConfiguration defines the configuration for creating a bucket.
 type createBucketConfiguration struct {
 	XMLName            xml.Name           `xml:"CreateBucketConfiguration"`
@@ -1350,7 +1379,7 @@ type MetaQueryAggregationRequest struct {
 	Operation string   `xml:"Operation,omitempty"`
 }
 
-//MetaQueryAggregationResponse defines meta query aggregation response
+// MetaQueryAggregationResponse defines meta query aggregation response
 type MetaQueryAggregationResponse struct {
 	XMLName   xml.Name         `xml:"Aggregation"`
 	Field     string           `xml:"Field,omitempty"`
