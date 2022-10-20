@@ -571,3 +571,30 @@ func (s *OssTypeSuite) TestGetBucketStatResult(c *C) {
 	c.Assert(res.ColdArchiveRealStorage, Equals, int64(360))
 	c.Assert(res.ColdArchiveObjectCount, Equals, int64(36))
 }
+
+// test delete object struct turn to xml string
+func (s *OssTypeSuite) TestDeleteObjectToXml(c *C) {
+	versionIds := make([]DeleteObject, 0)
+	versionIds = append(versionIds, DeleteObject{Key: "\f", VersionId: "1111"})
+	dxml := deleteXML{}
+	dxml.Objects = versionIds
+	dxml.Quiet = false
+	str := marshalDeleteObjectToXml(dxml)
+	str2 := "<Delete><Quiet>false</Quiet><Object><Key>&#x0C;</Key><VersionId>1111</VersionId></Object></Delete>"
+	c.Assert(str, Equals, str2)
+
+	versionIds = append(versionIds, DeleteObject{Key: "A ' < > \" & ~ ` ! @ # $ % ^ & * ( ) [] {} - _ + = / | \\ ? . , : ; A", VersionId: "2222"})
+	dxml.Objects = versionIds
+	dxml.Quiet = false
+	str = marshalDeleteObjectToXml(dxml)
+	str2 = "<Delete><Quiet>false</Quiet><Object><Key>&#x0C;</Key><VersionId>1111</VersionId></Object><Object><Key>A &#39; &lt; &gt; &#34; &amp; ~ ` ! @ # $ % ^ &amp; * ( ) [] {} - _ + = / | \\ ? . , : ; A</Key><VersionId>2222</VersionId></Object></Delete>"
+	c.Assert(str, Equals, str2)
+
+	objects := make([]DeleteObject, 0)
+	objects = append(objects, DeleteObject{Key: "\v"})
+	dxml.Objects = objects
+	dxml.Quiet = true
+	str = marshalDeleteObjectToXml(dxml)
+	str2 = "<Delete><Quiet>true</Quiet><Object><Key>&#x0B;</Key></Object></Delete>"
+	c.Assert(str, Equals, str2)
+}
