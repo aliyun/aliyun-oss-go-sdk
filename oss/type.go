@@ -91,10 +91,13 @@ type LifecycleExpiration struct {
 
 // LifecycleTransition defines the rule's transition propery
 type LifecycleTransition struct {
-	XMLName           xml.Name         `xml:"Transition"`
-	Days              int              `xml:"Days,omitempty"`              // Relative transition time: The transition time in days after the last modified time
-	CreatedBeforeDate string           `xml:"CreatedBeforeDate,omitempty"` // objects created before the date will be expired
-	StorageClass      StorageClassType `xml:"StorageClass,omitempty"`      // Specifies the target storage type
+	XMLName              xml.Name         `xml:"Transition"`
+	Days                 int              `xml:"Days,omitempty"`                 // Relative transition time: The transition time in days after the last modified time
+	CreatedBeforeDate    string           `xml:"CreatedBeforeDate,omitempty"`    // objects created before the date will be expired
+	StorageClass         StorageClassType `xml:"StorageClass,omitempty"`         // Specifies the target storage type
+	IsAccessTime         *bool            `xml:"IsAccessTime,omitempty"`         // access time
+	ReturnToStdWhenVisit *bool            `xml:"ReturnToStdWhenVisit,omitempty"` // Return To Std When Visit
+	AllowSmallFile       *bool            `xml:AllowSmallFile,omitempty`
 }
 
 // LifecycleAbortMultipartUpload defines the rule's abort multipart upload propery
@@ -112,9 +115,12 @@ type LifecycleVersionExpiration struct {
 
 // LifecycleVersionTransition defines the rule's NoncurrentVersionTransition propery
 type LifecycleVersionTransition struct {
-	XMLName        xml.Name         `xml:"NoncurrentVersionTransition"`
-	NoncurrentDays int              `xml:"NoncurrentDays,omitempty"` // How many days after the Object becomes a non-current version
-	StorageClass   StorageClassType `xml:"StorageClass,omitempty"`
+	XMLName              xml.Name         `xml:"NoncurrentVersionTransition"`
+	NoncurrentDays       int              `xml:"NoncurrentDays,omitempty"` // How many days after the Object becomes a non-current version
+	StorageClass         StorageClassType `xml:"StorageClass,omitempty"`
+	IsAccessTime         *bool            `xml:"IsAccessTime,omitempty"`         // access time
+	ReturnToStdWhenVisit *bool            `xml:"ReturnToStdWhenVisit,omitempty"` // Return To Std When Visit
+	AllowSmallFile       *bool            `xml:AllowSmallFile,omitempty`
 }
 
 const iso8601DateFormat = "2006-01-02T15:04:05.000Z"
@@ -321,6 +327,7 @@ type GetBucketInfoResult struct {
 type BucketInfo struct {
 	XMLName                xml.Name  `xml:"Bucket"`
 	Name                   string    `xml:"Name"`                     // Bucket name
+	AccessMonitor          string    `xml:"AccessMonitor"`            // Bucket Access Monitor
 	Location               string    `xml:"Location"`                 // Bucket datacenter
 	CreationDate           time.Time `xml:"CreationDate"`             // Bucket creation time
 	ExtranetEndpoint       string    `xml:"ExtranetEndpoint"`         // Bucket external endpoint
@@ -1406,4 +1413,16 @@ type MetaQueryGroup struct {
 	XMLName xml.Name `xml:"Group"`
 	Value   string   `xml:"Value"`
 	Count   int64    `xml:"Count"`
+}
+
+//GetBucketAccessMonitorResult define config for get bucket access monitor
+type GetBucketAccessMonitorResult BucketAccessMonitorXml
+
+//BucketAccessMonitor define the xml of bucket access monitor config
+type PutBucketAccessMonitor BucketAccessMonitorXml
+
+// GetBucketAccessMonitorXml define get bucket access monitor information
+type BucketAccessMonitorXml struct {
+	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
+	Status  string   `xml:"Status"` // access monitor status
 }
