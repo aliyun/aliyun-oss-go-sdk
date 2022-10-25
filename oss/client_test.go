@@ -4968,3 +4968,161 @@ func (s *OssClientSuite) TestBucketMetaQuery(c *C) {
 	err = client.CloseMetaQuery(bucketNameTest)
 	c.Assert(err, IsNil)
 }
+
+// TestBucketAccessMonitor
+func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	res, err := client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Disabled")
+
+	// Put Bucket Access Monitor
+	access := PutBucketAccessMonitor{
+		Status: "Enabled",
+	}
+	err = client.PutBucketAccessMonitor(bucketNameTest, access)
+	c.Assert(err, IsNil)
+
+	// Put Bucket Access Monitor twice
+	access = PutBucketAccessMonitor{
+		Status: "Enabled",
+	}
+	err = client.PutBucketAccessMonitor(bucketNameTest, access)
+	c.Assert(err, IsNil)
+
+	// get bucket info
+	res, err = client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Enabled")
+
+	// get bucket access monitor
+	result, err := client.GetBucketAccessMonitor(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(result.Status, Equals, "Enabled")
+
+	// set bucket life cycle with access time
+	isTrue := true
+	isFalse := false
+	rule1 := LifecycleRule{
+		ID:     "mtime transition1",
+		Prefix: "logs1",
+		Status: "Enabled",
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+			},
+		},
+	}
+	rule2 := LifecycleRule{
+		ID:     "mtime transition2",
+		Prefix: "logs2",
+		Status: "Enabled",
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+				IsAccessTime: &isFalse,
+			},
+		},
+	}
+	rule3 := LifecycleRule{
+		ID:     "amtime transition1",
+		Prefix: "logs3",
+		Status: "Enabled",
+		Transitions: []LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	rule4 := LifecycleRule{
+		ID:     "amtime transition2",
+		Prefix: "logs4",
+		Status: "Enabled",
+		Transitions: []LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+				AllowSmallFile:       &isTrue,
+			},
+		},
+	}
+	rule5 := LifecycleRule{
+		ID:     "amtime transition3",
+		Prefix: "logs5",
+		Status: "Enabled",
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+				AllowSmallFile:       &isFalse,
+			},
+		},
+	}
+	var rules = []LifecycleRule{rule1, rule2, rule3, rule4, rule5}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	// Get bucket's cycle
+	lc, err := client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(lc.Rules[0].Transitions[0].Days, Equals, 30)
+	c.Assert(lc.Rules[0].Transitions[0].StorageClass, Equals, StorageIA)
+
+	c.Assert(*lc.Rules[1].Transitions[0].IsAccessTime, Equals, false)
+
+	c.Assert(*lc.Rules[2].Transitions[0].IsAccessTime, Equals, true)
+	c.Assert(*lc.Rules[2].Transitions[0].ReturnToStdWhenVisit, Equals, false)
+
+	c.Assert(*lc.Rules[3].Transitions[0].IsAccessTime, Equals, true)
+	c.Assert(*lc.Rules[3].Transitions[0].ReturnToStdWhenVisit, Equals, true)
+	c.Assert(*lc.Rules[3].Transitions[0].AllowSmallFile, Equals, true)
+
+	c.Assert(lc.Rules[4].NonVersionTransitions[0].NoncurrentDays, Equals, 10)
+	c.Assert(lc.Rules[4].NonVersionTransitions[0].StorageClass, Equals, StorageIA)
+	c.Assert(*lc.Rules[4].NonVersionTransitions[0].IsAccessTime, Equals, true)
+	c.Assert(*lc.Rules[4].NonVersionTransitions[0].ReturnToStdWhenVisit, Equals, false)
+	c.Assert(*lc.Rules[4].NonVersionTransitions[0].AllowSmallFile, Equals, false)
+
+	// can't disable Access Monitor
+	access = PutBucketAccessMonitor{
+		Status: "Disabled",
+	}
+	err = client.PutBucketAccessMonitor(bucketNameTest, access)
+	c.Assert(err, NotNil)
+
+	// delete bucket's cycle
+	err = client.DeleteBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	// Put Bucket Access Monitor
+	access = PutBucketAccessMonitor{
+		Status: "Disabled",
+	}
+	err = client.PutBucketAccessMonitor(bucketNameTest, access)
+	c.Assert(err, IsNil)
+
+	// get bucket info
+	res, err = client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Disabled")
+
+	// get bucket access monitor
+	result, err = client.GetBucketAccessMonitor(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(result.Status, Equals, "Disabled")
+}
