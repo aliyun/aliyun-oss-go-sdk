@@ -2,10 +2,9 @@ package oss
 
 import (
 	"encoding/xml"
+	. "gopkg.in/check.v1"
 	"net/url"
 	"sort"
-
-	. "gopkg.in/check.v1"
 )
 
 type OssTypeSuite struct{}
@@ -597,4 +596,343 @@ func (s *OssTypeSuite) TestDeleteObjectToXml(c *C) {
 	str = marshalDeleteObjectToXml(dxml)
 	str2 = "<Delete><Quiet>true</Quiet><Object><Key>&#x0B;</Key></Object></Delete>"
 	c.Assert(str, Equals, str2)
+}
+
+// test access monitor
+func (s *OssTypeSuite) TestAccessMonitor(c *C) {
+	var res GetBucketAccessMonitorResult
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<AccessMonitorConfiguration>
+<Status>Enabled</Status>
+</AccessMonitorConfiguration>
+`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.Status, Equals, "Enabled")
+
+	// test aggregations
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<AccessMonitorConfiguration>
+<Status>Disabled</Status>
+</AccessMonitorConfiguration>
+`)
+	err = xml.Unmarshal(xmlData, &res)
+	c.Assert(res.Status, Equals, "Disabled")
+
+	var req PutBucketAccessMonitor
+	req.Status = "Enabled"
+	bs, err := xml.Marshal(req)
+	c.Assert(err, IsNil)
+	c.Assert(string(bs), Equals, `<AccessMonitorConfiguration><Status>Enabled</Status></AccessMonitorConfiguration>`)
+
+	req.Status = "Disabled"
+	bs, err = xml.Marshal(req)
+	c.Assert(err, IsNil)
+	c.Assert(string(bs), Equals, `<AccessMonitorConfiguration><Status>Disabled</Status></AccessMonitorConfiguration>`)
+}
+
+// test bucket info result with access monitor
+func (s *OssTypeSuite) TestBucketInfoWithAccessMonitor(c *C) {
+	var res GetBucketInfoResult
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<BucketInfo>
+  <Bucket>
+    <AccessMonitor>Enabled</AccessMonitor>
+    <CreationDate>2013-07-31T10:56:21.000Z</CreationDate>
+    <ExtranetEndpoint>oss-cn-hangzhou.aliyuncs.com</ExtranetEndpoint>
+    <IntranetEndpoint>oss-cn-hangzhou-internal.aliyuncs.com</IntranetEndpoint>
+    <Location>oss-cn-hangzhou</Location>
+    <StorageClass>Standard</StorageClass>
+    <TransferAcceleration>Disabled</TransferAcceleration>
+    <CrossRegionReplication>Disabled</CrossRegionReplication>
+    <Name>oss-example</Name>
+    <Owner>
+      <DisplayName>username</DisplayName>
+      <ID>27183473914</ID>
+    </Owner>
+    <Comment>test</Comment>
+  </Bucket>
+</BucketInfo>
+`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Enabled")
+	c.Assert(res.BucketInfo.CreationDate.Format("2006-01-02 15:04:05 +0000 UTC"), Equals, "2013-07-31 10:56:21 +0000 UTC")
+	c.Assert(res.BucketInfo.ExtranetEndpoint, Equals, "oss-cn-hangzhou.aliyuncs.com")
+	c.Assert(res.BucketInfo.IntranetEndpoint, Equals, "oss-cn-hangzhou-internal.aliyuncs.com")
+	c.Assert(res.BucketInfo.Location, Equals, "oss-cn-hangzhou")
+	c.Assert(res.BucketInfo.StorageClass, Equals, "Standard")
+	c.Assert(res.BucketInfo.TransferAcceleration, Equals, "Disabled")
+	c.Assert(res.BucketInfo.CrossRegionReplication, Equals, "Disabled")
+	c.Assert(res.BucketInfo.Name, Equals, "oss-example")
+	c.Assert(res.BucketInfo.Owner.ID, Equals, "27183473914")
+	c.Assert(res.BucketInfo.Owner.DisplayName, Equals, "username")
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<BucketInfo>
+  <Bucket>
+    <AccessMonitor>Disabled</AccessMonitor>
+    <CreationDate>2013-07-31T10:56:21.000Z</CreationDate>
+    <ExtranetEndpoint>oss-cn-hangzhou.aliyuncs.com</ExtranetEndpoint>
+    <IntranetEndpoint>oss-cn-hangzhou-internal.aliyuncs.com</IntranetEndpoint>
+    <Location>oss-cn-hangzhou</Location>
+    <StorageClass>Standard</StorageClass>
+    <TransferAcceleration>Disabled</TransferAcceleration>
+    <CrossRegionReplication>Disabled</CrossRegionReplication>
+    <Name>oss-example</Name>
+  </Bucket>
+</BucketInfo>
+`)
+	err = xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Disabled")
+}
+
+func (s *OssTypeSuite) TestValidateLifeCycleRulesWithAccessTime(c *C) {
+	expiration := LifecycleExpiration{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	isTrue := true
+	isFalse := false
+	rule := LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+				IsAccessTime: &isFalse,
+			},
+		},
+	}
+	rules := []LifecycleRule{rule}
+	err := verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	abortMPU := LifecycleAbortMultipartUpload{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	expiration = LifecycleExpiration{
+		Days: 30,
+	}
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days: 30,
+	}
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssTypeSuite) TestLifeCycleRules(c *C) {
+	expiration := LifecycleExpiration{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	isTrue := true
+	isFalse := false
+	rule := LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+				IsAccessTime: &isFalse,
+			},
+		},
+	}
+	rules := []LifecycleRule{rule}
+	err := verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	rule = LifecycleRule{
+		ID:         "ruleID",
+		Prefix:     "prefix",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	abortMPU := LifecycleAbortMultipartUpload{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
+
+	expiration = LifecycleExpiration{
+		Days: 30,
+	}
+	abortMPU = LifecycleAbortMultipartUpload{
+		Days: 30,
+	}
+	rule = LifecycleRule{
+		ID:                   "ruleID",
+		Prefix:               "prefix",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	rules = []LifecycleRule{rule}
+	err = verifyLifecycleRules(rules)
+	c.Assert(err, IsNil)
 }

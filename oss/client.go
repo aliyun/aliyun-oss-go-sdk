@@ -2058,6 +2058,67 @@ func (client Client) GetBucketReplicationProgress(bucketName string, ruleId stri
 	return string(data), err
 }
 
+// GetBucketAccessMonitor get bucket's access monitor config
+// bucketName    the bucket name.
+// GetBucketAccessMonitorResult  the access monitor configuration result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketAccessMonitor(bucketName string, options ...Option) (GetBucketAccessMonitorResult, error) {
+	var out GetBucketAccessMonitorResult
+	body, err := client.GetBucketAccessMonitorXml(bucketName, options...)
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketAccessMonitor get bucket's access monitor config
+// bucketName    the bucket name.
+// string  the access monitor configuration result of bucket xml foramt.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketAccessMonitorXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["accessmonitor"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// PutBucketAccessMonitor get bucket's access monitor config
+// bucketName    the bucket name.
+// accessMonitor the access monitor configuration of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketAccessMonitor(bucketName string, accessMonitor PutBucketAccessMonitor, options ...Option) error {
+	bs, err := xml.Marshal(accessMonitor)
+	if err != nil {
+		return err
+	}
+	err = client.PutBucketAccessMonitorXml(bucketName, string(bs), options...)
+	return err
+}
+
+// PutBucketAccessMonitor get bucket's access monitor config
+// bucketName    the bucket name.
+// xmlData		 the access monitor configuration in xml foramt
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketAccessMonitorXml(bucketName string, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["accessmonitor"] = nil
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // GetBucketCname get bucket's binding cname
 // bucketName    the bucket name.
 // string    the xml configuration of bucket.
