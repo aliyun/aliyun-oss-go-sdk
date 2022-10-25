@@ -2956,6 +2956,50 @@ func (s *OssClientSuite) TestBucketTaggingOperation(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssClientSuite) TestBucketTaggingWithKey(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(5)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	// Bucket Tagging
+	var tagging Tagging
+	tagging.Tags = []Tag{{Key: "k1", Value: "v1"}, {Key: "k2", Value: "v2"}, {Key: "k3", Value: "v3"}, {Key: "k4", Value: "v4"}, {Key: "k5", Value: "v5"}, {Key: "k6", Value: "v6"}}
+	err = client.SetBucketTagging(bucketName, tagging)
+	c.Assert(err, IsNil)
+
+	getResult, err := client.GetBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(getResult.Tags[0].Key, Equals, tagging.Tags[0].Key)
+	c.Assert(getResult.Tags[0].Value, Equals, tagging.Tags[0].Value)
+
+	// delete BucketTagging
+	err = client.DeleteBucketTagging(bucketName, addParam("tagging", "k1"))
+	c.Assert(err, IsNil)
+
+	getResult, err = client.GetBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(len(getResult.Tags), Equals, 5)
+
+	err = client.DeleteBucketTagging(bucketName, addParam("tagging", "k2,k3,k4"))
+	c.Assert(err, IsNil)
+
+	getResult, err = client.GetBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(len(getResult.Tags), Equals, 2)
+
+	err = client.DeleteBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+
+	getResult, err = client.GetBucketTagging(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(len(getResult.Tags), Equals, 0)
+
+	err = client.DeleteBucket(bucketName)
+	c.Assert(err, IsNil)
+}
+
 func (s *OssClientSuite) TestListBucketsTagging(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)

@@ -5,6 +5,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -775,6 +777,33 @@ func decodeListMultipartUploadResult(result *ListMultipartUploadResult) error {
 	return nil
 }
 
+// marshalDeleteObjectToXml deleteXML struct to xml
+func marshalDeleteObjectToXml(dxml deleteXML) string {
+	var builder strings.Builder
+	builder.WriteString("<Delete>")
+	builder.WriteString("<Quiet>")
+	builder.WriteString(strconv.FormatBool(dxml.Quiet))
+	builder.WriteString("</Quiet>")
+	if len(dxml.Objects) > 0 {
+		for _, object := range dxml.Objects {
+			builder.WriteString("<Object>")
+			if object.Key != "" {
+				builder.WriteString("<Key>")
+				builder.WriteString(EscapeXml(object.Key))
+				builder.WriteString("</Key>")
+			}
+			if object.VersionId != "" {
+				builder.WriteString("<VersionId>")
+				builder.WriteString(object.VersionId)
+				builder.WriteString("</VersionId>")
+			}
+			builder.WriteString("</Object>")
+		}
+	}
+	builder.WriteString("</Delete>")
+	return builder.String()
+}
+
 // createBucketConfiguration defines the configuration for creating a bucket.
 type createBucketConfiguration struct {
 	XMLName            xml.Name           `xml:"CreateBucketConfiguration"`
@@ -934,7 +963,8 @@ type BucketStat struct {
 	InfrequentAccessStorage     int64    `xml:"InfrequentAccessStorage"`
 	InfrequentAccessRealStorage int64    `xml:"InfrequentAccessRealStorage"`
 	InfrequentAccessObjectCount int64    `xml:"InfrequentAccessObjectCount"`
-	ArchiveStorage              int64    `xml:"ArchiveRealStorage"`
+	ArchiveStorage              int64    `xml:"ArchiveStorage"`
+	ArchiveRealStorage          int64    `xml:"ArchiveRealStorage"`
 	ArchiveObjectCount          int64    `xml:"ArchiveObjectCount"`
 	ColdArchiveStorage          int64    `xml:"ColdArchiveStorage"`
 	ColdArchiveRealStorage      int64    `xml:"ColdArchiveRealStorage"`
@@ -1356,7 +1386,7 @@ type MetaQueryAggregationRequest struct {
 	Operation string   `xml:"Operation,omitempty"`
 }
 
-//MetaQueryAggregationResponse defines meta query aggregation response
+// MetaQueryAggregationResponse defines meta query aggregation response
 type MetaQueryAggregationResponse struct {
 	XMLName   xml.Name         `xml:"Aggregation"`
 	Field     string           `xml:"Field,omitempty"`

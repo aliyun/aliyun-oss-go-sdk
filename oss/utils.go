@@ -14,11 +14,24 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var sys_name string
 var sys_release string
 var sys_machine string
+
+var (
+	escQuot = []byte("&#34;") // shorter than "&quot;"
+	escApos = []byte("&#39;") // shorter than "&apos;"
+	escAmp  = []byte("&amp;")
+	escLT   = []byte("&lt;")
+	escGT   = []byte("&gt;")
+	escTab  = []byte("&#x9;")
+	escNL   = []byte("&#xA;")
+	escCR   = []byte("&#xD;")
+	escFFFD = []byte("\uFFFD") // Unicode replacement character
+)
 
 func init() {
 	sys_name = runtime.GOOS
@@ -440,6 +453,13 @@ func CheckBucketName(bucketName string) error {
 	return nil
 }
 
+func CheckObjectName(objectName string) error {
+	if len(objectName) == 0 {
+		return fmt.Errorf("object name is empty")
+	}
+	return nil
+}
+
 func GetReaderLen(reader io.Reader) (int64, error) {
 	var contentLength int64
 	var err error
@@ -536,4 +556,65 @@ func EscapeLFString(str string) string {
 		}
 	}
 	return log.String()
+}
+
+// EscapeString writes to p the properly escaped XML equivalent
+// of the plain text data s.
+func EscapeXml(s string) string {
+	var p strings.Builder
+	var esc []byte
+	hextable := "0123456789ABCDEF"
+	escPattern := []byte("&#x00;")
+	last := 0
+	for i := 0; i < len(s); {
+		r, width := utf8.DecodeRuneInString(s[i:])
+		i += width
+		switch r {
+		case '"':
+			esc = escQuot
+		case '\'':
+			esc = escApos
+		case '&':
+			esc = escAmp
+		case '<':
+			esc = escLT
+		case '>':
+			esc = escGT
+		case '\t':
+			esc = escTab
+		case '\n':
+			esc = escNL
+		case '\r':
+			esc = escCR
+		default:
+			if !isInCharacterRange(r) || (r == 0xFFFD && width == 1) {
+				if r >= 0x00 && r < 0x20 {
+					escPattern[3] = hextable[r>>4]
+					escPattern[4] = hextable[r&0x0f]
+					esc = escPattern
+				} else {
+					esc = escFFFD
+				}
+				break
+			}
+			continue
+		}
+		p.WriteString(s[last : i-width])
+		p.Write(esc)
+		last = i
+	}
+	p.WriteString(s[last:])
+	return p.String()
+}
+
+// Decide whether the given rune is in the XML Character Range, per
+// the Char production of https://www.xml.com/axml/testaxml.htm,
+// Section 2.2 Characters.
+func isInCharacterRange(r rune) (inrange bool) {
+	return r == 0x09 ||
+		r == 0x0A ||
+		r == 0x0D ||
+		r >= 0x20 && r <= 0xD7FF ||
+		r >= 0xE000 && r <= 0xFFFD ||
+		r >= 0x10000 && r <= 0x10FFFF
 }
