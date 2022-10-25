@@ -105,7 +105,207 @@ func BucketLifecycleSample() {
 		HandleError(err)
 	}
 
-	// Case 6: Delete bucket's Lifecycle
+	// Case 6: Set the lifecycle. The rules with amtime and return to std when visit
+	isTrue := true
+	isFalse := false
+	rule1 = oss.LifecycleRule{
+		ID:     "mtime transition1",
+		Prefix: "logs1",
+		Status: "Enabled",
+		Transitions: []oss.LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: oss.StorageIA,
+			},
+		},
+	}
+	rule2 = oss.LifecycleRule{
+		ID:     "mtime transition2",
+		Prefix: "logs2",
+		Status: "Enabled",
+		Transitions: []oss.LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: oss.StorageIA,
+				IsAccessTime: &isFalse,
+			},
+		},
+	}
+	rule3 = oss.LifecycleRule{
+		ID:     "amtime transition1",
+		Prefix: "logs3",
+		Status: "Enabled",
+		Transitions: []oss.LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         oss.StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	rule4 = oss.LifecycleRule{
+		ID:     "amtime transition2",
+		Prefix: "logs4",
+		Status: "Enabled",
+		Transitions: []oss.LifecycleTransition{
+			{
+				Days:                 30,
+				StorageClass:         oss.StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isTrue,
+				AllowSmallFile:       &isFalse,
+			},
+		},
+	}
+	rule5 := oss.LifecycleRule{
+		ID:     "amtime transition3",
+		Prefix: "logs5",
+		Status: "Enabled",
+		NonVersionTransitions: []oss.LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         oss.StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+				AllowSmallFile:       &isTrue,
+			},
+		},
+	}
+	rules = []oss.LifecycleRule{rule1, rule2, rule3, rule4, rule5}
+	err = client.SetBucketLifecycle(bucketName, rules)
+	if err != nil {
+		HandleError(err)
+	}
+
+	// case 7: Set bucket's Lifecycle with xml
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<LifecycleConfiguration>
+	<Rule>
+    <ID>mtime transition1</ID>
+    <Prefix>logs1/</Prefix>
+    <Status>Enabled</Status>
+    <Transition>
+      <Days>30</Days>
+      <StorageClass>IA</StorageClass>
+    </Transition>
+  </Rule>
+  <Rule>
+    <ID>mtime transition2</ID>
+    <Prefix>logs2/</Prefix>
+    <Status>Enabled</Status>
+    <Transition>
+      <Days>30</Days>
+      <StorageClass>IA</StorageClass>
+      <IsAccessTime>false</IsAccessTime>
+    </Transition>
+  </Rule>
+  <Rule>
+    <ID>atime transition1</ID>
+    <Prefix>logs3/</Prefix>
+    <Status>Enabled</Status>
+    <Transition>
+      <Days>30</Days>
+      <StorageClass>IA</StorageClass>
+      <IsAccessTime>true</IsAccessTime>
+      <ReturnToStdWhenVisit>false</ReturnToStdWhenVisit>
+    </Transition>
+  </Rule>
+  <Rule>
+    <ID>atime transition2</ID>
+    <Prefix>logs4/</Prefix>
+    <Status>Enabled</Status>
+    <Transition>
+      <Days>30</Days>
+      <StorageClass>IA</StorageClass>
+      <IsAccessTime>true</IsAccessTime>
+      <ReturnToStdWhenVisit>true</ReturnToStdWhenVisit>
+      <AllowSmallFile>false</AllowSmallFile>
+    </Transition>
+  </Rule>
+  <Rule>
+    <ID>atime transition3</ID>
+    <Prefix>logs5/</Prefix>
+    <Status>Enabled</Status>
+    <NoncurrentVersionTransition>
+      <NoncurrentDays>10</NoncurrentDays>
+      <StorageClass>IA</StorageClass>
+      <IsAccessTime>true</IsAccessTime>
+      <ReturnToStdWhenVisit>false</ReturnToStdWhenVisit>
+	  <AllowSmallFile>true</AllowSmallFile>
+    </NoncurrentVersionTransition>
+  </Rule>
+</LifecycleConfiguration>
+`
+	err = client.SetBucketLifecycleXml(bucketName, xml)
+	if err != nil {
+		HandleError(err)
+	}
+
+	// case 8: Get bucket's Lifecycle print info
+	lcRes, err := client.GetBucketLifecycle(bucketName)
+	if err != nil {
+		HandleError(err)
+	}
+	for _, rule := range lcRes.Rules {
+		fmt.Println("Lifecycle Rule Id:", rule.ID)
+		fmt.Println("Lifecycle Rule Prefix:", rule.Prefix)
+		fmt.Println("Lifecycle Rule Status:", rule.Status)
+		if rule.Expiration != nil {
+			fmt.Println("Lifecycle Rule Expiration Days:", rule.Expiration.Days)
+			fmt.Println("Lifecycle Rule Expiration Date:", rule.Expiration.Date)
+			fmt.Println("Lifecycle Rule Expiration Created Before Date:", rule.Expiration.CreatedBeforeDate)
+			fmt.Println("Lifecycle Rule Expiration Expired Object DeleteMarker:", rule.Expiration.ExpiredObjectDeleteMarker)
+		}
+
+		for _, tag := range rule.Tags {
+			fmt.Println("Lifecycle Rule Tag Key:", tag.Key)
+			fmt.Println("Lifecycle Rule Tag Value:", tag.Value)
+		}
+
+		for _, transition := range rule.Transitions {
+			fmt.Println("Lifecycle Rule Transition Days:", transition.Days)
+			fmt.Println("Lifecycle Rule Transition Created Before Date:", transition.CreatedBeforeDate)
+			fmt.Println("Lifecycle Rule Transition Storage Class:", transition.StorageClass)
+			if transition.IsAccessTime != nil {
+				fmt.Println("Lifecycle Rule Transition Is Access Time:", *transition.IsAccessTime)
+			}
+			if transition.ReturnToStdWhenVisit != nil {
+				fmt.Println("Lifecycle Rule Transition Return To Std When Visit:", *transition.ReturnToStdWhenVisit)
+			}
+
+			if transition.AllowSmallFile != nil {
+				fmt.Println("Lifecycle Rule Transition Allow Small File:", *transition.AllowSmallFile)
+			}
+
+		}
+		if rule.AbortMultipartUpload != nil {
+			fmt.Println("Lifecycle Rule Abort Multipart Upload Days:", rule.AbortMultipartUpload.Days)
+			fmt.Println("Lifecycle Rule Abort Multipart Upload Created Before Date:", rule.AbortMultipartUpload.CreatedBeforeDate)
+		}
+
+		if rule.NonVersionExpiration != nil {
+			fmt.Println("Lifecycle Non Version Expiration Non Current Days:", rule.NonVersionExpiration.NoncurrentDays)
+		}
+
+		for _, nonVersionTransition := range rule.NonVersionTransitions {
+			fmt.Println("Lifecycle Rule Non Version Transitions Non current Days:", nonVersionTransition.NoncurrentDays)
+			fmt.Println("Lifecycle Rule Non Version Transition Storage Class:", nonVersionTransition.StorageClass)
+			if nonVersionTransition.IsAccessTime != nil {
+				fmt.Println("Lifecycle Rule Non Version Transition Is Access Time:", *nonVersionTransition.IsAccessTime)
+			}
+
+			if nonVersionTransition.ReturnToStdWhenVisit != nil {
+				fmt.Println("Lifecycle Rule Non Version Transition Return To Std When Visit:", *nonVersionTransition.ReturnToStdWhenVisit)
+			}
+
+			if nonVersionTransition.AllowSmallFile != nil {
+				fmt.Println("Lifecycle Rule Non Version Allow Small File:", *nonVersionTransition.AllowSmallFile)
+			}
+		}
+	}
+
+	// Case 9: Delete bucket's Lifecycle
 	err = client.DeleteBucketLifecycle(bucketName)
 	if err != nil {
 		HandleError(err)
