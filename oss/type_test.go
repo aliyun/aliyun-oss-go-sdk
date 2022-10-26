@@ -936,3 +936,81 @@ func (s *OssTypeSuite) TestLifeCycleRules(c *C) {
 	err = verifyLifecycleRules(rules)
 	c.Assert(err, IsNil)
 }
+
+func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<LifecycleConfiguration>
+  <Rule>
+    <ID>RuleID</ID>
+    <Prefix>logs</Prefix>
+    <Status>Enabled</Status>
+    <Filter>
+      <Not>
+        <Prefix>logs1</Prefix>
+        <Tag><Key>key1</Key><Value>value1</Value></Tag>
+        </Not>
+    </Filter>
+    <Expiration>
+      <Days>100</Days>
+    </Expiration>
+    <Transition>
+      <Days>Days</Days>
+      <StorageClass>Archive</StorageClass>
+    </Transition>
+  </Rule>
+</LifecycleConfiguration>
+`)
+	var res GetBucketLifecycleResult
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.Rules[0].ID, Equals, "RuleID")
+	c.Assert(res.Rules[0].Filter.Not[0].Prefix, Equals, "logs1")
+	c.Assert(res.Rules[0].Filter.Not[0].Tag.Key, Equals, "key1")
+	c.Assert(res.Rules[0].Filter.Not[0].Tag.Value, Equals, "value1")
+
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<LifecycleConfiguration>
+  <Rule>
+    <ID>test2</ID>
+    <Prefix>logs</Prefix>
+    <Status>Enabled</Status>
+    <Filter>
+      <Not>
+        <Prefix>logs-demo</Prefix>
+      </Not>
+      <Not>
+        <Prefix>abc/not1/</Prefix>
+        <Tag>
+          <Key>notkey1</Key>
+          <Value>notvalue1</Value>
+        </Tag>
+      </Not>
+      <Not>
+        <Prefix>abc/not2/</Prefix>
+        <Tag>
+          <Key>notkey2</Key>
+          <Value>notvalue2</Value>
+        </Tag>
+      </Not>
+    </Filter>
+    <Expiration>
+      <Days>100</Days>
+    </Expiration>
+    <Transition>
+      <Days>30</Days>
+      <StorageClass>Archive</StorageClass>
+    </Transition>
+  </Rule>
+</LifecycleConfiguration>
+`)
+	err = xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.Rules[0].ID, Equals, "test2")
+	c.Assert(res.Rules[0].Filter.Not[0].Prefix, Equals, "logs-demo")
+	c.Assert(res.Rules[0].Filter.Not[1].Prefix, Equals, "abc/not1/")
+	c.Assert(res.Rules[0].Filter.Not[1].Tag.Key, Equals, "notkey1")
+	c.Assert(res.Rules[0].Filter.Not[1].Tag.Value, Equals, "notvalue1")
+	c.Assert(res.Rules[0].Filter.Not[2].Prefix, Equals, "abc/not2/")
+	c.Assert(res.Rules[0].Filter.Not[2].Tag.Key, Equals, "notkey2")
+	c.Assert(res.Rules[0].Filter.Not[2].Tag.Value, Equals, "notvalue2")
+}

@@ -21,14 +21,14 @@ func BucketLifecycleSample() {
 	}
 
 	// Case 1: Set the lifecycle. The rule ID is rule1 and the applied objects' prefix is one and the last modified Date is before 2015/11/11
-	expriation := oss.LifecycleExpiration{
+	expiration := oss.LifecycleExpiration{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
 	rule1 := oss.LifecycleRule{
 		ID:         "rule1",
 		Prefix:     "one",
 		Status:     "Enabled",
-		Expiration: &expriation,
+		Expiration: &expiration,
 	}
 	var rules = []oss.LifecycleRule{rule1}
 	err = client.SetBucketLifecycle(bucketName, rules)
@@ -81,7 +81,7 @@ func BucketLifecycleSample() {
 	}
 
 	// Case 5: Set the lifecycle. The rule ID is rule4 and the applied objects' has the tagging which prefix is four and the last modified Date is before 2015/11/11
-	expriation = oss.LifecycleExpiration{
+	expiration = oss.LifecycleExpiration{
 		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
 	}
 	tag1 := oss.Tag{
@@ -97,7 +97,7 @@ func BucketLifecycleSample() {
 		Prefix:     "four",
 		Status:     "Enabled",
 		Tags:       []oss.Tag{tag1, tag2},
-		Expiration: &expriation,
+		Expiration: &expiration,
 	}
 	rules = []oss.LifecycleRule{rule4}
 	err = client.SetBucketLifecycle(bucketName, rules)
@@ -105,7 +105,42 @@ func BucketLifecycleSample() {
 		HandleError(err)
 	}
 
-	// Case 6: Set the lifecycle. The rules with amtime and return to std when visit
+	// Case 6: Set the lifecycle. The rule ID is filter one and Include Not exclusion conditions
+	expiration = oss.LifecycleExpiration{
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	tag := oss.Tag{
+		Key:   "key1",
+		Value: "value1",
+	}
+	filter := oss.LifecycleFilter{
+		Not: []oss.LifecycleFilterNot{
+			{
+				Prefix: "logs1",
+				Tag:    &tag,
+			},
+		},
+	}
+	filterRule := oss.LifecycleRule{
+		ID:         "filter one",
+		Prefix:     "logs",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []oss.LifecycleTransition{
+			{
+				Days:         10,
+				StorageClass: oss.StorageIA,
+			},
+		},
+		Filter: &filter,
+	}
+	rules = []oss.LifecycleRule{filterRule}
+	err = client.SetBucketLifecycle(bucketName, rules)
+	if err != nil {
+		HandleError(err)
+	}
+
+	// Case 7: Set the lifecycle. The rules with amtime and return to std when visit
 	isTrue := true
 	isFalse := false
 	rule1 = oss.LifecycleRule{
@@ -178,8 +213,8 @@ func BucketLifecycleSample() {
 		HandleError(err)
 	}
 
-	// case 7: Set bucket's Lifecycle with xml
-	xml := `<?xml version="1.0" encoding="UTF-8"?>
+	// case 8: Set bucket's Lifecycle with xml
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <LifecycleConfiguration>
 	<Rule>
     <ID>mtime transition1</ID>
@@ -237,12 +272,12 @@ func BucketLifecycleSample() {
   </Rule>
 </LifecycleConfiguration>
 `
-	err = client.SetBucketLifecycleXml(bucketName, xml)
+	err = client.SetBucketLifecycleXml(bucketName, xmlData)
 	if err != nil {
 		HandleError(err)
 	}
 
-	// case 8: Get bucket's Lifecycle print info
+	// case 9: Get bucket's Lifecycle print info
 	lcRes, err := client.GetBucketLifecycle(bucketName)
 	if err != nil {
 		HandleError(err)
@@ -255,7 +290,9 @@ func BucketLifecycleSample() {
 			fmt.Println("Lifecycle Rule Expiration Days:", rule.Expiration.Days)
 			fmt.Println("Lifecycle Rule Expiration Date:", rule.Expiration.Date)
 			fmt.Println("Lifecycle Rule Expiration Created Before Date:", rule.Expiration.CreatedBeforeDate)
-			fmt.Println("Lifecycle Rule Expiration Expired Object DeleteMarker:", rule.Expiration.ExpiredObjectDeleteMarker)
+			if rule.Expiration.ExpiredObjectDeleteMarker != nil {
+				fmt.Println("Lifecycle Rule Expiration Expired Object DeleteMarker:", *rule.Expiration.ExpiredObjectDeleteMarker)
+			}
 		}
 
 		for _, tag := range rule.Tags {
@@ -302,10 +339,20 @@ func BucketLifecycleSample() {
 			if nonVersionTransition.AllowSmallFile != nil {
 				fmt.Println("Lifecycle Rule Non Version Allow Small File:", *nonVersionTransition.AllowSmallFile)
 			}
+
+			if rule.Filter != nil {
+				for _, filterNot := range rule.Filter.Not {
+					fmt.Println("Lifecycle Rule Filter Not Prefix:", filterNot.Prefix)
+					if filterNot.Tag != nil {
+						fmt.Println("Lifecycle Rule Filter Not Tag Key:", filterNot.Tag.Key)
+						fmt.Println("Lifecycle Rule Filter Not Tag Value:", filterNot.Tag.Value)
+					}
+				}
+			}
 		}
 	}
 
-	// Case 9: Delete bucket's Lifecycle
+	// Case 10: Delete bucket's Lifecycle
 	err = client.DeleteBucketLifecycle(bucketName)
 	if err != nil {
 		HandleError(err)

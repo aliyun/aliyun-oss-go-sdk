@@ -80,6 +80,7 @@ type LifecycleRule struct {
 	// Deprecated: Use NonVersionTransitions instead.
 	NonVersionTransition  *LifecycleVersionTransition  `xml:"-"` // NonVersionTransition is not suggested to use
 	NonVersionTransitions []LifecycleVersionTransition `xml:"NoncurrentVersionTransition,omitempty"`
+	Filter                *LifecycleFilter             `xml:Filter,omitempty` //condition parameter container of this exclusion rule
 }
 
 // LifecycleExpiration defines the rule's expiration property
@@ -123,6 +124,19 @@ type LifecycleVersionTransition struct {
 	IsAccessTime         *bool            `xml:"IsAccessTime,omitempty"`         // access time
 	ReturnToStdWhenVisit *bool            `xml:"ReturnToStdWhenVisit,omitempty"` // Return To Std When Visit
 	AllowSmallFile       *bool            `xml:AllowSmallFile,omitempty`
+}
+
+// LifecycleFilter defines the rule's Filter propery
+type LifecycleFilter struct {
+	XMLName xml.Name             `xml:"Filter"`
+	Not     []LifecycleFilterNot `xml:"Not,omitempty"`
+}
+
+// LifecycleFilterNot defines the rule's Filter Not propery
+type LifecycleFilterNot struct {
+	XMLName xml.Name `xml:"Not"`
+	Prefix  string   `xml:"Prefix,omitempty"` //Object prefix applicable to this exclusion rule
+	Tag     *Tag     `xml:"Tag,omitempty"`    //the tags applicable to this exclusion rule
 }
 
 const iso8601DateFormat = "2006-01-02T15:04:05.000Z"
