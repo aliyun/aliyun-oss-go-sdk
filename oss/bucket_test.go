@@ -1533,6 +1533,44 @@ func (s *OssBucketSuite) TestDeleteObject(c *C) {
 	c.Assert(len(lor.Objects), Equals, 0)
 }
 
+func (s *OssBucketSuite) TestWithEmptyObjectKey(c *C) {
+	//upload
+	err := s.bucket.PutObject("", strings.NewReader(""))
+	c.Assert(err.Error(), Equals, "object name is empty")
+	_, err = s.bucket.GetObject("")
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	_, err = s.bucket.GetObjectTagging("")
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	_, err = s.bucket.GetObjectACL("")
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	_, err = s.bucket.GetObjectDetailedMeta("")
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	err = s.bucket.GetObjectToFile("", "bucket_test.go")
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	_, err = s.bucket.GetObjectMeta("")
+	c.Assert(err.Error(), Equals, "object name is empty")
+	// Delete
+	err = s.bucket.DeleteObject("")
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	err = s.bucket.DeleteObjectTagging("")
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	_, err = s.bucket.ListObjects()
+	c.Assert(err, IsNil)
+
+	_, err = s.bucket.ListObjectVersions()
+	c.Assert(err, IsNil)
+
+	_, err = s.bucket.ListObjectsV2()
+	c.Assert(err, IsNil)
+}
+
 // TestDeleteObjects
 func (s *OssBucketSuite) TestDeleteObjectsNormal(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
