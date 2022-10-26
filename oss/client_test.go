@@ -995,6 +995,67 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestSetBucketLifecycleWithFilter
+func (s *OssClientSuite) TestSetBucketLifecycleFilter(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	expiration := LifecycleExpiration{
+		Days: 30,
+	}
+	tag := Tag{
+		Key:   "key1",
+		Value: "value1",
+	}
+	filter := LifecycleFilter{
+		Not: []LifecycleFilterNot{
+			{
+				Prefix: "logs1",
+				Tag:    &tag,
+			},
+		},
+	}
+	rule := LifecycleRule{
+		ID:         "filter one",
+		Prefix:     "logs",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:         10,
+				StorageClass: StorageIA,
+			},
+		},
+		Filter: &filter,
+	}
+	rules := []LifecycleRule{rule}
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+	res, err := client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(res.Rules), Equals, 1)
+	c.Assert(res.Rules[0].ID, Equals, "filter one")
+	c.Assert(res.Rules[0].Expiration, NotNil)
+	c.Assert(res.Rules[0].Expiration.CreatedBeforeDate, Equals, "")
+	c.Assert(res.Rules[0].Expiration.Days, Equals, 30)
+	c.Assert(res.Rules[0].Transitions[0].Days, Equals, 10)
+	c.Assert(res.Rules[0].Transitions[0].StorageClass, Equals, StorageIA)
+	c.Assert(res.Rules[0].Filter.Not[0].Prefix, Equals, "logs1")
+	c.Assert(res.Rules[0].Filter.Not[0].Tag.Key, Equals, "key1")
+	c.Assert(res.Rules[0].Filter.Not[0].Tag.Value, Equals, "value1")
+
+	err = client.DeleteBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
 // TestSetBucketLifecycleOverLap
 func (s *OssClientSuite) TestSetBucketLifecycleOverLap(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
