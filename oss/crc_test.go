@@ -212,7 +212,7 @@ func (s *OssCrcSuite) TestCRCRepeatedCombine(c *C) {
 		post := hash.Sum64()
 
 		crc := CRC64Combine(prev, post, uint64(len(str)-i))
-		testLogger.Println("TestCRCRepeatedCombine:", prev, post, crc, i, len(str))
+		//testLogger.Println("TestCRCRepeatedCombine:", prev, post, crc, i, len(str))
 		c.Assert(crc == 0x7AD25FAFA1710407, Equals, true)
 	}
 }
@@ -236,7 +236,7 @@ func (s *OssCrcSuite) TestCRCRandomCombine(c *C) {
 			crc = CRC64Combine(crc, calc.Sum64(), (uint64)(part.Size))
 		}
 
-		testLogger.Println("TestCRCRandomCombine:", crc, i, fileParts)
+		//testLogger.Println("TestCRCRandomCombine:", crc, i, fileParts)
 		c.Assert(crc == 0x2B612D24FFF64222, Equals, true)
 	}
 }

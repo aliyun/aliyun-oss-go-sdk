@@ -197,6 +197,7 @@ func (s *OssSelectCsvSuite) TestSelectObjectIntoFile(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(string(str1), Equals, string(str2))
 
+	fd1.Close()
 	err = os.Remove(outfile)
 	c.Assert(err, IsNil)
 	err = s.bucket.DeleteObject(key)
