@@ -230,7 +230,7 @@ func (s *OssClientSuite) SetUpSuite(c *C) {
 	for _, bucket := range lbr.Buckets {
 		ForceDeleteBucket(client, bucket.Name, c)
 	}
-
+	time.Sleep(timeoutInOperation)
 	testLogger.Println("test client started")
 }
 
@@ -245,7 +245,7 @@ func (s *OssClientSuite) TearDownSuite(c *C) {
 	for _, bucket := range lbr.Buckets {
 		s.deleteBucket(client, bucket.Name, c)
 	}
-
+	time.Sleep(timeoutInOperation)
 	testLogger.Println("test client completed")
 }
 
@@ -640,6 +640,7 @@ func (s *OssClientSuite) TestSetBucketAcl(c *C) {
 	err = client.SetBucketACL(bucketNameTest, ACLPrivate)
 	c.Assert(err, IsNil)
 	time.Sleep(timeoutInOperation)
+	time.Sleep(timeoutInOperation)
 
 	res, err = client.GetBucketACL(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -887,6 +888,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	rules = []LifecycleRule{rule1}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	res, err := client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -902,6 +904,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	rules = []LifecycleRule{rule1, rule2}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -922,6 +925,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	rules = []LifecycleRule{rule2, rule3}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -947,6 +951,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	rules = []LifecycleRule{rule1, rule3}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -970,6 +975,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleNew(c *C) {
 	rules = []LifecycleRule{rule1, rule2, rule3}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	res, err = client.GetBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -1080,7 +1086,7 @@ func (s *OssClientSuite) TestSetBucketLifecycleOverLap(c *C) {
 	//enable overlap,error
 	options := []Option{AllowSameActionOverLap(true)}
 	err = client.SetBucketLifecycle(bucketNameTest, rules, options...)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 	err = client.DeleteBucket(bucketNameTest)
 
 }
@@ -2052,6 +2058,7 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	// Set
 	err = client.SetBucketCORS(bucketNameTest, []CORSRule{rule1})
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	gbcr, err := client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -2065,6 +2072,7 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	// Double set
 	err = client.SetBucketCORS(bucketNameTest, []CORSRule{rule1})
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 
 	gbcr, err = client.GetBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -3325,7 +3333,7 @@ func (s *OssClientSuite) TestBucketQos(c *C) {
 	c.Assert(len(requestId) > 0, Equals, true)
 
 	// wait a moment for configuration effect
-	time.Sleep(time.Second)
+	time.Sleep(timeoutInOperation)
 
 	retQos, err := client.GetBucketQosInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3348,7 +3356,7 @@ func (s *OssClientSuite) TestBucketQos(c *C) {
 	c.Assert(err, IsNil)
 
 	// wait a moment for configuration effect
-	time.Sleep(time.Second)
+	time.Sleep(timeoutInOperation)
 
 	retQos, err = client.GetBucketQosInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -3364,7 +3372,7 @@ func (s *OssClientSuite) TestBucketQos(c *C) {
 	c.Assert(err, IsNil)
 
 	// wait a moment for configuration effect
-	time.Sleep(time.Second)
+	time.Sleep(timeoutInOperation)
 
 	_, err = client.GetBucketQosInfo(bucketName)
 	c.Assert(err, NotNil)
@@ -5038,6 +5046,7 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
 
 	res, err := client.GetBucketInfo(bucketNameTest)
 	c.Assert(err, IsNil)
@@ -5049,6 +5058,7 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	}
 	err = client.PutBucketAccessMonitor(bucketNameTest, access)
 	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
 
 	// Put Bucket Access Monitor twice
 	access = PutBucketAccessMonitor{
@@ -5056,6 +5066,7 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	}
 	err = client.PutBucketAccessMonitor(bucketNameTest, access)
 	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
 
 	// get bucket info
 	res, err = client.GetBucketInfo(bucketNameTest)
@@ -5137,6 +5148,7 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	var rules = []LifecycleRule{rule1, rule2, rule3, rule4, rule5}
 	err = client.SetBucketLifecycle(bucketNameTest, rules)
 	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
 
 	// Get bucket's cycle
 	lc, err := client.GetBucketLifecycle(bucketNameTest)
@@ -5176,6 +5188,7 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	}
 	err = client.PutBucketAccessMonitor(bucketNameTest, access)
 	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
 
 	// get bucket info
 	res, err = client.GetBucketInfo(bucketNameTest)

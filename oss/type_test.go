@@ -2,9 +2,10 @@ package oss
 
 import (
 	"encoding/xml"
-	. "gopkg.in/check.v1"
 	"net/url"
 	"sort"
+
+	. "gopkg.in/check.v1"
 )
 
 type OssTypeSuite struct{}
@@ -954,7 +955,7 @@ func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
       <Days>100</Days>
     </Expiration>
     <Transition>
-      <Days>Days</Days>
+      <Days>30</Days>
       <StorageClass>Archive</StorageClass>
     </Transition>
   </Rule>
@@ -1003,14 +1004,15 @@ func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
   </Rule>
 </LifecycleConfiguration>
 `)
-	err = xml.Unmarshal(xmlData, &res)
+	var res1 GetBucketLifecycleResult
+	err = xml.Unmarshal(xmlData, &res1)
 	c.Assert(err, IsNil)
-	c.Assert(res.Rules[0].ID, Equals, "test2")
-	c.Assert(res.Rules[0].Filter.Not[0].Prefix, Equals, "logs-demo")
-	c.Assert(res.Rules[0].Filter.Not[1].Prefix, Equals, "abc/not1/")
-	c.Assert(res.Rules[0].Filter.Not[1].Tag.Key, Equals, "notkey1")
-	c.Assert(res.Rules[0].Filter.Not[1].Tag.Value, Equals, "notvalue1")
-	c.Assert(res.Rules[0].Filter.Not[2].Prefix, Equals, "abc/not2/")
-	c.Assert(res.Rules[0].Filter.Not[2].Tag.Key, Equals, "notkey2")
-	c.Assert(res.Rules[0].Filter.Not[2].Tag.Value, Equals, "notvalue2")
+	c.Assert(res1.Rules[0].ID, Equals, "test2")
+	c.Assert(res1.Rules[0].Filter.Not[0].Prefix, Equals, "logs-demo")
+	c.Assert(res1.Rules[0].Filter.Not[1].Prefix, Equals, "abc/not1/")
+	c.Assert(res1.Rules[0].Filter.Not[1].Tag.Key, Equals, "notkey1")
+	c.Assert(res1.Rules[0].Filter.Not[1].Tag.Value, Equals, "notvalue1")
+	c.Assert(res1.Rules[0].Filter.Not[2].Prefix, Equals, "abc/not2/")
+	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Key, Equals, "notkey2")
+	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Value, Equals, "notvalue2")
 }

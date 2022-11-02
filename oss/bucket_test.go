@@ -39,6 +39,7 @@ var (
 
 // SetUpSuite runs once when the suite starts running.
 func (s *OssBucketSuite) SetUpSuite(c *C) {
+	time.Sleep(timeoutInOperation)
 	if cloudboxControlEndpoint == "" {
 		client, err := New(endpoint, accessID, accessKey)
 		c.Assert(err, IsNil)
@@ -81,10 +82,12 @@ func (s *OssBucketSuite) SetUpSuite(c *C) {
 
 		testLogger.Println("test bucket started")
 	}
+	time.Sleep(timeoutInOperation)
 }
 
 // TearDownSuite runs before each test or benchmark starts running.
 func (s *OssBucketSuite) TearDownSuite(c *C) {
+	time.Sleep(timeoutInOperation)
 	for _, bucket := range []*Bucket{s.bucket, s.archiveBucket} {
 		// Delete multipart
 		keyMarker := KeyMarker("")
@@ -128,7 +131,7 @@ func (s *OssBucketSuite) TearDownSuite(c *C) {
 			c.Assert(err, IsNil)
 		}
 	}
-
+	time.Sleep(timeoutInOperation)
 	testLogger.Println("test bucket completed")
 }
 
@@ -3809,6 +3812,7 @@ func (s *OssBucketSuite) TestVersioningDeleteOldVersionObject(c *C) {
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
 	time.Sleep(timeoutInOperation)
+	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
 	c.Assert(err, IsNil)
@@ -4081,6 +4085,7 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	versioningConfig.Status = string(VersionEnabled)
 	err = client.SetBucketVersioning(bucketName, versioningConfig)
 	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
 	time.Sleep(timeoutInOperation)
 
 	bucketResult, err := client.GetBucketInfo(bucketName)
