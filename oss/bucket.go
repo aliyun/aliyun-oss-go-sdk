@@ -518,7 +518,7 @@ func (bucket Bucket) DeleteMultipleObjectsXml(xmlData string, options ...Option)
 	params := map[string]interface{}{}
 	params["delete"] = nil
 	params["encoding-type"] = "url"
-	resp, err := bucket.doEx("POST", "", params, options, buffer, nil)
+	resp, err := bucket.doInner("POST", "", params, options, buffer, nil)
 	if err != nil {
 		return "", err
 	}
@@ -580,7 +580,7 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 		return out, err
 	}
 
-	resp, err := bucket.doEx("GET", "", params, options, nil, nil)
+	resp, err := bucket.doInner("GET", "", params, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -608,7 +608,7 @@ func (bucket Bucket) ListObjectsV2(options ...Option) (ListObjectsResultV2, erro
 		return out, err
 	}
 
-	resp, err := bucket.doEx("GET", "", params, options, nil, nil)
+	resp, err := bucket.doInner("GET", "", params, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -634,7 +634,7 @@ func (bucket Bucket) ListObjectVersions(options ...Option) (ListObjectVersionsRe
 	}
 	params["versions"] = nil
 
-	resp, err := bucket.doEx("GET", "", params, options, nil, nil)
+	resp, err := bucket.doInner("GET", "", params, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -1196,7 +1196,7 @@ func (bucket Bucket) DeleteObjectTagging(objectKey string, options ...Option) er
 
 func (bucket Bucket) OptionsMethod(objectKey string, options ...Option) (http.Header, error) {
 	var out http.Header
-	resp, err := bucket.do("OPTIONS", objectKey, nil, options, nil, nil)
+	resp, err := bucket.doInner("OPTIONS", objectKey, nil, options, nil, nil)
 	if err != nil {
 		return out, err
 	}
@@ -1208,11 +1208,11 @@ func (bucket Bucket) OptionsMethod(objectKey string, options ...Option) (http.He
 // public
 func (bucket Bucket) Do(method, objectName string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
-	return bucket.doEx(method, objectName, params, options, data, listener)
+	return bucket.doInner(method, objectName, params, options, data, listener)
 }
 
 // Private
-func (bucket Bucket) doEx(method, objectName string, params map[string]interface{}, options []Option,
+func (bucket Bucket) doInner(method, objectName string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
 	headers := make(map[string]string)
 	err := handleOptions(headers, options)
@@ -1246,7 +1246,7 @@ func (bucket Bucket) do(method, objectName string, params map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	resp, err := bucket.doEx(method, objectName, params, options, data, listener)
+	resp, err := bucket.doInner(method, objectName, params, options, data, listener)
 	return resp, err
 }
 
