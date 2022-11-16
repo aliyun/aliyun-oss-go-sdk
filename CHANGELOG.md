@@ -1,4 +1,13 @@
 # ChangeLog - Aliyun OSS SDK for Go
+## 版本号：v2.2.6 日期：2022-11-16
+### 变更内容
+- 增加：the object name cannot be empty in object's apis.
+- 增加：support access monitor api.
+- 修复：fix GetBucketStat bug.
+- 增加：lifecycle rule supports filter configuration.
+- 增加：support deleting the specified bucket tags.
+- 修复：can't delete objects where the keys contain special characters.
+
 ## 版本号：v2.2.5 日期：2022-08-19
 ### 变更内容
 - 增加：add meta data indexing api
