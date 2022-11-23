@@ -417,6 +417,91 @@ func (s *OssUploadSuite) TestUploadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestUploadRoutineWithEmptyCheckPoint is multi-routine upload with empty check point
+func (s *OssUploadSuite) TestUploadRoutineWithEmptyFilePathCheckPoint(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	newFile := "upload-new-file-2.jpg"
+
+	// Use default routines and default CP file path
+	// First upload for 4 parts
+	uploadPartHooker = ErrorHooker
+	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	uploadPartHooker = defaultUploadPart
+	// Check CP
+	ucp := uploadCheckpoint{}
+	cpConf := cpConfig{IsEnable: true, FilePath: ""}
+	cpFilePath := getUploadCpFilePath(&cpConf, fileName, s.bucket.BucketName, objectName)
+	err = ucp.load(cpFilePath)
+	c.Assert(err, IsNil)
+	c.Assert(ucp.Magic, Equals, uploadCpMagic)
+	c.Assert(len(ucp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
+	c.Assert(ucp.FilePath, Equals, fileName)
+	c.Assert(ucp.FileStat.Size, Equals, int64(482048))
+	c.Assert(len(ucp.FileStat.LastModified.String()) > 0, Equals, true)
+	c.Assert(ucp.FileStat.MD5, Equals, "")
+	c.Assert(ucp.ObjectKey, Equals, objectName)
+	c.Assert(len(ucp.UploadID), Equals, len("3F79722737D1469980DACEDCA325BB52"))
+	c.Assert(len(ucp.Parts), Equals, 5)
+	c.Assert(len(ucp.todoParts()), Equals, 1)
+	c.Assert(len(ucp.allParts()), Equals, 5)
+
+	// Second upload, finish the remaining part
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, Checkpoint(true, ""))
+	c.Assert(err, IsNil)
+
+	os.Remove(newFile)
+	os.Remove(cpFilePath)
+	err = s.bucket.GetObjectToFile(objectName, newFile)
+	c.Assert(err, IsNil)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	uploadPartHooker = ErrorHooker
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, CheckpointDir(true, "./"))
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	uploadPartHooker = defaultUploadPart
+	// Check CP
+	cpConf = cpConfig{IsEnable: true, DirPath: "./"}
+	cpFilePath = getUploadCpFilePath(&cpConf, fileName, s.bucket.BucketName, objectName)
+	fmt.Printf("cpFilePath is:%#v\n", cpFilePath)
+	err = ucp.load(cpFilePath)
+	c.Assert(err, IsNil)
+	c.Assert(ucp.Magic, Equals, uploadCpMagic)
+	c.Assert(len(ucp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
+	c.Assert(ucp.FilePath, Equals, fileName)
+	c.Assert(ucp.FileStat.Size, Equals, int64(482048))
+	c.Assert(len(ucp.FileStat.LastModified.String()) > 0, Equals, true)
+	c.Assert(ucp.FileStat.MD5, Equals, "")
+	c.Assert(ucp.ObjectKey, Equals, objectName)
+	c.Assert(len(ucp.UploadID), Equals, len("3F79722737D1469980DACEDCA325BB52"))
+	c.Assert(len(ucp.Parts), Equals, 5)
+	c.Assert(len(ucp.todoParts()), Equals, 1)
+	c.Assert(len(ucp.allParts()), Equals, 5)
+
+	err = s.bucket.UploadFile(objectName, fileName, 100*1024, CheckpointDir(true, "./"))
+	c.Assert(err, IsNil)
+
+	os.Remove(newFile)
+	os.Remove(cpFilePath)
+
+	err = s.bucket.GetObjectToFile(objectName, newFile)
+	c.Assert(err, IsNil)
+	eq, err = compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+}
+
 // TestUploadRoutineWithRecoveryNegative is multiroutineed upload without checkpoint
 func (s *OssUploadSuite) TestUploadRoutineWithRecoveryNegative(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
