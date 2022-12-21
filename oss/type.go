@@ -1470,3 +1470,15 @@ type BucketAccessMonitorXml struct {
 	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
 	Status  string   `xml:"Status"` // access monitor status
 }
+
+//GetBucketResourceGroupResult define resource group for the bucket
+type GetBucketResourceGroupResult BucketResourceGroupXml
+
+//PutBucketResourceGroup define the xml of bucket's resource group config
+type PutBucketResourceGroup BucketResourceGroupXml
+
+// BucketResourceGroupXml define the information of the bucket's resource group
+type BucketResourceGroupXml struct {
+	XMLName         xml.Name `xml:"BucketResourceGroupConfiguration"`
+	ResourceGroupId string   `xml:"ResourceGroupId"` // resource groupId
+}

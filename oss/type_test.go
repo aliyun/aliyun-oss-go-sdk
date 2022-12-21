@@ -1016,3 +1016,42 @@ func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Key, Equals, "notkey2")
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Value, Equals, "notvalue2")
 }
+
+// Test Bucket Resource Group
+func (s *OssTypeSuite) TestBucketResourceGroup(c *C) {
+	var res GetBucketResourceGroupResult
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<BucketResourceGroupConfiguration>
+  <ResourceGroupId>rg-xxxxxx</ResourceGroupId>
+</BucketResourceGroupConfiguration>`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "rg-xxxxxx")
+
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<BucketResourceGroupConfiguration>
+  <ResourceGroupId></ResourceGroupId>
+</BucketResourceGroupConfiguration>`)
+	err = xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "")
+
+	resource := PutBucketResourceGroup{
+		ResourceGroupId: "rg-xxxxxx",
+	}
+
+	bs, err := xml.Marshal(resource)
+	c.Assert(err, IsNil)
+
+	c.Assert(string(bs), Equals, "<BucketResourceGroupConfiguration><ResourceGroupId>rg-xxxxxx</ResourceGroupId></BucketResourceGroupConfiguration>")
+
+	resource = PutBucketResourceGroup{
+		ResourceGroupId: "",
+	}
+
+	bs, err = xml.Marshal(resource)
+	c.Assert(err, IsNil)
+
+	c.Assert(string(bs), Equals, "<BucketResourceGroupConfiguration><ResourceGroupId></ResourceGroupId></BucketResourceGroupConfiguration>")
+
+}

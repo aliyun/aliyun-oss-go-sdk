@@ -2263,6 +2263,67 @@ func (client Client) DeleteBucketCname(bucketName string, cname string, options 
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// PutBucketResourceGroup set bucket's resource group
+// bucketName    the bucket name.
+// resourceGroup the resource group configuration of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketResourceGroup(bucketName string, resourceGroup PutBucketResourceGroup, options ...Option) error {
+	bs, err := xml.Marshal(resourceGroup)
+	if err != nil {
+		return err
+	}
+	err = client.PutBucketResourceGroupXml(bucketName, string(bs), options...)
+	return err
+}
+
+// PutBucketResourceGroupXml set bucket's resource group
+// bucketName    the bucket name.
+// xmlData		 the resource group in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketResourceGroupXml(bucketName string, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["resourceGroup"] = nil
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketResourceGroup get bucket's resource group
+// bucketName    the bucket name.
+// GetBucketResourceGroupResult  the resource group configuration result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketResourceGroup(bucketName string, options ...Option) (GetBucketResourceGroupResult, error) {
+	var out GetBucketResourceGroupResult
+	body, err := client.GetBucketResourceGroupXml(bucketName, options...)
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketResourceGroupXml get bucket's resource group
+// bucketName    the bucket name.
+// string  the resource group result of bucket xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketResourceGroupXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["resourceGroup"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
