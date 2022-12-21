@@ -5200,3 +5200,44 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(result.Status, Equals, "Disabled")
 }
+
+// TestBucketResourceGroup
+func (s *OssClientSuite) TestBucketResourceGroup(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	res, err := client.GetBucketResourceGroup(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "rg-acfmy7mo47b3adq")
+
+	// Put Bucket Resource Group
+	resource := PutBucketResourceGroup{
+		ResourceGroupId: "rg-aekztgrh2colcoa",
+	}
+	err = client.PutBucketResourceGroup(bucketNameTest, resource)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Get Bucket Resource Group
+	res, err = client.GetBucketResourceGroup(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "rg-aekztgrh2colcoa")
+
+	// Put Bucket Resource Group With Empty Resource GroupId
+	resource = PutBucketResourceGroup{
+		ResourceGroupId: "",
+	}
+	err = client.PutBucketResourceGroup(bucketNameTest, resource)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Get Bucket Resource Group
+	res, err = client.GetBucketResourceGroup(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "rg-acfmy7mo47b3adq")
+}
