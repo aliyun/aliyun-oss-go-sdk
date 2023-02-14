@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -37,16 +36,6 @@ func init() {
 	sys_name = runtime.GOOS
 	sys_release = "-"
 	sys_machine = runtime.GOARCH
-
-	if out, err := exec.Command("uname", "-s").CombinedOutput(); err == nil {
-		sys_name = string(bytes.TrimSpace(out))
-	}
-	if out, err := exec.Command("uname", "-r").CombinedOutput(); err == nil {
-		sys_release = string(bytes.TrimSpace(out))
-	}
-	if out, err := exec.Command("uname", "-m").CombinedOutput(); err == nil {
-		sys_machine = string(bytes.TrimSpace(out))
-	}
 }
 
 // userAgent gets user agent
