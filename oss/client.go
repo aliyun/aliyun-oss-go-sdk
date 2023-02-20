@@ -284,7 +284,7 @@ func (client Client) DeleteBucket(bucketName string, options ...Option) error {
 // GetBucketLocation gets the bucket location.
 //
 // Checks out the following link for more information :
-// https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/endpoint.html
+// https://www.alibabacloud.com/help/en/object-storage-service/latest/getbucketlocation
 //
 // bucketName    the bucket name
 //
@@ -348,7 +348,7 @@ func (client Client) GetBucketACL(bucketName string, options ...Option) (GetBuck
 // SetBucketLifecycle sets the bucket's lifecycle.
 //
 // For more information, checks out following link:
-// https://help.aliyun.com/document_detail/oss/user_guide/manage_object/object_lifecycle.html
+// https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketlifecycle
 //
 // bucketName    the bucket name.
 // rules    the lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in days and day/month/year respectively.
@@ -466,26 +466,26 @@ func (client Client) GetBucketLifecycleXml(bucketName string, options ...Option)
 // SetBucketReferer sets the bucket's referer whitelist and the flag if allowing empty referrer.
 //
 // To avoid stealing link on OSS data, OSS supports the HTTP referrer header. A whitelist referrer could be set either by API or web console, as well as
-// the allowing empty referrer flag. Note that this applies to requests from webbrowser only.
+// the allowing empty referrer flag. Note that this applies to requests from web browser only.
 // For example, for a bucket os-example and its referrer http://www.aliyun.com, all requests from this URL could access the bucket.
 // For more information, please check out this link :
-// https://help.aliyun.com/document_detail/oss/user_guide/security_management/referer.html
+// https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketreferer
 //
 // bucketName    the bucket name.
-// referers    the referrer white list. A bucket could have a referrer list and each referrer supports one '*' and multiple '?' as wildcards.
+// referrers    the referrer white list. A bucket could have a referrer list and each referrer supports one '*' and multiple '?' as wildcards.
 //             The sample could be found in sample/bucket_referer.go
 // allowEmptyReferer    the flag of allowing empty referrer. By default it's true.
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (client Client) SetBucketReferer(bucketName string, referers []string, allowEmptyReferer bool, options ...Option) error {
+func (client Client) SetBucketReferer(bucketName string, referrers []string, allowEmptyReferer bool, options ...Option) error {
 	rxml := RefererXML{}
 	rxml.AllowEmptyReferer = allowEmptyReferer
-	if referers == nil {
+	if referrers == nil {
 		rxml.RefererList = append(rxml.RefererList, "")
 	} else {
-		for _, referer := range referers {
-			rxml.RefererList = append(rxml.RefererList, referer)
+		for _, referrer := range referrers {
+			rxml.RefererList = append(rxml.RefererList, referrer)
 		}
 	}
 
@@ -535,7 +535,7 @@ func (client Client) GetBucketReferer(bucketName string, options ...Option) (Get
 //
 // OSS could automatically store the access log. Only the bucket owner could enable the logging.
 // Once enabled, OSS would save all the access log into hourly log files in a specified bucket.
-// For more information, please check out https://help.aliyun.com/document_detail/oss/user_guide/security_management/logging.html
+// For more information, please check out https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketlogging
 //
 // bucketName    bucket name to enable the log.
 // targetBucket    the target bucket name to store the log files.
@@ -619,7 +619,7 @@ func (client Client) GetBucketLogging(bucketName string, options ...Option) (Get
 // SetBucketWebsite sets the bucket's static website's index and error page.
 //
 // OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
-// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+// For more information, please check out: https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketwebsite
 //
 // bucketName    the bucket name to enable static web site.
 // indexDocument    index page.
@@ -656,7 +656,7 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 // SetBucketWebsiteDetail sets the bucket's static website's detail
 //
 // OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
-// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+// For more information, please check out: https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketwebsite
 //
 // bucketName the bucket name to enable static web site.
 //
@@ -689,7 +689,7 @@ func (client Client) SetBucketWebsiteDetail(bucketName string, wxml WebsiteXML, 
 // SetBucketWebsiteXml sets the bucket's static website's rule
 //
 // OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
-// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+// For more information, please check out: https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketwebsite
 //
 // bucketName the bucket name to enable static web site.
 //
@@ -777,8 +777,7 @@ func (client Client) GetMetaQueryStatus(bucketName string, options ...Option) (G
 // metaQuery    the option of query
 //
 // DoMetaQueryResult   the result object upon successful request. It's only valid when error is nil.
-
-// error    it's nil if no error, otherwise it's an error object.
+// error it's nil if no error, otherwise it's an error object.
 //
 func (client Client) DoMetaQuery(bucketName string, metaQuery MetaQuery, options ...Option) (DoMetaQueryResult, error) {
 	var out DoMetaQueryResult
@@ -790,14 +789,13 @@ func (client Client) DoMetaQuery(bucketName string, metaQuery MetaQuery, options
 	return out, err
 }
 
-// DoMetaQuery Queries the objects that meet specified conditions and lists the information about objects based on specified fields and sorting methods.
+// DoMetaQueryXml Queries the objects that meet specified conditions and lists the information about objects based on specified fields and sorting methods.
 //
 // bucketName   the bucket name
 //
 // metaQuery    the option of query
 //
 // DoMetaQueryResult   the result object upon successful request. It's only valid when error is nil.
-
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) DoMetaQueryXml(bucketName string, metaQueryXml string, options ...Option) (DoMetaQueryResult, error) {
@@ -2069,7 +2067,7 @@ func (client Client) GetBucketAccessMonitor(bucketName string, options ...Option
 	return out, err
 }
 
-// GetBucketAccessMonitor get bucket's access monitor config
+// GetBucketAccessMonitorXml get bucket's access monitor config
 // bucketName    the bucket name.
 // string  the access monitor configuration result of bucket xml foramt.
 // error    it's nil if no error, otherwise it's an error object.
@@ -2099,7 +2097,7 @@ func (client Client) PutBucketAccessMonitor(bucketName string, accessMonitor Put
 	return err
 }
 
-// PutBucketAccessMonitor get bucket's access monitor config
+// PutBucketAccessMonitorXml get bucket's access monitor config
 // bucketName    the bucket name.
 // xmlData		 the access monitor configuration in xml foramt
 // error    it's nil if no error, otherwise it's an error object.
@@ -2194,7 +2192,7 @@ func (client Client) GetBucketCnameToken(bucketName string, cname string, option
 	return out, err
 }
 
-// PutBucketCname map a custom domain name to a bucket
+// PutBucketCnameXml map a custom domain name to a bucket
 // bucketName    the bucket name.
 // xmlBody the cname configuration in xml foramt
 // error    it's nil if no error, otherwise it's an error object.
@@ -2435,14 +2433,14 @@ func SetLogger(Logger *log.Logger) ClientOption {
 	}
 }
 
-// SetCredentialsProvider sets funciton for get the user's ak
+// SetCredentialsProvider sets function for get the user's ak
 func SetCredentialsProvider(provider CredentialsProvider) ClientOption {
 	return func(client *Client) {
 		client.Config.CredentialsProvider = provider
 	}
 }
 
-// SetLocalAddr sets funciton for local addr
+// SetLocalAddr sets function for local addr
 func SetLocalAddr(localAddr net.Addr) ClientOption {
 	return func(client *Client) {
 		client.Config.LocalAddr = localAddr
@@ -2463,14 +2461,14 @@ func AdditionalHeaders(headers []string) ClientOption {
 	}
 }
 
-// only effective from go1.7 onward,RedirectEnabled set http redirect enabled or not
+// RedirectEnabled only effective from go1.7 onward,RedirectEnabled set http redirect enabled or not
 func RedirectEnabled(enabled bool) ClientOption {
 	return func(client *Client) {
 		client.Config.RedirectEnabled = enabled
 	}
 }
 
-// skip verifying tls certificate file
+// InsecureSkipVerify skip verifying tls certificate file
 func InsecureSkipVerify(enabled bool) ClientOption {
 	return func(client *Client) {
 		client.Config.InsecureSkipVerify = enabled
