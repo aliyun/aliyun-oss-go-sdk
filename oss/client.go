@@ -2263,6 +2263,114 @@ func (client Client) DeleteBucketCname(bucketName string, cname string, options 
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// PutBucketStyle set bucket's style
+// bucketName    the bucket name.
+// styleContent the style content.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketStyle(bucketName, styleName string, styleContent string, options ...Option) error {
+	bs := fmt.Sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Style><Content>%s</Content></Style>", styleContent)
+	err := client.PutBucketStyleXml(bucketName, styleName, bs, options...)
+	return err
+}
+
+// PutBucketStyleXml set bucket's style
+// bucketName    the bucket name.
+// styleName the style name.
+// xmlData		 the style in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketStyleXml(bucketName, styleName, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["style"] = nil
+	params["styleName"] = styleName
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketStyle get bucket's style
+// bucketName    the bucket name.
+// styleName the bucket style name.
+// GetBucketStyleResult  the style result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketStyle(bucketName, styleName string, options ...Option) (GetBucketStyleResult, error) {
+	var out GetBucketStyleResult
+	body, err := client.GetBucketStyleXml(bucketName, styleName, options...)
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketStyleXml get bucket's style
+// bucketName    the bucket name.
+// styleName the bucket style name.
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketStyleXml(bucketName, styleName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["style"] = nil
+	params["styleName"] = styleName
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// ListBucketStyle get bucket's styles
+// bucketName    the bucket name.
+// GetBucketListStyleResult  the list style result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketStyle(bucketName string, options ...Option) (GetBucketListStyleResult, error) {
+	var out GetBucketListStyleResult
+	body, err := client.ListBucketStyleXml(bucketName, options...)
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// ListBucketStyleXml get bucket's list style
+// bucketName    the bucket name.
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketStyleXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["style"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// DeleteBucketStyle delete bucket's style
+// bucketName    the bucket name.
+// styleName the bucket style name.
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DeleteBucketStyle(bucketName, styleName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["style"] = bucketName
+	params["styleName"] = styleName
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
