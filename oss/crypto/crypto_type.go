@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	math_rand "math/rand"
-	"time"
 )
 
 // MasterCipher encrypt or decrpt CipherData
@@ -69,8 +68,6 @@ type CipherData struct {
 }
 
 func (cd *CipherData) RandomKeyIv(keyLen int, ivLen int) error {
-	math_rand.Seed(time.Now().UnixNano())
-
 	// Key
 	cd.Key = make([]byte, keyLen)
 	if _, err := io.ReadFull(rand.Reader, cd.Key); err != nil {
