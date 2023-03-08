@@ -31,7 +31,7 @@ type BucketProperties struct {
 	StorageClass string    `xml:"StorageClass"` // Bucket storage class
 }
 
-// ListCloudBoxesResult defines the result object from ListBuckets request
+// ListCloudBoxResult defines the result object from ListBuckets request
 type ListCloudBoxResult struct {
 	XMLName     xml.Name             `xml:"ListCloudBoxResult"`
 	Prefix      string               `xml:"Prefix"`              // The prefix in this query
@@ -482,13 +482,13 @@ type DeleteObjectsResult struct {
 	DeletedObjects []string // Deleted object key list
 }
 
-// DeleteObjectsResult_inner defines result of DeleteObjects request
+// DeleteObjectVersionsResult defines result of DeleteObjects request
 type DeleteObjectVersionsResult struct {
 	XMLName              xml.Name         `xml:"DeleteResult"`
 	DeletedObjectsDetail []DeletedKeyInfo `xml:"Deleted"` // Deleted object detail info
 }
 
-// DeleteKeyInfo defines object delete info
+// DeletedKeyInfo defines object delete info
 type DeletedKeyInfo struct {
 	XMLName               xml.Name `xml:"Deleted"`
 	Key                   string   `xml:"Key"`                   // Object key
@@ -931,13 +931,13 @@ type Tag struct {
 	Value   string   `xml:"Value"`
 }
 
-// Tagging tagset for the object
+// Tagging tag set for the object
 type Tagging struct {
 	XMLName xml.Name `xml:"Tagging"`
 	Tags    []Tag    `xml:"TagSet>Tag,omitempty"`
 }
 
-// for GetObjectTagging return value
+// GetObjectTaggingResult for GetObjectTagging return value
 type GetObjectTaggingResult Tagging
 
 // VersioningConfig for the bucket
@@ -948,13 +948,13 @@ type VersioningConfig struct {
 
 type GetBucketVersioningResult VersioningConfig
 
-// Server Encryption rule for the bucket
+// ServerEncryptionRule Server Encryption rule for the bucket
 type ServerEncryptionRule struct {
 	XMLName    xml.Name       `xml:"ServerSideEncryptionRule"`
 	SSEDefault SSEDefaultRule `xml:"ApplyServerSideEncryptionByDefault"`
 }
 
-// Server Encryption deafult rule for the bucket
+// SSEDefaultRule Server Encryption deafult rule for the bucket
 type SSEDefaultRule struct {
 	XMLName           xml.Name `xml:"ApplyServerSideEncryptionByDefault"`
 	SSEAlgorithm      string   `xml:"SSEAlgorithm,omitempty"`
@@ -1165,7 +1165,7 @@ func (selectReq *SelectRequest) jsonEncodeBase64() {
 	}
 }
 
-// CsvOptions is a element in the SelectObject api request's params
+// SelectOptions is a element in the SelectObject api request's params
 type SelectOptions struct {
 	XMLName                  xml.Name `xml:"Options"`
 	SkipPartialDataRecord    *bool    `xml:"SkipPartialDataRecord,omitempty"`
@@ -1400,7 +1400,7 @@ type GetMetaQueryStatusResultXml struct {
 	UpdateTime string   `xml:"UpdateTime"`
 }
 
-// DoMetaQuery defines meta query struct
+// MetaQuery defines meta query struct
 type MetaQuery struct {
 	XMLName      xml.Name                      `xml:"MetaQuery"`
 	NextToken    string                        `xml:"NextToken,omitempty"`
@@ -1477,13 +1477,13 @@ type MetaQueryGroup struct {
 	Count   int64    `xml:"Count"`
 }
 
-//GetBucketAccessMonitorResult define config for get bucket access monitor
+// GetBucketAccessMonitorResult define config for get bucket access monitor
 type GetBucketAccessMonitorResult BucketAccessMonitorXml
 
-//BucketAccessMonitor define the xml of bucket access monitor config
+// PutBucketAccessMonitor define the xml of bucket access monitor config
 type PutBucketAccessMonitor BucketAccessMonitorXml
 
-// GetBucketAccessMonitorXml define get bucket access monitor information
+// BucketAccessMonitorXml define get bucket access monitor information
 type BucketAccessMonitorXml struct {
 	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
 	Status  string   `xml:"Status"` // access monitor status
