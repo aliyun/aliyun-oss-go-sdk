@@ -1355,6 +1355,24 @@ type CnameConfigurationXML struct {
 	Domain  string   `xml:"Cname>Domain"`
 }
 
+type PutBucketCname PutBucketCnameXml
+
+// PutBucketCnameXml define cname configuration
+type PutBucketCnameXml struct {
+	XMLName                  xml.Name                  `xml:"BucketCnameConfiguration"`
+	Cname                    string                    `xml:"Cname>Domain"`
+	CertificateConfiguration *CertificateConfiguration `xml:"Cname>CertificateConfiguration"`
+}
+
+type CertificateConfiguration struct {
+	CertId            string `xml:"CertId,omitempty"`
+	Certificate       string `xml:"Certificate,omitempty"`
+	PrivateKey        string `xml:"PrivateKey,omitempty"`
+	PreviousCertId    string `xml:"PreviousCertId,omitempty"`
+	Force             bool   `xml:"Force,omitempty"`
+	DeleteCertificate bool   `xml:"DeleteCertificate,omitempty"`
+}
+
 // CnameTokenXML define cname token information
 type CnameTokenXML struct {
 	XMLName    xml.Name `xml:"CnameToken"`
@@ -1469,6 +1487,37 @@ type PutBucketAccessMonitor BucketAccessMonitorXml
 type BucketAccessMonitorXml struct {
 	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
 	Status  string   `xml:"Status"` // access monitor status
+}
+
+
+// ListBucketCnameResult define the cname list of the bucket
+type ListBucketCnameResult BucketCnameXml
+
+// BucketCnameXml define get the bucket cname information
+type BucketCnameXml struct {
+	XMLName xml.Name `xml:"ListCnameResult"`
+	Bucket  string   `xml:"Bucket"`
+	Owner   string   `xml:"Owner"`
+	Cname   []Cname  `xml:"Cname"`
+}
+
+// Cname define the cname information
+type Cname struct {
+	Domain       string      `xml:"Domain"`
+	LastModified string      `xml:"LastModified"`
+	Status       string      `xml:"Status"`
+	Certificate  Certificate `xml:"Certificate"`
+}
+
+// Certificate define Details of domain name certificate
+type Certificate struct {
+	Type           string `xml:"Type"`
+	CertId         string `xml:"CertId"`
+	Status         string `xml:"Status"`
+	CreationDate   string `xml:"CreationDate"`
+	Fingerprint    string `xml:"Fingerprint"`
+	ValidStartDate string `xml:"ValidStartDate"`
+	ValidEndDate   string `xml:"ValidEndDate"`
 }
 
 //GetBucketResourceGroupResult define resource group for the bucket

@@ -1053,5 +1053,87 @@ func (s *OssTypeSuite) TestBucketResourceGroup(c *C) {
 	c.Assert(err, IsNil)
 
 	c.Assert(string(bs), Equals, "<BucketResourceGroupConfiguration><ResourceGroupId></ResourceGroupId></BucketResourceGroupConfiguration>")
+}
 
+func (s *OssTypeSuite) TestListBucketCnameResult(c *C) {
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<ListCnameResult>
+  <Bucket>targetbucket</Bucket>
+  <Owner>testowner</Owner>
+  <Cname>
+    <Domain>example.com</Domain>
+    <LastModified>2021-09-15T02:35:07.000Z</LastModified>
+    <Status>Enabled</Status>
+    <Certificate>
+      <Type>CAS</Type>
+      <CertId>493****-cn-hangzhou</CertId>
+      <Status>Enabled</Status>
+      <CreationDate>Wed, 15 Sep 2021 02:35:06 GMT</CreationDate>
+      <Fingerprint>DE:01:CF:EC:7C:A7:98:CB:D8:6E:FB:1D:97:EB:A9:64:1D:4E:**:**</Fingerprint>
+      <ValidStartDate>Tue, 12 Apr 2021 10:14:51 GMT</ValidStartDate>
+      <ValidEndDate>Mon, 4 May 2048 10:14:51 GMT</ValidEndDate>
+    </Certificate>
+  </Cname>
+  <Cname>
+    <Domain>example.org</Domain>
+    <LastModified>2021-09-15T02:34:58.000Z</LastModified>
+    <Status>Enabled</Status>
+  </Cname>
+  <Cname>
+    <Domain>example.edu</Domain>
+    <LastModified>2021-09-15T02:50:34.000Z</LastModified>
+    <Status>Enabled</Status>
+  </Cname>
+</ListCnameResult>`)
+	var res ListBucketCnameResult
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.Bucket, Equals, "targetbucket")
+	c.Assert(res.Owner, Equals, "testowner")
+	c.Assert(res.Cname[0].Domain, Equals, "example.com")
+	c.Assert(res.Cname[0].LastModified, Equals, "2021-09-15T02:35:07.000Z")
+	c.Assert(res.Cname[0].Status, Equals, "Enabled")
+	c.Assert(res.Cname[0].Certificate.Type, Equals, "CAS")
+	c.Assert(res.Cname[0].Certificate.CreationDate, Equals, "Wed, 15 Sep 2021 02:35:06 GMT")
+	c.Assert(res.Cname[0].Certificate.ValidEndDate, Equals, "Mon, 4 May 2048 10:14:51 GMT")
+	c.Assert(res.Cname[1].LastModified, Equals, "2021-09-15T02:34:58.000Z")
+	c.Assert(res.Cname[1].Domain, Equals, "example.org")
+
+	c.Assert(res.Cname[2].Domain, Equals, "example.edu")
+	c.Assert(res.Cname[2].LastModified, Equals, "2021-09-15T02:50:34.000Z")
+
+}
+
+func (s *OssTypeSuite) TestPutBucketCname(c *C) {
+	var putCnameConfig PutBucketCname
+	putCnameConfig.Cname = "www.aliyun.com"
+
+	bs, err := xml.Marshal(putCnameConfig)
+	c.Assert(err, IsNil)
+	c.Assert(string(bs), Equals, "<BucketCnameConfiguration><Cname><Domain>www.aliyun.com</Domain></Cname></BucketCnameConfiguration>")
+	certificate := "-----BEGIN CERTIFICATE----- MIIDhDCCAmwCCQCFs8ixARsyrDANBgkqhkiG9w0BAQsFADCBgzELMAkGA1UEBhMC **** -----END CERTIFICATE-----"
+	privateKey := "-----BEGIN CERTIFICATE----- MIIDhDCCAmwCCQCFs8ixARsyrDANBgkqhkiG9w0BAQsFADCBgzELMAkGA1UEBhMC **** -----END CERTIFICATE-----"
+	var CertificateConfig CertificateConfiguration
+	CertificateConfig.CertId = "493****-cn-hangzhou"
+	CertificateConfig.Certificate = certificate
+	CertificateConfig.PrivateKey = privateKey
+	CertificateConfig.Force = true
+	putCnameConfig.CertificateConfiguration = &CertificateConfig
+
+	bs, err = xml.Marshal(putCnameConfig)
+	c.Assert(err, IsNil)
+
+	testLogger.Println(string(bs))
+	c.Assert(string(bs), Equals, "<BucketCnameConfiguration><Cname><Domain>www.aliyun.com</Domain><CertificateConfiguration><CertId>493****-cn-hangzhou</CertId><Certificate>-----BEGIN CERTIFICATE----- MIIDhDCCAmwCCQCFs8ixARsyrDANBgkqhkiG9w0BAQsFADCBgzELMAkGA1UEBhMC **** -----END CERTIFICATE-----</Certificate><PrivateKey>-----BEGIN CERTIFICATE----- MIIDhDCCAmwCCQCFs8ixARsyrDANBgkqhkiG9w0BAQsFADCBgzELMAkGA1UEBhMC **** -----END CERTIFICATE-----</PrivateKey><Force>true</Force></CertificateConfiguration></Cname></BucketCnameConfiguration>")
+
+	var config CertificateConfiguration
+	config.DeleteCertificate = true
+	putCnameConfig2 := PutBucketCname{
+		Cname:                    "www.aliyun.com",
+		CertificateConfiguration: &config,
+	}
+
+	bs, err = xml.Marshal(putCnameConfig2)
+	c.Assert(err, IsNil)
+	c.Assert(string(bs), Equals, "<BucketCnameConfiguration><Cname><Domain>www.aliyun.com</Domain><CertificateConfiguration><DeleteCertificate>true</DeleteCertificate></CertificateConfiguration></Cname></BucketCnameConfiguration>")
 }
