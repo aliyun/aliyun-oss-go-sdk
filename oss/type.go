@@ -1470,3 +1470,24 @@ type BucketAccessMonitorXml struct {
 	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
 	Status  string   `xml:"Status"` // access monitor status
 }
+
+// GetBucketStyleResult define style for the bucket
+type GetBucketStyleResult BucketStyleXml
+
+// GetBucketListStyleResult define the list style for the bucket
+type GetBucketListStyleResult BucketListStyleXml
+
+// BucketListStyleXml define the list style of the bucket
+type BucketListStyleXml struct {
+	XMLName xml.Name         `xml:"StyleList"`
+	Style   []BucketStyleXml `xml:"Style,omitempty"` // style
+}
+
+// BucketStyleXml define the information of the bucket's style
+type BucketStyleXml struct {
+	XMLName        xml.Name `xml:"Style"`
+	Name           string   `xml:"Name,omitempty"`           // style name
+	Content        string   `xml:"Content"`                  // style content
+	CreateTime     string   `xml:"CreateTime,omitempty"`     // style create time
+	LastModifyTime string   `xml:"LastModifyTime,omitempty"` // style last modify time
+}
