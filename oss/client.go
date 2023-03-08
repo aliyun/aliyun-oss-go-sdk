@@ -2119,6 +2119,20 @@ func (client Client) PutBucketAccessMonitorXml(bucketName string, xmlData string
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// ListBucketCname list bucket's binding cname
+// bucketName    the bucket name.
+// string    the xml configuration of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketCname(bucketName string, options ...Option) (ListBucketCnameResult, error) {
+	var out ListBucketCnameResult
+	body, err := client.GetBucketCname(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
 // GetBucketCname get bucket's binding cname
 // bucketName    the bucket name.
 // string    the xml configuration of bucket.
@@ -2224,8 +2238,19 @@ func (client Client) PutBucketCnameXml(bucketName string, xmlBody string, option
 func (client Client) PutBucketCname(bucketName string, cname string, options ...Option) error {
 	rxml := CnameConfigurationXML{}
 	rxml.Domain = cname
-
 	bs, err := xml.Marshal(rxml)
+	if err != nil {
+		return err
+	}
+	return client.PutBucketCnameXml(bucketName, string(bs), options...)
+}
+
+// PutBucketCnameWithCertificate map a custom domain name to a bucket
+// bucketName    the bucket name.
+// PutBucketCname    the bucket cname config in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketCnameWithCertificate(bucketName string, putBucketCname PutBucketCname, options ...Option) error {
+	bs, err := xml.Marshal(putBucketCname)
 	if err != nil {
 		return err
 	}
