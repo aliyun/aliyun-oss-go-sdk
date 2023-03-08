@@ -4756,9 +4756,30 @@ func (s *OssClientSuite) TestBucketCName(c *C) {
 	c.Assert(isSuc, Equals, true)
 	c.Assert(serviceErr.Code, Equals, "NeedVerifyDomainOwnership")
 
+	var bindCnameConfig PutBucketCname
+	var bindCertificateConfig CertificateConfiguration
+	bindCnameConfig.Cname = "www.example.com"
+	bindCertificate := "-----BEGIN CERTIFICATE-----MIIGeDCCBOCgAwIBAgIRAPj4FWpW5XN6kwgU7*******-----END CERTIFICATE-----"
+	privateKey := "-----BEGIN CERTIFICATE-----MIIFBzCCA++gT2H2hT6Wb3nwxjpLIfXmSVcV*****-----END CERTIFICATE-----"
+	bindCertificateConfig.CertId = "92******-cn-hangzhou"
+	bindCertificateConfig.Certificate = bindCertificate
+	bindCertificateConfig.PrivateKey = privateKey
+	bindCertificateConfig.Force = true
+	bindCnameConfig.CertificateConfiguration = &bindCertificateConfig
+	err = client.PutBucketCnameWithCertificate(bucketName, bindCnameConfig)
+	serviceErr, isSuc = err.(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.Code, Equals, "NeedVerifyDomainOwnership")
+
 	xmlBody, err := client.GetBucketCname(bucketName)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(xmlBody, bucketName), Equals, true)
+
+	cnResult, err := client.ListBucketCname(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(cnResult.Bucket, Equals, bucketName)
+	c.Assert(cnResult.Owner != "", Equals, true)
+	c.Assert(len(cnResult.Cname) == 0, Equals, true)
 
 	err = client.DeleteBucketCname(bucketName, "www.example.com")
 	c.Assert(err, IsNil)
