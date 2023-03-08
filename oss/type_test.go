@@ -1137,3 +1137,57 @@ func (s *OssTypeSuite) TestPutBucketCname(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(string(bs), Equals, "<BucketCnameConfiguration><Cname><Domain>www.aliyun.com</Domain><CertificateConfiguration><DeleteCertificate>true</DeleteCertificate></CertificateConfiguration></Cname></BucketCnameConfiguration>")
 }
+
+// Test Bucket Style
+func (s *OssTypeSuite) TestBucketStyle(c *C) {
+	var res GetBucketStyleResult
+	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<Style>
+ <Name>imageStyle</Name>
+ <Content>image/resize,p_50</Content>
+ <CreateTime>Wed, 20 May 2020 12:07:15 GMT</CreateTime>
+ <LastModifyTime>Wed, 21 May 2020 12:07:15 GMT</LastModifyTime>
+</Style>`)
+	err := xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.Name, Equals, "imageStyle")
+	c.Assert(res.Content, Equals, "image/resize,p_50")
+	c.Assert(res.CreateTime, Equals, "Wed, 20 May 2020 12:07:15 GMT")
+	c.Assert(res.LastModifyTime, Equals, "Wed, 21 May 2020 12:07:15 GMT")
+
+	var list GetBucketListStyleResult
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<StyleList>
+ <Style>
+ <Name>imageStyle</Name>
+ <Content>image/resize,p_50</Content>
+ <CreateTime>Wed, 20 May 2020 12:07:15 GMT</CreateTime>
+ <LastModifyTime>Wed, 21 May 2020 12:07:15 GMT</LastModifyTime>
+ </Style>
+ <Style>
+ <Name>imageStyle1</Name>
+ <Content>image/resize,w_200</Content>
+ <CreateTime>Wed, 20 May 2020 12:08:04 GMT</CreateTime>
+ <LastModifyTime>Wed, 21 May 2020 12:08:04 GMT</LastModifyTime>
+ </Style>
+ <Style>
+ <Name>imageStyle3</Name>
+ <Content>image/resize,w_300</Content>
+ <CreateTime>Fri, 12 Mar 2021 06:19:13 GMT</CreateTime>
+ <LastModifyTime>Fri, 13 Mar 2021 06:27:21 GMT</LastModifyTime>
+ </Style>
+</StyleList>`)
+	err = xml.Unmarshal(xmlData, &list)
+	c.Assert(err, IsNil)
+	c.Assert(list.Style[0].Name, Equals, "imageStyle")
+	c.Assert(list.Style[0].Content, Equals, "image/resize,p_50")
+	c.Assert(list.Style[0].CreateTime, Equals, "Wed, 20 May 2020 12:07:15 GMT")
+	c.Assert(list.Style[0].LastModifyTime, Equals, "Wed, 21 May 2020 12:07:15 GMT")
+
+	c.Assert(err, IsNil)
+	c.Assert(list.Style[1].Name, Equals, "imageStyle1")
+	c.Assert(list.Style[2].Content, Equals, "image/resize,w_300")
+	c.Assert(list.Style[1].CreateTime, Equals, "Wed, 20 May 2020 12:08:04 GMT")
+	c.Assert(list.Style[2].LastModifyTime, Equals, "Fri, 13 Mar 2021 06:27:21 GMT")
+
+}
