@@ -1379,7 +1379,7 @@ func (s *OssClientSuite) TestBucketLifecycleNegative(c *C) {
 // TestSetBucketReferer
 func (s *OssClientSuite) TestSetBucketReferer(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
-	var referers = []string{"http://www.aliyun.com", "https://www.aliyun.com"}
+	var referrers = []string{"http://www.aliyun.com", "https://www.aliyun.com"}
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -1393,7 +1393,7 @@ func (s *OssClientSuite) TestSetBucketReferer(c *C) {
 	c.Assert(len(res.RefererList), Equals, 0)
 
 	// Set referers
-	err = client.SetBucketReferer(bucketNameTest, referers, false)
+	err = client.SetBucketReferer(bucketNameTest, referrers, false)
 	c.Assert(err, IsNil)
 	time.Sleep(timeoutInOperation)
 
@@ -1404,12 +1404,12 @@ func (s *OssClientSuite) TestSetBucketReferer(c *C) {
 	c.Assert(res.RefererList[1], Equals, "https://www.aliyun.com")
 
 	// Reset referer, referers empty
-	referers = []string{""}
-	err = client.SetBucketReferer(bucketNameTest, referers, true)
+	referrers = []string{""}
+	err = client.SetBucketReferer(bucketNameTest, referrers, true)
 	c.Assert(err, IsNil)
 
-	referers = []string{}
-	err = client.SetBucketReferer(bucketNameTest, referers, true)
+	referrers = []string{}
+	err = client.SetBucketReferer(bucketNameTest, referrers, true)
 	c.Assert(err, IsNil)
 
 	res, err = client.GetBucketReferer(bucketNameTest)
