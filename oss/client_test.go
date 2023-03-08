@@ -5262,3 +5262,66 @@ func (s *OssClientSuite) TestBucketResourceGroup(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(res.ResourceGroupId, Equals, "rg-acfmy7mo47b3adq")
 }
+
+// TestBucketStyle
+func (s *OssClientSuite) TestBucketStyle(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Put Bucket Style
+	style := "image/resize,p_50"
+	styleName := "image-" + RandLowStr(6)
+	err = client.PutBucketStyle(bucketNameTest, styleName, style)
+	c.Assert(err, IsNil)
+	time.Sleep(1 * time.Second)
+
+	// get bucket style
+	res, err := client.GetBucketStyle(bucketNameTest, styleName)
+	c.Assert(err, IsNil)
+	c.Assert(res.Name, Equals, styleName)
+	c.Assert(res.Content, Equals, "image/resize,p_50")
+	c.Assert(res.CreateTime != "", Equals, true)
+	c.Assert(res.LastModifyTime != "", Equals, true)
+
+	style1 := "image/resize,w_200"
+	styleName1 := "image-" + RandLowStr(6)
+	err = client.PutBucketStyle(bucketNameTest, styleName1, style1)
+	c.Assert(err, IsNil)
+	time.Sleep(1 * time.Second)
+
+	style2 := "image/resize,w_300"
+	styleName2 := "image-" + RandLowStr(6)
+	err = client.PutBucketStyle(bucketNameTest, styleName2, style2)
+	c.Assert(err, IsNil)
+	time.Sleep(1 * time.Second)
+
+	// list bucket style
+	list, err := client.ListBucketStyle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(list.Style), Equals, 3)
+
+	c.Assert(list.Style[1].Name, Equals, styleName1)
+	c.Assert(list.Style[1].Content, Equals, "image/resize,w_200")
+	c.Assert(list.Style[1].CreateTime != "", Equals, true)
+	c.Assert(list.Style[1].LastModifyTime != "", Equals, true)
+	c.Assert(list.Style[2].Name, Equals, styleName2)
+	c.Assert(list.Style[2].Content, Equals, "image/resize,w_300")
+	c.Assert(list.Style[2].CreateTime != "", Equals, true)
+	c.Assert(list.Style[2].LastModifyTime != "", Equals, true)
+
+	// delete bucket style
+	err = client.DeleteBucketStyle(bucketNameTest, styleName)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucketStyle(bucketNameTest, styleName1)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucketStyle(bucketNameTest, styleName2)
+	c.Assert(err, IsNil)
+
+}
