@@ -1489,6 +1489,7 @@ type BucketAccessMonitorXml struct {
 	Status  string   `xml:"Status"` // access monitor status
 }
 
+
 // ListBucketCnameResult define the cname list of the bucket
 type ListBucketCnameResult BucketCnameXml
 
@@ -1517,4 +1518,16 @@ type Certificate struct {
 	Fingerprint    string `xml:"Fingerprint"`
 	ValidStartDate string `xml:"ValidStartDate"`
 	ValidEndDate   string `xml:"ValidEndDate"`
+}
+
+//GetBucketResourceGroupResult define resource group for the bucket
+type GetBucketResourceGroupResult BucketResourceGroupXml
+
+//PutBucketResourceGroup define the xml of bucket's resource group config
+type PutBucketResourceGroup BucketResourceGroupXml
+
+// BucketResourceGroupXml define the information of the bucket's resource group
+type BucketResourceGroupXml struct {
+	XMLName         xml.Name `xml:"BucketResourceGroupConfiguration"`
+	ResourceGroupId string   `xml:"ResourceGroupId"` // resource groupId
 }
