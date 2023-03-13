@@ -4469,14 +4469,14 @@ func (s *OssClientSuite) TestBucketReplicationDeleteWithEmptyRuleID(c *C) {
 	data, err := client1.GetBucketReplication(sourceBucketNameTest)
 	c.Assert(err, IsNil)
 
-	var result GetResult
+	var result GetBucketReplicationResult
 	err = xml.Unmarshal([]byte(data), &result)
 	c.Assert(err, IsNil)
 
-	c.Assert(result.Rules[0].Status, Equals, "starting")
-	c.Assert(result.Rules[0].Destination.Location, Equals, "oss-cn-"+destinationRegion)
-	c.Assert(result.Rules[0].Destination.Bucket, Equals, destinationBucketNameTest)
-	c.Assert(result.Rules[0].HistoricalObjectReplication, Equals, "enabled")
+	c.Assert(result.Rule[0].Status, Equals, "starting")
+	c.Assert(result.Rule[0].Destination.Location, Equals, "oss-cn-"+destinationRegion)
+	c.Assert(result.Rule[0].Destination.Bucket, Equals, destinationBucketNameTest)
+	c.Assert(result.Rule[0].HistoricalObjectReplication, Equals, "enabled")
 
 	ruleID := ""
 
@@ -4516,6 +4516,16 @@ func (s *OssClientSuite) TestBucketReplicationGetLocation(c *C) {
 	c.Assert(err, IsNil)
 
 	c.Assert(strings.Contains(data, "<ReplicationLocation>"), Equals, true)
+
+	stringData, err := client1.GetBucketReplicationLocation(sourceBucketNameTest)
+	var repResult GetBucketReplicationLocationResult
+	err = xml.Unmarshal([]byte(stringData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Location[0], Equals, "oss-ap-northeast-1")
+	c.Assert(repResult.Location[9], Equals, "oss-cn-beijing")
+	c.Assert(repResult.LocationTransferType[1].Location, Equals, "oss-eu-central-1")
+	c.Assert(repResult.LocationTransferType[1].TransferTypes, Equals, "oss_acc")
+	c.Assert(repResult.RTCLocation[2], Equals, "oss-cn-shanghai")
 
 	err = client1.DeleteBucket(sourceBucketNameTest)
 	c.Assert(err, IsNil)
@@ -4618,6 +4628,17 @@ func (s *OssClientSuite) TestBucketReplicationGetProgressWithRuleID(c *C) {
 	c.Assert(progressResult.Rules[0].Destination.Location, Equals, "oss-cn-"+secondDestinationRegion)
 	c.Assert(progressResult.Rules[0].Destination.Bucket, Equals, secondDestinationBucketNameTest)
 	c.Assert(progressResult.Rules[0].HistoricalObjectReplication, Equals, "enabled")
+
+	stringData, err := client1.GetBucketReplicationProgress(sourceBucketNameTest, ruleID)
+
+	var reqProgress GetBucketReplicationProgressResult
+	err = xml.Unmarshal([]byte(stringData), &reqProgress)
+	c.Assert(err, IsNil)
+	c.Assert(reqProgress.Rule[0].ID, Equals, ruleID)
+	c.Assert(reqProgress.Rule[0].Status, Equals, "starting")
+	c.Assert(reqProgress.Rule[0].Destination.Location, Equals, "oss-cn-"+secondDestinationRegion)
+	c.Assert(reqProgress.Rule[0].Destination.Bucket, Equals, secondDestinationBucketNameTest)
+	c.Assert(reqProgress.Rule[0].HistoricalObjectReplication, Equals, "enabled")
 
 	err = client1.DeleteBucket(sourceBucketNameTest)
 	c.Assert(err, IsNil)

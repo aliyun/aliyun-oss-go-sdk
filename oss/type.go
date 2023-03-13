@@ -1470,3 +1470,85 @@ type BucketAccessMonitorXml struct {
 	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
 	Status  string   `xml:"Status"` // access monitor status
 }
+
+// PutBucketReplication define the bucket replication config
+type PutBucketReplication BucketReplicationXml
+
+// GetBucketReplicationResult define get bucket's replication config
+type GetBucketReplicationResult BucketReplicationXml
+
+// GetBucketReplicationLocationResult define get bucket's replication location
+type GetBucketReplicationLocationResult BucketReplicationLocationXml
+
+// GetBucketReplicationProgressResult define get bucket's replication progress
+type GetBucketReplicationProgressResult BucketReplicationProgressXml
+
+// PutBucketRTC define the bucket rtc config
+type PutBucketRTC BucketRTCXml
+
+// BucketReplicationXml define the xml of bucket replication config
+type BucketReplicationXml struct {
+	XMLName xml.Name          `xml:"ReplicationConfiguration"`
+	Rule    []ReplicationRule `xml:"Rule,omitempty"`
+}
+
+// BucketReplicationProgressXml define the xml of bucket replication config
+type BucketReplicationProgressXml struct {
+	XMLName xml.Name          `xml:"ReplicationProgress"`
+	Rule    []ReplicationRule `xml:"Rule,omitempty"`
+}
+
+// BucketRTCXml define the xml of bucket rtc config
+type BucketRTCXml struct {
+	XMLName xml.Name `xml:"ReplicationRule"`
+	RTC     *string  `xml:"RTC>Status,omitempty"`
+	ID      string   `xml:"ID,omitempty"`
+}
+
+// ReplicationRule define the xml of bucket replication config rule
+type ReplicationRule struct {
+	ID                          string                      `xml:"ID,omitempty"`
+	RTC                         *string                     `xml:"RTC>Status,omitempty"`
+	PrefixSet                   *ReplicationRulePrefix      `xml:"PrefixSet,omitempty"`
+	Action                      string                      `xml:"Action,omitempty"`
+	Destination                 *ReplicationRuleDestination `xml:"Destination,omitempty"`
+	HistoricalObjectReplication string                      `xml:"HistoricalObjectReplication,omitempty"`
+	Status                      string                      `xml:"Status,omitempty"`
+	SyncRole                    string                      `xml:"SyncRole,omitempty"`
+	SourceSelectionCriteria     *string                     `xml:"SourceSelectionCriteria>SseKmsEncryptedObjects>Status,omitempty"`
+	EncryptionConfiguration     *string                     `xml:"EncryptionConfiguration>ReplicaKmsKeyID,omitempty"`
+	Progress                    *ReplicationRuleProgress    `xml:"Progress,omitempty"`
+	HistoricalObject            string                      `xml:"HistoricalObject,omitempty"`
+}
+
+type ReplicationRulePrefix struct {
+	Prefix []*string `xml:"Prefix,omitempty"`
+}
+
+type ReplicationRuleDestination struct {
+	Bucket       string `xml:"Bucket,omitempty"`
+	Location     string `xml:"Location,omitempty"`
+	TransferType string `xml:"TransferType,omitempty"`
+}
+
+// BucketReplicationLocationXml define the xml of bucket replication location info
+type BucketReplicationLocationXml struct {
+	XMLName              xml.Name                          `xml:"ReplicationLocation"`
+	Location             []string                          `xml:"Location,omitempty"`
+	LocationTransferType []ReplicationLocationTransferType `xml:"LocationTransferTypeConstraint>LocationTransferType,omitempty"`
+	RTCLocation          []string                          `xml:"LocationRTCConstraint>Location,omitempty"`
+}
+
+type ReplicationLocation struct {
+	Location string `xml:"Location,omitempty"`
+}
+
+type ReplicationLocationTransferType struct {
+	Location      string `xml:"Location,omitempty"`
+	TransferTypes string `xml:"TransferTypes>Type,omitempty"`
+}
+
+type ReplicationRuleProgress struct {
+	HistoricalObject string `xml:"HistoricalObject,omitempty"`
+	NewObject        string `xml:"NewObject,omitempty"`
+}

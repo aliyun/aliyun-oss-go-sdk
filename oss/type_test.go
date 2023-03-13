@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"net/url"
 	"sort"
+	"strings"
 
 	. "gopkg.in/check.v1"
 )
@@ -1015,4 +1016,343 @@ func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
 	c.Assert(res1.Rules[0].Filter.Not[2].Prefix, Equals, "abc/not2/")
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Key, Equals, "notkey2")
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Value, Equals, "notvalue2")
+}
+
+func (s *OssTypeSuite) TestBucketReplication(c *C) {
+	// case 1:test PutBucketReplication
+	enabled := "enabled"
+	prefix1 := "prefix_1"
+	prefix2 := "prefix_2"
+	keyId := "c4d49f85-ee30-426b-a5ed-95e9139d"
+	prefixSet := ReplicationRulePrefix{[]*string{&prefix1, &prefix2}}
+	reqReplication := PutBucketReplication{
+		Rule: []ReplicationRule{
+			{
+				RTC:       &enabled,
+				PrefixSet: &prefixSet,
+				Action:    "all",
+				Destination: &ReplicationRuleDestination{
+					Bucket:       "srcBucket",
+					Location:     "oss-cn-hangzhou",
+					TransferType: "oss_acc",
+				},
+				HistoricalObjectReplication: "disabled",
+			},
+		},
+	}
+	xmlData, err := xml.Marshal(reqReplication)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ReplicationConfiguration><Rule><RTC><Status>enabled</Status></RTC><PrefixSet><Prefix>prefix_1</Prefix><Prefix>prefix_2</Prefix></PrefixSet><Action>all</Action><Destination><Bucket>srcBucket</Bucket><Location>oss-cn-hangzhou</Location><TransferType>oss_acc</TransferType></Destination><HistoricalObjectReplication>disabled</HistoricalObjectReplication></Rule></ReplicationConfiguration>")
+
+	prefixSet = ReplicationRulePrefix{[]*string{&prefix1, &prefix2}}
+	reqReplication = PutBucketReplication{
+		Rule: []ReplicationRule{
+			{
+				RTC:       &enabled,
+				PrefixSet: &prefixSet,
+				Action:    "all",
+				Destination: &ReplicationRuleDestination{
+					Bucket:       "srcBucket",
+					Location:     "oss-cn-hangzhou",
+					TransferType: "oss_acc",
+				},
+				HistoricalObjectReplication: "disabled",
+				SyncRole:                    "aliyunramrole",
+				SourceSelectionCriteria:     &enabled,
+				EncryptionConfiguration:     &keyId,
+			},
+		},
+	}
+	xmlData, err = xml.Marshal(reqReplication)
+	testLogger.Println(string(xmlData))
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ReplicationConfiguration><Rule><RTC><Status>enabled</Status></RTC><PrefixSet><Prefix>prefix_1</Prefix><Prefix>prefix_2</Prefix></PrefixSet><Action>all</Action><Destination><Bucket>srcBucket</Bucket><Location>oss-cn-hangzhou</Location><TransferType>oss_acc</TransferType></Destination><HistoricalObjectReplication>disabled</HistoricalObjectReplication><SyncRole>aliyunramrole</SyncRole><SourceSelectionCriteria><SseKmsEncryptedObjects><Status>enabled</Status></SseKmsEncryptedObjects></SourceSelectionCriteria><EncryptionConfiguration><ReplicaKmsKeyID>c4d49f85-ee30-426b-a5ed-95e9139d</ReplicaKmsKeyID></EncryptionConfiguration></Rule></ReplicationConfiguration>")
+
+	reqReplication = PutBucketReplication{
+		Rule: []ReplicationRule{
+			{},
+		},
+	}
+
+	xmlData, err = xml.Marshal(reqReplication)
+	testLogger.Println(string(xmlData))
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ReplicationConfiguration><Rule></Rule></ReplicationConfiguration>")
+
+	reqReplication = PutBucketReplication{
+		Rule: []ReplicationRule{},
+	}
+
+	xmlData, err = xml.Marshal(reqReplication)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ReplicationConfiguration></ReplicationConfiguration>")
+
+	reqReplication = PutBucketReplication{}
+
+	xmlData, err = xml.Marshal(reqReplication)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ReplicationConfiguration></ReplicationConfiguration>")
+
+	// case 2: test GetBucketReplicationResult
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<ReplicationConfiguration>
+  <Rule>
+    <ID>test_replication_1</ID>
+    <PrefixSet>
+      <Prefix>source1</Prefix>
+      <Prefix>video</Prefix>
+    </PrefixSet>
+    <Action>PUT</Action>
+    <Destination>
+      <Bucket>destbucket</Bucket>
+      <Location>oss-cn-beijing</Location>
+      <TransferType>oss_acc</TransferType>
+    </Destination>
+    <Status>doing</Status>
+    <HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+    <SyncRole>aliyunramrole</SyncRole>
+    <RTC>
+      <Status>enabled</Status>
+    </RTC>
+	<SourceSelectionCriteria>
+         <SseKmsEncryptedObjects>
+           <Status>Enabled</Status>
+         </SseKmsEncryptedObjects>
+      </SourceSelectionCriteria>
+      <EncryptionConfiguration>
+           <ReplicaKmsKeyID>c4d49f85-ee30-426b-a5ed-95e9139d****</ReplicaKmsKeyID>
+      </EncryptionConfiguration>
+  </Rule>
+</ReplicationConfiguration>`)
+	var reqResult GetBucketReplicationResult
+	err = xml.Unmarshal(xmlData, &reqResult)
+	c.Assert(err, IsNil)
+	rule := reqResult.Rule[0]
+	c.Assert(rule.ID, Equals, "test_replication_1")
+	c.Assert(*rule.PrefixSet.Prefix[0], Equals, "source1")
+	c.Assert(*rule.PrefixSet.Prefix[1], Equals, "video")
+	c.Assert(rule.Action, Equals, "PUT")
+	c.Assert(rule.Destination.Bucket, Equals, "destbucket")
+	c.Assert(rule.Destination.Location, Equals, "oss-cn-beijing")
+	c.Assert(rule.Destination.TransferType, Equals, "oss_acc")
+
+	c.Assert(rule.Status, Equals, "doing")
+	c.Assert(rule.HistoricalObjectReplication, Equals, "enabled")
+	c.Assert(rule.SyncRole, Equals, "aliyunramrole")
+	c.Assert(*rule.RTC, Equals, "enabled")
+
+	c.Assert(*rule.SourceSelectionCriteria, Equals, "Enabled")
+	c.Assert(*rule.EncryptionConfiguration, Equals, "c4d49f85-ee30-426b-a5ed-95e9139d****")
+}
+
+func (s *OssTypeSuite) TestBucketRtc(c *C) {
+	enabled := "enabled"
+	id := "300c8809-fe50-4966-bbfa-******"
+	reqRtc := PutBucketRTC{
+		RTC: &enabled,
+		ID:  id,
+	}
+
+	xmlData, err := xml.Marshal(reqRtc)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ReplicationRule><RTC><Status>enabled</Status></RTC><ID>300c8809-fe50-4966-bbfa-******</ID></ReplicationRule>")
+
+	reqRtc = PutBucketRTC{}
+	xmlData, err = xml.Marshal(reqRtc)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ReplicationRule></ReplicationRule>")
+}
+
+func (s *OssTypeSuite) TestGetBucketReplicationLocationResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<ReplicationLocation>
+  <Location>oss-ap-northeast-1</Location>
+  <Location>oss-ap-northeast-2</Location>
+  <Location>oss-ap-south-1</Location>
+  <Location>oss-ap-southeast-1</Location>
+  <Location>oss-ap-southeast-2</Location>
+  <Location>oss-ap-southeast-3</Location>
+  <Location>oss-ap-southeast-5</Location>
+  <Location>oss-ap-southeast-6</Location>
+  <Location>oss-ap-southeast-7</Location>
+  <Location>oss-cn-beijing</Location>
+  <Location>oss-cn-chengdu</Location>
+  <Location>oss-cn-fuzhou</Location>
+  <Location>oss-cn-guangzhou</Location>
+  <Location>oss-cn-heyuan</Location>
+  <Location>oss-cn-hongkong</Location>
+  <Location>oss-cn-huhehaote</Location>
+  <Location>oss-cn-nanjing</Location>
+  <Location>oss-cn-qingdao</Location>
+  <Location>oss-cn-shanghai</Location>
+  <Location>oss-cn-shenzhen</Location>
+  <Location>oss-cn-wulanchabu</Location>
+  <Location>oss-cn-zhangjiakou</Location>
+  <Location>oss-eu-central-1</Location>
+  <Location>oss-eu-west-1</Location>
+  <Location>oss-me-central-1</Location>
+  <Location>oss-me-east-1</Location>
+  <Location>oss-rus-west-1</Location>
+  <Location>oss-us-east-1</Location>
+  <Location>oss-us-west-1</Location>
+  <LocationTransferTypeConstraint>
+    <LocationTransferType>
+      <Location>oss-cn-hongkong</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-eu-central-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-southeast-7</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-southeast-6</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-southeast-5</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-eu-west-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-rus-west-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-southeast-2</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-southeast-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-me-central-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-south-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-us-east-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-northeast-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-me-east-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-northeast-2</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-ap-southeast-3</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+    <LocationTransferType>
+      <Location>oss-us-west-1</Location>
+      <TransferTypes>
+        <Type>oss_acc</Type>
+      </TransferTypes>
+    </LocationTransferType>
+  </LocationTransferTypeConstraint>
+  <LocationRTCConstraint>
+    <Location>oss-cn-beijing</Location>
+    <Location>oss-cn-qingdao</Location>
+    <Location>oss-cn-shanghai</Location>
+    <Location>oss-cn-shenzhen</Location>
+    <Location>oss-cn-zhangjiakou</Location>
+  </LocationRTCConstraint>
+</ReplicationLocation>`
+	var repResult GetBucketReplicationLocationResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Location[0], Equals, "oss-ap-northeast-1")
+	c.Assert(repResult.Location[9], Equals, "oss-cn-beijing")
+	testLogger.Println(repResult.LocationTransferType[1].Location)
+	c.Assert(repResult.LocationTransferType[1].Location, Equals, "oss-eu-central-1")
+	c.Assert(repResult.LocationTransferType[1].TransferTypes, Equals, "oss_acc")
+	c.Assert(repResult.RTCLocation[2], Equals, "oss-cn-shanghai")
+}
+
+func (s *OssTypeSuite) TestGetBucketReplicationProgressResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<ReplicationProgress>
+ <Rule>
+   <ID>test_replication_1</ID>
+   <PrefixSet>
+    <Prefix>source_image</Prefix>
+    <Prefix>video</Prefix>
+   </PrefixSet>
+   <Action>PUT</Action>
+   <Destination>
+    <Bucket>target-bucket</Bucket>
+    <Location>oss-cn-beijing</Location>
+    <TransferType>oss_acc</TransferType>
+   </Destination>
+   <Status>doing</Status>
+   <HistoricalObjectReplication>enabled</HistoricalObjectReplication>
+   <Progress>
+    <HistoricalObject>0.85</HistoricalObject>
+    <NewObject>2015-09-24T15:28:14.000Z</NewObject>
+   </Progress>
+ </Rule>
+</ReplicationProgress>`
+	var repResult GetBucketReplicationProgressResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Rule[0].ID, Equals, "test_replication_1")
+	c.Assert(*repResult.Rule[0].PrefixSet.Prefix[0], Equals, "source_image")
+	c.Assert(*repResult.Rule[0].PrefixSet.Prefix[1], Equals, "video")
+	c.Assert(repResult.Rule[0].Action, Equals, "PUT")
+	c.Assert(repResult.Rule[0].Destination.Bucket, Equals, "target-bucket")
+	c.Assert(repResult.Rule[0].Destination.Location, Equals, "oss-cn-beijing")
+	c.Assert(repResult.Rule[0].Destination.TransferType, Equals, "oss_acc")
+	c.Assert(repResult.Rule[0].Status, Equals, "doing")
+	c.Assert(repResult.Rule[0].HistoricalObjectReplication, Equals, "enabled")
+	c.Assert((*repResult.Rule[0].Progress).HistoricalObject, Equals, "0.85")
+	c.Assert((*repResult.Rule[0].Progress).NewObject, Equals, "2015-09-24T15:28:14.000Z")
 }

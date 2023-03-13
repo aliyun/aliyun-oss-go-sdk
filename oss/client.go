@@ -1956,6 +1956,43 @@ func (client Client) PutBucketReplication(bucketName string, xmlBody string, opt
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// PutBucketRTC put bucket replication rtc
+// bucketName    the bucket name.
+// rtc the bucket rtc config.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) PutBucketRTC(bucketName string, rtc PutBucketRTC, options ...Option) error {
+	bs, err := xml.Marshal(rtc)
+	if err != nil {
+		return err
+	}
+	err = client.PutBucketRTCXml(bucketName, string(bs), options...)
+	return err
+}
+
+// PutBucketRTCXml put bucket rtc configuration
+// bucketName    the bucket name.
+// xmlBody    the rtc configuration in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) PutBucketRTCXml(bucketName string, xmlBody string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlBody))
+
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	params := map[string]interface{}{}
+	params["rtc"] = nil
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // GetBucketReplication get bucket replication configuration
 // bucketName    the bucket name.
 // string    the replication configuration.
