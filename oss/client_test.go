@@ -1379,7 +1379,7 @@ func (s *OssClientSuite) TestBucketLifecycleNegative(c *C) {
 // TestSetBucketReferer
 func (s *OssClientSuite) TestSetBucketReferer(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
-	var referers = []string{"http://www.aliyun.com", "https://www.aliyun.com"}
+	var referrers = []string{"http://www.aliyun.com", "https://www.aliyun.com"}
 
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
@@ -1393,7 +1393,7 @@ func (s *OssClientSuite) TestSetBucketReferer(c *C) {
 	c.Assert(len(res.RefererList), Equals, 0)
 
 	// Set referers
-	err = client.SetBucketReferer(bucketNameTest, referers, false)
+	err = client.SetBucketReferer(bucketNameTest, referrers, false)
 	c.Assert(err, IsNil)
 	time.Sleep(timeoutInOperation)
 
@@ -1404,12 +1404,12 @@ func (s *OssClientSuite) TestSetBucketReferer(c *C) {
 	c.Assert(res.RefererList[1], Equals, "https://www.aliyun.com")
 
 	// Reset referer, referers empty
-	referers = []string{""}
-	err = client.SetBucketReferer(bucketNameTest, referers, true)
+	referrers = []string{""}
+	err = client.SetBucketReferer(bucketNameTest, referrers, true)
 	c.Assert(err, IsNil)
 
-	referers = []string{}
-	err = client.SetBucketReferer(bucketNameTest, referers, true)
+	referrers = []string{}
+	err = client.SetBucketReferer(bucketNameTest, referrers, true)
 	c.Assert(err, IsNil)
 
 	res, err = client.GetBucketReferer(bucketNameTest)
@@ -4777,9 +4777,30 @@ func (s *OssClientSuite) TestBucketCName(c *C) {
 	c.Assert(isSuc, Equals, true)
 	c.Assert(serviceErr.Code, Equals, "NeedVerifyDomainOwnership")
 
+	var bindCnameConfig PutBucketCname
+	var bindCertificateConfig CertificateConfiguration
+	bindCnameConfig.Cname = "www.example.com"
+	bindCertificate := "-----BEGIN CERTIFICATE-----MIIGeDCCBOCgAwIBAgIRAPj4FWpW5XN6kwgU7*******-----END CERTIFICATE-----"
+	privateKey := "-----BEGIN CERTIFICATE-----MIIFBzCCA++gT2H2hT6Wb3nwxjpLIfXmSVcV*****-----END CERTIFICATE-----"
+	bindCertificateConfig.CertId = "92******-cn-hangzhou"
+	bindCertificateConfig.Certificate = bindCertificate
+	bindCertificateConfig.PrivateKey = privateKey
+	bindCertificateConfig.Force = true
+	bindCnameConfig.CertificateConfiguration = &bindCertificateConfig
+	err = client.PutBucketCnameWithCertificate(bucketName, bindCnameConfig)
+	serviceErr, isSuc = err.(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.Code, Equals, "NeedVerifyDomainOwnership")
+
 	xmlBody, err := client.GetBucketCname(bucketName)
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(xmlBody, bucketName), Equals, true)
+
+	cnResult, err := client.ListBucketCname(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(cnResult.Bucket, Equals, bucketName)
+	c.Assert(cnResult.Owner != "", Equals, true)
+	c.Assert(len(cnResult.Cname) == 0, Equals, true)
 
 	err = client.DeleteBucketCname(bucketName, "www.example.com")
 	c.Assert(err, IsNil)
@@ -5220,4 +5241,108 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	result, err = client.GetBucketAccessMonitor(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(result.Status, Equals, "Disabled")
+}
+
+// TestBucketResourceGroup
+func (s *OssClientSuite) TestBucketResourceGroup(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	res, err := client.GetBucketResourceGroup(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "rg-acfmy7mo47b3adq")
+
+	// Put Bucket Resource Group
+	resource := PutBucketResourceGroup{
+		ResourceGroupId: "rg-aekztgrh2colcoa",
+	}
+	err = client.PutBucketResourceGroup(bucketNameTest, resource)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Get Bucket Resource Group
+	res, err = client.GetBucketResourceGroup(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "rg-aekztgrh2colcoa")
+
+	// Put Bucket Resource Group With Empty Resource GroupId
+	resource = PutBucketResourceGroup{
+		ResourceGroupId: "",
+	}
+	err = client.PutBucketResourceGroup(bucketNameTest, resource)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Get Bucket Resource Group
+	res, err = client.GetBucketResourceGroup(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.ResourceGroupId, Equals, "rg-acfmy7mo47b3adq")
+}
+
+// TestBucketStyle
+func (s *OssClientSuite) TestBucketStyle(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Put Bucket Style
+	style := "image/resize,p_50"
+	styleName := "image-" + RandLowStr(6)
+	err = client.PutBucketStyle(bucketNameTest, styleName, style)
+	c.Assert(err, IsNil)
+	time.Sleep(1 * time.Second)
+
+	// get bucket style
+	res, err := client.GetBucketStyle(bucketNameTest, styleName)
+	c.Assert(err, IsNil)
+	c.Assert(res.Name, Equals, styleName)
+	c.Assert(res.Content, Equals, "image/resize,p_50")
+	c.Assert(res.CreateTime != "", Equals, true)
+	c.Assert(res.LastModifyTime != "", Equals, true)
+
+	style1 := "image/resize,w_200"
+	styleName1 := "image-" + RandLowStr(6)
+	err = client.PutBucketStyle(bucketNameTest, styleName1, style1)
+	c.Assert(err, IsNil)
+	time.Sleep(1 * time.Second)
+
+	style2 := "image/resize,w_300"
+	styleName2 := "image-" + RandLowStr(6)
+	err = client.PutBucketStyle(bucketNameTest, styleName2, style2)
+	c.Assert(err, IsNil)
+	time.Sleep(1 * time.Second)
+
+	// list bucket style
+	list, err := client.ListBucketStyle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(list.Style), Equals, 3)
+
+	c.Assert(list.Style[1].Name, Equals, styleName1)
+	c.Assert(list.Style[1].Content, Equals, "image/resize,w_200")
+	c.Assert(list.Style[1].CreateTime != "", Equals, true)
+	c.Assert(list.Style[1].LastModifyTime != "", Equals, true)
+	c.Assert(list.Style[2].Name, Equals, styleName2)
+	c.Assert(list.Style[2].Content, Equals, "image/resize,w_300")
+	c.Assert(list.Style[2].CreateTime != "", Equals, true)
+	c.Assert(list.Style[2].LastModifyTime != "", Equals, true)
+
+	// delete bucket style
+	err = client.DeleteBucketStyle(bucketNameTest, styleName)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucketStyle(bucketNameTest, styleName1)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucketStyle(bucketNameTest, styleName2)
+	c.Assert(err, IsNil)
+
 }

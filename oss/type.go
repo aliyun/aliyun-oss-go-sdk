@@ -31,7 +31,7 @@ type BucketProperties struct {
 	StorageClass string    `xml:"StorageClass"` // Bucket storage class
 }
 
-// ListCloudBoxesResult defines the result object from ListBuckets request
+// ListCloudBoxResult defines the result object from ListBuckets request
 type ListCloudBoxResult struct {
 	XMLName     xml.Name             `xml:"ListCloudBoxResult"`
 	Prefix      string               `xml:"Prefix"`              // The prefix in this query
@@ -482,13 +482,13 @@ type DeleteObjectsResult struct {
 	DeletedObjects []string // Deleted object key list
 }
 
-// DeleteObjectsResult_inner defines result of DeleteObjects request
+// DeleteObjectVersionsResult defines result of DeleteObjects request
 type DeleteObjectVersionsResult struct {
 	XMLName              xml.Name         `xml:"DeleteResult"`
 	DeletedObjectsDetail []DeletedKeyInfo `xml:"Deleted"` // Deleted object detail info
 }
 
-// DeleteKeyInfo defines object delete info
+// DeletedKeyInfo defines object delete info
 type DeletedKeyInfo struct {
 	XMLName               xml.Name `xml:"Deleted"`
 	Key                   string   `xml:"Key"`                   // Object key
@@ -931,13 +931,13 @@ type Tag struct {
 	Value   string   `xml:"Value"`
 }
 
-// Tagging tagset for the object
+// Tagging tag set for the object
 type Tagging struct {
 	XMLName xml.Name `xml:"Tagging"`
 	Tags    []Tag    `xml:"TagSet>Tag,omitempty"`
 }
 
-// for GetObjectTagging return value
+// GetObjectTaggingResult for GetObjectTagging return value
 type GetObjectTaggingResult Tagging
 
 // VersioningConfig for the bucket
@@ -948,13 +948,13 @@ type VersioningConfig struct {
 
 type GetBucketVersioningResult VersioningConfig
 
-// Server Encryption rule for the bucket
+// ServerEncryptionRule Server Encryption rule for the bucket
 type ServerEncryptionRule struct {
 	XMLName    xml.Name       `xml:"ServerSideEncryptionRule"`
 	SSEDefault SSEDefaultRule `xml:"ApplyServerSideEncryptionByDefault"`
 }
 
-// Server Encryption deafult rule for the bucket
+// SSEDefaultRule Server Encryption deafult rule for the bucket
 type SSEDefaultRule struct {
 	XMLName           xml.Name `xml:"ApplyServerSideEncryptionByDefault"`
 	SSEAlgorithm      string   `xml:"SSEAlgorithm,omitempty"`
@@ -1165,7 +1165,7 @@ func (selectReq *SelectRequest) jsonEncodeBase64() {
 	}
 }
 
-// CsvOptions is a element in the SelectObject api request's params
+// SelectOptions is a element in the SelectObject api request's params
 type SelectOptions struct {
 	XMLName                  xml.Name `xml:"Options"`
 	SkipPartialDataRecord    *bool    `xml:"SkipPartialDataRecord,omitempty"`
@@ -1349,128 +1349,6 @@ type ReplicationXML struct {
 	ID      string   `xml:"ID,omitempty"`
 }
 
-// CnameConfigurationXML define cname configuration
-type CnameConfigurationXML struct {
-	XMLName xml.Name `xml:"BucketCnameConfiguration"`
-	Domain  string   `xml:"Cname>Domain"`
-}
-
-// CnameTokenXML define cname token information
-type CnameTokenXML struct {
-	XMLName    xml.Name `xml:"CnameToken"`
-	Bucket     string   `xml:"Bucket,omitempty"`
-	Cname      string   `xml:"Cname,omitempty"`
-	Token      string   `xml:"Token,omitempty"`
-	ExpireTime string   `xml:"ExpireTime,omitempty"`
-}
-
-// CreateBucketCnameTokenResult defines result object for CreateBucketCnameToken request
-type CreateBucketCnameTokenResult CnameTokenXML
-
-// GetBucketCnameTokenResult defines result object for GetBucketCnameToken request
-type GetBucketCnameTokenResult CnameTokenXML
-
-// GetMetaQueryStatusResult defines result for GetMetaQueryStatus result
-type GetMetaQueryStatusResult GetMetaQueryStatusResultXml
-
-// GetMetaQueryStatusResultXml define get meta query status information
-type GetMetaQueryStatusResultXml struct {
-	XMLName    xml.Name `xml:"MetaQueryStatus"`
-	State      string   `xml:"State"`
-	Phase      string   `xml:"Phase"`
-	CreateTime string   `xml:"CreateTime"`
-	UpdateTime string   `xml:"UpdateTime"`
-}
-
-// DoMetaQuery defines meta query struct
-type MetaQuery struct {
-	XMLName      xml.Name                      `xml:"MetaQuery"`
-	NextToken    string                        `xml:"NextToken,omitempty"`
-	MaxResults   int64                         `xml:"MaxResults,omitempty"`
-	Query        string                        `xml:"Query"`
-	Sort         string                        `xml:"Sort,omitempty"`
-	Order        string                        `xml:"Order,omitempty"`
-	Aggregations []MetaQueryAggregationRequest `xml:"Aggregations>Aggregation,omitempty"`
-}
-
-// MetaQueryAggregationRequest defines meta query aggregation request
-type MetaQueryAggregationRequest struct {
-	XMLName   xml.Name `xml:"Aggregation"`
-	Field     string   `xml:"Field,omitempty"`
-	Operation string   `xml:"Operation,omitempty"`
-}
-
-// MetaQueryAggregationResponse defines meta query aggregation response
-type MetaQueryAggregationResponse struct {
-	XMLName   xml.Name         `xml:"Aggregation"`
-	Field     string           `xml:"Field,omitempty"`
-	Operation string           `xml:"Operation,omitempty"`
-	Value     float64          `xml:"Value,omitempty"`
-	Groups    []MetaQueryGroup `xml:"Groups>Group,omitempty"`
-}
-
-// DoMetaQueryResult defines result for DoMetaQuery result
-type DoMetaQueryResult DoMetaQueryResultXml
-
-// DoMetaQueryResultXml defines do meta query information
-type DoMetaQueryResultXml struct {
-	XMLName      xml.Name                       `xml:"MetaQuery"`
-	NextToken    string                         `xml:"NextToken,omitempty"`                 // next token
-	Files        []MetaQueryFile                `xml:"Files>File,omitempty"`                // file
-	Aggregations []MetaQueryAggregationResponse `xml:"Aggregations>Aggregation,omitempty"'` // Aggregation
-}
-
-// MetaQueryFile defines do meta query result file information
-type MetaQueryFile struct {
-	XMLName                               xml.Name            `xml:"File"`
-	Filename                              string              `xml:"Filename"`                                        //file name
-	Size                                  int64               `xml:"Size"`                                            // file size
-	FileModifiedTime                      string              `xml:"FileModifiedTime"`                                // file Modified Time
-	OssObjectType                         string              `xml:"OSSObjectType"`                                   // Oss Object Type
-	OssStorageClass                       string              `xml:"OSSStorageClass"`                                 // Oss Storage Class
-	ObjectACL                             string              `xml:"ObjectACL"`                                       // Object Acl
-	ETag                                  string              `xml:"ETag"`                                            // ETag
-	OssCRC64                              string              `xml:"OSSCRC64"`                                        // Oss CRC64
-	OssTaggingCount                       int64               `xml:"OSSTaggingCount,omitempty"`                       // Oss Tagging Count
-	OssTagging                            []MetaQueryTagging  `xml:"OSSTagging>Tagging,omitempty"`                    // Tagging
-	OssUserMeta                           []MetaQueryUserMeta `xml:"OSSUserMeta>UserMeta,omitempty"`                  // UserMeta
-	ServerSideEncryption                  string              `xml:"ServerSideEncryption,omitempty"`                  //Server Side Encryption
-	ServerSideEncryptionCustomerAlgorithm string              `xml:"ServerSideEncryptionCustomerAlgorithm,omitempty"` // Server Side Encryption Customer Algorithm
-}
-
-// MetaQueryTagging defines do meta query result tagging information
-type MetaQueryTagging struct {
-	XMLName xml.Name `xml:"Tagging"`
-	Key     string   `xml:"Key"`
-	Value   string   `xml:"Value"`
-}
-
-// MetaQueryUserMeta defines do meta query result user meta information
-type MetaQueryUserMeta struct {
-	XMLName xml.Name `xml:"UserMeta"`
-	Key     string   `xml:"Key"`
-	Value   string   `xml:"Value"`
-}
-
-// MetaQueryGroup defines do meta query result group information
-type MetaQueryGroup struct {
-	XMLName xml.Name `xml:"Group"`
-	Value   string   `xml:"Value"`
-	Count   int64    `xml:"Count"`
-}
-
-//GetBucketAccessMonitorResult define config for get bucket access monitor
-type GetBucketAccessMonitorResult BucketAccessMonitorXml
-
-//BucketAccessMonitor define the xml of bucket access monitor config
-type PutBucketAccessMonitor BucketAccessMonitorXml
-
-// GetBucketAccessMonitorXml define get bucket access monitor information
-type BucketAccessMonitorXml struct {
-	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
-	Status  string   `xml:"Status"` // access monitor status
-}
-
 // PutBucketReplication define the bucket replication config
 type PutBucketReplication BucketReplicationXml
 
@@ -1551,4 +1429,207 @@ type ReplicationLocationTransferType struct {
 type ReplicationRuleProgress struct {
 	HistoricalObject string `xml:"HistoricalObject,omitempty"`
 	NewObject        string `xml:"NewObject,omitempty"`
+}
+
+// CnameConfigurationXML define cname configuration
+type CnameConfigurationXML struct {
+	XMLName xml.Name `xml:"BucketCnameConfiguration"`
+	Domain  string   `xml:"Cname>Domain"`
+}
+
+type PutBucketCname PutBucketCnameXml
+
+// PutBucketCnameXml define cname configuration
+type PutBucketCnameXml struct {
+	XMLName                  xml.Name                  `xml:"BucketCnameConfiguration"`
+	Cname                    string                    `xml:"Cname>Domain"`
+	CertificateConfiguration *CertificateConfiguration `xml:"Cname>CertificateConfiguration"`
+}
+
+type CertificateConfiguration struct {
+	CertId            string `xml:"CertId,omitempty"`
+	Certificate       string `xml:"Certificate,omitempty"`
+	PrivateKey        string `xml:"PrivateKey,omitempty"`
+	PreviousCertId    string `xml:"PreviousCertId,omitempty"`
+	Force             bool   `xml:"Force,omitempty"`
+	DeleteCertificate bool   `xml:"DeleteCertificate,omitempty"`
+}
+
+// CnameTokenXML define cname token information
+type CnameTokenXML struct {
+	XMLName    xml.Name `xml:"CnameToken"`
+	Bucket     string   `xml:"Bucket,omitempty"`
+	Cname      string   `xml:"Cname,omitempty"`
+	Token      string   `xml:"Token,omitempty"`
+	ExpireTime string   `xml:"ExpireTime,omitempty"`
+}
+
+// CreateBucketCnameTokenResult defines result object for CreateBucketCnameToken request
+type CreateBucketCnameTokenResult CnameTokenXML
+
+// GetBucketCnameTokenResult defines result object for GetBucketCnameToken request
+type GetBucketCnameTokenResult CnameTokenXML
+
+// GetMetaQueryStatusResult defines result for GetMetaQueryStatus result
+type GetMetaQueryStatusResult GetMetaQueryStatusResultXml
+
+// GetMetaQueryStatusResultXml define get meta query status information
+type GetMetaQueryStatusResultXml struct {
+	XMLName    xml.Name `xml:"MetaQueryStatus"`
+	State      string   `xml:"State"`
+	Phase      string   `xml:"Phase"`
+	CreateTime string   `xml:"CreateTime"`
+	UpdateTime string   `xml:"UpdateTime"`
+}
+
+// MetaQuery defines meta query struct
+type MetaQuery struct {
+	XMLName      xml.Name                      `xml:"MetaQuery"`
+	NextToken    string                        `xml:"NextToken,omitempty"`
+	MaxResults   int64                         `xml:"MaxResults,omitempty"`
+	Query        string                        `xml:"Query"`
+	Sort         string                        `xml:"Sort,omitempty"`
+	Order        string                        `xml:"Order,omitempty"`
+	Aggregations []MetaQueryAggregationRequest `xml:"Aggregations>Aggregation,omitempty"`
+}
+
+// MetaQueryAggregationRequest defines meta query aggregation request
+type MetaQueryAggregationRequest struct {
+	XMLName   xml.Name `xml:"Aggregation"`
+	Field     string   `xml:"Field,omitempty"`
+	Operation string   `xml:"Operation,omitempty"`
+}
+
+// MetaQueryAggregationResponse defines meta query aggregation response
+type MetaQueryAggregationResponse struct {
+	XMLName   xml.Name         `xml:"Aggregation"`
+	Field     string           `xml:"Field,omitempty"`
+	Operation string           `xml:"Operation,omitempty"`
+	Value     float64          `xml:"Value,omitempty"`
+	Groups    []MetaQueryGroup `xml:"Groups>Group,omitempty"`
+}
+
+// DoMetaQueryResult defines result for DoMetaQuery result
+type DoMetaQueryResult DoMetaQueryResultXml
+
+// DoMetaQueryResultXml defines do meta query information
+type DoMetaQueryResultXml struct {
+	XMLName      xml.Name                       `xml:"MetaQuery"`
+	NextToken    string                         `xml:"NextToken,omitempty"`                 // next token
+	Files        []MetaQueryFile                `xml:"Files>File,omitempty"`                // file
+	Aggregations []MetaQueryAggregationResponse `xml:"Aggregations>Aggregation,omitempty"'` // Aggregation
+}
+
+// MetaQueryFile defines do meta query result file information
+type MetaQueryFile struct {
+	XMLName                               xml.Name            `xml:"File"`
+	Filename                              string              `xml:"Filename"`                                        //file name
+	Size                                  int64               `xml:"Size"`                                            // file size
+	FileModifiedTime                      string              `xml:"FileModifiedTime"`                                // file Modified Time
+	OssObjectType                         string              `xml:"OSSObjectType"`                                   // Oss Object Type
+	OssStorageClass                       string              `xml:"OSSStorageClass"`                                 // Oss Storage Class
+	ObjectACL                             string              `xml:"ObjectACL"`                                       // Object Acl
+	ETag                                  string              `xml:"ETag"`                                            // ETag
+	OssCRC64                              string              `xml:"OSSCRC64"`                                        // Oss CRC64
+	OssTaggingCount                       int64               `xml:"OSSTaggingCount,omitempty"`                       // Oss Tagging Count
+	OssTagging                            []MetaQueryTagging  `xml:"OSSTagging>Tagging,omitempty"`                    // Tagging
+	OssUserMeta                           []MetaQueryUserMeta `xml:"OSSUserMeta>UserMeta,omitempty"`                  // UserMeta
+	ServerSideEncryption                  string              `xml:"ServerSideEncryption,omitempty"`                  //Server Side Encryption
+	ServerSideEncryptionCustomerAlgorithm string              `xml:"ServerSideEncryptionCustomerAlgorithm,omitempty"` // Server Side Encryption Customer Algorithm
+}
+
+// MetaQueryTagging defines do meta query result tagging information
+type MetaQueryTagging struct {
+	XMLName xml.Name `xml:"Tagging"`
+	Key     string   `xml:"Key"`
+	Value   string   `xml:"Value"`
+}
+
+// MetaQueryUserMeta defines do meta query result user meta information
+type MetaQueryUserMeta struct {
+	XMLName xml.Name `xml:"UserMeta"`
+	Key     string   `xml:"Key"`
+	Value   string   `xml:"Value"`
+}
+
+// MetaQueryGroup defines do meta query result group information
+type MetaQueryGroup struct {
+	XMLName xml.Name `xml:"Group"`
+	Value   string   `xml:"Value"`
+	Count   int64    `xml:"Count"`
+}
+
+// GetBucketAccessMonitorResult define config for get bucket access monitor
+type GetBucketAccessMonitorResult BucketAccessMonitorXml
+
+// PutBucketAccessMonitor define the xml of bucket access monitor config
+type PutBucketAccessMonitor BucketAccessMonitorXml
+
+// BucketAccessMonitorXml define get bucket access monitor information
+type BucketAccessMonitorXml struct {
+	XMLName xml.Name `xml:"AccessMonitorConfiguration"`
+	Status  string   `xml:"Status"` // access monitor status
+}
+
+// ListBucketCnameResult define the cname list of the bucket
+type ListBucketCnameResult BucketCnameXml
+
+// BucketCnameXml define get the bucket cname information
+type BucketCnameXml struct {
+	XMLName xml.Name `xml:"ListCnameResult"`
+	Bucket  string   `xml:"Bucket"`
+	Owner   string   `xml:"Owner"`
+	Cname   []Cname  `xml:"Cname"`
+}
+
+// Cname define the cname information
+type Cname struct {
+	Domain       string      `xml:"Domain"`
+	LastModified string      `xml:"LastModified"`
+	Status       string      `xml:"Status"`
+	Certificate  Certificate `xml:"Certificate"`
+}
+
+// Certificate define Details of domain name certificate
+type Certificate struct {
+	Type           string `xml:"Type"`
+	CertId         string `xml:"CertId"`
+	Status         string `xml:"Status"`
+	CreationDate   string `xml:"CreationDate"`
+	Fingerprint    string `xml:"Fingerprint"`
+	ValidStartDate string `xml:"ValidStartDate"`
+	ValidEndDate   string `xml:"ValidEndDate"`
+}
+
+//GetBucketResourceGroupResult define resource group for the bucket
+type GetBucketResourceGroupResult BucketResourceGroupXml
+
+//PutBucketResourceGroup define the xml of bucket's resource group config
+type PutBucketResourceGroup BucketResourceGroupXml
+
+// BucketResourceGroupXml define the information of the bucket's resource group
+type BucketResourceGroupXml struct {
+	XMLName         xml.Name `xml:"BucketResourceGroupConfiguration"`
+	ResourceGroupId string   `xml:"ResourceGroupId"` // resource groupId
+}
+
+// GetBucketStyleResult define style for the bucket
+type GetBucketStyleResult BucketStyleXml
+
+// GetBucketListStyleResult define the list style for the bucket
+type GetBucketListStyleResult BucketListStyleXml
+
+// BucketListStyleXml define the list style of the bucket
+type BucketListStyleXml struct {
+	XMLName xml.Name         `xml:"StyleList"`
+	Style   []BucketStyleXml `xml:"Style,omitempty"` // style
+}
+
+// BucketStyleXml define the information of the bucket's style
+type BucketStyleXml struct {
+	XMLName        xml.Name `xml:"Style"`
+	Name           string   `xml:"Name,omitempty"`           // style name
+	Content        string   `xml:"Content"`                  // style content
+	CreateTime     string   `xml:"CreateTime,omitempty"`     // style create time
+	LastModifyTime string   `xml:"LastModifyTime,omitempty"` // style last modify time
 }

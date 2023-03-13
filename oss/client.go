@@ -284,7 +284,7 @@ func (client Client) DeleteBucket(bucketName string, options ...Option) error {
 // GetBucketLocation gets the bucket location.
 //
 // Checks out the following link for more information :
-// https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/endpoint.html
+// https://www.alibabacloud.com/help/en/object-storage-service/latest/getbucketlocation
 //
 // bucketName    the bucket name
 //
@@ -348,7 +348,7 @@ func (client Client) GetBucketACL(bucketName string, options ...Option) (GetBuck
 // SetBucketLifecycle sets the bucket's lifecycle.
 //
 // For more information, checks out following link:
-// https://help.aliyun.com/document_detail/oss/user_guide/manage_object/object_lifecycle.html
+// https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketlifecycle
 //
 // bucketName    the bucket name.
 // rules    the lifecycle rules. There're two kind of rules: absolute time expiration and relative time expiration in days and day/month/year respectively.
@@ -466,26 +466,26 @@ func (client Client) GetBucketLifecycleXml(bucketName string, options ...Option)
 // SetBucketReferer sets the bucket's referer whitelist and the flag if allowing empty referrer.
 //
 // To avoid stealing link on OSS data, OSS supports the HTTP referrer header. A whitelist referrer could be set either by API or web console, as well as
-// the allowing empty referrer flag. Note that this applies to requests from webbrowser only.
+// the allowing empty referrer flag. Note that this applies to requests from web browser only.
 // For example, for a bucket os-example and its referrer http://www.aliyun.com, all requests from this URL could access the bucket.
 // For more information, please check out this link :
-// https://help.aliyun.com/document_detail/oss/user_guide/security_management/referer.html
+// https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketreferer
 //
 // bucketName    the bucket name.
-// referers    the referrer white list. A bucket could have a referrer list and each referrer supports one '*' and multiple '?' as wildcards.
+// referrers    the referrer white list. A bucket could have a referrer list and each referrer supports one '*' and multiple '?' as wildcards.
 //             The sample could be found in sample/bucket_referer.go
 // allowEmptyReferer    the flag of allowing empty referrer. By default it's true.
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
-func (client Client) SetBucketReferer(bucketName string, referers []string, allowEmptyReferer bool, options ...Option) error {
+func (client Client) SetBucketReferer(bucketName string, referrers []string, allowEmptyReferer bool, options ...Option) error {
 	rxml := RefererXML{}
 	rxml.AllowEmptyReferer = allowEmptyReferer
-	if referers == nil {
+	if referrers == nil {
 		rxml.RefererList = append(rxml.RefererList, "")
 	} else {
-		for _, referer := range referers {
-			rxml.RefererList = append(rxml.RefererList, referer)
+		for _, referrer := range referrers {
+			rxml.RefererList = append(rxml.RefererList, referrer)
 		}
 	}
 
@@ -535,7 +535,7 @@ func (client Client) GetBucketReferer(bucketName string, options ...Option) (Get
 //
 // OSS could automatically store the access log. Only the bucket owner could enable the logging.
 // Once enabled, OSS would save all the access log into hourly log files in a specified bucket.
-// For more information, please check out https://help.aliyun.com/document_detail/oss/user_guide/security_management/logging.html
+// For more information, please check out https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketlogging
 //
 // bucketName    bucket name to enable the log.
 // targetBucket    the target bucket name to store the log files.
@@ -619,7 +619,7 @@ func (client Client) GetBucketLogging(bucketName string, options ...Option) (Get
 // SetBucketWebsite sets the bucket's static website's index and error page.
 //
 // OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
-// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+// For more information, please check out: https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketwebsite
 //
 // bucketName    the bucket name to enable static web site.
 // indexDocument    index page.
@@ -656,7 +656,7 @@ func (client Client) SetBucketWebsite(bucketName, indexDocument, errorDocument s
 // SetBucketWebsiteDetail sets the bucket's static website's detail
 //
 // OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
-// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+// For more information, please check out: https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketwebsite
 //
 // bucketName the bucket name to enable static web site.
 //
@@ -689,7 +689,7 @@ func (client Client) SetBucketWebsiteDetail(bucketName string, wxml WebsiteXML, 
 // SetBucketWebsiteXml sets the bucket's static website's rule
 //
 // OSS supports static web site hosting for the bucket data. When the bucket is enabled with that, you can access the file in the bucket like the way to access a static website.
-// For more information, please check out: https://help.aliyun.com/document_detail/oss/user_guide/static_host_website.html
+// For more information, please check out: https://www.alibabacloud.com/help/en/object-storage-service/latest/putbucketwebsite
 //
 // bucketName the bucket name to enable static web site.
 //
@@ -777,8 +777,7 @@ func (client Client) GetMetaQueryStatus(bucketName string, options ...Option) (G
 // metaQuery    the option of query
 //
 // DoMetaQueryResult   the result object upon successful request. It's only valid when error is nil.
-
-// error    it's nil if no error, otherwise it's an error object.
+// error it's nil if no error, otherwise it's an error object.
 //
 func (client Client) DoMetaQuery(bucketName string, metaQuery MetaQuery, options ...Option) (DoMetaQueryResult, error) {
 	var out DoMetaQueryResult
@@ -790,14 +789,13 @@ func (client Client) DoMetaQuery(bucketName string, metaQuery MetaQuery, options
 	return out, err
 }
 
-// DoMetaQuery Queries the objects that meet specified conditions and lists the information about objects based on specified fields and sorting methods.
+// DoMetaQueryXml Queries the objects that meet specified conditions and lists the information about objects based on specified fields and sorting methods.
 //
 // bucketName   the bucket name
 //
 // metaQuery    the option of query
 //
 // DoMetaQueryResult   the result object upon successful request. It's only valid when error is nil.
-
 // error    it's nil if no error, otherwise it's an error object.
 //
 func (client Client) DoMetaQueryXml(bucketName string, metaQueryXml string, options ...Option) (DoMetaQueryResult, error) {
@@ -2106,7 +2104,7 @@ func (client Client) GetBucketAccessMonitor(bucketName string, options ...Option
 	return out, err
 }
 
-// GetBucketAccessMonitor get bucket's access monitor config
+// GetBucketAccessMonitorXml get bucket's access monitor config
 // bucketName    the bucket name.
 // string  the access monitor configuration result of bucket xml foramt.
 // error    it's nil if no error, otherwise it's an error object.
@@ -2136,7 +2134,7 @@ func (client Client) PutBucketAccessMonitor(bucketName string, accessMonitor Put
 	return err
 }
 
-// PutBucketAccessMonitor get bucket's access monitor config
+// PutBucketAccessMonitorXml get bucket's access monitor config
 // bucketName    the bucket name.
 // xmlData		 the access monitor configuration in xml foramt
 // error    it's nil if no error, otherwise it's an error object.
@@ -2154,6 +2152,20 @@ func (client Client) PutBucketAccessMonitorXml(bucketName string, xmlData string
 	}
 	defer resp.Body.Close()
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// ListBucketCname list bucket's binding cname
+// bucketName    the bucket name.
+// string    the xml configuration of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketCname(bucketName string, options ...Option) (ListBucketCnameResult, error) {
+	var out ListBucketCnameResult
+	body, err := client.GetBucketCname(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
 }
 
 // GetBucketCname get bucket's binding cname
@@ -2231,7 +2243,7 @@ func (client Client) GetBucketCnameToken(bucketName string, cname string, option
 	return out, err
 }
 
-// PutBucketCname map a custom domain name to a bucket
+// PutBucketCnameXml map a custom domain name to a bucket
 // bucketName    the bucket name.
 // xmlBody the cname configuration in xml foramt
 // error    it's nil if no error, otherwise it's an error object.
@@ -2261,8 +2273,19 @@ func (client Client) PutBucketCnameXml(bucketName string, xmlBody string, option
 func (client Client) PutBucketCname(bucketName string, cname string, options ...Option) error {
 	rxml := CnameConfigurationXML{}
 	rxml.Domain = cname
-
 	bs, err := xml.Marshal(rxml)
+	if err != nil {
+		return err
+	}
+	return client.PutBucketCnameXml(bucketName, string(bs), options...)
+}
+
+// PutBucketCnameWithCertificate map a custom domain name to a bucket
+// bucketName    the bucket name.
+// PutBucketCname    the bucket cname config in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketCnameWithCertificate(bucketName string, putBucketCname PutBucketCname, options ...Option) error {
+	bs, err := xml.Marshal(putBucketCname)
 	if err != nil {
 		return err
 	}
@@ -2298,6 +2321,175 @@ func (client Client) DeleteBucketCname(bucketName string, cname string, options 
 	}
 	defer resp.Body.Close()
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// PutBucketResourceGroup set bucket's resource group
+// bucketName    the bucket name.
+// resourceGroup the resource group configuration of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketResourceGroup(bucketName string, resourceGroup PutBucketResourceGroup, options ...Option) error {
+	bs, err := xml.Marshal(resourceGroup)
+	if err != nil {
+		return err
+	}
+	err = client.PutBucketResourceGroupXml(bucketName, string(bs), options...)
+	return err
+}
+
+// PutBucketResourceGroupXml set bucket's resource group
+// bucketName    the bucket name.
+// xmlData		 the resource group in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketResourceGroupXml(bucketName string, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["resourceGroup"] = nil
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketResourceGroup get bucket's resource group
+// bucketName    the bucket name.
+// GetBucketResourceGroupResult  the resource group configuration result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketResourceGroup(bucketName string, options ...Option) (GetBucketResourceGroupResult, error) {
+	var out GetBucketResourceGroupResult
+	body, err := client.GetBucketResourceGroupXml(bucketName, options...)
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketResourceGroupXml get bucket's resource group
+// bucketName    the bucket name.
+// string  the resource group result of bucket xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketResourceGroupXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["resourceGroup"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// PutBucketStyle set bucket's style
+// bucketName    the bucket name.
+// styleContent the style content.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketStyle(bucketName, styleName string, styleContent string, options ...Option) error {
+	bs := fmt.Sprintf("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Style><Content>%s</Content></Style>", styleContent)
+	err := client.PutBucketStyleXml(bucketName, styleName, bs, options...)
+	return err
+}
+
+// PutBucketStyleXml set bucket's style
+// bucketName    the bucket name.
+// styleName the style name.
+// xmlData		 the style in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketStyleXml(bucketName, styleName, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["style"] = nil
+	params["styleName"] = styleName
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketStyle get bucket's style
+// bucketName    the bucket name.
+// styleName the bucket style name.
+// GetBucketStyleResult  the style result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketStyle(bucketName, styleName string, options ...Option) (GetBucketStyleResult, error) {
+	var out GetBucketStyleResult
+	body, err := client.GetBucketStyleXml(bucketName, styleName, options...)
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketStyleXml get bucket's style
+// bucketName    the bucket name.
+// styleName the bucket style name.
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketStyleXml(bucketName, styleName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["style"] = nil
+	params["styleName"] = styleName
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// ListBucketStyle get bucket's styles
+// bucketName    the bucket name.
+// GetBucketListStyleResult  the list style result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketStyle(bucketName string, options ...Option) (GetBucketListStyleResult, error) {
+	var out GetBucketListStyleResult
+	body, err := client.ListBucketStyleXml(bucketName, options...)
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// ListBucketStyleXml get bucket's list style
+// bucketName    the bucket name.
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketStyleXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["style"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// DeleteBucketStyle delete bucket's style
+// bucketName    the bucket name.
+// styleName the bucket style name.
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DeleteBucketStyle(bucketName, styleName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["style"] = bucketName
+	params["styleName"] = styleName
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
@@ -2472,14 +2664,14 @@ func SetLogger(Logger *log.Logger) ClientOption {
 	}
 }
 
-// SetCredentialsProvider sets funciton for get the user's ak
+// SetCredentialsProvider sets function for get the user's ak
 func SetCredentialsProvider(provider CredentialsProvider) ClientOption {
 	return func(client *Client) {
 		client.Config.CredentialsProvider = provider
 	}
 }
 
-// SetLocalAddr sets funciton for local addr
+// SetLocalAddr sets function for local addr
 func SetLocalAddr(localAddr net.Addr) ClientOption {
 	return func(client *Client) {
 		client.Config.LocalAddr = localAddr
@@ -2500,14 +2692,14 @@ func AdditionalHeaders(headers []string) ClientOption {
 	}
 }
 
-// only effective from go1.7 onward,RedirectEnabled set http redirect enabled or not
+// RedirectEnabled only effective from go1.7 onward,RedirectEnabled set http redirect enabled or not
 func RedirectEnabled(enabled bool) ClientOption {
 	return func(client *Client) {
 		client.Config.RedirectEnabled = enabled
 	}
 }
 
-// skip verifying tls certificate file
+// InsecureSkipVerify skip verifying tls certificate file
 func InsecureSkipVerify(enabled bool) ClientOption {
 	return func(client *Client) {
 		client.Config.InsecureSkipVerify = enabled

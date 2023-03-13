@@ -30,7 +30,7 @@ type Bucket struct {
 // reader    io.Reader instance for reading the data for uploading
 // options    the options for uploading the object. The valid options here are CacheControl, ContentDisposition, ContentEncoding
 //            Expires, ServerSideEncryption, ObjectACL and Meta. Refer to the link below for more details.
-//            https://help.aliyun.com/document_detail/oss/api-reference/object/PutObject.html
+//            https://www.alibabacloud.com/help/en/object-storage-service/latest/putobject
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -119,7 +119,7 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 // objectKey    the object key.
 // options    the options for downloading the object. The valid values are: Range, IfModifiedSince, IfUnmodifiedSince, IfMatch,
 //            IfNoneMatch, AcceptEncoding. For more details, please check out:
-//            https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
+//            https://www.alibabacloud.com/help/en/object-storage-service/latest/getobject
 //
 // io.ReadCloser    reader instance for reading data from response. It must be called close() after the usage and only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
@@ -228,7 +228,7 @@ func (bucket Bucket) DoGetObject(request *GetObjectRequest, options []Option) (*
 //            CopySourceIfNoneMatch, CopySourceIfModifiedSince, CopySourceIfUnmodifiedSince, MetadataDirective.
 //            Also you can specify the target object's attributes, such as CacheControl, ContentDisposition, ContentEncoding, Expires,
 //            ServerSideEncryption, ObjectACL, Meta. Refer to the link below for more details :
-//            https://help.aliyun.com/document_detail/oss/api-reference/object/CopyObject.html
+//            https://www.alibabacloud.com/help/en/object-storage-service/latest/copyobject
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -595,8 +595,8 @@ func (bucket Bucket) ListObjects(options ...Option) (ListObjectsResult, error) {
 	return out, err
 }
 
+// ListObjectsV2 lists the objects under the current bucket.
 // Recommend to use ListObjectsV2 to replace ListObjects
-// ListOListObjectsV2bjects lists the objects under the current bucket.
 // ListObjectsResultV2    the return value after operation succeeds (only valid when error is nil).
 func (bucket Bucket) ListObjectsV2(options ...Option) (ListObjectsResultV2, error) {
 	var out ListObjectsResultV2
@@ -667,7 +667,7 @@ func (bucket Bucket) SetObjectMeta(objectKey string, options ...Option) error {
 //
 // objectKey    object key.
 // options    the constraints of the object. Only when the object meets the requirements this method will return the metadata. Otherwise returns error. Valid options are IfModifiedSince, IfUnmodifiedSince,
-//            IfMatch, IfNoneMatch. For more details check out https://help.aliyun.com/document_detail/oss/api-reference/object/HeadObject.html
+//            IfMatch, IfNoneMatch. For more details check out https://www.alibabacloud.com/help/en/object-storage-service/latest/headobject
 //
 // http.Header    object meta when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
@@ -921,7 +921,7 @@ func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec i
 // reader    io.Reader the read instance for reading the data for the upload.
 // options    the options for uploading the data. The valid options are CacheControl, ContentDisposition, ContentEncoding,
 //            Expires, ServerSideEncryption, ObjectACL and custom metadata. Check out the following link for details:
-//            https://help.aliyun.com/document_detail/oss/api-reference/object/PutObject.html
+//            https://www.alibabacloud.com/help/en/object-storage-service/latest/putobject
 //
 // error    it's nil if no error, otherwise it's an error object.
 //
@@ -995,7 +995,7 @@ func (bucket Bucket) DoPutObjectWithURL(signedURL string, reader io.Reader, opti
 // signedURL    the signed URL.
 // options    options for downloading the object. Valid options are IfModifiedSince, IfUnmodifiedSince, IfMatch,
 //            IfNoneMatch, AcceptEncoding. For more information, check out the following link:
-//            https://help.aliyun.com/document_detail/oss/api-reference/object/GetObject.html
+//            https://www.alibabacloud.com/help/en/object-storage-service/latest/getobject
 //
 // io.ReadCloser    the reader object for getting the data from response. It needs be closed after the usage. It's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
