@@ -5246,29 +5246,34 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 // TestBucketResourceGroup
 func (s *OssClientSuite) TestBucketResourceGroup(c *C) {
 	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	var bucketNameTest2 = bucketNamePrefix + "-acc-" + RandLowStr(8)
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
+	err = client.CreateBucket(bucketNameTest2)
+	c.Assert(err, IsNil)
+
 	time.Sleep(3 * time.Second)
 
 	res, err := client.GetBucketResourceGroup(bucketNameTest)
 	c.Assert(err, IsNil)
-	c.Assert(res.ResourceGroupId, Equals, "rg-acfmy7mo47b3adq")
+
+	id := res.ResourceGroupId
 
 	// Put Bucket Resource Group
 	resource := PutBucketResourceGroup{
-		ResourceGroupId: "rg-aekztgrh2colcoa",
+		ResourceGroupId: id,
 	}
-	err = client.PutBucketResourceGroup(bucketNameTest, resource)
+	err = client.PutBucketResourceGroup(bucketNameTest2, resource)
 	c.Assert(err, IsNil)
 	time.Sleep(3 * time.Second)
 
 	// Get Bucket Resource Group
-	res, err = client.GetBucketResourceGroup(bucketNameTest)
+	res, err = client.GetBucketResourceGroup(bucketNameTest2)
 	c.Assert(err, IsNil)
-	c.Assert(res.ResourceGroupId, Equals, "rg-aekztgrh2colcoa")
+	c.Assert(res.ResourceGroupId, Equals, id)
 
 	// Put Bucket Resource Group With Empty Resource GroupId
 	resource = PutBucketResourceGroup{
@@ -5281,7 +5286,23 @@ func (s *OssClientSuite) TestBucketResourceGroup(c *C) {
 	// Get Bucket Resource Group
 	res, err = client.GetBucketResourceGroup(bucketNameTest)
 	c.Assert(err, IsNil)
-	c.Assert(res.ResourceGroupId, Equals, "rg-acfmy7mo47b3adq")
+	c.Assert(res.ResourceGroupId, Equals, id)
+
+	// Put Bucket Resource Group With Empty Resource GroupId
+	resource = PutBucketResourceGroup{
+		ResourceGroupId: "no-exist-id",
+	}
+	err = client.PutBucketResourceGroup(bucketNameTest, resource)
+	c.Assert(err, NotNil)
+
+	resource = PutBucketResourceGroup{
+		ResourceGroupId: "no-exist-id",
+	}
+	err = client.PutBucketResourceGroup(bucketNameTest2, resource)
+	c.Assert(err, NotNil)
+
+	ForceDeleteBucket(client, bucketNameTest, c)
+	ForceDeleteBucket(client, bucketNameTest2, c)
 }
 
 // TestBucketStyle
