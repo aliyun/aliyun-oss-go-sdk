@@ -506,27 +506,37 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 		if statusCode >= 400 && statusCode <= 505 {
 			// 4xx and 5xx indicate that the operation has error occurred
 			var respBody []byte
+			var errorXml []byte
 			respBody, err := readResponseBody(resp)
 			if err != nil {
 				return nil, err
 			}
-
-			if len(respBody) == 0 {
+			errorXml = respBody
+			if len(respBody) == 0 && len(resp.Header.Get(HTTPHeaderOssErr)) > 0 {
+				errorXml, err = base64.StdEncoding.DecodeString(resp.Header.Get(HTTPHeaderOssErr))
+				if err != nil {
+					errorXml = respBody
+				}
+			}
+			if len(errorXml) == 0 {
 				err = ServiceError{
 					StatusCode: statusCode,
 					RequestID:  resp.Header.Get(HTTPHeaderOssRequestID),
+					Ec:         resp.Header.Get(HTTPHeaderOssEc),
 				}
 			} else {
-				// Response contains storage service error object, unmarshal
-				srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
+				srvErr, errIn := serviceErrFromXML(errorXml, resp.StatusCode,
 					resp.Header.Get(HTTPHeaderOssRequestID))
-				if errIn != nil { // error unmarshaling the error response
-					err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+				if errIn != nil { // error unmarshal the error response
+					if len(resp.Header.Get(HTTPHeaderOssEc)) > 0 {
+						err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s, ec = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID), resp.Header.Get(HTTPHeaderOssEc))
+					} else {
+						err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+					}
 				} else {
 					err = srvErr
 				}
 			}
-
 			return &Response{
 				StatusCode: resp.StatusCode,
 				Headers:    resp.Header,
@@ -544,27 +554,37 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 			// (0,300) [308,400) [506,)
 			// Other extended http StatusCode
 			var respBody []byte
+			var errorXml []byte
 			respBody, err := readResponseBody(resp)
 			if err != nil {
 				return &Response{StatusCode: resp.StatusCode, Headers: resp.Header, Body: ioutil.NopCloser(bytes.NewReader(respBody))}, err
 			}
-
-			if len(respBody) == 0 {
+			errorXml = respBody
+			if len(respBody) == 0 && len(resp.Header.Get(HTTPHeaderOssErr)) > 0 {
+				errorXml, err = base64.StdEncoding.DecodeString(resp.Header.Get(HTTPHeaderOssErr))
+				if err != nil {
+					errorXml = respBody
+				}
+			}
+			if len(errorXml) == 0 {
 				err = ServiceError{
 					StatusCode: statusCode,
 					RequestID:  resp.Header.Get(HTTPHeaderOssRequestID),
+					Ec:         resp.Header.Get(HTTPHeaderOssEc),
 				}
 			} else {
-				// Response contains storage service error object, unmarshal
-				srvErr, errIn := serviceErrFromXML(respBody, resp.StatusCode,
+				srvErr, errIn := serviceErrFromXML(errorXml, resp.StatusCode,
 					resp.Header.Get(HTTPHeaderOssRequestID))
-				if errIn != nil { // error unmarshaling the error response
-					err = fmt.Errorf("unkown response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+				if errIn != nil { // error unmarshal the error response
+					if len(resp.Header.Get(HTTPHeaderOssEc)) > 0 {
+						err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s, ec = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID), resp.Header.Get(HTTPHeaderOssEc))
+					} else {
+						err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+					}
 				} else {
 					err = srvErr
 				}
 			}
-
 			return &Response{
 				StatusCode: resp.StatusCode,
 				Headers:    resp.Header,
