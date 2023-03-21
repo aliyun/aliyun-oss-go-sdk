@@ -4905,10 +4905,148 @@ func (s *OssClientSuite) TestExtendHttpResponseStatusCode(c *C) {
 	_, err = bucket.GetObject("unkown-error")
 	serviceErr, isSuc = err.(ServiceError)
 	c.Assert(isSuc, Equals, false)
-	prefix := "unkown response body, status = 509"
+	prefix := "unknown response body, status = 509"
+	ok := strings.Contains(err.Error(), prefix)
+	c.Assert(ok, Equals, true)
+	svr.Close()
+}
+
+func emptyBodyEcHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(HTTPHeaderOssRequestID, "123456")
+	w.Header().Set(HTTPHeaderOssEc, "0001-00000309")
+	w.WriteHeader(309)
+	fmt.Fprintf(w, "")
+}
+
+func emptyBodyHeaderHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set(HTTPHeaderOssRequestID, "64195A905C006935335FE181")
+	w.Header().Set(HTTPHeaderOssEc, "0026-00000001")
+	w.Header().Set(HTTPHeaderOssErr, "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPEVycm9yPgogIDxDb2RlPk5vU3VjaEtleTwvQ29kZT4KICA8TWVzc2FnZT5UaGUgc3BlY2lmaWVkIGtleSBkb2VzIG5vdCBleGlzdC48L01lc3NhZ2U+CiAgPFJlcXVlc3RJZD42NDE5NUE5MDVDMDA2OTM1MzM1RkUxODE8L1JlcXVlc3RJZD4KICA8SG9zdElkPmRlbW8td2Fsa2VyLTY5NjEub3NzLWNuLWhhbmd6aG91LmFsaXl1bmNzLmNvbTwvSG9zdElkPgogIDxLZXk+ZGVtby0xMTEudXh1PC9LZXk+CiAgPEVDPjAwMjYtMDAwMDAwMDE8L0VDPgo8L0Vycm9yPgo=")
+	w.WriteHeader(404)
+	fmt.Fprintf(w, "")
+}
+
+func serviceErrorBodyEcHandler(w http.ResponseWriter, r *http.Request) {
+	err := ServiceError{
+		Code:       "510",
+		Message:    "service response error",
+		RequestID:  "ABCDEF",
+		HostID:     "127.0.0.1",
+		Endpoint:   "127.0.0.1",
+		StatusCode: 510,
+		Ec:         "0001-00000510",
+	}
+	data, _ := xml.MarshalIndent(&err, "", " ")
+	w.Header().Set(HTTPHeaderOssRequestID, "ABCDEF")
+	w.WriteHeader(510)
+	fmt.Fprintf(w, string(data))
+}
+func serviceErrorBodyEmptyEndpiointEcHandler(w http.ResponseWriter, r *http.Request) {
+	err := ServiceError{
+		Code:       "510",
+		Message:    "service response error",
+		RequestID:  "ABCDEF",
+		HostID:     "127.0.0.1",
+		Endpoint:   "",
+		StatusCode: 510,
+		Ec:         "0001-00000510",
+	}
+	data, _ := xml.MarshalIndent(&err, "", " ")
+	w.Header().Set(HTTPHeaderOssRequestID, "ABCDEF")
+	w.WriteHeader(510)
+	fmt.Fprintf(w, string(data))
+}
+
+func unknownErrorBodyEcHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(509)
+	w.Header().Set(HTTPHeaderOssEc, "0001-00000509")
+	fmt.Fprintf(w, "unkown response error")
+}
+
+func (s *OssClientSuite) TestExtendHttpResponseStatusCodeWithEc(c *C) {
+	// get port
+	rand.Seed(time.Now().Unix())
+	port := 10000 + rand.Intn(10000)
+
+	// start http server
+	httpAddr := fmt.Sprintf("127.0.0.1:%d", port)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/empty-body/empty-body", emptyBodyEcHandler)
+	mux.HandleFunc("/service-error/service-error", serviceErrorBodyEcHandler)
+	mux.HandleFunc("/service-error/service-error-point", serviceErrorBodyEmptyEndpiointEcHandler)
+	mux.HandleFunc("/unknown-error/unknown-error", unknownErrorBodyEcHandler)
+
+	mux.HandleFunc("/empty-body/read-err-from-header", emptyBodyHeaderHandler)
+	svr := &http.Server{
+		Addr:           httpAddr,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		Handler:        mux,
+	}
+
+	go func() {
+		svr.ListenAndServe()
+	}()
+
+	time.Sleep(5 * time.Second)
+
+	testEndpoint := httpAddr
+	client, err := New(testEndpoint, accessID, accessKey)
+
+	bucket, err := client.Bucket("empty-body")
+	_, err = bucket.GetObject("empty-body")
+	serviceErr, isSuc := err.(ServiceError)
+	testLogger.Println(serviceErr)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.StatusCode, Equals, 309)
+	c.Assert(serviceErr.RequestID, Equals, "123456")
+	c.Assert(serviceErr.Ec, Equals, "0001-00000309")
+	prefix := "oss: service returned error: StatusCode=309, ErrorCode=, ErrorMessage=\"\", RequestId=123456, Ec=0001-00000309"
 	ok := strings.Contains(err.Error(), prefix)
 	c.Assert(ok, Equals, true)
 
+	bucket, err = client.Bucket("empty-body")
+	_, err = bucket.GetObject("read-err-from-header")
+	serviceErr, isSuc = err.(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.StatusCode, Equals, 404)
+	c.Assert(serviceErr.RequestID, Equals, "64195A905C006935335FE181")
+	c.Assert(serviceErr.Ec, Equals, "0026-00000001")
+
+	prefix = "oss: service returned error: StatusCode=404, ErrorCode=NoSuchKey, ErrorMessage=\"The specified key does not exist.\", RequestId=64195A905C006935335FE181, Ec=0026-00000001"
+	c.Assert(err.Error(), Equals, prefix)
+
+	bucket, err = client.Bucket("service-error")
+	_, err = bucket.GetObject("service-error")
+	serviceErr, isSuc = (err).(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.StatusCode, Equals, 510)
+	c.Assert(serviceErr.RequestID, Equals, "ABCDEF")
+	c.Assert(serviceErr.Ec, Equals, "0001-00000510")
+	prefix = "oss: service returned error: StatusCode=510, ErrorCode=510, ErrorMessage=\"service response error\", RequestId=ABCDEF, Endpoint=127.0.0.1, Ec=0001-00000510"
+	ok = strings.Contains(err.Error(), prefix)
+	c.Assert(ok, Equals, true)
+
+	bucket, err = client.Bucket("service-error")
+	_, err = bucket.GetObject("service-error-point")
+	serviceErr, isSuc = (err).(ServiceError)
+	c.Assert(isSuc, Equals, true)
+	c.Assert(serviceErr.StatusCode, Equals, 510)
+	c.Assert(serviceErr.RequestID, Equals, "ABCDEF")
+	c.Assert(serviceErr.Ec, Equals, "0001-00000510")
+	prefix = "oss: service returned error: StatusCode=510, ErrorCode=510, ErrorMessage=\"service response error\", RequestId=ABCDEF, Ec=0001-00000510"
+	ok = strings.Contains(err.Error(), prefix)
+	c.Assert(ok, Equals, true)
+
+	bucket, err = client.Bucket("unknown-error")
+	_, err = bucket.GetObject("unknown-error")
+	serviceErr, isSuc = err.(ServiceError)
+	c.Assert(serviceErr.Ec, Equals, "")
+	testLogger.Println(err.Error())
+	c.Assert(isSuc, Equals, false)
+	prefix = "unknown response body, status = 509 status code 509, RequestId = "
+	c.Assert(err.Error(), Equals, prefix)
 	svr.Close()
 }
 
