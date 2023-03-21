@@ -181,7 +181,7 @@ func testCRC64Combine(c *C, str string, pos int, crc uint64) {
 	crc1 = hash.Sum64()
 
 	hash = crc64.New(tabECMA)
-	io.WriteString(hash, str[pos:len(str)])
+	io.WriteString(hash, str[pos:])
 	crc2 := hash.Sum64()
 
 	crc1 = CRC64Combine(crc1, crc2, uint64(len(str)-pos))
@@ -208,7 +208,7 @@ func (s *OssCrcSuite) TestCRCRepeatedCombine(c *C) {
 		prev := hash.Sum64()
 
 		hash = crc64.New(tab)
-		io.WriteString(hash, string(str[i:len(str)]))
+		io.WriteString(hash, string(str[i:]))
 		post := hash.Sum64()
 
 		crc := CRC64Combine(prev, post, uint64(len(str)-i))

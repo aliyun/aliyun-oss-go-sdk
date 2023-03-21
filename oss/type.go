@@ -80,7 +80,7 @@ type LifecycleRule struct {
 	// Deprecated: Use NonVersionTransitions instead.
 	NonVersionTransition  *LifecycleVersionTransition  `xml:"-"` // NonVersionTransition is not suggested to use
 	NonVersionTransitions []LifecycleVersionTransition `xml:"NoncurrentVersionTransition,omitempty"`
-	Filter                *LifecycleFilter             `xml:Filter,omitempty` //condition parameter container of this exclusion rule
+	Filter                *LifecycleFilter             `xml:"Filter,omitempty"` //condition parameter container of this exclusion rule
 }
 
 // LifecycleExpiration defines the rule's expiration property
@@ -100,7 +100,7 @@ type LifecycleTransition struct {
 	StorageClass         StorageClassType `xml:"StorageClass,omitempty"`         // Specifies the target storage type
 	IsAccessTime         *bool            `xml:"IsAccessTime,omitempty"`         // access time
 	ReturnToStdWhenVisit *bool            `xml:"ReturnToStdWhenVisit,omitempty"` // Return To Std When Visit
-	AllowSmallFile       *bool            `xml:AllowSmallFile,omitempty`
+	AllowSmallFile       *bool            `xml:"AllowSmallFile,omitempty"`
 }
 
 // LifecycleAbortMultipartUpload defines the rule's abort multipart upload propery
@@ -123,7 +123,7 @@ type LifecycleVersionTransition struct {
 	StorageClass         StorageClassType `xml:"StorageClass,omitempty"`
 	IsAccessTime         *bool            `xml:"IsAccessTime,omitempty"`         // access time
 	ReturnToStdWhenVisit *bool            `xml:"ReturnToStdWhenVisit,omitempty"` // Return To Std When Visit
-	AllowSmallFile       *bool            `xml:AllowSmallFile,omitempty`
+	AllowSmallFile       *bool            `xml:"AllowSmallFile,omitempty"`
 }
 
 // LifecycleFilter defines the rule's Filter propery
@@ -1041,8 +1041,8 @@ type JsonMetaRequest struct {
 
 type InputSerialization struct {
 	XMLName         xml.Name `xml:"InputSerialization"`
-	CSV             CSV      `xml:CSV,omitempty`
-	JSON            JSON     `xml:JSON,omitempty`
+	CSV             CSV      `xml:"CSV,omitempty"`
+	JSON            JSON     `xml:"JSON,omitempty"`
 	CompressionType string   `xml:"CompressionType,omitempty"`
 }
 type CSV struct {
@@ -1067,8 +1067,8 @@ type SelectRequest struct {
 }
 type InputSerializationSelect struct {
 	XMLName         xml.Name        `xml:"InputSerialization"`
-	CsvBodyInput    CSVSelectInput  `xml:CSV,omitempty`
-	JsonBodyInput   JSONSelectInput `xml:JSON,omitempty`
+	CsvBodyInput    CSVSelectInput  `xml:"CSV,omitempty"`
+	JsonBodyInput   JSONSelectInput `xml:"JSON,omitempty"`
 	CompressionType string          `xml:"CompressionType,omitempty"`
 }
 type CSVSelectInput struct {
@@ -1098,8 +1098,8 @@ func (jsonInput *JSONSelectInput) JsonIsEmpty() bool {
 
 type OutputSerializationSelect struct {
 	XMLName          xml.Name         `xml:"OutputSerialization"`
-	CsvBodyOutput    CSVSelectOutput  `xml:CSV,omitempty`
-	JsonBodyOutput   JSONSelectOutput `xml:JSON,omitempty`
+	CsvBodyOutput    CSVSelectOutput  `xml:"CSV,omitempty"`
+	JsonBodyOutput   JSONSelectOutput `xml:"JSON,omitempty"`
 	OutputRawData    *bool            `xml:"OutputRawData,omitempty"`
 	KeepAllColumns   *bool            `xml:"KeepAllColumns,omitempty"`
 	EnablePayloadCrc *bool            `xml:"EnablePayloadCrc,omitempty"`
@@ -1230,12 +1230,12 @@ type InventoryConfiguration struct {
 	OSSBucketDestination   OSSBucketDestination `xml:"Destination>OSSBucketDestination,omitempty"`
 	Frequency              string               `xml:"Schedule>Frequency,omitempty"`
 	IncludedObjectVersions string               `xml:"IncludedObjectVersions,omitempty"`
-	OptionalFields         OptionalFields       `xml:OptionalFields,omitempty`
+	OptionalFields         OptionalFields       `xml:"OptionalFields,omitempty"`
 }
 
 type OptionalFields struct {
-	XMLName xml.Name `xml:"OptionalFields,omitempty`
-	Field   []string `xml:"Field,omitempty`
+	XMLName xml.Name `xml:"OptionalFields,omitempty"`
+	Field   []string `xml:"Field,omitempty"`
 }
 
 type OSSBucketDestination struct {
@@ -1265,7 +1265,7 @@ type InvSseKms struct {
 
 type ListInventoryConfigurationsResult struct {
 	XMLName                xml.Name                 `xml:"ListInventoryConfigurationsResult"`
-	InventoryConfiguration []InventoryConfiguration `xml:"InventoryConfiguration,omitempty`
+	InventoryConfiguration []InventoryConfiguration `xml:"InventoryConfiguration,omitempty"`
 	IsTruncated            *bool                    `xml:"IsTruncated,omitempty"`
 	NextContinuationToken  string                   `xml:"NextContinuationToken,omitempty"`
 }
@@ -1415,9 +1415,9 @@ type DoMetaQueryResult DoMetaQueryResultXml
 // DoMetaQueryResultXml defines do meta query information
 type DoMetaQueryResultXml struct {
 	XMLName      xml.Name                       `xml:"MetaQuery"`
-	NextToken    string                         `xml:"NextToken,omitempty"`                 // next token
-	Files        []MetaQueryFile                `xml:"Files>File,omitempty"`                // file
-	Aggregations []MetaQueryAggregationResponse `xml:"Aggregations>Aggregation,omitempty"'` // Aggregation
+	NextToken    string                         `xml:"NextToken,omitempty"`                // next token
+	Files        []MetaQueryFile                `xml:"Files>File,omitempty"`               // file
+	Aggregations []MetaQueryAggregationResponse `xml:"Aggregations>Aggregation,omitempty"` // Aggregation
 }
 
 // MetaQueryFile defines do meta query result file information
@@ -1459,10 +1459,10 @@ type MetaQueryGroup struct {
 	Count   int64    `xml:"Count"`
 }
 
-//GetBucketAccessMonitorResult define config for get bucket access monitor
+// GetBucketAccessMonitorResult define config for get bucket access monitor
 type GetBucketAccessMonitorResult BucketAccessMonitorXml
 
-//BucketAccessMonitor define the xml of bucket access monitor config
+// BucketAccessMonitor define the xml of bucket access monitor config
 type PutBucketAccessMonitor BucketAccessMonitorXml
 
 // GetBucketAccessMonitorXml define get bucket access monitor information

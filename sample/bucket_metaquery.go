@@ -96,7 +96,7 @@ func BucketMetaQuerySample() {
 	for _, aggregation := range queryResult.Aggregations {
 		fmt.Printf("Aggregation Field:%s\n", aggregation.Field)
 		fmt.Printf("Aggregation Operation:%s\n", aggregation.Operation)
-		fmt.Printf("Aggregation Value:%d\n", aggregation.Value)
+		fmt.Printf("Aggregation Value:%f\n", aggregation.Value)
 		for _, group := range aggregation.Groups {
 			fmt.Printf("Group Value:%s\n", group.Value)
 			fmt.Printf("Group Count:%d\n", group.Count)

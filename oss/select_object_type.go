@@ -83,7 +83,8 @@ func (sr *SelectObjectResponse) readFrames(p []byte) (int, error) {
 			}
 		}
 
-		if sr.Frame.FrameType == DataFrameType {
+		switch sr.Frame.FrameType {
+		case DataFrameType:
 			n, err := sr.analysisData(p[nn:])
 			if err != nil {
 				return nn, err
@@ -102,13 +103,13 @@ func (sr *SelectObjectResponse) readFrames(p []byte) (int, error) {
 			if nn == len(p) {
 				return nn, nil
 			}
-		} else if sr.Frame.FrameType == ContinuousFrameType {
+		case ContinuousFrameType:
 			checkValid, err = sr.checkPayloadSum()
 			if err != nil || !checkValid {
 				return nn, fmt.Errorf("%s", err.Error())
 			}
 			sr.Frame.OpenLine = false
-		} else if sr.Frame.FrameType == EndFrameType {
+		case EndFrameType:
 			err = sr.analysisEndFrame()
 			if err != nil {
 				return nn, err
@@ -118,7 +119,7 @@ func (sr *SelectObjectResponse) readFrames(p []byte) (int, error) {
 				sr.Finish = true
 			}
 			return nn, err
-		} else if sr.Frame.FrameType == MetaEndFrameCSVType {
+		case MetaEndFrameCSVType:
 			err = sr.analysisMetaEndFrameCSV()
 			if err != nil {
 				return nn, err
@@ -128,7 +129,7 @@ func (sr *SelectObjectResponse) readFrames(p []byte) (int, error) {
 				sr.Finish = true
 			}
 			return nn, err
-		} else if sr.Frame.FrameType == MetaEndFrameJSONType {
+		case MetaEndFrameJSONType:
 			err = sr.analysisMetaEndFrameJSON()
 			if err != nil {
 				return nn, err
@@ -140,7 +141,6 @@ func (sr *SelectObjectResponse) readFrames(p []byte) (int, error) {
 			return nn, err
 		}
 	}
-	return nn, nil
 }
 
 type chanReadIO struct {

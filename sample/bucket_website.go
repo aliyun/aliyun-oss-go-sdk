@@ -40,7 +40,7 @@ func BucketWebsiteSample() {
 			KeyPrefixEquals:             "abc",
 			HTTPErrorCodeReturnedEquals: 404,
 			IncludeHeader: []oss.IncludeHeader{
-				oss.IncludeHeader{
+				{
 					Key:    "host",
 					Equals: "test.oss-cn-beijing-internal.aliyuncs.com",
 				},
@@ -58,7 +58,7 @@ func BucketWebsiteSample() {
 				Pass:    []string{"key1", "key2"},
 				Remove:  []string{"remove1", "remove2"},
 				Set: []oss.MirrorHeaderSet{
-					oss.MirrorHeaderSet{
+					{
 						Key:   "setKey1",
 						Value: "setValue1",
 					},
