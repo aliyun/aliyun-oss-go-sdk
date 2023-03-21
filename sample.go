@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/sample"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/sample"
 )
 
 // sampleMap contains all samples

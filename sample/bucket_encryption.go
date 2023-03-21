@@ -3,7 +3,7 @@ package sample
 import (
 	"fmt"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
 )
 
 // BucketEncryptionSample shows how to get and set the bucket encryption Algorithm

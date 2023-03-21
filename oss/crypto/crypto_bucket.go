@@ -12,7 +12,7 @@ import (
 	"strconv"
 
 	kms "github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
 )
 
 // MasterCipherManager is interface for getting master key with MatDesc(material desc)

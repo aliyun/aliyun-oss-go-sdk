@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
 )
 
 // SignURLSample signs URL sample

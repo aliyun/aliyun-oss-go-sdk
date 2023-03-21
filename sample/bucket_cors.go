@@ -3,7 +3,7 @@ package sample
 import (
 	"fmt"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
 )
 
 // BucketCORSSample shows how to get or set the bucket CORS.

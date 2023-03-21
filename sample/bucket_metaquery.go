@@ -2,8 +2,9 @@ package sample
 
 import (
 	"fmt"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"os"
+
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
 )
 
 func BucketMetaQuerySample() {

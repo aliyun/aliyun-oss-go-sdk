@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/aliyun/aliyun-oss-go-sdk/v2/oss"
 )
 
 // PutObjectSample illustrates two methods for uploading a file: simple upload and multipart upload.
