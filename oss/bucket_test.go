@@ -1775,6 +1775,46 @@ func (s *OssBucketSuite) TestGetObjectMeta(c *C) {
 	c.Assert(err, NotNil)
 }
 
+// TestErrorFromHeader
+func (s *OssBucketSuite) TestErrorFromHeader(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+
+	// Put
+	err := s.bucket.PutObject(objectName, strings.NewReader(""))
+	c.Assert(err, IsNil)
+
+	_, err = s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+
+	meta, err := s.bucket.GetObjectMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(len(meta) > 0, Equals, true)
+
+	exist, err := s.bucket.IsObjectExist(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, true)
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	_, err = s.bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchKey")
+	c.Assert(err.(ServiceError).Ec != "", Equals, true)
+	c.Assert(err.(ServiceError).RequestID != "", Equals, true)
+	c.Assert(err.(ServiceError).HostID != "", Equals, true)
+
+	exist, err = s.bucket.IsObjectExist(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(exist, Equals, false)
+
+	_, err = s.bucket.GetObjectMeta("NotExistObject")
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchKey")
+	c.Assert(err.(ServiceError).Ec != "", Equals, true)
+	c.Assert(err.(ServiceError).RequestID != "", Equals, true)
+	c.Assert(err.(ServiceError).HostID != "", Equals, true)
+}
+
 // TestGetObjectDetailedMeta
 func (s *OssBucketSuite) TestGetObjectDetailedMeta(c *C) {
 	objectName := objectNamePrefix + RandStr(8)

@@ -207,6 +207,8 @@ const (
 	HttpHeaderOssDate                        = "X-Oss-Date"
 	HttpHeaderOssContentSha256               = "X-Oss-Content-Sha256"
 	HttpHeaderOssNotification                = "X-Oss-Notification"
+	HTTPHeaderOssEc                          = "X-Oss-Ec"
+	HTTPHeaderOssErr                         = "X-Oss-Err"
 )
 
 // HTTP Param
