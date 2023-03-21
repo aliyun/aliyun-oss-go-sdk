@@ -49,7 +49,7 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"x-oss-enable-md5", "x-oss-enable-sha1", "x-oss-enable-sha256",
 	"x-oss-hash-ctx", "x-oss-md5-ctx", "transferAcceleration",
 	"regionList", "cloudboxes", "x-oss-ac-source-ip", "x-oss-ac-subnet-mask", "x-oss-ac-vpc-id", "x-oss-ac-forward-allow",
-	"metaQuery", "resourceGroup","rtc",
+	"metaQuery", "resourceGroup", "rtc",
 }
 
 // init initializes Conn
@@ -577,9 +577,9 @@ func (conn Conn) handleResponse(resp *http.Response, crc hash.Hash64) (*Response
 					resp.Header.Get(HTTPHeaderOssRequestID))
 				if errIn != nil { // error unmarshal the error response
 					if len(resp.Header.Get(HTTPHeaderOssEc)) > 0 {
-						err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s, ec = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID), resp.Header.Get(HTTPHeaderOssEc))
+						err = fmt.Errorf("unknown response body, status = %s, RequestId = %s, ec = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID), resp.Header.Get(HTTPHeaderOssEc))
 					} else {
-						err = fmt.Errorf("oss: service returned invalid response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
+						err = fmt.Errorf("unknown response body, status = %s, RequestId = %s", resp.Status, resp.Header.Get(HTTPHeaderOssRequestID))
 					}
 				} else {
 					err = srvErr
