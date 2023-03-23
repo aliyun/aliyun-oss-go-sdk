@@ -1,4 +1,15 @@
 # ChangeLog - Aliyun OSS SDK for Go
+
+## 版本号：v2.2.7 日期：2023-03-23
+### 变更内容
+- 增加：support get info form EC & x-oss-err.
+- 增加：support bucket replication time control api.
+- 增加：support bucket style api.
+- 增加：support list bucket cname api.
+- 增加：support bucket resource group api.
+- 修复：do not use uname -* cmd to get platform information.
+- 修复：call rand.Seed only once.
+
 ## 版本号：v2.2.6 日期：2022-11-16
 ### 变更内容
 - 增加：the object name cannot be empty in object's apis.
