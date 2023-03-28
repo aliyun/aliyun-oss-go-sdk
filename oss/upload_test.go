@@ -1,6 +1,9 @@
 package oss
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -752,6 +755,64 @@ func (s *OssUploadSuite) TestUploadFileWithSequential(c *C) {
 	// Updating the file
 	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
 	c.Assert(err, IsNil)
+
+	respHeader, err = bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+
+	strMD5 := respHeader.Get("Content-MD5")
+	c.Assert(len(strMD5) > 0, Equals, true)
+
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+// TestUploadFileWithSequential
+func (s *OssUploadSuite) TestUploadFileWithCallbackResult(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	fileInfo, err := os.Stat(fileName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	var respHeader http.Header
+	callbackMap := map[string]string{}
+	callbackMap["callbackUrl"] = "www.aliyuncs.com"
+	callbackMap["callbackBody"] = "filename=${object}&size=${size}&mimeType=${mimeType}"
+	callbackMap["callbackBodyType"] = "application/x-www-form-urlencoded"
+	callbackBuffer := bytes.NewBuffer([]byte{})
+	callbackEncoder := json.NewEncoder(callbackBuffer)
+	callbackEncoder.SetEscapeHTML(false)
+	err = callbackEncoder.Encode(callbackMap)
+	c.Assert(err, IsNil)
+
+	callbackVal := base64.StdEncoding.EncodeToString(callbackBuffer.Bytes())
+	var pBody []byte
+
+	// UploadFile with properties
+	options := []Option{
+		Sequential(),
+		GetResponseHeader(&respHeader),
+		Checkpoint(true, fileName+".cp"),
+		Callback(callbackVal),
+		CallbackResult(&pBody),
+	}
+
+	// Updating the file
+	err = bucket.UploadFile(objectName, fileName, fileInfo.Size()/2, options...)
+	c.Assert(err, NotNil)
+
+	e, ok := err.(ServiceError)
+	c.Assert(ok, Equals, true)
+	c.Assert(e.StatusCode, Equals, 203)
+	c.Assert(pBody, IsNil)
 
 	respHeader, err = bucket.GetObjectDetailedMeta(objectName)
 	c.Assert(err, IsNil)
