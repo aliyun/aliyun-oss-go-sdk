@@ -600,6 +600,13 @@ type ProcessObjectResult struct {
 	Status   string `json:"status"`
 }
 
+// AsyncProcessObjectResult defines result object of AsyncProcessObject
+type AsyncProcessObjectResult struct {
+	EventId   string `json:"EventId"`
+	RequestId string `json:"RequestId"`
+	TaskId    string `json:"TaskId"`
+}
+
 // decodeDeleteObjectsResult decodes deleting objects result in URL encoding
 func decodeDeleteObjectsResult(result *DeleteObjectVersionsResult) error {
 	var err error

@@ -1530,3 +1530,13 @@ func (s *OssTypeSuite) TestGetBucketReplicationProgressResult(c *C) {
 	c.Assert((*repResult.Rule[0].Progress).HistoricalObject, Equals, "0.85")
 	c.Assert((*repResult.Rule[0].Progress).NewObject, Equals, "2015-09-24T15:28:14.000Z")
 }
+
+func (s *OssTypeSuite) TestAsyncProcessResult(c *C) {
+	jsonData := `{"EventId":"10C-1XqxdjCRx3x7gRim3go1yLUVWgm","RequestId":"B8AD6942-BBDE-571D-A9A9-525A4C34B2B3","TaskId":"MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d"}`
+	var repResult AsyncProcessObjectResult
+	err := xmlUnmarshal(strings.NewReader(jsonData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.EventId, Equals, "10C-1XqxdjCRx3x7gRim3go1yLUVWgm")
+	c.Assert(repResult.RequestId, Equals, "B8AD6942-BBDE-571D-A9A9-525A4C34B2B3")
+	c.Assert(repResult.TaskId, Equals, "MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d")
+}
