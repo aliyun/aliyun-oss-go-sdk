@@ -367,6 +367,38 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	}
 }
 
+// TestCreateBucketWithServerEncryption
+func (s *OssClientSuite) TestCreateBucketWithServerEncryption(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// Create
+	client.DeleteBucket(bucketNameTest)
+	err = client.CreateBucket(bucketNameTest, ServerSideEncryption("KMS"), ServerSideDataEncryption("SM4"))
+	c.Assert(err, IsNil)
+	//sleep 3 seconds after create bucket
+	time.Sleep(timeoutInOperation)
+
+	// verify bucket is exist
+	rs, err := client.GetBucketEncryption(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(rs.SSEDefault.SSEAlgorithm, Equals, "KMS")
+	c.Assert(rs.SSEDefault.KMSDataEncryption, Equals, "SM4")
+
+	client.DeleteBucket(bucketNameTest)
+	err = client.CreateBucket(bucketNameTest, ServerSideEncryption("AES256"))
+	c.Assert(err, IsNil)
+
+	rs, err = client.GetBucketEncryption(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(rs.SSEDefault.KMSDataEncryption, Equals, "")
+	c.Assert(rs.SSEDefault.SSEAlgorithm, Equals, "AES256")
+
+	client.DeleteBucket(bucketNameTest)
+}
+
 func (s *OssClientSuite) TestCreateBucketRedundancyType(c *C) {
 	bucketNameTest := bucketNamePrefix + RandLowStr(6)
 	client, err := New(endpoint, accessID, accessKey)
