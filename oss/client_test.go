@@ -1439,6 +1439,89 @@ func (s *OssClientSuite) TestBucketRefererNegative(c *C) {
 	testLogger.Println(err)
 }
 
+// TestBucketRefererV2
+func (s *OssClientSuite) TestBucketRefererV2(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	var referrers = []string{"http://www.aliyun.com", "https://www.aliyun.com"}
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	res, err := client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, true)
+	c.Assert(len(res.RefererList), Equals, 0)
+	c.Assert(*res.AllowTruncateQueryString, Equals, true)
+	c.Assert(res.RefererBlacklist, IsNil)
+
+	// Set referers
+	var set RefererXML
+	set.AllowEmptyReferer = false
+	set.RefererList = referrers
+	err = client.SetBucketRefererV2(bucketNameTest, set)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	res, err = client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, false)
+	c.Assert(len(res.RefererList), Equals, 2)
+	c.Assert(res.RefererList[0], Equals, "http://www.aliyun.com")
+	c.Assert(res.RefererList[1], Equals, "https://www.aliyun.com")
+
+	// Reset referer, referers empty
+	var del RefererXML
+	del.AllowEmptyReferer = true
+	del.RefererList = []string{}
+	err = client.SetBucketRefererV2(bucketNameTest, del)
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, true)
+	c.Assert(len(res.RefererList), Equals, 0)
+
+	// Set referers
+	var setBucketReferer RefererXML
+	setBucketReferer.AllowEmptyReferer = false
+	setBucketReferer.RefererList = referrers
+	referer1 := "http://www.refuse.com"
+	referer2 := "https://*.hack.com"
+	referer3 := "http://ban.*.com"
+	referer4 := "https://www.?.deny.com"
+	setBucketReferer.RefererBlacklist = &RefererBlacklist{
+		[]string{
+			referer1, referer2, referer3, referer4,
+		},
+	}
+	setBucketReferer.AllowEmptyReferer = false
+	boolTrue := true
+	setBucketReferer.AllowTruncateQueryString = &boolTrue
+	err = client.SetBucketRefererV2(bucketNameTest, setBucketReferer)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	res, err = client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, false)
+	c.Assert(len(res.RefererList), Equals, 2)
+	c.Assert(res.RefererList[0], Equals, "http://www.aliyun.com")
+	c.Assert(res.RefererList[1], Equals, "https://www.aliyun.com")
+	c.Assert(*res.AllowTruncateQueryString, Equals, true)
+	c.Assert(res.RefererBlacklist, NotNil)
+	c.Assert(len(res.RefererBlacklist.Referer), Equals, 4)
+	c.Assert(res.RefererBlacklist.Referer[0], Equals, referer1)
+	c.Assert(res.RefererBlacklist.Referer[3], Equals, referer4)
+
+	del.AllowEmptyReferer = true
+	del.RefererList = []string{}
+	err = client.SetBucketRefererV2(bucketNameTest, del)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
 // TestSetBucketLogging
 func (s *OssClientSuite) TestSetBucketLogging(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
