@@ -5505,3 +5505,22 @@ func (s *OssClientSuite) TestBucketStyle(c *C) {
 	c.Assert(err, IsNil)
 
 }
+
+// TestDescribeRegions
+func (s *OssClientSuite) TestDescribeRegions(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	list, err := client.DescribeRegions("")
+	c.Assert(err, IsNil)
+	c.Assert(len(list.Regions) > 0, Equals, true)
+
+	regionEndpoint := "oss-cn-hangzhou"
+	info, err := client.DescribeRegions(regionEndpoint)
+	c.Assert(err, IsNil)
+	c.Assert(len(info.Regions), Equals, 1)
+	c.Assert(info.Regions[0].Region, Equals, "oss-cn-hangzhou")
+	c.Assert(info.Regions[0].InternetEndpoint, Equals, "oss-cn-hangzhou.aliyuncs.com")
+	c.Assert(info.Regions[0].InternalEndpoint, Equals, "oss-cn-hangzhou-internal.aliyuncs.com")
+	c.Assert(info.Regions[0].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
+}

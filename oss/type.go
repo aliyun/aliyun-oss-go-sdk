@@ -1633,3 +1633,18 @@ type BucketStyleXml struct {
 	CreateTime     string   `xml:"CreateTime,omitempty"`     // style create time
 	LastModifyTime string   `xml:"LastModifyTime,omitempty"` // style last modify time
 }
+
+// DescribeRegionsResult define get the describe regions result
+type DescribeRegionsResult RegionInfoList
+
+type RegionInfo struct {
+	Region             string `xml:"Region"`
+	InternetEndpoint   string `xml:"InternetEndpoint"`
+	InternalEndpoint   string `xml:"InternalEndpoint"`
+	AccelerateEndpoint string `xml:"AccelerateEndpoint"`
+}
+
+type RegionInfoList struct {
+	XMLName xml.Name     `xml:"RegionInfoList"`
+	Regions []RegionInfo `xml:"RegionInfo"`
+}
