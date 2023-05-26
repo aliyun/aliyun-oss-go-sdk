@@ -3447,6 +3447,70 @@ func (s *OssClientSuite) TestClientCredentialInfBuild(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssClientSuite) TestClientNewEnvironmentVariableCredentialsProvider(c *C) {
+	provider, err := ProviderWrongKeyId()
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key id is empty!")
+	provider, err = ProviderWrongSecret()
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key secret is empty!")
+
+	provider, err = NewEnvironmentVariableCredentialsProvider()
+	c.Assert(err, IsNil)
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, "", "", SetCredentialsProvider(&provider))
+	fmt.Printf(":%#v\n", &client.Config.CredentialsProvider)
+	c.Assert(err, IsNil)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+func ProviderWrongKeyId() (EnvironmentVariableCredentialsProvider, error) {
+	var provider EnvironmentVariableCredentialsProvider
+	keyId := os.Getenv("OSS_ACCESS_KEY_ID_d")
+	if keyId == "" {
+		return provider, fmt.Errorf("access key id is empty!")
+	}
+	secret := os.Getenv("OSS_ACCESS_KEY_SECRET_d")
+	if accessKey == "" {
+		return provider, fmt.Errorf("access key secret is empty!")
+	}
+	token := os.Getenv("OSS_SESSION_TOKEN")
+
+	envCredential := &envCredentials{
+		AccessKeyId:     keyId,
+		AccessKeySecret: secret,
+		SecurityToken:   token,
+	}
+	return EnvironmentVariableCredentialsProvider{
+		cred: envCredential,
+	}, nil
+}
+
+func ProviderWrongSecret() (EnvironmentVariableCredentialsProvider, error) {
+	var provider EnvironmentVariableCredentialsProvider
+	keyId := os.Getenv("OSS_ACCESS_KEY_ID")
+	if keyId == "" {
+		return provider, fmt.Errorf("access key id is empty!")
+	}
+	secret := os.Getenv("OSS_ACCESS_KEY_SECRET_NOT_EXIST")
+	if secret == "" {
+		return provider, fmt.Errorf("access key secret is empty!")
+	}
+	token := os.Getenv("OSS_SESSION_TOKEN")
+
+	envCredential := &envCredentials{
+		AccessKeyId:     keyId,
+		AccessKeySecret: secret,
+		SecurityToken:   token,
+	}
+	return EnvironmentVariableCredentialsProvider{
+		cred: envCredential,
+	}, nil
+}
+
 func (s *OssClientSuite) TestClientSetLocalIpError(c *C) {
 	// create client and bucket
 	ipAddr, err := net.ResolveIPAddr("ip", "127.0.0.1")
