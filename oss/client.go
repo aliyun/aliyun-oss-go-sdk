@@ -2100,6 +2100,9 @@ func (client Client) GetBucketReplicationProgress(bucketName string, ruleId stri
 func (client Client) GetBucketAccessMonitor(bucketName string, options ...Option) (GetBucketAccessMonitorResult, error) {
 	var out GetBucketAccessMonitorResult
 	body, err := client.GetBucketAccessMonitorXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
@@ -2363,6 +2366,9 @@ func (client Client) PutBucketResourceGroupXml(bucketName string, xmlData string
 func (client Client) GetBucketResourceGroup(bucketName string, options ...Option) (GetBucketResourceGroupResult, error) {
 	var out GetBucketResourceGroupResult
 	body, err := client.GetBucketResourceGroupXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
@@ -2424,6 +2430,9 @@ func (client Client) PutBucketStyleXml(bucketName, styleName, xmlData string, op
 func (client Client) GetBucketStyle(bucketName, styleName string, options ...Option) (GetBucketStyleResult, error) {
 	var out GetBucketStyleResult
 	body, err := client.GetBucketStyleXml(bucketName, styleName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
@@ -2454,6 +2463,9 @@ func (client Client) GetBucketStyleXml(bucketName, styleName string, options ...
 func (client Client) ListBucketStyle(bucketName string, options ...Option) (GetBucketListStyleResult, error) {
 	var out GetBucketListStyleResult
 	body, err := client.ListBucketStyleXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
