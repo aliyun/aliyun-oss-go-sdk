@@ -5232,6 +5232,10 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Disabled")
 
+	result, err := client.GetBucketAccessMonitor(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(result.Status, Equals, "Disabled")
+
 	// Put Bucket Access Monitor
 	access := PutBucketAccessMonitor{
 		Status: "Enabled",
@@ -5254,7 +5258,7 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Enabled")
 
 	// get bucket access monitor
-	result, err := client.GetBucketAccessMonitor(bucketNameTest)
+	result, err = client.GetBucketAccessMonitor(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(result.Status, Equals, "Enabled")
 
@@ -5468,6 +5472,11 @@ func (s *OssClientSuite) TestBucketStyle(c *C) {
 	c.Assert(res.CreateTime != "", Equals, true)
 	c.Assert(res.LastModifyTime != "", Equals, true)
 
+	_, err = client.GetBucketStyle(bucketNameTest, "no-exist-style")
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchStyle")
+
 	style1 := "image/resize,w_200"
 	styleName1 := "image-" + RandLowStr(6)
 	err = client.PutBucketStyle(bucketNameTest, styleName1, style1)
@@ -5503,5 +5512,12 @@ func (s *OssClientSuite) TestBucketStyle(c *C) {
 
 	err = client.DeleteBucketStyle(bucketNameTest, styleName2)
 	c.Assert(err, IsNil)
+
+	err = client.DeleteBucketStyle(bucketNameTest, "no-exist-style")
+	c.Assert(err, IsNil)
+
+	list, err = client.ListBucketStyle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(list.Style), Equals, 0)
 
 }
