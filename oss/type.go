@@ -1633,3 +1633,15 @@ type BucketStyleXml struct {
 	CreateTime     string   `xml:"CreateTime,omitempty"`     // style create time
 	LastModifyTime string   `xml:"LastModifyTime,omitempty"` // style last modify time
 }
+
+// GetBucketArchiveDirectReadResult define config for get bucket's archive direct read
+type GetBucketArchiveDirectReadResult BucketArchiveDirectReadXml
+
+// PutBucketArchiveDirectRead define the xml of bucket's archive direct read
+type PutBucketArchiveDirectRead BucketArchiveDirectReadXml
+
+// BucketArchiveDirectReadXml define get bucket's archive direct read
+type BucketArchiveDirectReadXml struct {
+	XMLName xml.Name `xml:"ArchiveDirectReadConfiguration"`
+	Enabled bool     `xml:"Enabled"`
+}

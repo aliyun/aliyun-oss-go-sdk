@@ -1530,3 +1530,30 @@ func (s *OssTypeSuite) TestGetBucketReplicationProgressResult(c *C) {
 	c.Assert((*repResult.Rule[0].Progress).HistoricalObject, Equals, "0.85")
 	c.Assert((*repResult.Rule[0].Progress).NewObject, Equals, "2015-09-24T15:28:14.000Z")
 }
+
+func (s *OssTypeSuite) TestPutBucketArchiveDirectRead(c *C) {
+	var put PutBucketArchiveDirectRead
+	put.Enabled = true
+	xmlData, err := xml.Marshal(put)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ArchiveDirectReadConfiguration><Enabled>true</Enabled></ArchiveDirectReadConfiguration>")
+
+	var put1 PutBucketArchiveDirectRead
+	put1.Enabled = false
+	xmlData1, err := xml.Marshal(put1)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData1), Equals, "<ArchiveDirectReadConfiguration><Enabled>false</Enabled></ArchiveDirectReadConfiguration>")
+}
+
+func (s *OssTypeSuite) TestGetBucketArchiveDirectReadResult(c *C) {
+	var repResult GetBucketArchiveDirectReadResult
+	xmlData := "<ArchiveDirectReadConfiguration><Enabled>true</Enabled></ArchiveDirectReadConfiguration>"
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Enabled, Equals, true)
+
+	xmlData = "<ArchiveDirectReadConfiguration><Enabled>false</Enabled></ArchiveDirectReadConfiguration>"
+	err = xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Enabled, Equals, false)
+}
