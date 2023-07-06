@@ -5,6 +5,8 @@
 package oss
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -5504,4 +5506,81 @@ func (s *OssClientSuite) TestBucketStyle(c *C) {
 	err = client.DeleteBucketStyle(bucketNameTest, styleName2)
 	c.Assert(err, IsNil)
 
+}
+
+// TestBucketCallbackPolicy
+func (s *OssClientSuite) TestBucketCallbackPolicy(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Put Bucket Callback Policy
+	var callbackPolicy PutBucketCallbackPolicy
+	callbackVal := base64.StdEncoding.EncodeToString([]byte(`{"callbackUrl":"http://www.aliyuncs.com", "callbackBody":"bucket=${bucket}&object=${object}"}`))
+
+	callbackVal2 := base64.StdEncoding.EncodeToString([]byte(`{"callbackUrl":"http://www.aliyun.com", "callbackBody":"bucket=${bucket}&object=${object}"}`))
+
+	callbackVar2 := base64.StdEncoding.EncodeToString([]byte(`{"x:a":"a", "x:b":"b"}`))
+	callbackPolicy = PutBucketCallbackPolicy{
+		PolicyItem: []PolicyItem{
+			{
+				PolicyName:  "first",
+				Callback:    callbackVal,
+				CallbackVar: "",
+			},
+			{
+				PolicyName:  "second",
+				Callback:    callbackVal2,
+				CallbackVar: callbackVar2,
+			},
+		},
+	}
+
+	err = client.PutBucketCallbackPolicy(bucketNameTest, callbackPolicy)
+	c.Assert(err, IsNil)
+
+	time.Sleep(time.Second * 3)
+
+	// get bucket callback policy
+	res, err := client.GetBucketCallbackPolicy(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(res.PolicyItem), Equals, 2)
+
+	bucket, err := client.Bucket(bucketNameTest)
+
+	name := base64.StdEncoding.EncodeToString([]byte(`{"callbackPolicy":"first"}`))
+	err = bucket.PutObject("object.txt", strings.NewReader("hi oss"), Callback(name))
+	c.Assert(err, NotNil)
+	c.Assert(err.(UnexpectedStatusCodeError).Got(), Equals, 203)
+
+	name = base64.StdEncoding.EncodeToString([]byte(`{"callbackPolicy":"not_exist_name"}`))
+	err = bucket.PutObject("object.txt", strings.NewReader("hi oss"), Callback(name))
+	c.Assert(err, NotNil)
+
+	name = base64.StdEncoding.EncodeToString([]byte(`{"callbackPolicy":"not_exist_name"}`))
+	callbackMap := map[string]string{}
+	callbackMap["callbackUrl"] = "http://oss-demo.aliyuncs.com:23451"
+	callbackMap["callbackHost"] = "oss-cn-hangzhou.aliyuncs.com"
+	callbackMap["callbackBody"] = "filename=${object}&size=${size}&mimeType=${mimeType}"
+	callbackMap["callbackBodyType"] = "application/x-www-form-urlencoded"
+	callbackMap["callbackPolicy"] = "first"
+	callbackBuffer := bytes.NewBuffer([]byte{})
+	callbackEncoder := json.NewEncoder(callbackBuffer)
+	//do not encode '&' to "\u0026"
+	callbackEncoder.SetEscapeHTML(false)
+	err = callbackEncoder.Encode(callbackMap)
+	c.Assert(err, IsNil)
+	callbackVal3 := base64.StdEncoding.EncodeToString(callbackBuffer.Bytes())
+	err = bucket.PutObject("object.txt", strings.NewReader("hi oss"), Callback(callbackVal3))
+	c.Assert(err, NotNil)
+
+	// delete bucket style
+	err = client.DeleteBucketCallbackPolicy(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	ForceDeleteBucket(client, bucketNameTest, c)
 }

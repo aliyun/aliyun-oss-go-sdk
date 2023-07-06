@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"encoding/base64"
 	"encoding/xml"
 	"net/url"
 	"sort"
@@ -1529,4 +1530,59 @@ func (s *OssTypeSuite) TestGetBucketReplicationProgressResult(c *C) {
 	c.Assert(repResult.Rule[0].HistoricalObjectReplication, Equals, "enabled")
 	c.Assert((*repResult.Rule[0].Progress).HistoricalObject, Equals, "0.85")
 	c.Assert((*repResult.Rule[0].Progress).NewObject, Equals, "2015-09-24T15:28:14.000Z")
+}
+
+func (s *OssTypeSuite) TestGetBucketCallbackPolicyResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<BucketCallbackPolicy>
+    <PolicyItem>
+        <PolicyName>first</PolicyName>
+        <Callback>e1wiY2FsR7YnU=</Callback>
+        <CallbackVar>Q2FsbGmJcIn0=</CallbackVar>
+    </PolicyItem>
+    <PolicyItem>
+        <PolicyName>second</PolicyName>
+        <Callback>e1wiY2Fsb9keVwiOlwiYnVja2V0PSR7YnU=</Callback>
+        <CallbackVar>Q2FsFcIiwgXCJ4OmJcIjpcImJcIn0=</CallbackVar>
+    </PolicyItem>
+</BucketCallbackPolicy>`
+	var repResult GetBucketCallbackPolicyResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.PolicyItem[0].PolicyName, Equals, "first")
+	c.Assert(repResult.PolicyItem[0].Callback, Equals, "e1wiY2FsR7YnU=")
+	c.Assert(repResult.PolicyItem[0].CallbackVar, Equals, "Q2FsbGmJcIn0=")
+
+	c.Assert(repResult.PolicyItem[1].PolicyName, Equals, "second")
+	c.Assert(repResult.PolicyItem[1].Callback, Equals, "e1wiY2Fsb9keVwiOlwiYnVja2V0PSR7YnU=")
+	c.Assert(repResult.PolicyItem[1].CallbackVar, Equals, "Q2FsFcIiwgXCJ4OmJcIjpcImJcIn0=")
+}
+
+func (s *OssTypeSuite) TestPutBucketCallbackPolicy(c *C) {
+	xmlData := `<BucketCallbackPolicy><PolicyItem><PolicyName>first</PolicyName><Callback>eyJjYWxsYmFja1VybCI6Imh0dHA6Ly93d3cuYWxpeXVuY3MuY29tIiwgImNhbGxiYWNrQm9keSI6ImJ1Y2tldD0ke2J1Y2tldH0mb2JqZWN0PSR7b2JqZWN0fSJ9</Callback><CallbackVar></CallbackVar></PolicyItem><PolicyItem><PolicyName>second</PolicyName><Callback>eyJjYWxsYmFja1VybCI6Imh0dHA6Ly93d3cuYWxpeXVuLmNvbSIsICJjYWxsYmFja0JvZHkiOiJidWNrZXQ9JHtidWNrZXR9Jm9iamVjdD0ke29iamVjdH0ifQ==</Callback><CallbackVar>eyJ4OmEiOiJhIiwgIng6YiI6ImIifQ==</CallbackVar></PolicyItem></BucketCallbackPolicy>`
+	var callbackPolicy PutBucketCallbackPolicy
+	callbackVal := base64.StdEncoding.EncodeToString([]byte(`{"callbackUrl":"http://www.aliyuncs.com", "callbackBody":"bucket=${bucket}&object=${object}"}`))
+
+	callbackVal2 := base64.StdEncoding.EncodeToString([]byte(`{"callbackUrl":"http://www.aliyun.com", "callbackBody":"bucket=${bucket}&object=${object}"}`))
+
+	callbackVar2 := base64.StdEncoding.EncodeToString([]byte(`{"x:a":"a", "x:b":"b"}`))
+	callbackPolicy = PutBucketCallbackPolicy{
+		PolicyItem: []PolicyItem{
+			{
+				PolicyName:  "first",
+				Callback:    callbackVal,
+				CallbackVar: "",
+			},
+			{
+				PolicyName:  "second",
+				Callback:    callbackVal2,
+				CallbackVar: callbackVar2,
+			},
+		},
+	}
+	bs, err := xml.Marshal(callbackPolicy)
+	c.Assert(err, IsNil)
+	testLogger.Println(string(bs))
+	c.Assert(string(bs), Equals, xmlData)
+
 }

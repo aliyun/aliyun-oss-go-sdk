@@ -1633,3 +1633,21 @@ type BucketStyleXml struct {
 	CreateTime     string   `xml:"CreateTime,omitempty"`     // style create time
 	LastModifyTime string   `xml:"LastModifyTime,omitempty"` // style last modify time
 }
+
+// GetBucketCallbackPolicyResult define the callback policy for the bucket
+type GetBucketCallbackPolicyResult BucketCallbackPolicyXml
+
+// PutBucketCallbackPolicy define the callback policy for the bucket
+type PutBucketCallbackPolicy BucketCallbackPolicyXml
+
+// BucketCallbackPolicyXml define the callback policy of the bucket
+type BucketCallbackPolicyXml struct {
+	XMLName    xml.Name     `xml:"BucketCallbackPolicy"`
+	PolicyItem []PolicyItem `xml:"PolicyItem"`
+}
+
+type PolicyItem struct {
+	PolicyName  string `xml:"PolicyName"`
+	Callback    string `xml:"Callback"`
+	CallbackVar string `xml:"CallbackVar"`
+}

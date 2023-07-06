@@ -2492,6 +2492,85 @@ func (client Client) DeleteBucketStyle(bucketName, styleName string, options ...
 	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+// GetBucketCallbackPolicy get bucket's callback policy
+// bucketName    the bucket name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketCallbackPolicy(bucketName string, options ...Option) (GetBucketCallbackPolicyResult, error) {
+	var out GetBucketCallbackPolicyResult
+	body, err := client.GetBucketCallbackPolicyXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketCallbackPolicyXml get bucket's callback policy
+// bucketName    the bucket name.
+// string  the call back policy of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketCallbackPolicyXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+	params["comp"] = "callback"
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// PutBucketCallbackPolicy set bucket's callback policy
+// bucketName    the bucket name.
+// callbackPolicy PutBucketCallbackPolicy the call back policy of bucket in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketCallbackPolicy(bucketName string, callbackPolicy PutBucketCallbackPolicy, options ...Option) error {
+	bs, err := xml.Marshal(callbackPolicy)
+	if err != nil {
+		return err
+	}
+	err = client.PutBucketCallbackPolicyXml(bucketName, string(bs), options...)
+	return err
+}
+
+// DeleteBucketCallbackPolicy delete bucket's callback policy
+// bucketName    the bucket name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DeleteBucketCallbackPolicy(bucketName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["policy"] = nil
+	params["comp"] = "callback"
+	resp, err := client.do("DELETE", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
+// PutBucketCallbackPolicyXml set bucket's callback policy
+// bucketName    the bucket name.
+// xmlData  the call back policy of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketCallbackPolicyXml(bucketName, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = "application/xml"
+	params := map[string]interface{}{}
+	params["policy"] = nil
+	params["comp"] = "callback"
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
