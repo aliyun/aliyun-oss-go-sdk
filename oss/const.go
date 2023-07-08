@@ -209,6 +209,7 @@ const (
 	HttpHeaderOssNotification                = "X-Oss-Notification"
 	HTTPHeaderOssEc                          = "X-Oss-Ec"
 	HTTPHeaderOssErr                         = "X-Oss-Err"
+	HTTPHeaderOssAccessPointName             = "X-Oss-Access-Point-Name"
 )
 
 // HTTP Param

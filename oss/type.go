@@ -1633,3 +1633,58 @@ type BucketStyleXml struct {
 	CreateTime     string   `xml:"CreateTime,omitempty"`     // style create time
 	LastModifyTime string   `xml:"LastModifyTime,omitempty"` // style last modify time
 }
+
+// CreateBucketAccessPoint define the access point config of the bucket
+type CreateBucketAccessPoint BucketAccessPointConfigXml
+
+// BucketAccessPointConfigXml define the access point config of the bucket
+type BucketAccessPointConfigXml struct {
+	XMLName         xml.Name `xml:"CreateAccessPointConfiguration"`
+	AccessPointName string   `xml:"AccessPointName"`
+	NetworkOrigin   string   `xml:"NetworkOrigin"`
+	VpcId           *string  `xml:"VpcConfiguration>VpcId,omitempty"`
+}
+
+// CreateBucketAccessPointResult define create bucket access point result
+type CreateBucketAccessPointResult struct {
+	XMLName        xml.Name `xml:"CreateAccessPointResult"`
+	AccessPointArn string   `xml:"AccessPointArn"`
+	Alias          string   `xml:"Alias"`
+}
+
+// GetBucketAccessPointResult define get bucket access point result
+type GetBucketAccessPointResult struct {
+	XMLName xml.Name `xml:"GetAccessPointResult"`
+	AccessPoint
+}
+
+// AccessPoint define access point info
+type AccessPoint struct {
+	AccessPointName string    `xml:"AccessPointName"`
+	Bucket          string    `xml:"Bucket"`
+	AccountId       string    `xml:"AccountId"`
+	NetworkOrigin   string    `xml:"NetworkOrigin"`
+	VpcId           string    `xml:"VpcConfiguration>VpcId"`
+	AccessPointArn  string    `xml:"AccessPointArn"`
+	CreationDate    string    `xml:"CreationDate"`
+	Alias           string    `xml:"Alias"`
+	Status          string    `xml:"Status"`
+	Endpoints       Endpoints `xml:"Endpoints"`
+}
+
+type Endpoints struct {
+	PublicEndpoint   string `xml:"PublicEndpoint"`
+	InternalEndpoint string `xml:"InternalEndpoint"`
+}
+
+// ListBucketAccessPointsResult define list access point result
+type ListBucketAccessPointsResult ListBucketAccessPointsXml
+
+// ListBucketAccessPointsResult define list access point
+type ListBucketAccessPointsXml struct {
+	XMLName               xml.Name      `xml:"ListAccessPointsResult"`
+	IsTruncated           bool          `xml:"IsTruncated"`
+	NextContinuationToken string        `xml:"NextContinuationToken"`
+	AccountId             string        `xml:"AccountId"`
+	AccessPoints          []AccessPoint `xml:"AccessPoints>AccessPoint"`
+}

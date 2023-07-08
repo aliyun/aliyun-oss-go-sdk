@@ -1530,3 +1530,147 @@ func (s *OssTypeSuite) TestGetBucketReplicationProgressResult(c *C) {
 	c.Assert((*repResult.Rule[0].Progress).HistoricalObject, Equals, "0.85")
 	c.Assert((*repResult.Rule[0].Progress).NewObject, Equals, "2015-09-24T15:28:14.000Z")
 }
+
+func (s *OssTypeSuite) TestCreateBucketAccessPoint(c *C) {
+	var create CreateBucketAccessPoint
+	create.AccessPointName = "my-access-point"
+	create.NetworkOrigin = "Internet"
+	xmlData, err := xml.Marshal(create)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, `<CreateAccessPointConfiguration><AccessPointName>my-access-point</AccessPointName><NetworkOrigin>Internet</NetworkOrigin></CreateAccessPointConfiguration>`)
+
+	var create1 CreateBucketAccessPoint
+	create1.AccessPointName = "my-access-point-2"
+	create1.NetworkOrigin = "vpc"
+	vpcId := "vpc-1234567890"
+	create1.VpcId = &vpcId
+	xmlData1, err := xml.Marshal(create1)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData1), Equals, `<CreateAccessPointConfiguration><AccessPointName>my-access-point-2</AccessPointName><NetworkOrigin>vpc</NetworkOrigin><VpcConfiguration><VpcId>vpc-1234567890</VpcId></VpcConfiguration></CreateAccessPointConfiguration>`)
+}
+
+func (s *OssTypeSuite) TestCreateBucketAccessPointResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<CreateAccessPointResult>
+  <AccessPointArn>acs:oss:ap-southeast-2:128364106451****:accesspoint/ap-01</AccessPointArn>
+  <Alias>ap-01-45ee7945007a2f0bcb595f63e2215c****-ossalias</Alias>
+</CreateAccessPointResult>`
+	var result CreateBucketAccessPointResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &result)
+	c.Assert(err, IsNil)
+	c.Assert(result.AccessPointArn, Equals, "acs:oss:ap-southeast-2:128364106451****:accesspoint/ap-01")
+	c.Assert(result.Alias, Equals, "ap-01-45ee7945007a2f0bcb595f63e2215c****-ossalias")
+}
+
+func (s *OssTypeSuite) TestGetBucketAccessPointResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+        <GetAccessPointResult>
+          <AccessPointName>my-access-point</AccessPointName>
+          <Bucket>my-bucket</Bucket>
+          <AccountId>1234567890</AccountId>
+          <NetworkOrigin>Internet</NetworkOrigin>
+          <VpcConfiguration>
+            <VpcId>vpc-1234567890</VpcId>
+          </VpcConfiguration>
+          <AccessPointArn>my-access-point-arn</AccessPointArn>
+          <CreationDate>2022-01-01T00:00:00Z</CreationDate>
+          <Alias>my-alias</Alias>
+          <Status>Active</Status>
+          <Endpoints>
+            <PublicEndpoint>my-access-point.s3.amazonaws.com</PublicEndpoint>
+            <InternalEndpoint>my-access-point.internal.s3.amazonaws.com</InternalEndpoint>
+          </Endpoints>
+        </GetAccessPointResult>`
+	var repResult GetBucketAccessPointResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.AccessPointName, Equals, "my-access-point")
+	c.Assert(repResult.Bucket, Equals, "my-bucket")
+	c.Assert(repResult.AccountId, Equals, "1234567890")
+	c.Assert(repResult.NetworkOrigin, Equals, "Internet")
+	c.Assert(repResult.VpcId, Equals, "vpc-1234567890")
+	c.Assert(repResult.AccessPointArn, Equals, "my-access-point-arn")
+	c.Assert(repResult.CreationDate, Equals, "2022-01-01T00:00:00Z")
+	c.Assert(repResult.Alias, Equals, "my-alias")
+	c.Assert(repResult.Status, Equals, "Active")
+	c.Assert(repResult.Endpoints.PublicEndpoint, Equals, "my-access-point.s3.amazonaws.com")
+	c.Assert(repResult.Endpoints.InternalEndpoint, Equals, "my-access-point.internal.s3.amazonaws.com")
+
+	xmlData1 := `<?xml version="1.0" encoding="UTF-8"?>
+        <GetAccessPointResult>
+          <AccessPointName>my-access-point</AccessPointName>
+          <Bucket>my-bucket</Bucket>
+          <AccountId>1234567890</AccountId>
+          <NetworkOrigin>Internet</NetworkOrigin>
+          <AccessPointArn>my-access-point-arn</AccessPointArn>
+          <CreationDate>2022-01-01T00:00:00Z</CreationDate>
+          <Alias>my-alias</Alias>
+          <Status>Active</Status>
+          <Endpoints>
+            <PublicEndpoint>my-access-point.s3.amazonaws.com</PublicEndpoint>
+            <InternalEndpoint>my-access-point.internal.s3.amazonaws.com</InternalEndpoint>
+          </Endpoints>
+        </GetAccessPointResult>`
+	var repResult1 GetBucketAccessPointResult
+	err = xmlUnmarshal(strings.NewReader(xmlData1), &repResult1)
+	c.Assert(err, IsNil)
+	c.Assert(repResult1.AccessPointName, Equals, "my-access-point")
+	c.Assert(repResult1.Bucket, Equals, "my-bucket")
+	c.Assert(repResult1.AccountId, Equals, "1234567890")
+	c.Assert(repResult1.NetworkOrigin, Equals, "Internet")
+	c.Assert(repResult1.VpcId, Equals, "")
+	c.Assert(repResult1.AccessPointArn, Equals, "my-access-point-arn")
+	c.Assert(repResult1.CreationDate, Equals, "2022-01-01T00:00:00Z")
+	c.Assert(repResult1.Alias, Equals, "my-alias")
+	c.Assert(repResult1.Status, Equals, "Active")
+	c.Assert(repResult1.Endpoints.PublicEndpoint, Equals, "my-access-point.s3.amazonaws.com")
+	c.Assert(repResult1.Endpoints.InternalEndpoint, Equals, "my-access-point.internal.s3.amazonaws.com")
+}
+
+func (s *OssTypeSuite) TestListBucketAccessPointResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8" ?>
+<ListAccessPointsResult>
+    <IsTruncated>true</IsTruncated>
+    <NextContinuationToken>abc</NextContinuationToken>
+    <AccountId>111933544165****</AccountId>
+    <AccessPoints>
+        <AccessPoint>
+            <Bucket>oss-example</Bucket>
+            <AccessPointName>ap-01</AccessPointName>
+            <Alias>ap-01-ossalias</Alias>
+            <NetworkOrigin>vpc</NetworkOrigin>
+            <VpcConfiguration>
+                <VpcId>vpc-t4nlw426y44rd3iq4****</VpcId>
+            </VpcConfiguration>
+            <Status>enable</Status>
+        </AccessPoint>
+        <AccessPoint>
+            <AccessPointName>ap-02</AccessPointName>
+            <Alias>access-point-name-2-1280*****-ossalias</Alias>
+            <Bucket>oss-example</Bucket>
+            <NetworkOrigin>internet</NetworkOrigin>
+            <VpcConfiguration><VpcId></VpcId></VpcConfiguration>
+            <Status>enable</Status>
+        </AccessPoint>
+    </AccessPoints>
+</ListAccessPointsResult>`
+	var list ListBucketAccessPointsResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &list)
+	c.Assert(err, IsNil)
+	c.Assert(list.IsTruncated, Equals, true)
+	c.Assert(list.NextContinuationToken, Equals, "abc")
+	c.Assert(list.AccountId, Equals, "111933544165****")
+	c.Assert(list.AccessPoints[0].Bucket, Equals, "oss-example")
+	c.Assert(list.AccessPoints[0].AccessPointName, Equals, "ap-01")
+	c.Assert(list.AccessPoints[0].Alias, Equals, "ap-01-ossalias")
+	c.Assert(list.AccessPoints[0].NetworkOrigin, Equals, "vpc")
+	c.Assert(list.AccessPoints[0].VpcId, Equals, "vpc-t4nlw426y44rd3iq4****")
+	c.Assert(list.AccessPoints[0].Status, Equals, "enable")
+
+	c.Assert(list.AccessPoints[1].Bucket, Equals, "oss-example")
+	c.Assert(list.AccessPoints[1].AccessPointName, Equals, "ap-02")
+	c.Assert(list.AccessPoints[1].Alias, Equals, "access-point-name-2-1280*****-ossalias")
+	c.Assert(list.AccessPoints[1].NetworkOrigin, Equals, "internet")
+	c.Assert(list.AccessPoints[1].VpcId, Equals, "")
+	c.Assert(list.AccessPoints[1].Status, Equals, "enable")
+}

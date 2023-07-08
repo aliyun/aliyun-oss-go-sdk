@@ -5505,3 +5505,178 @@ func (s *OssClientSuite) TestBucketStyle(c *C) {
 	c.Assert(err, IsNil)
 
 }
+
+// TestBucketAccessPoint
+func (s *OssClientSuite) TestBucketAccessPoint(c *C) {
+	if accountID == "" {
+		c.ExpectFailure("account ID is empty!")
+	}
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	// Create Access Point
+	apName := "ap1-" + RandLowStr(10)
+	var create CreateBucketAccessPoint
+	create.AccessPointName = apName
+	create.NetworkOrigin = "internet"
+	resp, err := client.CreateBucketAccessPoint(bucketNameTest, create)
+	c.Assert(err, IsNil)
+
+	c.Assert(resp.AccessPointArn != "", Equals, true)
+	c.Assert(strings.Contains(resp.AccessPointArn, "acs:oss:"), Equals, true)
+	c.Assert(resp.Alias != "", Equals, true)
+	c.Assert(strings.Contains(resp.Alias, "ossalias"), Equals, true)
+	time.Sleep(1 * time.Second)
+
+	// get access point
+	_, err = client.GetBucketAccessPoint(bucketNameTest, "not-exist-ap")
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchAccessPoint")
+
+	res, err := client.GetBucketAccessPoint(bucketNameTest, apName)
+	aliasName := res.Alias
+	c.Assert(err, IsNil)
+	c.Assert(res.AccessPointName, Equals, apName)
+	c.Assert(res.Bucket, Equals, bucketNameTest)
+	c.Assert(res.AccountId != "", Equals, true)
+	c.Assert(res.NetworkOrigin, Equals, "internet")
+	c.Assert(res.VpcId, Equals, "")
+	c.Assert(res.AccessPointArn != "", Equals, true)
+	accessPointArn := res.AccessPointArn
+	c.Assert(strings.Contains(res.AccessPointArn, "acs:oss:"), Equals, true)
+	c.Assert(res.CreationDate != "", Equals, true)
+	c.Assert(res.Alias != "", Equals, true)
+	c.Assert(res.Status != "", Equals, true)
+	c.Assert(strings.Contains(res.Endpoints.PublicEndpoint, "oss-accesspoint.aliyuncs.com"), Equals, true)
+	c.Assert(strings.Contains(res.Endpoints.PublicEndpoint, apName), Equals, true)
+
+	c.Assert(strings.Contains(res.Endpoints.InternalEndpoint, "-internal.oss-accesspoint.aliyuncs.com"), Equals, true)
+	c.Assert(strings.Contains(res.Endpoints.InternalEndpoint, apName), Equals, true)
+
+	apName1 := "ap2-" + RandLowStr(10)
+	var create1 CreateBucketAccessPoint
+	create1.AccessPointName = apName1
+	create1.NetworkOrigin = "vpc"
+	vpcId := "vpc-1234567890"
+	create1.VpcId = &vpcId
+	resp1, err := client.CreateBucketAccessPoint(bucketNameTest, create1)
+	c.Assert(err, IsNil)
+
+	c.Assert(resp1.AccessPointArn != "", Equals, true)
+	c.Assert(strings.Contains(resp1.AccessPointArn, "acs:oss:"), Equals, true)
+	c.Assert(resp1.Alias != "", Equals, true)
+	c.Assert(strings.Contains(resp1.Alias, "ossalias"), Equals, true)
+	time.Sleep(1 * time.Second)
+
+	// list access point
+	list, err := client.ListBucketAccessPoint(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(list.AccessPoints), Equals, 2)
+
+	c.Assert(list.AccessPoints[1].AccessPointName, Equals, apName1)
+	c.Assert(list.AccessPoints[1].Bucket, Equals, bucketNameTest)
+	c.Assert(list.AccessPoints[1].Alias != "", Equals, true)
+	c.Assert(list.AccessPoints[1].NetworkOrigin, Equals, "vpc")
+	c.Assert(list.AccessPoints[1].VpcId, Equals, vpcId)
+	c.Assert(list.AccessPoints[1].Status != "", Equals, true)
+
+	// test access point policy
+	policy := `{
+   "Version":"1",
+   "Statement":[
+   {
+     "Action":[
+       	"oss:*"
+    ],
+    "Effect": "Allow",
+    "Principal":["` + accountID + `"],
+    "Resource":[
+		"` + accessPointArn + `",
+		"` + accessPointArn + `/object/*"
+     ]
+   }
+  ]
+ }`
+
+	err = client.PutAccessPointPolicy(bucketNameTest, apName, policy)
+	c.Assert(err, IsNil)
+
+	info, err := client.GetAccessPointPolicy(bucketNameTest, apName)
+	c.Assert(err, IsNil)
+	c.Assert(info, Equals, policy)
+
+	// test access point policy by alias
+	for {
+		res, err = client.GetBucketAccessPoint(bucketNameTest, apName)
+		c.Assert(err, IsNil)
+		if res.Status == "enable" {
+			break
+		}
+		time.Sleep(30 * time.Second)
+	}
+	policy1 := `{
+   "Version":"1",
+   "Statement":[
+   {
+     "Action":[
+       	"oss:*"
+    ],
+    "Effect": "Allow",
+    "Principal":["` + accountID + `"],
+    "Resource":[
+		"` + accessPointArn + `",
+		"` + accessPointArn + `/object/*"
+     ]
+   },
+	{
+     "Action":[
+       "oss:PutObject",
+       "oss:GetObject"
+    ],
+    "Effect":"Deny",
+    "Principal":["123456"],
+    "Resource":[
+       "` + accessPointArn + `",
+       "` + accessPointArn + `/object/*"
+     ]
+   }
+  ]
+ }`
+	err = client.PutAccessPointPolicy(aliasName, apName, policy1)
+	c.Assert(err, IsNil)
+
+	_, err = client.GetAccessPointPolicy(aliasName, apName)
+	c.Assert(err, IsNil)
+	err = client.DeleteAccessPointPolicy(aliasName, apName)
+	c.Assert(err, IsNil)
+
+	err = client.PutAccessPointPolicy(bucketNameTest, apName, policy1)
+	c.Assert(err, IsNil)
+	err = client.DeleteAccessPointPolicy(bucketNameTest, apName)
+	c.Assert(err, IsNil)
+
+	// delete bucket access point
+	for {
+		list2, err := client.ListBucketAccessPoint(bucketNameTest)
+		testLogger.Println(list2)
+		c.Assert(err, IsNil)
+		if len(list2.AccessPoints) > 0 {
+			for _, point := range list2.AccessPoints {
+				if point.Status == "enable" {
+					err = client.DeleteBucketAccessPoint(bucketNameTest, point.AccessPointName)
+					c.Assert(err, IsNil)
+				}
+			}
+		} else {
+			break
+		}
+		time.Sleep(30 * time.Second)
+	}
+	ForceDeleteBucket(client, bucketNameTest, c)
+}
