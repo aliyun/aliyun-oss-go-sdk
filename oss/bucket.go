@@ -2,6 +2,7 @@ package oss
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/xml"
@@ -1224,6 +1225,8 @@ func (bucket Bucket) doInner(method, objectName string, params map[string]interf
 	if len(bucket.BucketName) > 0 && err != nil {
 		return nil, err
 	}
+	_, paramCtx, _ := IsOptionSet(options, HTTPParamContext)
+	params[HTTPParamContext] = paramCtx
 	resp, err := bucket.Client.Conn.Do(method, bucket.BucketName, objectName,
 		params, headers, data, 0, listener)
 
@@ -1252,13 +1255,18 @@ func (bucket Bucket) do(method, objectName string, params map[string]interface{}
 
 func (bucket Bucket) doURL(method HTTPMethod, signedURL string, params map[string]interface{}, options []Option,
 	data io.Reader, listener ProgressListener) (*Response, error) {
+
 	headers := make(map[string]string)
 	err := handleOptions(headers, options)
 	if err != nil {
 		return nil, err
 	}
-
-	resp, err := bucket.Client.Conn.DoURL(method, signedURL, headers, data, 0, listener)
+	_, paramCtx, _ := IsOptionSet(options, HTTPParamContext)
+	var ctx context.Context
+	if paramCtx != nil {
+		ctx = paramCtx.(context.Context)
+	}
+	resp, err := bucket.Client.Conn.DoURL(method, signedURL, headers, data, 0, listener, ctx)
 
 	// get response header
 	respHeader, _ := FindOption(options, responseHeader, nil)

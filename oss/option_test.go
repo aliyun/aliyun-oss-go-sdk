@@ -1,7 +1,9 @@
 package oss
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	. "gopkg.in/check.v1"
 )
@@ -314,4 +316,15 @@ func (s *OssOptionSuite) TestDeleteOption(c *C) {
 	str, err = FindOption(skipOption, "key-marker", "")
 	c.Assert(str, Equals, "789")
 
+}
+
+func (s *OssOptionSuite) TestWithContext(c *C) {
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	options := []Option{WithContext(ctx)}
+	_, paramCtx, _ := IsOptionSet(options, HTTPParamContext)
+
+	c.Assert(paramCtx, NotNil)
+	c.Assert(paramCtx.(context.Context), Equals, ctx)
 }
