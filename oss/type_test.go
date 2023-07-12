@@ -2,11 +2,10 @@ package oss
 
 import (
 	"encoding/xml"
+	. "gopkg.in/check.v1"
 	"net/url"
 	"sort"
 	"strings"
-
-	. "gopkg.in/check.v1"
 )
 
 type OssTypeSuite struct{}
@@ -939,7 +938,7 @@ func (s *OssTypeSuite) TestLifeCycleRules(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
+func (s *OssTypeSuite) TestGetBucketLifecycleResult(c *C) {
 	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <LifecycleConfiguration>
   <Rule>
@@ -1016,6 +1015,136 @@ func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
 	c.Assert(res1.Rules[0].Filter.Not[2].Prefix, Equals, "abc/not2/")
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Key, Equals, "notkey2")
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Value, Equals, "notvalue2")
+
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?><LifecycleConfiguration>
+  <Rule>
+    <ID>r1</ID>
+    <Prefix>abc/</Prefix>
+    <Filter>
+      <ObjectSizeGreaterThan>500</ObjectSizeGreaterThan>
+      <ObjectSizeLessThan>64000</ObjectSizeLessThan>
+      <Not>
+        <Prefix>abc/not1/</Prefix>
+        <Tag>
+          <Key>notkey1</Key>
+          <Value>notvalue1</Value>
+        </Tag>
+      </Not>
+      <Not>
+        <Prefix>abc/not2/</Prefix>
+        <Tag>
+          <Key>notkey2</Key>
+          <Value>notvalue2</Value>
+        </Tag>
+      </Not>
+    </Filter>
+  </Rule>
+  <Rule>
+    <ID>r2</ID>
+    <Prefix>def/</Prefix>
+    <Filter>
+      <ObjectSizeGreaterThan>500</ObjectSizeGreaterThan>
+      <Not>
+        <Prefix>def/not1/</Prefix>
+      </Not>
+      <Not>
+        <Prefix>def/not2/</Prefix>
+        <Tag>
+          <Key>notkey2</Key>
+          <Value>notvalue2</Value>
+        </Tag>
+      </Not>
+    </Filter>
+  </Rule>
+</LifecycleConfiguration>
+`)
+
+	var res2 GetBucketLifecycleResult
+	err = xml.Unmarshal(xmlData, &res2)
+	testLogger.Println(res2.Rules[1].Filter)
+	c.Assert(err, IsNil)
+	c.Assert(res2.Rules[0].ID, Equals, "r1")
+	c.Assert(res2.Rules[0].Prefix, Equals, "abc/")
+	c.Assert(res2.Rules[0].Filter.ObjectSizeGreaterThan, Equals, int64(500))
+	c.Assert(res2.Rules[0].Filter.ObjectSizeLessThan, Equals, int64(64000))
+	c.Assert(res2.Rules[0].Filter.Not[0].Prefix, Equals, "abc/not1/")
+	c.Assert(res2.Rules[0].Filter.Not[0].Tag.Key, Equals, "notkey1")
+	c.Assert(res2.Rules[0].Filter.Not[0].Tag.Value, Equals, "notvalue1")
+
+	c.Assert(res2.Rules[0].Filter.Not[1].Prefix, Equals, "abc/not2/")
+	c.Assert(res2.Rules[0].Filter.Not[1].Tag.Key, Equals, "notkey2")
+	c.Assert(res2.Rules[0].Filter.Not[1].Tag.Value, Equals, "notvalue2")
+
+	c.Assert(res2.Rules[1].ID, Equals, "r2")
+	c.Assert(res2.Rules[1].Prefix, Equals, "def/")
+	c.Assert(res2.Rules[1].Filter.ObjectSizeGreaterThan, Equals, int64(500))
+	c.Assert(res2.Rules[1].Filter.ObjectSizeLessThan, Equals, nil)
+	c.Assert(res2.Rules[1].Filter.Not[0].Prefix, Equals, "def/not1/")
+
+	c.Assert(res2.Rules[1].Filter.Not[1].Prefix, Equals, "def/not2/")
+	c.Assert(res2.Rules[1].Filter.Not[1].Tag.Key, Equals, "notkey2")
+	c.Assert(res2.Rules[1].Filter.Not[1].Tag.Value, Equals, "notvalue2")
+}
+func (s *OssTypeSuite) TestLifecycleConfiguration(c *C) {
+	expiration := LifecycleExpiration{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	isTrue := true
+	isFalse := false
+	greater := int64(500)
+	less := int64(645000)
+	filter := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+	}
+	rule0 := LifecycleRule{
+		ID:         "r0",
+		Prefix:     "prefix0",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+	rule1 := LifecycleRule{
+		ID:         "r1",
+		Prefix:     "prefix1",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+				IsAccessTime: &isFalse,
+			},
+		},
+		Filter: &filter,
+	}
+
+	abortMPU := LifecycleAbortMultipartUpload{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	rule2 := LifecycleRule{
+		ID:                   "r3",
+		Prefix:               "prefix3",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	rules := []LifecycleRule{rule0, rule1, rule2}
+	config := LifecycleConfiguration{
+		Rules: rules,
+	}
+	xmlData, err := xml.Marshal(config)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<LifecycleConfiguration><Rule><ID>r0</ID><Prefix>prefix0</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration></Rule><Rule><ID>r1</ID><Prefix>prefix1</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Transition><Days>30</Days><StorageClass>IA</StorageClass><IsAccessTime>false</IsAccessTime></Transition><Filter><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>700</ObjectSizeLessThan></Filter></Rule><Rule><ID>r3</ID><Prefix>prefix3</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition></Rule></LifecycleConfiguration>")
 }
 
 // Test Bucket Resource Group
