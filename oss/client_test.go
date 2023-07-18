@@ -5706,12 +5706,11 @@ func (s *OssClientSuite) TestDescribeRegions(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
 
-	list, err := client.DescribeRegions("")
+	list, err := client.DescribeRegions()
 	c.Assert(err, IsNil)
 	c.Assert(len(list.Regions) > 0, Equals, true)
 
-	regionEndpoint := "oss-cn-hangzhou"
-	info, err := client.DescribeRegions(regionEndpoint)
+	info, err := client.DescribeRegions(AddParam("regions", "oss-cn-hangzhou"))
 	c.Assert(err, IsNil)
 	c.Assert(len(info.Regions), Equals, 1)
 	c.Assert(info.Regions[0].Region, Equals, "oss-cn-hangzhou")
