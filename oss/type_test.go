@@ -1645,3 +1645,33 @@ func (s *OssTypeSuite) TestRefererXML(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(string(xmlBody), Equals, xmlData2)
 }
+
+func (s *OssTypeSuite) TestDescribeRegionsResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<RegionInfoList>
+  <RegionInfo>
+     <Region>oss-cn-hangzhou</Region>
+     <InternetEndpoint>oss-cn-hangzhou.aliyuncs.com</InternetEndpoint>
+     <InternalEndpoint>oss-cn-hangzhou-internal.aliyuncs.com</InternalEndpoint>
+     <AccelerateEndpoint>oss-accelerate.aliyuncs.com</AccelerateEndpoint>  
+  </RegionInfo>
+  <RegionInfo>
+     <Region>oss-cn-shanghai</Region>
+     <InternetEndpoint>oss-cn-shanghai.aliyuncs.com</InternetEndpoint>
+     <InternalEndpoint>oss-cn-shanghai-internal.aliyuncs.com</InternalEndpoint>
+     <AccelerateEndpoint>oss-accelerate.aliyuncs.com</AccelerateEndpoint>  
+  </RegionInfo>
+</RegionInfoList>`
+	var repResult DescribeRegionsResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Regions[0].Region, Equals, "oss-cn-hangzhou")
+	c.Assert(repResult.Regions[0].InternetEndpoint, Equals, "oss-cn-hangzhou.aliyuncs.com")
+	c.Assert(repResult.Regions[0].InternalEndpoint, Equals, "oss-cn-hangzhou-internal.aliyuncs.com")
+	c.Assert(repResult.Regions[0].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
+
+	c.Assert(repResult.Regions[1].Region, Equals, "oss-cn-shanghai")
+	c.Assert(repResult.Regions[1].InternetEndpoint, Equals, "oss-cn-shanghai.aliyuncs.com")
+	c.Assert(repResult.Regions[1].InternalEndpoint, Equals, "oss-cn-shanghai-internal.aliyuncs.com")
+	c.Assert(repResult.Regions[1].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
+}

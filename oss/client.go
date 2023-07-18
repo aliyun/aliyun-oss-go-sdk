@@ -2536,6 +2536,40 @@ func (client Client) DeleteBucketStyle(bucketName, styleName string, options ...
 	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+// DescribeRegions get describe regions
+// GetDescribeRegionsResult  the  result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DescribeRegions(options ...Option) (DescribeRegionsResult, error) {
+	var out DescribeRegionsResult
+	body, err := client.DescribeRegionsXml(options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// DescribeRegionsXml get describe regions
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DescribeRegionsXml(options ...Option) (string, error) {
+	params, err := GetRawParams(options)
+	if err != nil {
+		return "", err
+	}
+	if params["regions"] == nil {
+		params["regions"] = nil
+	}
+	resp, err := client.do("GET", "", params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
