@@ -128,8 +128,10 @@ type LifecycleVersionTransition struct {
 
 // LifecycleFilter defines the rule's Filter propery
 type LifecycleFilter struct {
-	XMLName xml.Name             `xml:"Filter"`
-	Not     []LifecycleFilterNot `xml:"Not,omitempty"`
+	XMLName               xml.Name             `xml:"Filter"`
+	Not                   []LifecycleFilterNot `xml:"Not,omitempty"`
+	ObjectSizeGreaterThan *int64               `xml:"ObjectSizeGreaterThan,omitempty"`
+	ObjectSizeLessThan    *int64               `xml:"ObjectSizeLessThan,omitempty"`
 }
 
 // LifecycleFilterNot defines the rule's Filter Not propery

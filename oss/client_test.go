@@ -1408,6 +1408,50 @@ func (s *OssClientSuite) TestBucketLifecycleNegative(c *C) {
 	c.Assert(err, NotNil)
 }
 
+// TestBucketLifecycleWithFilterSize
+func (s *OssClientSuite) TestBucketLifecycleWithFilterSize(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+
+	greater := int64(500)
+	less := int64(645000)
+	filter := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+	}
+	rule1 := LifecycleRule{
+		ID:     "rs1",
+		Prefix: "logs",
+		Status: "Enabled",
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+			},
+		},
+		Filter: &filter,
+	}
+
+	rules := []LifecycleRule{rule1}
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.SetBucketLifecycle(bucketNameTest, rules)
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+}
+
 // TestSetBucketReferer
 func (s *OssClientSuite) TestSetBucketReferer(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
