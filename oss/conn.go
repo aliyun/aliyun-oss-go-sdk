@@ -2,6 +2,7 @@ package oss
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
@@ -73,7 +74,7 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) 
 			}
 			transport.Proxy = http.ProxyURL(proxyURL)
 		}
-		client = &http.Client{Transport: transport}
+		client = &http.Client{Transport: transport, Timeout: time.Second * time.Duration(config.Timeout)}
 		if !config.RedirectEnabled {
 			disableHTTPRedirect(client)
 		}
@@ -89,6 +90,12 @@ func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) 
 // Do sends request and returns the response
 func (conn Conn) Do(method, bucketName, objectName string, params map[string]interface{}, headers map[string]string,
 	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
+	var ctx context.Context
+	paramCtx := params[HTTPParamContext]
+	if paramCtx != nil {
+		ctx = paramCtx.(context.Context)
+		delete(params, HTTPParamContext)
+	}
 	urlParams := conn.getURLParams(params)
 	subResource := conn.getSubResource(params)
 	uri := conn.url.getURL(bucketName, objectName, urlParams)
@@ -100,12 +107,12 @@ func (conn Conn) Do(method, bucketName, objectName string, params map[string]int
 		resource = conn.getResourceV4(bucketName, objectName, subResource)
 	}
 
-	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener)
+	return conn.doRequest(method, uri, resource, headers, data, initCRC, listener, ctx)
 }
 
 // DoURL sends the request with signed URL and returns the response result.
 func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]string,
-	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
+	data io.Reader, initCRC uint64, listener ProgressListener, ctx context.Context) (*Response, error) {
 	// Get URI from signedURL
 	uri, err := url.ParseRequestURI(signedURL)
 	if err != nil {
@@ -123,6 +130,9 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 		Host:       uri.Host,
 	}
 
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
 	tracker := &readerTracker{completedBytes: 0}
 	fd, crc := conn.handleBody(req, data, initCRC, listener, tracker)
 	if fd != nil {
@@ -158,9 +168,17 @@ func (conn Conn) DoURL(method HTTPMethod, signedURL string, headers map[string]s
 	resp, err := conn.client.Do(req)
 	if err != nil {
 		// Transfer failed
+		conn.config.WriteLog(Debug, "[Resp:%p]http error:%s\n", req, err.Error())
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
 		publishProgress(listener, event)
-		conn.config.WriteLog(Debug, "[Resp:%p]http error:%s\n", req, err.Error())
+		if ctx != nil {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			default:
+			}
+
+		}
 		return nil, err
 	}
 
@@ -281,7 +299,7 @@ func (conn Conn) getResourceV4(bucketName, objectName, subResource string) strin
 }
 
 func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource string, headers map[string]string,
-	data io.Reader, initCRC uint64, listener ProgressListener) (*Response, error) {
+	data io.Reader, initCRC uint64, listener ProgressListener, ctx context.Context) (*Response, error) {
 	method = strings.ToUpper(method)
 	req := &http.Request{
 		Method:     method,
@@ -292,7 +310,9 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 		Header:     make(http.Header),
 		Host:       uri.Host,
 	}
-
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
 	tracker := &readerTracker{completedBytes: 0}
 	fd, crc := conn.handleBody(req, data, initCRC, listener, tracker)
 	if fd != nil {
@@ -341,11 +361,20 @@ func (conn Conn) doRequest(method string, uri *url.URL, canonicalizedResource st
 	resp, err := conn.client.Do(req)
 
 	if err != nil {
-		// Transfer failed
-		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
-		publishProgress(listener, event)
 		conn.config.WriteLog(Debug, "[Resp:%p]http error:%s\n", req, err.Error())
-		return nil, err
+		if ctx != nil {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			default:
+			}
+			return nil, err
+		} else {
+			// Transfer failed
+			event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
+			publishProgress(listener, event)
+			return nil, err
+		}
 	}
 
 	if conn.config.LogLevel >= Debug {

@@ -2,6 +2,7 @@ package oss
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/tls"
@@ -2277,6 +2278,219 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.GetConfig().SecurityToken, Equals, "token")
 	c.Assert(bucket.GetConfig().IsCname, Equals, true)
 	c.Assert(bucket.GetConfig().IsEnableMD5, Equals, false)
+}
+
+func (s *OssBucketSuite) TestClientTimeOutAndContextTimeout(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
+
+	// Put
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
+	defer cancel()
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue), WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get
+	_, err = bucket.GetObject(objectName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Delete
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Put with URL
+	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue), WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get with URL
+	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
+	c.Assert(err, IsNil)
+
+	_, err = bucket.GetObjectWithURL(signedURL, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	content := RandStr(1024 * 1024)
+	var fileName = "test-file-" + RandStr(8)
+	CreateFile(fileName, content, c)
+
+	fd, err := os.Open(fileName)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	err = bucket.PutObjectFromFile(objectName, fileName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	clientTime, err := New(endpoint, accessID, accessKey, SetTimeout(1))
+	c.Assert(err, IsNil)
+
+	bucketTime, err := clientTime.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	// Put
+	ctxTime := context.Background()
+	ctxTime, cancel = context.WithTimeout(ctxTime, 100*time.Nanosecond)
+	defer cancel()
+	err = bucketTime.PutObject(objectName, strings.NewReader(objectValue), WithContext(ctxTime))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucketTime.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get
+	_, err = bucketTime.GetObject(objectName, WithContext(ctxTime))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Delete
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Put with URL
+	signedURL, err = bucketTime.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+
+	err = bucketTime.PutObjectWithURL(signedURL, strings.NewReader(objectValue), WithContext(ctxTime))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucketTime.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get with URL
+	signedURL, err = bucketTime.SignURL(objectName, HTTPGet, 3600)
+	c.Assert(err, IsNil)
+
+	_, err = bucketTime.GetObjectWithURL(signedURL, WithContext(ctxTime))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Delete
+	err = bucketTime.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectFromFile(objectName, fileName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Put
+	ctx1 := context.TODO()
+	ctx1, cancel = context.WithTimeout(ctx1, 2*time.Second)
+	defer cancel()
+	var traffic int64 = 245760
+	err = bucketTime.PutObject(objectName, strings.NewReader(content), WithContext(ctx1), TrafficLimitHeader(traffic))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers"), Equals, true)
+
+	// Get not exist object
+	_, err = bucketTime.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(content))
+	c.Assert(err, IsNil)
+
+	ctx2 := context.TODO()
+	ctx2, cancel = context.WithTimeout(ctx2, 2*time.Second)
+	defer cancel()
+	// Get
+	_, err = bucketTime.GetObject(objectName, WithContext(ctx2), TrafficLimitHeader(traffic))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers"), Equals, true)
+
+	// Delete
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Put with URL
+	signedURL, err = bucketTime.SignURL(objectName, HTTPPut, 3600, TrafficLimitHeader(traffic))
+	c.Assert(err, IsNil)
+
+	ctx3 := context.TODO()
+	ctx3, cancel = context.WithTimeout(ctx3, 2*time.Second)
+	defer cancel()
+	err = bucketTime.PutObjectWithURL(signedURL, strings.NewReader(content), WithContext(ctx3), TrafficLimitHeader(traffic))
+	c.Assert(err, NotNil)
+	testLogger.Println(err)
+	c.Assert(strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers"), Equals, true)
+
+	// Get not exist object
+	_, err = bucketTime.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(content))
+	c.Assert(err, IsNil)
+
+	// Get with URL
+	signedURL, err = bucketTime.SignURL(objectName, HTTPGet, 3600, TrafficLimitHeader(traffic))
+	c.Assert(err, IsNil)
+
+	ctx4 := context.TODO()
+	ctx4, cancel = context.WithTimeout(ctx4, 2*time.Second)
+	defer cancel()
+	_, err = bucketTime.GetObjectWithURL(signedURL, WithContext(ctx4), TrafficLimitHeader(traffic))
+	c.Assert(err, NotNil)
+	testLogger.Println(err)
+	c.Assert(strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers"), Equals, true)
+
+	// Delete
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	ctx5 := context.TODO()
+	ctx5, cancel = context.WithTimeout(ctx5, 3*time.Second)
+	defer cancel()
+	err = bucketTime.PutObjectFromFile(objectName, fileName, WithContext(ctx5), TrafficLimitHeader(traffic))
+	c.Assert(err, NotNil)
+	c.Log(err.Error())
+	c.Assert(strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers"), Equals, true)
+
+	os.Remove(fileName)
 }
 
 func (s *OssBucketSuite) TestSTSToken(c *C) {

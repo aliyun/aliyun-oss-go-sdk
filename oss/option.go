@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -12,9 +13,11 @@ import (
 type optionType string
 
 const (
-	optionParam optionType = "HTTPParameter" // URL parameter
-	optionHTTP  optionType = "HTTPHeader"    // HTTP header
-	optionArg   optionType = "FuncArgument"  // Function argument
+	optionParam   optionType = "HTTPParameter" // URL parameter
+	optionHTTP    optionType = "HTTPHeader"    // HTTP header
+	optionContext optionType = "HTTPContext"   // context
+	optionArg     optionType = "FuncArgument"  // Function argument
+
 )
 
 const (
@@ -234,6 +237,11 @@ func RequestPayer(payerType PayerType) Option {
 // RequestPayerParam is an option to set payer who pay for the request
 func RequestPayerParam(payerType PayerType) Option {
 	return addParam(strings.ToLower(HTTPHeaderOssRequester), strings.ToLower(string(payerType)))
+}
+
+// WithContext returns an option that sets the context for requests.
+func WithContext(ctx context.Context) Option {
+	return addContext(strings.ToLower(HTTPParamContext), ctx)
 }
 
 // SetTagging is an option to set object tagging
@@ -561,6 +569,16 @@ func addArg(key string, value interface{}) Option {
 			return nil
 		}
 		params[key] = optionValue{value, optionArg}
+		return nil
+	}
+}
+
+func addContext(key string, value interface{}) Option {
+	return func(params map[string]optionValue) error {
+		if value == nil {
+			return nil
+		}
+		params[key] = optionValue{value, optionContext}
 		return nil
 	}
 }
