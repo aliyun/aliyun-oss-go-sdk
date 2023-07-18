@@ -113,10 +113,14 @@ func BucketLifecycleSample() {
 		Key:   "key1",
 		Value: "value1",
 	}
+	greater := int64(500)
+	less := int64(645000)
 	filter := oss.LifecycleFilter{
+		ObjectSizeLessThan:    &greater,
+		ObjectSizeGreaterThan: &less,
 		Not: []oss.LifecycleFilterNot{
 			{
-				Prefix: "logs1",
+				Prefix: "logs/log2",
 				Tag:    &tag,
 			},
 		},
@@ -270,6 +274,28 @@ func BucketLifecycleSample() {
 	  <AllowSmallFile>true</AllowSmallFile>
     </NoncurrentVersionTransition>
   </Rule>
+  <Rule>
+    <ID>r1</ID>
+    <Prefix>abc/</Prefix>
+    <Filter>
+      <ObjectSizeGreaterThan>500</ObjectSizeGreaterThan>
+      <ObjectSizeLessThan>64000</ObjectSizeLessThan>
+      <Not>
+        <Prefix>abc/not1/</Prefix>
+        <Tag>
+          <Key>notkey1</Key>
+          <Value>notvalue1</Value>
+        </Tag>
+      </Not>
+      <Not>
+        <Prefix>abc/not2/</Prefix>
+        <Tag>
+          <Key>notkey2</Key>
+          <Value>notvalue2</Value>
+        </Tag>
+      </Not>
+    </Filter>
+  </Rule>
 </LifecycleConfiguration>
 `
 	err = client.SetBucketLifecycleXml(bucketName, xmlData)
@@ -341,6 +367,12 @@ func BucketLifecycleSample() {
 			}
 
 			if rule.Filter != nil {
+				if rule.Filter.ObjectSizeGreaterThan != nil {
+					fmt.Println("Lifecycle Rule Filter Object Size Greater Than:", *rule.Filter.ObjectSizeGreaterThan)
+				}
+				if rule.Filter.ObjectSizeLessThan != nil {
+					fmt.Println("Lifecycle Rule Filter Object Size Less Than:", *rule.Filter.ObjectSizeLessThan)
+				}
 				for _, filterNot := range rule.Filter.Not {
 					fmt.Println("Lifecycle Rule Filter Not Prefix:", filterNot.Prefix)
 					if filterNot.Tag != nil {
