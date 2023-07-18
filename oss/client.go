@@ -2537,12 +2537,11 @@ func (client Client) DeleteBucketStyle(bucketName, styleName string, options ...
 }
 
 // DescribeRegions get describe regions
-// endpoint    the OSS datacenter endpoint such as oss-cn-hangzhou .
 // GetDescribeRegionsResult  the  result of bucket in xml format.
 // error    it's nil if no error, otherwise it's an error object.
-func (client Client) DescribeRegions(endpoint string, options ...Option) (DescribeRegionsResult, error) {
+func (client Client) DescribeRegions(options ...Option) (DescribeRegionsResult, error) {
 	var out DescribeRegionsResult
-	body, err := client.DescribeRegionsXml(endpoint, options...)
+	body, err := client.DescribeRegionsXml(options...)
 	if err != nil {
 		return out, err
 	}
@@ -2551,14 +2550,14 @@ func (client Client) DescribeRegions(endpoint string, options ...Option) (Descri
 }
 
 // DescribeRegionsXml get describe regions
-// endpoint    the OSS datacenter endpoint such as oss-cn-hangzhou .
 // string  the style result of bucket in xml format.
 // error    it's nil if no error, otherwise it's an error object.
-func (client Client) DescribeRegionsXml(endpoint string, options ...Option) (string, error) {
-	params := map[string]interface{}{}
-	if endpoint != "" {
-		params["regions"] = endpoint
-	} else {
+func (client Client) DescribeRegionsXml(options ...Option) (string, error) {
+	params, err := GetRawParams(options)
+	if err != nil {
+		return "", err
+	}
+	if params["regions"] == nil {
 		params["regions"] = nil
 	}
 	resp, err := client.do("GET", "", params, nil, nil, options...)
