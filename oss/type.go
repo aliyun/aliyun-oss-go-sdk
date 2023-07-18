@@ -206,13 +206,19 @@ type GetBucketLifecycleResult LifecycleConfiguration
 
 // RefererXML defines Referer configuration
 type RefererXML struct {
-	XMLName           xml.Name `xml:"RefererConfiguration"`
-	AllowEmptyReferer bool     `xml:"AllowEmptyReferer"`   // Allow empty referrer
-	RefererList       []string `xml:"RefererList>Referer"` // Referer whitelist
+	XMLName                  xml.Name          `xml:"RefererConfiguration"`
+	AllowEmptyReferer        bool              `xml:"AllowEmptyReferer"` // Allow empty referrer
+	AllowTruncateQueryString *bool             `xml:"AllowTruncateQueryString,omitempty"`
+	RefererList              []string          `xml:"RefererList>Referer"`        // Referer whitelist
+	RefererBlacklist         *RefererBlacklist `xml:"RefererBlacklist,omitempty"` // Referer blacklist
 }
 
 // GetBucketRefererResult defines result object for GetBucketReferer request
 type GetBucketRefererResult RefererXML
+
+type RefererBlacklist struct {
+	Referer []string `xml:"Referer,omitempty"`
+}
 
 // LoggingXML defines logging configuration
 type LoggingXML struct {

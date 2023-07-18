@@ -493,9 +493,32 @@ func (client Client) SetBucketReferer(bucketName string, referrers []string, all
 	if err != nil {
 		return err
 	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
 
+	return client.PutBucketRefererXml(bucketName, string(bs), options...)
+}
+
+// SetBucketRefererV2 gets the bucket's referer white list.
+//
+// setBucketReferer   SetBucketReferer bucket referer config in struct format.
+//
+// GetBucketRefererResponse    the result object upon successful request. It's only valid when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketRefererV2(bucketName string, setBucketReferer RefererXML, options ...Option) error {
+	bs, err := xml.Marshal(setBucketReferer)
+	if err != nil {
+		return err
+	}
+	return client.PutBucketRefererXml(bucketName, string(bs), options...)
+}
+
+// PutBucketRefererXml set bucket's style
+// bucketName    the bucket name.
+// xmlData		 the style in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketRefererXml(bucketName, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
 	contentType := http.DetectContentType(buffer.Bytes())
 	headers := map[string]string{}
 	headers[HTTPHeaderContentType] = contentType
@@ -511,24 +534,33 @@ func (client Client) SetBucketReferer(bucketName string, referrers []string, all
 }
 
 // GetBucketReferer gets the bucket's referrer white list.
-//
 // bucketName    the bucket name.
-//
-// GetBucketRefererResponse    the result object upon successful request. It's only valid when error is nil.
+// GetBucketRefererResult  the result object upon successful request. It's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
-//
 func (client Client) GetBucketReferer(bucketName string, options ...Option) (GetBucketRefererResult, error) {
 	var out GetBucketRefererResult
+	body, err := client.GetBucketRefererXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketRefererXml gets the bucket's referrer white list.
+// bucketName    the bucket name.
+// GetBucketRefererResponse the bucket referer config result in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketRefererXml(bucketName string, options ...Option) (string, error) {
 	params := map[string]interface{}{}
 	params["referer"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
 	if err != nil {
-		return out, err
+		return "", err
 	}
 	defer resp.Body.Close()
-
-	err = xmlUnmarshal(resp.Body, &out)
-	return out, err
+	body, err := ioutil.ReadAll(resp.Body)
+	return string(body), err
 }
 
 // SetBucketLogging sets the bucket logging settings.
