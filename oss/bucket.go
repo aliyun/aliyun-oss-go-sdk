@@ -1125,6 +1125,35 @@ func (bucket Bucket) ProcessObject(objectKey string, process string, options ...
 }
 
 //
+// AsyncProcessObject apply async process on the specified image file.
+//
+// The supported process includes resize, rotate, crop, watermark, format,
+// udf, customized style, etc.
+//
+//
+// objectKey	object key to process.
+// asyncProcess	process string, such as "image/resize,w_100|sys/saveas,o_dGVzdC5qcGc,b_dGVzdA"
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (bucket Bucket) AsyncProcessObject(objectKey string, asyncProcess string, options ...Option) (AsyncProcessObjectResult, error) {
+	var out AsyncProcessObjectResult
+	params, _ := GetRawParams(options)
+	params["x-oss-async-process"] = nil
+	processData := fmt.Sprintf("%v=%v", "x-oss-async-process", asyncProcess)
+	data := strings.NewReader(processData)
+
+	resp, err := bucket.do("POST", objectKey, params, nil, data, nil)
+	if err != nil {
+		return out, err
+	}
+	defer resp.Body.Close()
+
+	err = jsonUnmarshal(resp.Body, &out)
+	return out, err
+}
+
+//
 // PutObjectTagging add tagging to object
 //
 // objectKey  object key to add tagging

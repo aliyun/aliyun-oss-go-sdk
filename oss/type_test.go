@@ -1675,3 +1675,13 @@ func (s *OssTypeSuite) TestDescribeRegionsResult(c *C) {
 	c.Assert(repResult.Regions[1].InternalEndpoint, Equals, "oss-cn-shanghai-internal.aliyuncs.com")
 	c.Assert(repResult.Regions[1].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
 }
+
+func (s *OssTypeSuite) TestAsyncProcessResult(c *C) {
+	jsonData := `{"EventId":"10C-1XqxdjCRx3x7gRim3go1yLUVWgm","RequestId":"B8AD6942-BBDE-571D-A9A9-525A4C34B2B3","TaskId":"MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d"}`
+	var repResult AsyncProcessObjectResult
+	err := xmlUnmarshal(strings.NewReader(jsonData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.EventId, Equals, "10C-1XqxdjCRx3x7gRim3go1yLUVWgm")
+	c.Assert(repResult.RequestId, Equals, "B8AD6942-BBDE-571D-A9A9-525A4C34B2B3")
+	c.Assert(repResult.TaskId, Equals, "MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d")
+}
