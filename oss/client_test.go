@@ -367,6 +367,38 @@ func (s *OssClientSuite) TestCreateBucket(c *C) {
 	}
 }
 
+// TestCreateBucketWithServerEncryption
+func (s *OssClientSuite) TestCreateBucketWithServerEncryption(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	// Create
+	client.DeleteBucket(bucketNameTest)
+	err = client.CreateBucket(bucketNameTest, ServerSideEncryption("KMS"), ServerSideDataEncryption("SM4"))
+	c.Assert(err, IsNil)
+	//sleep 3 seconds after create bucket
+	time.Sleep(timeoutInOperation)
+
+	// verify bucket is exist
+	rs, err := client.GetBucketEncryption(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(rs.SSEDefault.SSEAlgorithm, Equals, "KMS")
+	c.Assert(rs.SSEDefault.KMSDataEncryption, Equals, "SM4")
+
+	client.DeleteBucket(bucketNameTest)
+	err = client.CreateBucket(bucketNameTest, ServerSideEncryption("AES256"))
+	c.Assert(err, IsNil)
+
+	rs, err = client.GetBucketEncryption(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(rs.SSEDefault.KMSDataEncryption, Equals, "")
+	c.Assert(rs.SSEDefault.SSEAlgorithm, Equals, "AES256")
+
+	client.DeleteBucket(bucketNameTest)
+}
+
 func (s *OssClientSuite) TestCreateBucketRedundancyType(c *C) {
 	bucketNameTest := bucketNamePrefix + RandLowStr(6)
 	client, err := New(endpoint, accessID, accessKey)
@@ -1437,6 +1469,89 @@ func (s *OssClientSuite) TestBucketRefererNegative(c *C) {
 	err = client.SetBucketReferer(bucketNameTest, referers, true)
 	c.Assert(err, NotNil)
 	testLogger.Println(err)
+}
+
+// TestBucketRefererV2
+func (s *OssClientSuite) TestBucketRefererV2(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	var referrers = []string{"http://www.aliyun.com", "https://www.aliyun.com"}
+
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	res, err := client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, true)
+	c.Assert(len(res.RefererList), Equals, 0)
+	c.Assert(*res.AllowTruncateQueryString, Equals, true)
+	c.Assert(res.RefererBlacklist, IsNil)
+
+	// Set referers
+	var set RefererXML
+	set.AllowEmptyReferer = false
+	set.RefererList = referrers
+	err = client.SetBucketRefererV2(bucketNameTest, set)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	res, err = client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, false)
+	c.Assert(len(res.RefererList), Equals, 2)
+	c.Assert(res.RefererList[0], Equals, "http://www.aliyun.com")
+	c.Assert(res.RefererList[1], Equals, "https://www.aliyun.com")
+
+	// Reset referer, referers empty
+	var del RefererXML
+	del.AllowEmptyReferer = true
+	del.RefererList = []string{}
+	err = client.SetBucketRefererV2(bucketNameTest, del)
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, true)
+	c.Assert(len(res.RefererList), Equals, 0)
+
+	// Set referers
+	var setBucketReferer RefererXML
+	setBucketReferer.AllowEmptyReferer = false
+	setBucketReferer.RefererList = referrers
+	referer1 := "http://www.refuse.com"
+	referer2 := "https://*.hack.com"
+	referer3 := "http://ban.*.com"
+	referer4 := "https://www.?.deny.com"
+	setBucketReferer.RefererBlacklist = &RefererBlacklist{
+		[]string{
+			referer1, referer2, referer3, referer4,
+		},
+	}
+	setBucketReferer.AllowEmptyReferer = false
+	boolTrue := true
+	setBucketReferer.AllowTruncateQueryString = &boolTrue
+	err = client.SetBucketRefererV2(bucketNameTest, setBucketReferer)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	res, err = client.GetBucketReferer(bucketNameTest)
+	c.Assert(res.AllowEmptyReferer, Equals, false)
+	c.Assert(len(res.RefererList), Equals, 2)
+	c.Assert(res.RefererList[0], Equals, "http://www.aliyun.com")
+	c.Assert(res.RefererList[1], Equals, "https://www.aliyun.com")
+	c.Assert(*res.AllowTruncateQueryString, Equals, true)
+	c.Assert(res.RefererBlacklist, NotNil)
+	c.Assert(len(res.RefererBlacklist.Referer), Equals, 4)
+	c.Assert(res.RefererBlacklist.Referer[0], Equals, referer1)
+	c.Assert(res.RefererBlacklist.Referer[3], Equals, referer4)
+
+	del.AllowEmptyReferer = true
+	del.RefererList = []string{}
+	err = client.SetBucketRefererV2(bucketNameTest, del)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
 }
 
 // TestSetBucketLogging
@@ -3447,6 +3562,70 @@ func (s *OssClientSuite) TestClientCredentialInfBuild(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssClientSuite) TestClientNewEnvironmentVariableCredentialsProvider(c *C) {
+	provider, err := ProviderWrongKeyId()
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key id is empty!")
+	provider, err = ProviderWrongSecret()
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key secret is empty!")
+
+	provider, err = NewEnvironmentVariableCredentialsProvider()
+	c.Assert(err, IsNil)
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, "", "", SetCredentialsProvider(&provider))
+	fmt.Printf(":%#v\n", &client.Config.CredentialsProvider)
+	c.Assert(err, IsNil)
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+}
+
+func ProviderWrongKeyId() (EnvironmentVariableCredentialsProvider, error) {
+	var provider EnvironmentVariableCredentialsProvider
+	keyId := os.Getenv("OSS_ACCESS_KEY_ID_d")
+	if keyId == "" {
+		return provider, fmt.Errorf("access key id is empty!")
+	}
+	secret := os.Getenv("OSS_ACCESS_KEY_SECRET_d")
+	if accessKey == "" {
+		return provider, fmt.Errorf("access key secret is empty!")
+	}
+	token := os.Getenv("OSS_SESSION_TOKEN")
+
+	envCredential := &envCredentials{
+		AccessKeyId:     keyId,
+		AccessKeySecret: secret,
+		SecurityToken:   token,
+	}
+	return EnvironmentVariableCredentialsProvider{
+		cred: envCredential,
+	}, nil
+}
+
+func ProviderWrongSecret() (EnvironmentVariableCredentialsProvider, error) {
+	var provider EnvironmentVariableCredentialsProvider
+	keyId := os.Getenv("OSS_ACCESS_KEY_ID")
+	if keyId == "" {
+		return provider, fmt.Errorf("access key id is empty!")
+	}
+	secret := os.Getenv("OSS_ACCESS_KEY_SECRET_NOT_EXIST")
+	if secret == "" {
+		return provider, fmt.Errorf("access key secret is empty!")
+	}
+	token := os.Getenv("OSS_SESSION_TOKEN")
+
+	envCredential := &envCredentials{
+		AccessKeyId:     keyId,
+		AccessKeySecret: secret,
+		SecurityToken:   token,
+	}
+	return EnvironmentVariableCredentialsProvider{
+		cred: envCredential,
+	}, nil
+}
+
 func (s *OssClientSuite) TestClientSetLocalIpError(c *C) {
 	// create client and bucket
 	ipAddr, err := net.ResolveIPAddr("ip", "127.0.0.1")
@@ -5232,6 +5411,10 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Disabled")
 
+	result, err := client.GetBucketAccessMonitor(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(result.Status, Equals, "Disabled")
+
 	// Put Bucket Access Monitor
 	access := PutBucketAccessMonitor{
 		Status: "Enabled",
@@ -5254,7 +5437,7 @@ func (s *OssClientSuite) TestBucketAccessMonitor(c *C) {
 	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Enabled")
 
 	// get bucket access monitor
-	result, err := client.GetBucketAccessMonitor(bucketNameTest)
+	result, err = client.GetBucketAccessMonitor(bucketNameTest)
 	c.Assert(err, IsNil)
 	c.Assert(result.Status, Equals, "Enabled")
 
@@ -5468,6 +5651,11 @@ func (s *OssClientSuite) TestBucketStyle(c *C) {
 	c.Assert(res.CreateTime != "", Equals, true)
 	c.Assert(res.LastModifyTime != "", Equals, true)
 
+	_, err = client.GetBucketStyle(bucketNameTest, "no-exist-style")
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchStyle")
+
 	style1 := "image/resize,w_200"
 	styleName1 := "image-" + RandLowStr(6)
 	err = client.PutBucketStyle(bucketNameTest, styleName1, style1)
@@ -5504,4 +5692,30 @@ func (s *OssClientSuite) TestBucketStyle(c *C) {
 	err = client.DeleteBucketStyle(bucketNameTest, styleName2)
 	c.Assert(err, IsNil)
 
+	err = client.DeleteBucketStyle(bucketNameTest, "no-exist-style")
+	c.Assert(err, IsNil)
+
+	list, err = client.ListBucketStyle(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(list.Style), Equals, 0)
+
+}
+
+// TestDescribeRegions
+func (s *OssClientSuite) TestDescribeRegions(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	list, err := client.DescribeRegions("")
+	c.Assert(err, IsNil)
+	c.Assert(len(list.Regions) > 0, Equals, true)
+
+	regionEndpoint := "oss-cn-hangzhou"
+	info, err := client.DescribeRegions(regionEndpoint)
+	c.Assert(err, IsNil)
+	c.Assert(len(info.Regions), Equals, 1)
+	c.Assert(info.Regions[0].Region, Equals, "oss-cn-hangzhou")
+	c.Assert(info.Regions[0].InternetEndpoint, Equals, "oss-cn-hangzhou.aliyuncs.com")
+	c.Assert(info.Regions[0].InternalEndpoint, Equals, "oss-cn-hangzhou-internal.aliyuncs.com")
+	c.Assert(info.Regions[0].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
 }

@@ -206,13 +206,19 @@ type GetBucketLifecycleResult LifecycleConfiguration
 
 // RefererXML defines Referer configuration
 type RefererXML struct {
-	XMLName           xml.Name `xml:"RefererConfiguration"`
-	AllowEmptyReferer bool     `xml:"AllowEmptyReferer"`   // Allow empty referrer
-	RefererList       []string `xml:"RefererList>Referer"` // Referer whitelist
+	XMLName                  xml.Name          `xml:"RefererConfiguration"`
+	AllowEmptyReferer        bool              `xml:"AllowEmptyReferer"` // Allow empty referrer
+	AllowTruncateQueryString *bool             `xml:"AllowTruncateQueryString,omitempty"`
+	RefererList              []string          `xml:"RefererList>Referer"`        // Referer whitelist
+	RefererBlacklist         *RefererBlacklist `xml:"RefererBlacklist,omitempty"` // Referer blacklist
 }
 
 // GetBucketRefererResult defines result object for GetBucketReferer request
 type GetBucketRefererResult RefererXML
+
+type RefererBlacklist struct {
+	Referer []string `xml:"Referer,omitempty"`
+}
 
 // LoggingXML defines logging configuration
 type LoggingXML struct {
@@ -1639,4 +1645,19 @@ type BucketStyleXml struct {
 	Content        string   `xml:"Content"`                  // style content
 	CreateTime     string   `xml:"CreateTime,omitempty"`     // style create time
 	LastModifyTime string   `xml:"LastModifyTime,omitempty"` // style last modify time
+}
+
+// DescribeRegionsResult define get the describe regions result
+type DescribeRegionsResult RegionInfoList
+
+type RegionInfo struct {
+	Region             string `xml:"Region"`
+	InternetEndpoint   string `xml:"InternetEndpoint"`
+	InternalEndpoint   string `xml:"InternalEndpoint"`
+	AccelerateEndpoint string `xml:"AccelerateEndpoint"`
+}
+
+type RegionInfoList struct {
+	XMLName xml.Name     `xml:"RegionInfoList"`
+	Regions []RegionInfo `xml:"RegionInfo"`
 }

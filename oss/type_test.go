@@ -2,11 +2,11 @@ package oss
 
 import (
 	"encoding/xml"
+	. "gopkg.in/check.v1"
+	"log"
 	"net/url"
 	"sort"
 	"strings"
-
-	. "gopkg.in/check.v1"
 )
 
 type OssTypeSuite struct{}
@@ -1529,6 +1529,151 @@ func (s *OssTypeSuite) TestGetBucketReplicationProgressResult(c *C) {
 	c.Assert(repResult.Rule[0].HistoricalObjectReplication, Equals, "enabled")
 	c.Assert((*repResult.Rule[0].Progress).HistoricalObject, Equals, "0.85")
 	c.Assert((*repResult.Rule[0].Progress).NewObject, Equals, "2015-09-24T15:28:14.000Z")
+}
+
+func (s *OssTypeSuite) TestGetBucketRefererResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+  <AllowEmptyReferer>true</AllowEmptyReferer>
+  <RefererList>
+  </RefererList>
+</RefererConfiguration>`
+	var repResult GetBucketRefererResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.AllowEmptyReferer, Equals, true)
+	c.Assert(repResult.AllowTruncateQueryString, IsNil)
+	c.Assert(repResult.RefererList, IsNil)
+	c.Assert(repResult.RefererBlacklist, IsNil)
+
+	xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+<AllowEmptyReferer>true</AllowEmptyReferer>
+<AllowTruncateQueryString>false</AllowTruncateQueryString>
+    <RefererList>
+        <Referer>http://www.aliyun.com</Referer>
+        <Referer>https://www.aliyun.com</Referer>
+        <Referer>http://www.*.com</Referer>
+        <Referer>https://www.?.aliyuncs.com</Referer>
+    </RefererList>
+</RefererConfiguration>`
+
+	var repResult0 GetBucketRefererResult
+	err = xmlUnmarshal(strings.NewReader(xmlData), &repResult0)
+	c.Assert(err, IsNil)
+	c.Assert(repResult0.AllowEmptyReferer, Equals, true)
+	c.Assert(*repResult0.AllowTruncateQueryString, Equals, false)
+	c.Assert(len(repResult0.RefererList), Equals, 4)
+	c.Assert(repResult0.RefererList[1], Equals, "https://www.aliyun.com")
+	c.Assert(repResult0.RefererBlacklist, IsNil)
+
+	xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+  <AllowEmptyReferer>false</AllowEmptyReferer>
+  <AllowTruncateQueryString>false</AllowTruncateQueryString>
+  <RefererList>
+        <Referer>http://www.aliyun.com</Referer>
+        <Referer>https://www.aliyun.com</Referer>
+        <Referer>http://www.*.com</Referer>
+        <Referer>https://www.?.aliyuncs.com</Referer>
+  </RefererList>
+  <RefererBlacklist>
+        <Referer>http://www.refuse.com</Referer>
+        <Referer>https://*.hack.com</Referer>
+        <Referer>http://ban.*.com</Referer>
+    	  <Referer>https://www.?.deny.com</Referer>
+  </RefererBlacklist>
+</RefererConfiguration>`
+	var repResult1 GetBucketRefererResult
+	err = xmlUnmarshal(strings.NewReader(xmlData), &repResult1)
+	c.Assert(err, IsNil)
+	c.Assert(repResult1.AllowEmptyReferer, Equals, false)
+	c.Assert(*repResult1.AllowTruncateQueryString, Equals, false)
+	c.Assert(len(repResult1.RefererList), Equals, 4)
+	c.Assert(repResult1.RefererList[3], Equals, "https://www.?.aliyuncs.com")
+
+	c.Assert(len(repResult1.RefererList), Equals, 4)
+	c.Assert((repResult1.RefererBlacklist).Referer[2], Equals, "http://ban.*.com")
+}
+
+func (s *OssTypeSuite) TestRefererXML(c *C) {
+	xmlData := `<RefererConfiguration><AllowEmptyReferer>true</AllowEmptyReferer><RefererList></RefererList></RefererConfiguration>`
+	var setBucketReferer RefererXML
+	setBucketReferer.AllowEmptyReferer = true
+	setBucketReferer.RefererList = []string{}
+	xmlBody, err := xml.Marshal(setBucketReferer)
+	log.Println(string(xmlBody))
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlBody), Equals, xmlData)
+
+	xmlData1 := `<RefererConfiguration><AllowEmptyReferer>true</AllowEmptyReferer><AllowTruncateQueryString>false</AllowTruncateQueryString><RefererList><Referer>http://www.aliyun.com</Referer><Referer>https://www.aliyun.com</Referer><Referer>http://www.*.com</Referer><Referer>https://www.?.aliyuncs.com</Referer></RefererList></RefererConfiguration>`
+
+	setBucketReferer.AllowEmptyReferer = true
+	boolFalse := false
+	setBucketReferer.AllowTruncateQueryString = &boolFalse
+	setBucketReferer.RefererList = []string{
+		"http://www.aliyun.com",
+		"https://www.aliyun.com",
+		"http://www.*.com",
+		"https://www.?.aliyuncs.com",
+	}
+	c.Log(setBucketReferer)
+	xmlBody, err = xml.Marshal(setBucketReferer)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlBody), Equals, xmlData1)
+
+	xmlData2 := `<RefererConfiguration><AllowEmptyReferer>false</AllowEmptyReferer><AllowTruncateQueryString>false</AllowTruncateQueryString><RefererList><Referer>http://www.aliyun.com</Referer><Referer>https://www.aliyun.com</Referer><Referer>http://www.*.com</Referer><Referer>https://www.?.aliyuncs.com</Referer></RefererList><RefererBlacklist><Referer>http://www.refuse.com</Referer><Referer>https://*.hack.com</Referer><Referer>http://ban.*.com</Referer><Referer>https://www.?.deny.com</Referer></RefererBlacklist></RefererConfiguration>`
+
+	setBucketReferer.AllowEmptyReferer = false
+	setBucketReferer.AllowTruncateQueryString = &boolFalse
+	setBucketReferer.RefererList = []string{
+		"http://www.aliyun.com",
+		"https://www.aliyun.com",
+		"http://www.*.com",
+		"https://www.?.aliyuncs.com",
+	}
+	referer1 := "http://www.refuse.com"
+	referer2 := "https://*.hack.com"
+	referer3 := "http://ban.*.com"
+	referer4 := "https://www.?.deny.com"
+	setBucketReferer.RefererBlacklist = &RefererBlacklist{
+		[]string{
+			referer1, referer2, referer3, referer4,
+		},
+	}
+	xmlBody, err = xml.Marshal(setBucketReferer)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlBody), Equals, xmlData2)
+}
+
+func (s *OssTypeSuite) TestDescribeRegionsResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<RegionInfoList>
+  <RegionInfo>
+     <Region>oss-cn-hangzhou</Region>
+     <InternetEndpoint>oss-cn-hangzhou.aliyuncs.com</InternetEndpoint>
+     <InternalEndpoint>oss-cn-hangzhou-internal.aliyuncs.com</InternalEndpoint>
+     <AccelerateEndpoint>oss-accelerate.aliyuncs.com</AccelerateEndpoint>  
+  </RegionInfo>
+  <RegionInfo>
+     <Region>oss-cn-shanghai</Region>
+     <InternetEndpoint>oss-cn-shanghai.aliyuncs.com</InternetEndpoint>
+     <InternalEndpoint>oss-cn-shanghai-internal.aliyuncs.com</InternalEndpoint>
+     <AccelerateEndpoint>oss-accelerate.aliyuncs.com</AccelerateEndpoint>  
+  </RegionInfo>
+</RegionInfoList>`
+	var repResult DescribeRegionsResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Regions[0].Region, Equals, "oss-cn-hangzhou")
+	c.Assert(repResult.Regions[0].InternetEndpoint, Equals, "oss-cn-hangzhou.aliyuncs.com")
+	c.Assert(repResult.Regions[0].InternalEndpoint, Equals, "oss-cn-hangzhou-internal.aliyuncs.com")
+	c.Assert(repResult.Regions[0].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
+
+	c.Assert(repResult.Regions[1].Region, Equals, "oss-cn-shanghai")
+	c.Assert(repResult.Regions[1].InternetEndpoint, Equals, "oss-cn-shanghai.aliyuncs.com")
+	c.Assert(repResult.Regions[1].InternalEndpoint, Equals, "oss-cn-shanghai-internal.aliyuncs.com")
+	c.Assert(repResult.Regions[1].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
 }
 
 func (s *OssTypeSuite) TestAsyncProcessResult(c *C) {
