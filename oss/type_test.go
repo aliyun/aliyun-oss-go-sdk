@@ -1066,8 +1066,8 @@ func (s *OssTypeSuite) TestGetBucketLifecycleResult(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(res2.Rules[0].ID, Equals, "r1")
 	c.Assert(res2.Rules[0].Prefix, Equals, "abc/")
-	c.Assert(res2.Rules[0].Filter.ObjectSizeGreaterThan, Equals, int64(500))
-	c.Assert(res2.Rules[0].Filter.ObjectSizeLessThan, Equals, int64(64000))
+	c.Assert(*(res2.Rules[0].Filter.ObjectSizeGreaterThan), Equals, int64(500))
+	c.Assert(*(res2.Rules[0].Filter.ObjectSizeLessThan), Equals, int64(64000))
 	c.Assert(res2.Rules[0].Filter.Not[0].Prefix, Equals, "abc/not1/")
 	c.Assert(res2.Rules[0].Filter.Not[0].Tag.Key, Equals, "notkey1")
 	c.Assert(res2.Rules[0].Filter.Not[0].Tag.Value, Equals, "notvalue1")
@@ -1078,8 +1078,8 @@ func (s *OssTypeSuite) TestGetBucketLifecycleResult(c *C) {
 
 	c.Assert(res2.Rules[1].ID, Equals, "r2")
 	c.Assert(res2.Rules[1].Prefix, Equals, "def/")
-	c.Assert(res2.Rules[1].Filter.ObjectSizeGreaterThan, Equals, int64(500))
-	c.Assert(res2.Rules[1].Filter.ObjectSizeLessThan, Equals, nil)
+	c.Assert(*(res2.Rules[1].Filter.ObjectSizeGreaterThan), Equals, int64(500))
+	c.Assert(res2.Rules[1].Filter.ObjectSizeLessThan, IsNil)
 	c.Assert(res2.Rules[1].Filter.Not[0].Prefix, Equals, "def/not1/")
 
 	c.Assert(res2.Rules[1].Filter.Not[1].Prefix, Equals, "def/not2/")
@@ -1145,7 +1145,7 @@ func (s *OssTypeSuite) TestLifecycleConfiguration(c *C) {
 	}
 	xmlData, err := xml.Marshal(config)
 	c.Assert(err, IsNil)
-	c.Assert(string(xmlData), Equals, "<LifecycleConfiguration><Rule><ID>r0</ID><Prefix>prefix0</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration></Rule><Rule><ID>r1</ID><Prefix>prefix1</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Transition><Days>30</Days><StorageClass>IA</StorageClass><IsAccessTime>false</IsAccessTime></Transition><Filter><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>700</ObjectSizeLessThan></Filter></Rule><Rule><ID>r3</ID><Prefix>prefix3</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition></Rule></LifecycleConfiguration>")
+	c.Assert(string(xmlData), Equals, "<LifecycleConfiguration><Rule><ID>r0</ID><Prefix>prefix0</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration></Rule><Rule><ID>r1</ID><Prefix>prefix1</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Transition><Days>30</Days><StorageClass>IA</StorageClass><IsAccessTime>false</IsAccessTime></Transition><Filter><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule><Rule><ID>r3</ID><Prefix>prefix3</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition></Rule></LifecycleConfiguration>")
 }
 
 // Test Bucket Resource Group
@@ -1809,7 +1809,7 @@ func (s *OssTypeSuite) TestDescribeRegionsResult(c *C) {
 func (s *OssTypeSuite) TestAsyncProcessResult(c *C) {
 	jsonData := `{"EventId":"10C-1XqxdjCRx3x7gRim3go1yLUVWgm","RequestId":"B8AD6942-BBDE-571D-A9A9-525A4C34B2B3","TaskId":"MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d"}`
 	var repResult AsyncProcessObjectResult
-	err := xmlUnmarshal(strings.NewReader(jsonData), &repResult)
+	err := jsonUnmarshal(strings.NewReader(jsonData), &repResult)
 	c.Assert(err, IsNil)
 	c.Assert(repResult.EventId, Equals, "10C-1XqxdjCRx3x7gRim3go1yLUVWgm")
 	c.Assert(repResult.RequestId, Equals, "B8AD6942-BBDE-571D-A9A9-525A4C34B2B3")
