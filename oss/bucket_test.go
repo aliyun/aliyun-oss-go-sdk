@@ -2650,7 +2650,6 @@ func (s *OssBucketSuite) TestProcessObject(c *C) {
 
 // TestAsyncProcessObject
 func (s *OssBucketSuite) TestAsyncProcessObject(c *C) {
-	//bucketNameTest := os.Getenv("OSS_TEST_BUCKET")
 	videoUrl := "https://oss-console-img-demo-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/video.mp4?spm=a2c4g.64555.0.0.515675979u4B8w&file=video.mp4"
 	fileName := "video.mp4"
 	// 发起get请求
@@ -2665,7 +2664,7 @@ func (s *OssBucketSuite) TestAsyncProcessObject(c *C) {
 	_, err = io.Copy(file, resp.Body)
 	c.Assert(err, IsNil)
 
-	err = s.bucket.PutObjectFromFile("demo.mp4", fileName)
+	err = s.bucket.PutObjectFromFile("demo.avi", fileName)
 	c.Assert(err, IsNil)
 
 	sourceImageName := "demo.avi"
@@ -2674,8 +2673,8 @@ func (s *OssBucketSuite) TestAsyncProcessObject(c *C) {
 	process := fmt.Sprintf("%s|sys/saveas,b_%v,o_%v", style, strings.TrimRight(base64.URLEncoding.EncodeToString([]byte(bucketName)), "="), strings.TrimRight(base64.URLEncoding.EncodeToString([]byte(targetObject)), "="))
 	_, err = s.bucket.AsyncProcessObject(sourceImageName, process)
 	c.Assert(err, NotNil)
-	c.Assert(err.(ServiceError).Code, Equals, "InvalidArgument")
-	c.Assert(err.(ServiceError).Message, Equals, "operation not support post: video/convert")
+	c.Assert(err.(ServiceError).Code, Equals, "Imm Client")
+	c.Assert(strings.Contains(err.(ServiceError).Message, "ResourceNotFound, The specified resource Attachment is not found"), Equals, true)
 
 	os.Remove(fileName)
 }

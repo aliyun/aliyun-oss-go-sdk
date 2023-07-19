@@ -3614,11 +3614,12 @@ func (s *OssClientSuite) TestClientNewEnvironmentVariableCredentialsProvider(c *
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "access key secret is empty!")
 
+	os.Setenv("OSS_ACCESS_KEY_ID", accessID)
+	os.Setenv("OSS_ACCESS_KEY_SECRET", accessKey)
 	provider, err = NewEnvironmentVariableCredentialsProvider()
 	c.Assert(err, IsNil)
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
 	client, err := New(endpoint, "", "", SetCredentialsProvider(&provider))
-	fmt.Printf(":%#v\n", &client.Config.CredentialsProvider)
 	c.Assert(err, IsNil)
 	err = client.CreateBucket(bucketNameTest)
 	c.Assert(err, IsNil)
