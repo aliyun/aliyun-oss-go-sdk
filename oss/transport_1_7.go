@@ -23,6 +23,9 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 			if config.LocalAddr != nil {
 				d.LocalAddr = config.LocalAddr
 			}
+			if config.Resolver != nil {
+				d.Resolver = config.Resolver
+			}
 			conn, err := d.Dial(netw, addr)
 			if err != nil {
 				return nil, err

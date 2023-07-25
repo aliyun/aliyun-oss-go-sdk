@@ -2671,6 +2671,13 @@ func SetCredentialsProvider(provider CredentialsProvider) ClientOption {
 	}
 }
 
+// SetResolver set net resolver
+func SetResolver(resolver *net.Resolver) ClientOption {
+	return func(client *Client) {
+		client.Config.Resolver = resolver
+	}
+}
+
 // SetLocalAddr sets function for local addr
 func SetLocalAddr(localAddr net.Addr) ClientOption {
 	return func(client *Client) {
