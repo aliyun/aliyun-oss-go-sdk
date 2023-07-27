@@ -25,8 +25,7 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 			var conn net.Conn
 			var err error
 			if config.Resolver != nil {
-				d.Resolver = config.Resolver
-				conn, err = d.Resolver.Dial(context.Background(), netw, addr)
+				conn, err = config.Resolver.Dial(context.Background(), netw, addr)
 			} else {
 				conn, err = d.Dial(netw, addr)
 			}
