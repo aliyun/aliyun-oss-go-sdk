@@ -4,6 +4,7 @@
 package oss
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 	"net/http"
@@ -23,10 +24,13 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 			if config.LocalAddr != nil {
 				d.LocalAddr = config.LocalAddr
 			}
+			var conn net.Conn
+			var err error
 			if config.Resolver != nil {
-				d.Resolver = config.Resolver
+				conn, err = config.Resolver.Dial(context.Background(), netw, addr)
+			} else {
+				conn, err = d.Dial(netw, addr)
 			}
-			conn, err := d.Dial(netw, addr)
 			if err != nil {
 				return nil, err
 			}

@@ -13,7 +13,6 @@ import (
 func newTransport(conn *Conn, config *Config) *http.Transport {
 	httpTimeOut := conn.config.HTTPTimeout
 	httpMaxConns := conn.config.HTTPMaxConns
-	resolver := conn.config.Resolver
 	// New Transport
 	transport := &http.Transport{
 		Dial: func(netw, addr string) (net.Conn, error) {
@@ -24,14 +23,18 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 			if config.LocalAddr != nil {
 				d.LocalAddr = config.LocalAddr
 			}
+			var conn net.Conn
+			var err error
 			if config.Resolver != nil {
-				d.Resolver = config.Resolver
+				conn, err = config.Resolver.Dial(context.Background(), netw, addr)
+			} else {
+				conn, err = d.Dial(netw, addr)
 			}
-			conn, err := d.Dial(netw, addr)
 			if err != nil {
 				return nil, err
 			}
 			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
+			conn, err := d.Dial(netw, addr)
 		},
 		MaxIdleConnsPerHost:   httpMaxConns.MaxIdleConnsPerHost,
 		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
@@ -44,4 +47,3 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 	}
 	return transport
 }
-
