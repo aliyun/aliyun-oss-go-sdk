@@ -2,6 +2,7 @@ package oss
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/tls"
@@ -12,6 +13,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -5782,4 +5784,64 @@ func stsAssumeRole(accessKeyId string, accessKeySecret string, roleArn string, s
 		return nil, err
 	}
 	return &result, nil
+}
+func (s *OssBucketSuite) TestPutObjectWithResolver(c *C) {
+	resolver := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			ip, err := net.LookupHost(address)
+			if err == nil {
+				return net.Dial(network, ip[0])
+			}
+			conn, err := net.Dial(network, address)
+			return conn, err
+		},
+	}
+
+	client, err := New(endpoint, accessID, accessKey, SetResolver(resolver))
+	c.Assert(err, IsNil)
+
+	c.Assert(client.Config.Resolver, NotNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "." + string(os.PathSeparator) + objectName
+
+	textBuffer := RandStr(1024 * 1024)
+	ioutil.WriteFile(fileName, []byte(textBuffer), 0644)
+
+	err = bucket.PutObjectFromFile(objectName, fileName)
+
+	body, err := bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+
+	fileBody, err := ioutil.ReadFile(fileName)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, string(fileBody))
+
+	resolverError := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			return net.Dial(network, "127.0.0.1:90")
+		},
+	}
+	// create client and bucket
+	clientError, err := New(endpoint, accessID, accessKey, SetResolver(resolverError))
+	c.Assert(err, IsNil)
+	c.Assert(client.Config.Resolver, NotNil)
+	bucketError, _ := clientError.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	err1 := bucketError.PutObjectFromFile(objectName, fileName)
+	c.Assert(err1, NotNil)
+
+	testLogger.Println(err1)
+
+	bucket.DeleteObject(objectName)
+
+	os.Remove(fileName)
 }

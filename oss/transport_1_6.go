@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"time"
 )
 
 func newTransport(conn *Conn, config *Config) *http.Transport {
@@ -23,14 +22,19 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 			if config.LocalAddr != nil {
 				d.LocalAddr = config.LocalAddr
 			}
+			var conn net.Conn
+			var err error
 			if config.Resolver != nil {
 				d.Resolver = config.Resolver
+				conn, err = d.Resolver.Dial(context.Background(), netw, addr)
+			} else {
+				conn, err = d.Dial(netw, addr)
 			}
-			conn, err := d.Dial(netw, addr)
 			if err != nil {
 				return nil, err
 			}
 			return newTimeoutConn(conn, httpTimeOut.ReadWriteTimeout, httpTimeOut.LongTimeout), nil
+			conn, err := d.Dial(netw, addr)
 		},
 		MaxIdleConnsPerHost:   httpMaxConns.MaxIdleConnsPerHost,
 		ResponseHeaderTimeout: httpTimeOut.HeaderTimeout,
@@ -43,4 +47,3 @@ func newTransport(conn *Conn, config *Config) *http.Transport {
 	}
 	return transport
 }
-
