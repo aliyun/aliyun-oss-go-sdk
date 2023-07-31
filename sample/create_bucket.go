@@ -40,6 +40,17 @@ func CreateBucketSample() {
 		HandleError(err)
 	}
 
+	err = client.DeleteBucket(bucketName)
+	if err != nil {
+		HandleError(err)
+	}
+	// Case 4: Create a bucket of reserved capacity
+	instanceId := "Reserved-Capacity-Instance-Id"
+	err = client.CreateBucket(bucketName, oss.StorageClass(oss.StorageDeepColdArchive), oss.ReservedCapacityInstanceId(instanceId), oss.RedundancyType(oss.RedundancyLRS))
+	if err != nil {
+		HandleError(err)
+	}
+
 	// Delete bucket
 	err = client.DeleteBucket(bucketName)
 	if err != nil {

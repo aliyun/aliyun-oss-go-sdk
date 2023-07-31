@@ -34,6 +34,7 @@ var sampleMap = map[string]interface{}{
 	"BucketCnameSample":           sample.BucketCnameSample,
 	"BucketStyleSample":           sample.BucketStyleSample,
 	"BucketReplicationSample":     sample.BucketReplicationSample,
+	"ReservedCapacitySample":      sample.ReservedCapacitySample,
 	"ObjectACLSample":             sample.ObjectACLSample,
 	"ObjectMetaSample":            sample.ObjectMetaSample,
 	"ListObjectsSample":           sample.ListObjectsSample,

@@ -18,15 +18,16 @@ const (
 )
 
 const (
-	deleteObjectsQuiet = "delete-objects-quiet"
-	routineNum         = "x-routine-num"
-	checkpointConfig   = "x-cp-config"
-	initCRC64          = "init-crc64"
-	progressListener   = "x-progress-listener"
-	storageClass       = "storage-class"
-	responseHeader     = "x-response-header"
-	redundancyType     = "redundancy-type"
-	objectHashFunc     = "object-hash-func"
+	deleteObjectsQuiet         = "delete-objects-quiet"
+	routineNum                 = "x-routine-num"
+	checkpointConfig           = "x-cp-config"
+	initCRC64                  = "init-crc64"
+	progressListener           = "x-progress-listener"
+	storageClass               = "storage-class"
+	responseHeader             = "x-response-header"
+	redundancyType             = "redundancy-type"
+	objectHashFunc             = "object-hash-func"
+	reservedCapacityInstanceId = "reserved-capacity-instance-id"
 )
 
 type (
@@ -443,9 +444,14 @@ func RedundancyType(value DataRedundancyType) Option {
 	return addArg(redundancyType, value)
 }
 
-// RedundancyType bucket data redundancy type
+// ObjectHashFunc bucket data object hash func
 func ObjectHashFunc(value ObjecthashFuncType) Option {
 	return addArg(objectHashFunc, value)
+}
+
+// ReservedCapacityInstanceId bucket reserved capacity instance id
+func ReservedCapacityInstanceId(value string) Option {
+	return addArg(reservedCapacityInstanceId, value)
 }
 
 // Checkpoint configuration

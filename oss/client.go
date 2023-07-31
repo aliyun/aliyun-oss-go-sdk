@@ -139,6 +139,7 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 	isStorageSet, valStroage, _ := IsOptionSet(options, storageClass)
 	isRedundancySet, valRedundancy, _ := IsOptionSet(options, redundancyType)
 	isObjectHashFuncSet, valHashFunc, _ := IsOptionSet(options, objectHashFunc)
+	isReservedCapacityInstanceIdSet, valReservedCapacityInstanceId, _ := IsOptionSet(options, reservedCapacityInstanceId)
 	if isStorageSet {
 		cbConfig.StorageClass = valStroage.(StorageClassType)
 	}
@@ -149,6 +150,10 @@ func (client Client) CreateBucket(bucketName string, options ...Option) error {
 
 	if isObjectHashFuncSet {
 		cbConfig.ObjectHashFunction = valHashFunc.(ObjecthashFuncType)
+	}
+
+	if isReservedCapacityInstanceIdSet {
+		cbConfig.ReservedCapacityInstanceId = valReservedCapacityInstanceId.(string)
 	}
 
 	bs, err := xml.Marshal(cbConfig)
@@ -2490,6 +2495,141 @@ func (client Client) DeleteBucketStyle(bucketName, styleName string, options ...
 	}
 	defer resp.Body.Close()
 	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
+// CreateReservedCapacity create the bucket reserved capacity.
+// crcConfig    the reserved capacity in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) CreateReservedCapacity(crcConfig CreateReservedCapacity, options ...Option) error {
+	xmlData, err := xml.Marshal(crcConfig)
+	if err != nil {
+		return err
+	}
+	return client.CreateReservedCapacityXml("", string(xmlData), options...)
+}
+
+// CreateReservedCapacityXml create the reserved capacity.
+// id    the the reserved capacity id.
+// xmlData the reserved capacity config in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) CreateReservedCapacityXml(id, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["reservedCapacity"] = nil
+	if id != "" {
+		params["x-oss-reserved-capacity-id"] = id
+	}
+	resp, err := client.do("PUT", "", params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// UpdateReservedCapacity create the reserved capacity.
+// id    the reserved capacity id.
+// urcConfig UpdateReservedCapacity
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) UpdateReservedCapacity(id string, urcConfig UpdateReservedCapacity, options ...Option) error {
+	xmlData, err := xml.Marshal(urcConfig)
+	if err != nil {
+		return err
+	}
+	return client.CreateReservedCapacityXml(id, string(xmlData), options...)
+}
+
+// GetReservedCapacity get the reserved capacity.
+// id    the reserved capacity id.
+// GetReservedCapacityResult the reserved capacity result in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetReservedCapacity(id string, options ...Option) (GetReservedCapacityResult, error) {
+	var out GetReservedCapacityResult
+	body, err := client.GetReservedCapacityXml(id, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetReservedCapacityXml get the reserved capacity.
+// id    the reserved capacity id.
+// string  the reserved capacity result in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetReservedCapacityXml(id string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["reservedCapacity"] = nil
+	if id != "" {
+		params["x-oss-reserved-capacity-id"] = id
+	}
+	resp, err := client.do("GET", "", params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	out := string(body)
+	return out, err
+}
+
+// ListReservedCapacity list the reserved capacity.
+// bucketName    the bucket name.
+// ListReservedCapacityResult list reserved capacity result in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListReservedCapacity(options ...Option) (ListReservedCapacityResult, error) {
+	var out ListReservedCapacityResult
+	body, err := client.GetReservedCapacityXml("", options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// ListBucketWithReservedCapacity list the bucket with reserved capacity.
+// id    the reserved capacity id.
+// ListBucketWithReservedCapacityResult list reserved capacity result in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketWithReservedCapacity(id string, options ...Option) (ListBucketWithReservedCapacityResult, error) {
+	var out ListBucketWithReservedCapacityResult
+	body, err := client.ListBucketWithReservedCapacityXml(id, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// ListBucketWithReservedCapacityXml list the bucket with reserved capacity.
+// id    the reserved capacity id.
+// string list reserved capacity result in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketWithReservedCapacityXml(id string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["reservedCapacity"] = nil
+	if id != "" {
+		params["x-oss-reserved-capacity-id"] = id
+	}
+	params["comp"] = "queryBucketList"
+	resp, err := client.do("GET", "", params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	out := string(body)
+	return out, err
 }
 
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
