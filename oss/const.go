@@ -76,6 +76,9 @@ const (
 
 	// StorageColdArchive cold archive
 	StorageColdArchive StorageClassType = "ColdArchive"
+
+	// StorageDeepColdArchive deep cold archive
+	StorageDeepColdArchive StorageClassType = "DeepColdArchive"
 )
 
 //RedundancyType bucket data Redundancy type
