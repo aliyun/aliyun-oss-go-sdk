@@ -1139,13 +1139,66 @@ func (s *OssTypeSuite) TestLifecycleConfiguration(c *C) {
 			},
 		},
 	}
-	rules := []LifecycleRule{rule0, rule1, rule2}
+	tag := Tag{
+		Key:   "key1",
+		Value: "val1",
+	}
+	filter3 := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+		Not: []LifecycleFilterNot{
+			{
+				Tag: &tag,
+			},
+		},
+	}
+	rule3 := LifecycleRule{
+		ID:                   "r4",
+		Prefix:               "",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+		Filter: &filter3,
+	}
+	rules := []LifecycleRule{rule0, rule1, rule2, rule3}
 	config := LifecycleConfiguration{
 		Rules: rules,
 	}
 	xmlData, err := xml.Marshal(config)
+	testLogger.Println(string(xmlData))
 	c.Assert(err, IsNil)
-	c.Assert(string(xmlData), Equals, "<LifecycleConfiguration><Rule><ID>r0</ID><Prefix>prefix0</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration></Rule><Rule><ID>r1</ID><Prefix>prefix1</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Transition><Days>30</Days><StorageClass>IA</StorageClass><IsAccessTime>false</IsAccessTime></Transition><Filter><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule><Rule><ID>r3</ID><Prefix>prefix3</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition></Rule></LifecycleConfiguration>")
+	c.Assert(string(xmlData), Equals, "<LifecycleConfiguration><Rule><ID>r0</ID><Prefix>prefix0</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration></Rule><Rule><ID>r1</ID><Prefix>prefix1</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Transition><Days>30</Days><StorageClass>IA</StorageClass><IsAccessTime>false</IsAccessTime></Transition><Filter><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule><Rule><ID>r3</ID><Prefix>prefix3</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition></Rule><Rule><ID>r4</ID><Prefix></Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition><Filter><Not><Prefix></Prefix><Tag><Key>key1</Key><Value>val1</Value></Tag></Not><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule></LifecycleConfiguration>")
+
+	filter4 := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+		Not: []LifecycleFilterNot{
+			{},
+		},
+	}
+	rule4 := LifecycleRule{
+		ID:         "r5",
+		Prefix:     "",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Filter:     &filter4,
+	}
+	rules4 := []LifecycleRule{rule4}
+	config4 := LifecycleConfiguration{
+		Rules: rules4,
+	}
+	xmlData4, err := xml.Marshal(config4)
+	testLogger.Println(string(xmlData4))
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData4), Equals, "<LifecycleConfiguration><Rule><ID>r5</ID><Prefix></Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Filter><Not><Prefix></Prefix></Not><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule></LifecycleConfiguration>")
 }
 
 // Test Bucket Resource Group

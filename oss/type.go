@@ -137,8 +137,8 @@ type LifecycleFilter struct {
 // LifecycleFilterNot defines the rule's Filter Not propery
 type LifecycleFilterNot struct {
 	XMLName xml.Name `xml:"Not"`
-	Prefix  string   `xml:"Prefix,omitempty"` //Object prefix applicable to this exclusion rule
-	Tag     *Tag     `xml:"Tag,omitempty"`    //the tags applicable to this exclusion rule
+	Prefix  string   `xml:"Prefix"`        //Object prefix applicable to this exclusion rule
+	Tag     *Tag     `xml:"Tag,omitempty"` //the tags applicable to this exclusion rule
 }
 
 const iso8601DateFormat = "2006-01-02T15:04:05.000Z"

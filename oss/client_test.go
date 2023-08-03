@@ -1430,6 +1430,11 @@ func (s *OssClientSuite) TestBucketLifecycleWithFilterSize(c *C) {
 		},
 		Filter: &filter,
 	}
+	config4 := LifecycleConfiguration{
+		Rules: []LifecycleRule{rule1},
+	}
+	xmlData4, err := xml.Marshal(config4)
+	testLogger.Println(string(xmlData4))
 
 	rules := []LifecycleRule{rule1}
 	client, err := New(endpoint, accessID, accessKey)
@@ -1446,7 +1451,37 @@ func (s *OssClientSuite) TestBucketLifecycleWithFilterSize(c *C) {
 
 	err = client.DeleteBucketLifecycle(bucketNameTest)
 	c.Assert(err, IsNil)
+	tag := Tag{Key: "key1", Value: "val1"}
+	filter2 := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+		Not: []LifecycleFilterNot{
+			{
+				Tag: &tag,
+			},
+		},
+	}
+	rule2 := LifecycleRule{
+		ID:     "rs2",
+		Prefix: "",
+		Status: "Enabled",
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+			},
+		},
+		Filter: &filter2,
+	}
+	rules2 := []LifecycleRule{rule2}
 
+	err = client.SetBucketLifecycle(bucketNameTest, rules2)
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketLifecycle(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	err = client.DeleteBucketLifecycle(bucketNameTest)
 	err = client.DeleteBucket(bucketNameTest)
 	c.Assert(err, IsNil)
 
