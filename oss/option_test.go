@@ -323,7 +323,7 @@ func (s *OssOptionSuite) TestWithContext(c *C) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	options := []Option{WithContext(ctx)}
-	_, paramCtx, _ := IsOptionSet(options, HTTPParamContext)
+	paramCtx, _ := FindOption(options, contextArg, nil)
 
 	c.Assert(paramCtx, NotNil)
 	c.Assert(paramCtx.(context.Context), Equals, ctx)

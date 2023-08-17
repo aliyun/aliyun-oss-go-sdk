@@ -30,6 +30,7 @@ const (
 	responseHeader     = "x-response-header"
 	redundancyType     = "redundancy-type"
 	objectHashFunc     = "object-hash-func"
+	contextArg         = "x-context-arg"
 )
 
 type (
@@ -237,11 +238,6 @@ func RequestPayer(payerType PayerType) Option {
 // RequestPayerParam is an option to set payer who pay for the request
 func RequestPayerParam(payerType PayerType) Option {
 	return addParam(strings.ToLower(HTTPHeaderOssRequester), strings.ToLower(string(payerType)))
-}
-
-// WithContext returns an option that sets the context for requests.
-func WithContext(ctx context.Context) Option {
-	return addContext(strings.ToLower(HTTPParamContext), ctx)
 }
 
 // SetTagging is an option to set object tagging
@@ -456,6 +452,11 @@ func ObjectHashFunc(value ObjecthashFuncType) Option {
 	return addArg(objectHashFunc, value)
 }
 
+// WithContext returns an option that sets the context for requests.
+func WithContext(ctx context.Context) Option {
+	return addArg(contextArg, ctx)
+}
+
 // Checkpoint configuration
 type cpConfig struct {
 	IsEnable bool
@@ -569,16 +570,6 @@ func addArg(key string, value interface{}) Option {
 			return nil
 		}
 		params[key] = optionValue{value, optionArg}
-		return nil
-	}
-}
-
-func addContext(key string, value interface{}) Option {
-	return func(params map[string]optionValue) error {
-		if value == nil {
-			return nil
-		}
-		params[key] = optionValue{value, optionContext}
 		return nil
 	}
 }

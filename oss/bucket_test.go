@@ -2290,6 +2290,11 @@ func (s *OssBucketSuite) TestClientTimeOutAndContextTimeout(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
 
+	bucketNameDest := bucketNamePrefix + RandLowStr(8)
+	c.Assert(err, IsNil)
+
+	objectNameDest := objectName + RandLowStr(5)
+
 	// Put
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
@@ -2311,9 +2316,18 @@ func (s *OssBucketSuite) TestClientTimeOutAndContextTimeout(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
 
+	// CopyObjectTo
+	_, err = bucket.CopyObjectTo(bucketNameDest, objectNameDest, objectName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
 	// Delete
 	err = s.bucket.DeleteObject(objectName)
 	c.Assert(err, IsNil)
+
+	var nextPos int64
+	// String append
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader("红藕香残玉簟秋。轻解罗裳，独上兰舟。"), nextPos, WithContext(ctx))
+	c.Assert(err, NotNil)
 
 	// Put with URL
 	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)

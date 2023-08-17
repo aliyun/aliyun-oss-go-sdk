@@ -218,7 +218,6 @@ const (
 	HTTPParamSignature     = "Signature"
 	HTTPParamSecurityToken = "security-token"
 	HTTPParamPlaylistName  = "playlistName"
-	HTTPParamContext       = "context"
 
 	HTTPParamSignatureVersion    = "x-oss-signature-version"
 	HTTPParamExpiresV2           = "x-oss-expires"
