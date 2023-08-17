@@ -310,7 +310,12 @@ func (bucket Bucket) copy(srcObjectKey, destBucketName, destObjectKey string, op
 		return out, err
 	}
 	params := map[string]interface{}{}
-	resp, err := bucket.Client.Conn.Do("PUT", destBucketName, destObjectKey, params, headers, nil, 0, nil)
+	_, paramCtx, _ := IsOptionSet(options, HTTPParamContext)
+	var ctx context.Context
+	if paramCtx != nil {
+		ctx = paramCtx.(context.Context)
+	}
+	resp, err := bucket.Client.Conn.DoWithContext(ctx, "PUT", destBucketName, destObjectKey, params, headers, nil, 0, nil)
 
 	// get response header
 	respHeader, _ := FindOption(options, responseHeader, nil)
@@ -387,7 +392,12 @@ func (bucket Bucket) DoAppendObject(request *AppendObjectRequest, options []Opti
 	listener := GetProgressListener(options)
 
 	handleOptions(headers, opts)
-	resp, err := bucket.Client.Conn.Do("POST", bucket.BucketName, request.ObjectKey, params, headers,
+	_, paramCtx, _ := IsOptionSet(options, HTTPParamContext)
+	var ctx context.Context
+	if paramCtx != nil {
+		ctx = paramCtx.(context.Context)
+	}
+	resp, err := bucket.Client.Conn.DoWithContext(ctx, "POST", bucket.BucketName, request.ObjectKey, params, headers,
 		request.Reader, initCRC, listener)
 
 	// get response header
@@ -1226,8 +1236,11 @@ func (bucket Bucket) doInner(method, objectName string, params map[string]interf
 		return nil, err
 	}
 	_, paramCtx, _ := IsOptionSet(options, HTTPParamContext)
-	params[HTTPParamContext] = paramCtx
-	resp, err := bucket.Client.Conn.Do(method, bucket.BucketName, objectName,
+	var ctx context.Context
+	if paramCtx != nil {
+		ctx = paramCtx.(context.Context)
+	}
+	resp, err := bucket.Client.Conn.DoWithContext(ctx, method, bucket.BucketName, objectName,
 		params, headers, data, 0, listener)
 
 	// get response header
@@ -1266,7 +1279,7 @@ func (bucket Bucket) doURL(method HTTPMethod, signedURL string, params map[strin
 	if paramCtx != nil {
 		ctx = paramCtx.(context.Context)
 	}
-	resp, err := bucket.Client.Conn.DoURL(method, signedURL, headers, data, 0, listener, ctx)
+	resp, err := bucket.Client.Conn.DoURLWithContext(ctx, method, signedURL, headers, data, 0, listener)
 
 	// get response header
 	respHeader, _ := FindOption(options, responseHeader, nil)
