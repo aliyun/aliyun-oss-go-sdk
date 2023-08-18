@@ -2745,6 +2745,13 @@ func (s *OssClientSuite) TestHttpsEndpointProxy(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *OssBucketSuite) TestProxyNavigate(c *C) {
+	client, err := New(endpoint, accessID, accessKey, AuthProxy("http://127.0.0.1:8120", "user", "passwd"))
+	c.Assert(err, IsNil)
+	_, err = client.GetBucketInfo(bucketName)
+	c.Assert(strings.Contains(err.Error(), "proxyconnect tcp: dial tcp 127.0.0.1:8120"), Equals, true)
+}
+
 // Private
 func (s *OssClientSuite) checkBucket(buckets []BucketProperties, bucket string) bool {
 	for _, v := range buckets {

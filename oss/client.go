@@ -49,10 +49,6 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 	// URL parse
 	url := &urlMaker{}
-	err := url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
-	if err != nil {
-		return nil, err
-	}
 
 	// HTTP connect
 	conn := &Conn{config: config, url: url}
@@ -66,6 +62,11 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	// Client options parse
 	for _, option := range options {
 		option(client)
+	}
+
+	err := url.InitExt(config.Endpoint, config.IsCname, config.IsUseProxy, config.IsPathStyle)
+	if err != nil {
+		return nil, err
 	}
 
 	if config.AuthVersion != AuthV1 && config.AuthVersion != AuthV2 && config.AuthVersion != AuthV4 {
@@ -2597,7 +2598,16 @@ func (client Client) LimitDownloadSpeed(downSpeed int) error {
 func UseCname(isUseCname bool) ClientOption {
 	return func(client *Client) {
 		client.Config.IsCname = isUseCname
-		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
+	}
+}
+
+// ForcePathStyle sets the flag of using Path Style. By default it's false.
+//
+// isPathStyle    true: the endpoint has the Path Style, false: the endpoint does not have Path Style. Default is false.
+//
+func ForcePathStyle(isPathStyle bool) ClientOption {
+	return func(client *Client) {
+		client.Config.IsPathStyle = isPathStyle
 	}
 }
 
@@ -2694,7 +2704,6 @@ func Proxy(proxyHost string) ClientOption {
 	return func(client *Client) {
 		client.Config.IsUseProxy = true
 		client.Config.ProxyHost = proxyHost
-		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
 	}
 }
 
@@ -2711,7 +2720,6 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 		client.Config.IsAuthProxy = true
 		client.Config.ProxyUser = proxyUser
 		client.Config.ProxyPassword = proxyPassword
-		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
 	}
 }
 

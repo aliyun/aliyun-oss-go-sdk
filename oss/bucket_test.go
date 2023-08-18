@@ -2280,6 +2280,51 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.GetConfig().IsEnableMD5, Equals, false)
 }
 
+func (s *OssBucketSuite) TestForcePathStyle(c *C) {
+	url, err := url.ParseRequestURI(endpoint)
+	client, err := New(endpoint, accessID, accessKey, ForcePathStyle(true))
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SecondLevelDomainForbidden")
+	c.Assert(err.(ServiceError).HostID, Equals, url.Host)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucket.GetConfig().IsPathStyle, Equals, true)
+
+	objectName := "demo.txt"
+
+	err = bucket.PutObject(objectName, strings.NewReader("hi oss"))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SecondLevelDomainForbidden")
+
+	str, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+	strUrl := endpoint + "/" + bucketName + "/" + objectName
+	c.Assert(strings.Contains(str, strUrl), Equals, true)
+}
+
+func (s *OssBucketSuite) TestUseCname(c *C) {
+	url, err := url.ParseRequestURI(endpoint)
+	c.Assert(err, IsNil)
+	cnameEndpoint := bucketName + "." + url.Host
+	client, err := New(cnameEndpoint, accessID, accessKey, UseCname(true))
+	c.Assert(err, IsNil)
+
+	info, err := client.GetBucketInfo(bucketName)
+
+	c.Assert(err, IsNil)
+	c.Assert(info.BucketInfo.Name, Equals, bucketName)
+
+	client, err = New(cnameEndpoint, accessID, accessKey)
+	_, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).HostID, Equals, bucketName+"."+cnameEndpoint)
+}
+
 func (s *OssBucketSuite) TestContextTimeout(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
