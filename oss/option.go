@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -12,9 +13,11 @@ import (
 type optionType string
 
 const (
-	optionParam optionType = "HTTPParameter" // URL parameter
-	optionHTTP  optionType = "HTTPHeader"    // HTTP header
-	optionArg   optionType = "FuncArgument"  // Function argument
+	optionParam   optionType = "HTTPParameter" // URL parameter
+	optionHTTP    optionType = "HTTPHeader"    // HTTP header
+	optionContext optionType = "HTTPContext"   // context
+	optionArg     optionType = "FuncArgument"  // Function argument
+
 )
 
 const (
@@ -27,6 +30,7 @@ const (
 	responseHeader     = "x-response-header"
 	redundancyType     = "redundancy-type"
 	objectHashFunc     = "object-hash-func"
+	contextArg         = "x-context-arg"
 )
 
 type (
@@ -446,6 +450,11 @@ func RedundancyType(value DataRedundancyType) Option {
 // RedundancyType bucket data redundancy type
 func ObjectHashFunc(value ObjecthashFuncType) Option {
 	return addArg(objectHashFunc, value)
+}
+
+// WithContext returns an option that sets the context for requests.
+func WithContext(ctx context.Context) Option {
+	return addArg(contextArg, ctx)
 }
 
 // Checkpoint configuration
