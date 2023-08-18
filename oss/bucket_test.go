@@ -2280,6 +2280,32 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.GetConfig().IsEnableMD5, Equals, false)
 }
 
+func (s *OssBucketSuite) TestForcePathStyle(c *C) {
+	client, err := New(endpoint, accessID, accessKey, ForcePathStyle(true))
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SecondLevelDomainForbidden")
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucket.GetConfig().IsPathStyle, Equals, true)
+
+	objectName := "demo.txt"
+
+	err = bucket.PutObject(objectName, strings.NewReader("hi oss"))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SecondLevelDomainForbidden")
+
+	str, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+	strUrl := endpoint + "/" + bucketName + "/" + objectName
+	c.Assert(strings.Contains(str, strUrl), Equals, true)
+
+}
+
 func (s *OssBucketSuite) TestContextTimeout(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
