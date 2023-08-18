@@ -177,14 +177,6 @@ func (conn Conn) DoURLWithContext(ctx context.Context, method HTTPMethod, signed
 		conn.config.WriteLog(Debug, "[Resp:%p]http error:%s\n", req, err.Error())
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
 		publishProgress(listener, event)
-		if ctx != nil {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			default:
-			}
-
-		}
 		return nil, err
 	}
 
@@ -373,13 +365,6 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 		// Transfer failed
 		event = newProgressEvent(TransferFailedEvent, tracker.completedBytes, req.ContentLength, 0)
 		publishProgress(listener, event)
-		if ctx != nil {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			default:
-			}
-		}
 		return nil, err
 	}
 
