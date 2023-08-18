@@ -2543,15 +2543,6 @@ func Timeout(connectTimeoutSec, readWriteTimeout int64) ClientOption {
 	}
 }
 
-// Timeout sets the HTTP timeout in seconds.
-//
-// timeout    HTTP timeout in seconds. Default is 60 seconds.
-func SetTimeout(timeout int64) ClientOption {
-	return func(client *Client) {
-		client.Config.Timeout = uint(timeout)
-	}
-}
-
 // MaxConns sets the HTTP max connections for a client.
 //
 // maxIdleConns    controls the maximum number of idle (keep-alive) connections across all hosts. Default is 100.
