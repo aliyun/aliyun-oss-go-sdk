@@ -1,5 +1,16 @@
 # ChangeLog - Aliyun OSS SDK for Go
 
+## 版本号：v2.2.8 日期：2023-07-31
+### 变更内容
+- 增加：support EnvironmentVariableCredentialsProvider
+- 增加：support describe regions api.
+- 增加：support create bucket with server encryption parameters.
+- 增加：support referer black list.
+- 增加：support aysnc process object api.
+- 增加：support ObjectSizeGreaterThan and ObjectSizeLessThan in lifecycle rule.
+- 增加：add DeepColdArchive storage class.
+- 修复：fix bug.
+
 ## 版本号：v2.2.7 日期：2023-03-23
 ### 变更内容
 - 增加：support get info form EC & x-oss-err.

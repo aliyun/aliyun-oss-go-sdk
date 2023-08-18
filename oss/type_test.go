@@ -2,11 +2,11 @@ package oss
 
 import (
 	"encoding/xml"
+	. "gopkg.in/check.v1"
+	"log"
 	"net/url"
 	"sort"
 	"strings"
-
-	. "gopkg.in/check.v1"
 )
 
 type OssTypeSuite struct{}
@@ -939,7 +939,7 @@ func (s *OssTypeSuite) TestLifeCycleRules(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
+func (s *OssTypeSuite) TestGetBucketLifecycleResult(c *C) {
 	xmlData := []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <LifecycleConfiguration>
   <Rule>
@@ -1016,6 +1016,189 @@ func (s *OssTypeSuite) TestLifeCycleRulesWithFilter(c *C) {
 	c.Assert(res1.Rules[0].Filter.Not[2].Prefix, Equals, "abc/not2/")
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Key, Equals, "notkey2")
 	c.Assert(res1.Rules[0].Filter.Not[2].Tag.Value, Equals, "notvalue2")
+
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?><LifecycleConfiguration>
+  <Rule>
+    <ID>r1</ID>
+    <Prefix>abc/</Prefix>
+    <Filter>
+      <ObjectSizeGreaterThan>500</ObjectSizeGreaterThan>
+      <ObjectSizeLessThan>64000</ObjectSizeLessThan>
+      <Not>
+        <Prefix>abc/not1/</Prefix>
+        <Tag>
+          <Key>notkey1</Key>
+          <Value>notvalue1</Value>
+        </Tag>
+      </Not>
+      <Not>
+        <Prefix>abc/not2/</Prefix>
+        <Tag>
+          <Key>notkey2</Key>
+          <Value>notvalue2</Value>
+        </Tag>
+      </Not>
+    </Filter>
+  </Rule>
+  <Rule>
+    <ID>r2</ID>
+    <Prefix>def/</Prefix>
+    <Filter>
+      <ObjectSizeGreaterThan>500</ObjectSizeGreaterThan>
+      <Not>
+        <Prefix>def/not1/</Prefix>
+      </Not>
+      <Not>
+        <Prefix>def/not2/</Prefix>
+        <Tag>
+          <Key>notkey2</Key>
+          <Value>notvalue2</Value>
+        </Tag>
+      </Not>
+    </Filter>
+  </Rule>
+</LifecycleConfiguration>
+`)
+
+	var res2 GetBucketLifecycleResult
+	err = xml.Unmarshal(xmlData, &res2)
+	testLogger.Println(res2.Rules[1].Filter)
+	c.Assert(err, IsNil)
+	c.Assert(res2.Rules[0].ID, Equals, "r1")
+	c.Assert(res2.Rules[0].Prefix, Equals, "abc/")
+	c.Assert(*(res2.Rules[0].Filter.ObjectSizeGreaterThan), Equals, int64(500))
+	c.Assert(*(res2.Rules[0].Filter.ObjectSizeLessThan), Equals, int64(64000))
+	c.Assert(res2.Rules[0].Filter.Not[0].Prefix, Equals, "abc/not1/")
+	c.Assert(res2.Rules[0].Filter.Not[0].Tag.Key, Equals, "notkey1")
+	c.Assert(res2.Rules[0].Filter.Not[0].Tag.Value, Equals, "notvalue1")
+
+	c.Assert(res2.Rules[0].Filter.Not[1].Prefix, Equals, "abc/not2/")
+	c.Assert(res2.Rules[0].Filter.Not[1].Tag.Key, Equals, "notkey2")
+	c.Assert(res2.Rules[0].Filter.Not[1].Tag.Value, Equals, "notvalue2")
+
+	c.Assert(res2.Rules[1].ID, Equals, "r2")
+	c.Assert(res2.Rules[1].Prefix, Equals, "def/")
+	c.Assert(*(res2.Rules[1].Filter.ObjectSizeGreaterThan), Equals, int64(500))
+	c.Assert(res2.Rules[1].Filter.ObjectSizeLessThan, IsNil)
+	c.Assert(res2.Rules[1].Filter.Not[0].Prefix, Equals, "def/not1/")
+
+	c.Assert(res2.Rules[1].Filter.Not[1].Prefix, Equals, "def/not2/")
+	c.Assert(res2.Rules[1].Filter.Not[1].Tag.Key, Equals, "notkey2")
+	c.Assert(res2.Rules[1].Filter.Not[1].Tag.Value, Equals, "notvalue2")
+}
+func (s *OssTypeSuite) TestLifecycleConfiguration(c *C) {
+	expiration := LifecycleExpiration{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	isTrue := true
+	isFalse := false
+	greater := int64(500)
+	less := int64(645000)
+	filter := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+	}
+	rule0 := LifecycleRule{
+		ID:         "r0",
+		Prefix:     "prefix0",
+		Status:     "Enabled",
+		Expiration: &expiration,
+	}
+	rule1 := LifecycleRule{
+		ID:         "r1",
+		Prefix:     "prefix1",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Transitions: []LifecycleTransition{
+			{
+				Days:         30,
+				StorageClass: StorageIA,
+				IsAccessTime: &isFalse,
+			},
+		},
+		Filter: &filter,
+	}
+
+	abortMPU := LifecycleAbortMultipartUpload{
+		Days:              30,
+		CreatedBeforeDate: "2015-11-11T00:00:00.000Z",
+	}
+	rule2 := LifecycleRule{
+		ID:                   "r3",
+		Prefix:               "prefix3",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+	}
+	tag := Tag{
+		Key:   "key1",
+		Value: "val1",
+	}
+	filter3 := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+		Not: []LifecycleFilterNot{
+			{
+				Tag: &tag,
+			},
+		},
+	}
+	rule3 := LifecycleRule{
+		ID:                   "r4",
+		Prefix:               "",
+		Status:               "Enabled",
+		Expiration:           &expiration,
+		AbortMultipartUpload: &abortMPU,
+		NonVersionTransitions: []LifecycleVersionTransition{
+			{
+				NoncurrentDays:       10,
+				StorageClass:         StorageIA,
+				IsAccessTime:         &isTrue,
+				ReturnToStdWhenVisit: &isFalse,
+			},
+		},
+		Filter: &filter3,
+	}
+	rules := []LifecycleRule{rule0, rule1, rule2, rule3}
+	config := LifecycleConfiguration{
+		Rules: rules,
+	}
+	xmlData, err := xml.Marshal(config)
+	testLogger.Println(string(xmlData))
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<LifecycleConfiguration><Rule><ID>r0</ID><Prefix>prefix0</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration></Rule><Rule><ID>r1</ID><Prefix>prefix1</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Transition><Days>30</Days><StorageClass>IA</StorageClass><IsAccessTime>false</IsAccessTime></Transition><Filter><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule><Rule><ID>r3</ID><Prefix>prefix3</Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition></Rule><Rule><ID>r4</ID><Prefix></Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><AbortMultipartUpload><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></AbortMultipartUpload><NoncurrentVersionTransition><NoncurrentDays>10</NoncurrentDays><StorageClass>IA</StorageClass><IsAccessTime>true</IsAccessTime><ReturnToStdWhenVisit>false</ReturnToStdWhenVisit></NoncurrentVersionTransition><Filter><Not><Prefix></Prefix><Tag><Key>key1</Key><Value>val1</Value></Tag></Not><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule></LifecycleConfiguration>")
+
+	filter4 := LifecycleFilter{
+		ObjectSizeGreaterThan: &greater,
+		ObjectSizeLessThan:    &less,
+		Not: []LifecycleFilterNot{
+			{},
+		},
+	}
+	rule4 := LifecycleRule{
+		ID:         "r5",
+		Prefix:     "",
+		Status:     "Enabled",
+		Expiration: &expiration,
+		Filter:     &filter4,
+	}
+	rules4 := []LifecycleRule{rule4}
+	config4 := LifecycleConfiguration{
+		Rules: rules4,
+	}
+	xmlData4, err := xml.Marshal(config4)
+	testLogger.Println(string(xmlData4))
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData4), Equals, "<LifecycleConfiguration><Rule><ID>r5</ID><Prefix></Prefix><Status>Enabled</Status><Expiration><Days>30</Days><CreatedBeforeDate>2015-11-11T00:00:00.000Z</CreatedBeforeDate></Expiration><Filter><Not><Prefix></Prefix></Not><ObjectSizeGreaterThan>500</ObjectSizeGreaterThan><ObjectSizeLessThan>645000</ObjectSizeLessThan></Filter></Rule></LifecycleConfiguration>")
 }
 
 // Test Bucket Resource Group
@@ -1529,4 +1712,159 @@ func (s *OssTypeSuite) TestGetBucketReplicationProgressResult(c *C) {
 	c.Assert(repResult.Rule[0].HistoricalObjectReplication, Equals, "enabled")
 	c.Assert((*repResult.Rule[0].Progress).HistoricalObject, Equals, "0.85")
 	c.Assert((*repResult.Rule[0].Progress).NewObject, Equals, "2015-09-24T15:28:14.000Z")
+}
+
+func (s *OssTypeSuite) TestGetBucketRefererResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+  <AllowEmptyReferer>true</AllowEmptyReferer>
+  <RefererList>
+  </RefererList>
+</RefererConfiguration>`
+	var repResult GetBucketRefererResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.AllowEmptyReferer, Equals, true)
+	c.Assert(repResult.AllowTruncateQueryString, IsNil)
+	c.Assert(repResult.RefererList, IsNil)
+	c.Assert(repResult.RefererBlacklist, IsNil)
+
+	xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+<AllowEmptyReferer>true</AllowEmptyReferer>
+<AllowTruncateQueryString>false</AllowTruncateQueryString>
+    <RefererList>
+        <Referer>http://www.aliyun.com</Referer>
+        <Referer>https://www.aliyun.com</Referer>
+        <Referer>http://www.*.com</Referer>
+        <Referer>https://www.?.aliyuncs.com</Referer>
+    </RefererList>
+</RefererConfiguration>`
+
+	var repResult0 GetBucketRefererResult
+	err = xmlUnmarshal(strings.NewReader(xmlData), &repResult0)
+	c.Assert(err, IsNil)
+	c.Assert(repResult0.AllowEmptyReferer, Equals, true)
+	c.Assert(*repResult0.AllowTruncateQueryString, Equals, false)
+	c.Assert(len(repResult0.RefererList), Equals, 4)
+	c.Assert(repResult0.RefererList[1], Equals, "https://www.aliyun.com")
+	c.Assert(repResult0.RefererBlacklist, IsNil)
+
+	xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<RefererConfiguration>
+  <AllowEmptyReferer>false</AllowEmptyReferer>
+  <AllowTruncateQueryString>false</AllowTruncateQueryString>
+  <RefererList>
+        <Referer>http://www.aliyun.com</Referer>
+        <Referer>https://www.aliyun.com</Referer>
+        <Referer>http://www.*.com</Referer>
+        <Referer>https://www.?.aliyuncs.com</Referer>
+  </RefererList>
+  <RefererBlacklist>
+        <Referer>http://www.refuse.com</Referer>
+        <Referer>https://*.hack.com</Referer>
+        <Referer>http://ban.*.com</Referer>
+    	  <Referer>https://www.?.deny.com</Referer>
+  </RefererBlacklist>
+</RefererConfiguration>`
+	var repResult1 GetBucketRefererResult
+	err = xmlUnmarshal(strings.NewReader(xmlData), &repResult1)
+	c.Assert(err, IsNil)
+	c.Assert(repResult1.AllowEmptyReferer, Equals, false)
+	c.Assert(*repResult1.AllowTruncateQueryString, Equals, false)
+	c.Assert(len(repResult1.RefererList), Equals, 4)
+	c.Assert(repResult1.RefererList[3], Equals, "https://www.?.aliyuncs.com")
+
+	c.Assert(len(repResult1.RefererList), Equals, 4)
+	c.Assert((repResult1.RefererBlacklist).Referer[2], Equals, "http://ban.*.com")
+}
+
+func (s *OssTypeSuite) TestRefererXML(c *C) {
+	xmlData := `<RefererConfiguration><AllowEmptyReferer>true</AllowEmptyReferer><RefererList></RefererList></RefererConfiguration>`
+	var setBucketReferer RefererXML
+	setBucketReferer.AllowEmptyReferer = true
+	setBucketReferer.RefererList = []string{}
+	xmlBody, err := xml.Marshal(setBucketReferer)
+	log.Println(string(xmlBody))
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlBody), Equals, xmlData)
+
+	xmlData1 := `<RefererConfiguration><AllowEmptyReferer>true</AllowEmptyReferer><AllowTruncateQueryString>false</AllowTruncateQueryString><RefererList><Referer>http://www.aliyun.com</Referer><Referer>https://www.aliyun.com</Referer><Referer>http://www.*.com</Referer><Referer>https://www.?.aliyuncs.com</Referer></RefererList></RefererConfiguration>`
+
+	setBucketReferer.AllowEmptyReferer = true
+	boolFalse := false
+	setBucketReferer.AllowTruncateQueryString = &boolFalse
+	setBucketReferer.RefererList = []string{
+		"http://www.aliyun.com",
+		"https://www.aliyun.com",
+		"http://www.*.com",
+		"https://www.?.aliyuncs.com",
+	}
+	c.Log(setBucketReferer)
+	xmlBody, err = xml.Marshal(setBucketReferer)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlBody), Equals, xmlData1)
+
+	xmlData2 := `<RefererConfiguration><AllowEmptyReferer>false</AllowEmptyReferer><AllowTruncateQueryString>false</AllowTruncateQueryString><RefererList><Referer>http://www.aliyun.com</Referer><Referer>https://www.aliyun.com</Referer><Referer>http://www.*.com</Referer><Referer>https://www.?.aliyuncs.com</Referer></RefererList><RefererBlacklist><Referer>http://www.refuse.com</Referer><Referer>https://*.hack.com</Referer><Referer>http://ban.*.com</Referer><Referer>https://www.?.deny.com</Referer></RefererBlacklist></RefererConfiguration>`
+
+	setBucketReferer.AllowEmptyReferer = false
+	setBucketReferer.AllowTruncateQueryString = &boolFalse
+	setBucketReferer.RefererList = []string{
+		"http://www.aliyun.com",
+		"https://www.aliyun.com",
+		"http://www.*.com",
+		"https://www.?.aliyuncs.com",
+	}
+	referer1 := "http://www.refuse.com"
+	referer2 := "https://*.hack.com"
+	referer3 := "http://ban.*.com"
+	referer4 := "https://www.?.deny.com"
+	setBucketReferer.RefererBlacklist = &RefererBlacklist{
+		[]string{
+			referer1, referer2, referer3, referer4,
+		},
+	}
+	xmlBody, err = xml.Marshal(setBucketReferer)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlBody), Equals, xmlData2)
+}
+
+func (s *OssTypeSuite) TestDescribeRegionsResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<RegionInfoList>
+  <RegionInfo>
+     <Region>oss-cn-hangzhou</Region>
+     <InternetEndpoint>oss-cn-hangzhou.aliyuncs.com</InternetEndpoint>
+     <InternalEndpoint>oss-cn-hangzhou-internal.aliyuncs.com</InternalEndpoint>
+     <AccelerateEndpoint>oss-accelerate.aliyuncs.com</AccelerateEndpoint>  
+  </RegionInfo>
+  <RegionInfo>
+     <Region>oss-cn-shanghai</Region>
+     <InternetEndpoint>oss-cn-shanghai.aliyuncs.com</InternetEndpoint>
+     <InternalEndpoint>oss-cn-shanghai-internal.aliyuncs.com</InternalEndpoint>
+     <AccelerateEndpoint>oss-accelerate.aliyuncs.com</AccelerateEndpoint>  
+  </RegionInfo>
+</RegionInfoList>`
+	var repResult DescribeRegionsResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Regions[0].Region, Equals, "oss-cn-hangzhou")
+	c.Assert(repResult.Regions[0].InternetEndpoint, Equals, "oss-cn-hangzhou.aliyuncs.com")
+	c.Assert(repResult.Regions[0].InternalEndpoint, Equals, "oss-cn-hangzhou-internal.aliyuncs.com")
+	c.Assert(repResult.Regions[0].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
+
+	c.Assert(repResult.Regions[1].Region, Equals, "oss-cn-shanghai")
+	c.Assert(repResult.Regions[1].InternetEndpoint, Equals, "oss-cn-shanghai.aliyuncs.com")
+	c.Assert(repResult.Regions[1].InternalEndpoint, Equals, "oss-cn-shanghai-internal.aliyuncs.com")
+	c.Assert(repResult.Regions[1].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
+}
+
+func (s *OssTypeSuite) TestAsyncProcessResult(c *C) {
+	jsonData := `{"EventId":"10C-1XqxdjCRx3x7gRim3go1yLUVWgm","RequestId":"B8AD6942-BBDE-571D-A9A9-525A4C34B2B3","TaskId":"MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d"}`
+	var repResult AsyncProcessObjectResult
+	err := jsonUnmarshal(strings.NewReader(jsonData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.EventId, Equals, "10C-1XqxdjCRx3x7gRim3go1yLUVWgm")
+	c.Assert(repResult.RequestId, Equals, "B8AD6942-BBDE-571D-A9A9-525A4C34B2B3")
+	c.Assert(repResult.TaskId, Equals, "MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d")
 }

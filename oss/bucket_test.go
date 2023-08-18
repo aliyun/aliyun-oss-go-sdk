@@ -2876,6 +2876,37 @@ func (s *OssBucketSuite) TestProcessObject(c *C) {
 	c.Assert(err, NotNil)
 }
 
+// TestAsyncProcessObject
+func (s *OssBucketSuite) TestAsyncProcessObject(c *C) {
+	videoUrl := "https://oss-console-img-demo-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/video.mp4?spm=a2c4g.64555.0.0.515675979u4B8w&file=video.mp4"
+	fileName := "video.mp4"
+	// 发起get请求
+	resp, err := http.Get(videoUrl)
+	c.Assert(err, IsNil)
+	defer resp.Body.Close()
+
+	// 创建文件
+	file, err := os.Create(fileName)
+	c.Assert(err, IsNil)
+	defer file.Close()
+	_, err = io.Copy(file, resp.Body)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.PutObjectFromFile("demo.avi", fileName)
+	c.Assert(err, IsNil)
+
+	sourceImageName := "demo.avi"
+	style := "video/convert,f_avi,vcodec_h265,s_1920x1080,vb_2000000,fps_30,acodec_aac,ab_100000,sn_1"
+	targetObject := "demo"
+	process := fmt.Sprintf("%s|sys/saveas,b_%v,o_%v", style, strings.TrimRight(base64.URLEncoding.EncodeToString([]byte(bucketName)), "="), strings.TrimRight(base64.URLEncoding.EncodeToString([]byte(targetObject)), "="))
+	_, err = s.bucket.AsyncProcessObject(sourceImageName, process)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "Imm Client")
+	c.Assert(strings.Contains(err.(ServiceError).Message, "ResourceNotFound, The specified resource Attachment is not found"), Equals, true)
+
+	os.Remove(fileName)
+}
+
 // Private
 func CreateFileAndWrite(fileName string, data []byte) error {
 	os.Remove(fileName)
