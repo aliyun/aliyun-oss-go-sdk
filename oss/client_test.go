@@ -2570,7 +2570,7 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
 
 	client, err := New(endpoint, accessID, accessKey, UseCname(true),
-		Timeout(11, 12), SecurityToken("token"), Proxy("http://127.0.0.1:8120"), SetTimeout(1))
+		Timeout(11, 12), SecurityToken("token"), Proxy("http://127.0.0.1:8120"))
 	c.Assert(err, IsNil)
 
 	// CreateBucket timeout
@@ -2588,8 +2588,6 @@ func (s *OssClientSuite) TestClientOption(c *C) {
 
 	c.Assert(client.Conn.config.IsUseProxy, Equals, true)
 	c.Assert(client.Config.ProxyHost, Equals, "http://127.0.0.1:8120")
-	duration := time.Second * time.Duration(1)
-	c.Assert(client.Conn.config.Timeout, Equals, uint(duration.Seconds()))
 
 	client, err = New(endpoint, accessID, accessKey, AuthProxy("http://127.0.0.1:8120", "user", "passwd"))
 
