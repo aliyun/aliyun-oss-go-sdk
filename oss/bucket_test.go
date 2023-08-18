@@ -2,6 +2,7 @@ package oss
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/tls"
@@ -2277,6 +2278,137 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.GetConfig().SecurityToken, Equals, "token")
 	c.Assert(bucket.GetConfig().IsCname, Equals, true)
 	c.Assert(bucket.GetConfig().IsEnableMD5, Equals, false)
+}
+
+func (s *OssBucketSuite) TestContextTimeout(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
+
+	bucketNameDest := bucketNamePrefix + RandLowStr(8)
+	c.Assert(err, IsNil)
+
+	objectNameDest := objectName + RandLowStr(5)
+
+	// Put
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
+	defer cancel()
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue), WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get
+	_, err = bucket.GetObject(objectName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// CopyObjectTo
+	_, err = bucket.CopyObjectTo(bucketNameDest, objectNameDest, objectName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+	// Delete
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	var nextPos int64
+	// String append
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader("红藕香残玉簟秋。轻解罗裳，独上兰舟。"), nextPos, WithContext(ctx))
+	c.Assert(err, NotNil)
+
+	// Put with URL
+	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue), WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get with URL
+	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
+	c.Assert(err, IsNil)
+
+	_, err = bucket.GetObjectWithURL(signedURL, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	content := RandStr(1024 * 1024)
+	var fileName = "test-file-" + RandStr(8)
+	CreateFile(fileName, content, c)
+
+	fd, err := os.Open(fileName)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	err = bucket.PutObjectFromFile(objectName, fileName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	os.Remove(fileName)
+}
+
+func (s *OssBucketSuite) TestContextTimeoutBigFile(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	//big file
+	content := RandStr(5 * 1024 * 1024)
+	var fileName = "test-file-" + RandStr(8)
+	CreateFile(fileName, content, c)
+
+	fd, err := os.Open(fileName)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	objectNameBigfile := objectName + "-bigfile"
+	err = bucket.PutObjectFromFile(objectNameBigfile, fileName, WithContext(ctx))
+	if ctx != nil {
+		select {
+		case <-ctx.Done():
+			c.Assert(err, NotNil)
+			c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+		default:
+			c.Fail()
+		}
+	}
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectNameBigfile)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	os.Remove(fileName)
 }
 
 func (s *OssBucketSuite) TestSTSToken(c *C) {
