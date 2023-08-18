@@ -808,9 +808,10 @@ func (c *timeoutConn) SetWriteDeadline(t time.Time) error {
 
 // UrlMaker builds URL and resource
 const (
-	urlTypeCname  = 1
-	urlTypeIP     = 2
-	urlTypeAliyun = 3
+	urlTypeCname     = 1
+	urlTypeIP        = 2
+	urlTypeAliyun    = 3
+	urlTypePathStyle = 4
 )
 
 type urlMaker struct {
@@ -822,6 +823,11 @@ type urlMaker struct {
 
 // Init parses endpoint
 func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
+	return um.InitExt(endpoint, isCname, isProxy, false)
+}
+
+// InitExt parses endpoint
+func (um *urlMaker) InitExt(endpoint string, isCname bool, isProxy bool, isPathStyle bool) error {
 	if strings.HasPrefix(endpoint, "http://") {
 		um.Scheme = "http"
 		um.NetLoc = endpoint[len("http://"):]
@@ -854,6 +860,8 @@ func (um *urlMaker) Init(endpoint string, isCname bool, isProxy bool) error {
 		um.Type = urlTypeIP
 	} else if isCname {
 		um.Type = urlTypeCname
+	} else if isPathStyle {
+		um.Type = urlTypePathStyle
 	} else {
 		um.Type = urlTypeAliyun
 	}
@@ -902,7 +910,7 @@ func (um urlMaker) buildURL(bucket, object string) (string, string) {
 	if um.Type == urlTypeCname {
 		host = um.NetLoc
 		path = "/" + object
-	} else if um.Type == urlTypeIP {
+	} else if um.Type == urlTypeIP || um.Type == urlTypePathStyle {
 		if bucket == "" {
 			host = um.NetLoc
 			path = "/"
@@ -937,7 +945,7 @@ func (um urlMaker) buildURLV4(bucket, object string) (string, string) {
 	if um.Type == urlTypeCname {
 		host = um.NetLoc
 		path = "/" + object
-	} else if um.Type == urlTypeIP {
+	} else if um.Type == urlTypeIP || um.Type == urlTypePathStyle {
 		if bucket == "" {
 			host = um.NetLoc
 			path = "/"

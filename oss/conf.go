@@ -146,6 +146,7 @@ type Config struct {
 	Timeout             uint                // Timeout in seconds. By default it's 60.
 	SecurityToken       string              // STS Token
 	IsCname             bool                // If cname is in the endpoint.
+	IsPathStyle         bool                // If Path Style is in the endpoint.
 	HTTPTimeout         HTTPTimeout         // HTTP timeout
 	HTTPMaxConns        HTTPMaxConns        // Http max connections
 	IsUseProxy          bool                // Flag of using proxy.
@@ -256,6 +257,7 @@ func getDefaultOssConfig() *Config {
 	config.Timeout = 60 // Seconds
 	config.SecurityToken = ""
 	config.IsCname = false
+	config.IsPathStyle = false
 
 	config.HTTPTimeout.ConnectTimeout = time.Second * 30   // 30s
 	config.HTTPTimeout.ReadWriteTimeout = time.Second * 60 // 60s
