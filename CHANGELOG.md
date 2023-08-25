@@ -1,5 +1,12 @@
 # ChangeLog - Aliyun OSS SDK for Go
 
+## 版本号：v2.2.9 日期：2023-08-25
+### 变更内容
+- 增加：support force path style option.
+- 增加：support context.Context option.
+- 修改：remove LifecycleFilterNot.Prefix omitempty attribute.
+
+
 ## 版本号：v2.2.8 日期：2023-07-31
 ### 变更内容
 - 增加：support EnvironmentVariableCredentialsProvider
