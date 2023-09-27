@@ -2852,3 +2852,11 @@ func (client Client) do(method, bucketName string, params map[string]interface{}
 
 	return resp, err
 }
+
+// SetMaxConns sets the maxIdleConns, maxIdleConnsPerHost.
+func SetMaxConns(maxIdleConns, maxIdleConnsPerHost int) ClientOption {
+	return func(client *Client) {
+		client.Config.HTTPMaxConns.MaxIdleConns = maxIdleConns
+		client.Config.HTTPMaxConns.MaxIdleConnsPerHost = maxIdleConnsPerHost
+	}
+}
