@@ -3,7 +3,6 @@ package oss
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -715,8 +714,6 @@ func GetCallbackBody(options []Option, resp *Response, callbackSet bool) error {
 		callback, _ := FindOption(options, HTTPHeaderOssCallback, nil)
 		if callback != nil {
 			err = setBody(options, resp)
-		}else{
-			io.Copy(io.Discard, resp.Body)
 		}
 	}
 	return err
