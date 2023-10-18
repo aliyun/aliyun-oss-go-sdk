@@ -1039,6 +1039,7 @@ func (s *OssBucketMultipartSuite) TestMultipartUploadWithCallbackResult(c *C) {
 	e, ok := err.(ServiceError)
 	c.Assert(ok, Equals, true)
 	c.Assert(e.StatusCode, Equals, 203)
+	c.Assert(e.Code, Equals, "CallbackFailed")
 	c.Assert(body, IsNil)
 
 	pbody, err := s.bucket.GetObject(objectName)
