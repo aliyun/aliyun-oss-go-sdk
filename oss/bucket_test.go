@@ -6012,6 +6012,7 @@ func (s *OssBucketSuite) TestPutObjectWithCallbackResult(c *C) {
 	e, ok := err.(ServiceError)
 	c.Assert(ok, Equals, true)
 	c.Assert(e.StatusCode, Equals, 203)
+	c.Assert(e.Code, Equals, "CallbackFailed")
 	c.Assert(pBody, IsNil)
 
 	//Check

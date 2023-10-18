@@ -96,6 +96,17 @@ func CheckCallbackResp(resp *Response) error {
 	return err
 }
 
+func tryConvertServiceError(data []byte, resp *Response, def error) (err error) {
+	err = def
+	if len(data) > 0 {
+		srvErr, errIn := serviceErrFromXML(data, resp.StatusCode, resp.Headers.Get(HTTPHeaderOssRequestID))
+		if errIn == nil {
+			err = srvErr
+		}
+	}
+	return err
+}
+
 // CRCCheckError is returned when crc check is inconsistent between client and server
 type CRCCheckError struct {
 	clientCRC uint64 // Calculated CRC64 in client
