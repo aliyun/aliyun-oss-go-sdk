@@ -100,16 +100,21 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 	if err != nil {
 		return nil, err
 	}
-
 	if bucket.GetConfig().IsEnableCRC {
 		err = CheckCRC(resp, "DoPutObject")
 		if err != nil {
 			return resp, err
 		}
 	}
-
 	err = CheckRespCode(resp.StatusCode, []int{http.StatusOK})
-
+	if err != nil {
+		err = CheckCallbackResp(resp)
+	} else {
+		err = GetCallbackBody(options, resp, false)
+		if err != nil {
+			return resp, err
+		}
+	}
 	return resp, err
 }
 

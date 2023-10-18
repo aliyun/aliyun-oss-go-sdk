@@ -218,8 +218,17 @@ func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 		return out, err
 	}
 	defer resp.Body.Close()
-
-	err = xmlUnmarshal(resp.Body, &out)
+	err = CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+	if err != nil {
+		err = CheckCallbackResp(resp)
+	} else {
+		callback, _ := FindOption(options, HTTPHeaderOssCallback, nil)
+		if callback == nil {
+			err = xmlUnmarshal(resp.Body, &out)
+		} else {
+			err = GetCallbackBody(options, resp, true)
+		}
+	}
 	return out, err
 }
 
