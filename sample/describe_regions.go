@@ -15,7 +15,7 @@ func DescribeRegionsSample() {
 
 	// Get describe regions
 	regionEndpoint := "oss-cn-hangzhou"
-	list, err := client.DescribeRegions(regionEndpoint)
+	list, err := client.DescribeRegions(oss.AddParam("regions", regionEndpoint))
 	if err != nil {
 		HandleError(err)
 	}
@@ -29,7 +29,7 @@ func DescribeRegionsSample() {
 
 	// List describe regions
 
-	list, err = client.DescribeRegions("")
+	list, err = client.DescribeRegions()
 	if err != nil {
 		HandleError(err)
 	}
