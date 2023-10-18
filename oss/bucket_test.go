@@ -2,6 +2,7 @@ package oss
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/tls"
@@ -2279,6 +2280,182 @@ func (s *OssBucketSuite) TestGetConfig(c *C) {
 	c.Assert(bucket.GetConfig().IsEnableMD5, Equals, false)
 }
 
+func (s *OssBucketSuite) TestForcePathStyle(c *C) {
+	url, err := url.ParseRequestURI(endpoint)
+	client, err := New(endpoint, accessID, accessKey, ForcePathStyle(true))
+	c.Assert(err, IsNil)
+
+	_, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SecondLevelDomainForbidden")
+	c.Assert(err.(ServiceError).HostID, Equals, url.Host)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	c.Assert(bucket.GetConfig().IsPathStyle, Equals, true)
+
+	objectName := "demo.txt"
+
+	err = bucket.PutObject(objectName, strings.NewReader("hi oss"))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SecondLevelDomainForbidden")
+
+	str, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+	strUrl := endpoint + "/" + bucketName + "/" + objectName
+	c.Assert(strings.Contains(str, strUrl), Equals, true)
+}
+
+func (s *OssBucketSuite) TestUseCname(c *C) {
+	url, err := url.ParseRequestURI(endpoint)
+	c.Assert(err, IsNil)
+	cnameEndpoint := bucketName + "." + url.Host
+	client, err := New(cnameEndpoint, accessID, accessKey, UseCname(true))
+	c.Assert(err, IsNil)
+
+	info, err := client.GetBucketInfo(bucketName)
+
+	c.Assert(err, IsNil)
+	c.Assert(info.BucketInfo.Name, Equals, bucketName)
+
+	client, err = New(cnameEndpoint, accessID, accessKey)
+	_, err = client.GetBucketInfo(bucketName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).HostID, Equals, bucketName+"."+cnameEndpoint)
+}
+
+func (s *OssBucketSuite) TestContextTimeout(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
+
+	bucketNameDest := bucketNamePrefix + RandLowStr(8)
+	c.Assert(err, IsNil)
+
+	objectNameDest := objectName + RandLowStr(5)
+
+	// Put
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
+	defer cancel()
+	err = bucket.PutObject(objectName, strings.NewReader(objectValue), WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get
+	_, err = bucket.GetObject(objectName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// CopyObjectTo
+	_, err = bucket.CopyObjectTo(bucketNameDest, objectNameDest, objectName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+	// Delete
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	var nextPos int64
+	// String append
+	nextPos, err = s.bucket.AppendObject(objectName, strings.NewReader("红藕香残玉簟秋。轻解罗裳，独上兰舟。"), nextPos, WithContext(ctx))
+	c.Assert(err, NotNil)
+
+	// Put with URL
+	signedURL, err := bucket.SignURL(objectName, HTTPPut, 3600)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObjectWithURL(signedURL, strings.NewReader(objectValue), WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+
+	// Get with URL
+	signedURL, err = bucket.SignURL(objectName, HTTPGet, 3600)
+	c.Assert(err, IsNil)
+
+	_, err = bucket.GetObjectWithURL(signedURL, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	content := RandStr(1024 * 1024)
+	var fileName = "test-file-" + RandStr(8)
+	CreateFile(fileName, content, c)
+
+	fd, err := os.Open(fileName)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	err = bucket.PutObjectFromFile(objectName, fileName, WithContext(ctx))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+
+	os.Remove(fileName)
+}
+
+func (s *OssBucketSuite) TestContextTimeoutBigFile(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+
+	//big file
+	content := RandStr(5 * 1024 * 1024)
+	var fileName = "test-file-" + RandStr(8)
+	CreateFile(fileName, content, c)
+
+	fd, err := os.Open(fileName)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	objectNameBigfile := objectName + "-bigfile"
+	err = bucket.PutObjectFromFile(objectNameBigfile, fileName, WithContext(ctx))
+	if ctx != nil {
+		select {
+		case <-ctx.Done():
+			c.Assert(err, NotNil)
+			c.Assert(strings.Contains(err.Error(), "context deadline exceeded"), Equals, true)
+		default:
+			c.Fail()
+		}
+	}
+
+	// Get not exist object
+	_, err = bucket.GetObject(objectNameBigfile)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).StatusCode, Equals, 404)
+
+	os.Remove(fileName)
+}
+
 func (s *OssBucketSuite) TestSTSToken(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
 	objectValue := "红藕香残玉簟秋。轻解罗裳，独上兰舟。云中谁寄锦书来？雁字回时，月满西楼。"
@@ -2646,6 +2823,37 @@ func (s *OssBucketSuite) TestProcessObject(c *C) {
 	process = fmt.Sprintf("image/resize,w_100|saveas,o_%v,b_%v", base64.URLEncoding.EncodeToString([]byte(destObjName)), base64.URLEncoding.EncodeToString([]byte(s.bucket.BucketName)))
 	result, err = s.bucket.ProcessObject(objectName, process)
 	c.Assert(err, NotNil)
+}
+
+// TestAsyncProcessObject
+func (s *OssBucketSuite) TestAsyncProcessObject(c *C) {
+	videoUrl := "https://oss-console-img-demo-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/video.mp4?spm=a2c4g.64555.0.0.515675979u4B8w&file=video.mp4"
+	fileName := "video.mp4"
+	// 发起get请求
+	resp, err := http.Get(videoUrl)
+	c.Assert(err, IsNil)
+	defer resp.Body.Close()
+
+	// 创建文件
+	file, err := os.Create(fileName)
+	c.Assert(err, IsNil)
+	defer file.Close()
+	_, err = io.Copy(file, resp.Body)
+	c.Assert(err, IsNil)
+
+	err = s.bucket.PutObjectFromFile("demo.avi", fileName)
+	c.Assert(err, IsNil)
+
+	sourceImageName := "demo.avi"
+	style := "video/convert,f_avi,vcodec_h265,s_1920x1080,vb_2000000,fps_30,acodec_aac,ab_100000,sn_1"
+	targetObject := "demo"
+	process := fmt.Sprintf("%s|sys/saveas,b_%v,o_%v", style, strings.TrimRight(base64.URLEncoding.EncodeToString([]byte(bucketName)), "="), strings.TrimRight(base64.URLEncoding.EncodeToString([]byte(targetObject)), "="))
+	_, err = s.bucket.AsyncProcessObject(sourceImageName, process)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "Imm Client")
+	c.Assert(strings.Contains(err.(ServiceError).Message, "ResourceNotFound, The specified resource Attachment is not found"), Equals, true)
+
+	os.Remove(fileName)
 }
 
 // Private

@@ -13,14 +13,14 @@
 > - With this SDK, you can upload, download and manage data on any app anytime and anywhere conveniently. 
 
 ## Version
-> - Current version: v2.2.7
+> - Current version: v2.2.9
 
 ## Running Environment
 > - Go 1.5 or above. 
 
 ## Installing
 ### Install the SDK through GitHub
-> - Run the 'go get github.com/aliyun/aliyun-oss-go-sdk/oss' command to get the remote code package.
+> - Run the 'go get github.com/aliyun/aliyun-oss-go-sdk' command to get the remote code package.
 > - Use 'import "github.com/aliyun/aliyun-oss-go-sdk/oss"' in your code to introduce OSS Go SDK package.
 
 ## Getting Started

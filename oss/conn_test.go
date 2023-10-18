@@ -84,6 +84,22 @@ func (s *OssConnSuite) TestURLMarker(c *C) {
 	c.Assert(um.Type, Equals, urlTypeIP)
 	c.Assert(um.Scheme, Equals, "https")
 	c.Assert(um.NetLoc, Equals, "[2401:b180::dc]:8080")
+
+	um.InitExt("https://docs.github.com:8080", false, false, true)
+	c.Assert(um.Type, Equals, urlTypePathStyle)
+	c.Assert(um.Scheme, Equals, "https")
+	c.Assert(um.NetLoc, Equals, "docs.github.com:8080")
+	c.Assert(um.getURL("bucket", "object", "params").String(), Equals, "https://docs.github.com:8080/bucket/object?params")
+	c.Assert(um.getURL("", "object", "params").String(), Equals, "https://docs.github.com:8080/?params")
+
+	um.InitExt("docs.github.com", false, false, true)
+	c.Assert(um.Type, Equals, urlTypePathStyle)
+	c.Assert(um.Scheme, Equals, "http")
+	c.Assert(um.NetLoc, Equals, "docs.github.com")
+
+	c.Assert(um.getURL("bucket", "object", "params").String(), Equals, "http://docs.github.com/bucket/object?params")
+	c.Assert(um.getURL("bucket", "object", "").String(), Equals, "http://docs.github.com/bucket/object")
+	c.Assert(um.getURL("", "object", "").String(), Equals, "http://docs.github.com/")
 }
 
 func (s *OssConnSuite) TestAuth(c *C) {

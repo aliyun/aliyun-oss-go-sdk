@@ -49,10 +49,6 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 
 	// URL parse
 	url := &urlMaker{}
-	err := url.Init(config.Endpoint, config.IsCname, config.IsUseProxy)
-	if err != nil {
-		return nil, err
-	}
 
 	// HTTP connect
 	conn := &Conn{config: config, url: url}
@@ -66,6 +62,11 @@ func New(endpoint, accessKeyID, accessKeySecret string, options ...ClientOption)
 	// Client options parse
 	for _, option := range options {
 		option(client)
+	}
+
+	err := url.InitExt(config.Endpoint, config.IsCname, config.IsUseProxy, config.IsPathStyle)
+	if err != nil {
+		return nil, err
 	}
 
 	if config.AuthVersion != AuthV1 && config.AuthVersion != AuthV2 && config.AuthVersion != AuthV4 {
@@ -493,9 +494,32 @@ func (client Client) SetBucketReferer(bucketName string, referrers []string, all
 	if err != nil {
 		return err
 	}
-	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
 
+	return client.PutBucketRefererXml(bucketName, string(bs), options...)
+}
+
+// SetBucketRefererV2 gets the bucket's referer white list.
+//
+// setBucketReferer   SetBucketReferer bucket referer config in struct format.
+//
+// GetBucketRefererResponse    the result object upon successful request. It's only valid when error is nil.
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketRefererV2(bucketName string, setBucketReferer RefererXML, options ...Option) error {
+	bs, err := xml.Marshal(setBucketReferer)
+	if err != nil {
+		return err
+	}
+	return client.PutBucketRefererXml(bucketName, string(bs), options...)
+}
+
+// PutBucketRefererXml set bucket's style
+// bucketName    the bucket name.
+// xmlData		 the style in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketRefererXml(bucketName, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
 	contentType := http.DetectContentType(buffer.Bytes())
 	headers := map[string]string{}
 	headers[HTTPHeaderContentType] = contentType
@@ -511,24 +535,33 @@ func (client Client) SetBucketReferer(bucketName string, referrers []string, all
 }
 
 // GetBucketReferer gets the bucket's referrer white list.
-//
 // bucketName    the bucket name.
-//
-// GetBucketRefererResponse    the result object upon successful request. It's only valid when error is nil.
+// GetBucketRefererResult  the result object upon successful request. It's only valid when error is nil.
 // error    it's nil if no error, otherwise it's an error object.
-//
 func (client Client) GetBucketReferer(bucketName string, options ...Option) (GetBucketRefererResult, error) {
 	var out GetBucketRefererResult
+	body, err := client.GetBucketRefererXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketRefererXml gets the bucket's referrer white list.
+// bucketName    the bucket name.
+// GetBucketRefererResponse the bucket referer config result in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketRefererXml(bucketName string, options ...Option) (string, error) {
 	params := map[string]interface{}{}
 	params["referer"] = nil
 	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
 	if err != nil {
-		return out, err
+		return "", err
 	}
 	defer resp.Body.Close()
-
-	err = xmlUnmarshal(resp.Body, &out)
-	return out, err
+	body, err := ioutil.ReadAll(resp.Body)
+	return string(body), err
 }
 
 // SetBucketLogging sets the bucket logging settings.
@@ -2100,6 +2133,9 @@ func (client Client) GetBucketReplicationProgress(bucketName string, ruleId stri
 func (client Client) GetBucketAccessMonitor(bucketName string, options ...Option) (GetBucketAccessMonitorResult, error) {
 	var out GetBucketAccessMonitorResult
 	body, err := client.GetBucketAccessMonitorXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
@@ -2363,6 +2399,9 @@ func (client Client) PutBucketResourceGroupXml(bucketName string, xmlData string
 func (client Client) GetBucketResourceGroup(bucketName string, options ...Option) (GetBucketResourceGroupResult, error) {
 	var out GetBucketResourceGroupResult
 	body, err := client.GetBucketResourceGroupXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
@@ -2424,6 +2463,9 @@ func (client Client) PutBucketStyleXml(bucketName, styleName, xmlData string, op
 func (client Client) GetBucketStyle(bucketName, styleName string, options ...Option) (GetBucketStyleResult, error) {
 	var out GetBucketStyleResult
 	body, err := client.GetBucketStyleXml(bucketName, styleName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
@@ -2454,6 +2496,9 @@ func (client Client) GetBucketStyleXml(bucketName, styleName string, options ...
 func (client Client) ListBucketStyle(bucketName string, options ...Option) (GetBucketListStyleResult, error) {
 	var out GetBucketListStyleResult
 	body, err := client.ListBucketStyleXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
 	err = xmlUnmarshal(strings.NewReader(body), &out)
 	return out, err
 }
@@ -2492,6 +2537,40 @@ func (client Client) DeleteBucketStyle(bucketName, styleName string, options ...
 	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+// DescribeRegions get describe regions
+// GetDescribeRegionsResult  the  result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DescribeRegions(options ...Option) (DescribeRegionsResult, error) {
+	var out DescribeRegionsResult
+	body, err := client.DescribeRegionsXml(options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// DescribeRegionsXml get describe regions
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DescribeRegionsXml(options ...Option) (string, error) {
+	params, err := GetRawParams(options)
+	if err != nil {
+		return "", err
+	}
+	if params["regions"] == nil {
+		params["regions"] = nil
+	}
+	resp, err := client.do("GET", "", params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
@@ -2519,7 +2598,16 @@ func (client Client) LimitDownloadSpeed(downSpeed int) error {
 func UseCname(isUseCname bool) ClientOption {
 	return func(client *Client) {
 		client.Config.IsCname = isUseCname
-		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
+	}
+}
+
+// ForcePathStyle sets the flag of using Path Style. By default it's false.
+//
+// isPathStyle    true: the endpoint has the Path Style, false: the endpoint does not have Path Style. Default is false.
+//
+func ForcePathStyle(isPathStyle bool) ClientOption {
+	return func(client *Client) {
+		client.Config.IsPathStyle = isPathStyle
 	}
 }
 
@@ -2616,7 +2704,6 @@ func Proxy(proxyHost string) ClientOption {
 	return func(client *Client) {
 		client.Config.IsUseProxy = true
 		client.Config.ProxyHost = proxyHost
-		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
 	}
 }
 
@@ -2633,7 +2720,6 @@ func AuthProxy(proxyHost, proxyUser, proxyPassword string) ClientOption {
 		client.Config.IsAuthProxy = true
 		client.Config.ProxyUser = proxyUser
 		client.Config.ProxyPassword = proxyPassword
-		client.Conn.url.Init(client.Config.Endpoint, client.Config.IsCname, client.Config.IsUseProxy)
 	}
 }
 
