@@ -5991,3 +5991,34 @@ func stsAssumeRole(accessKeyId string, accessKeySecret string, roleArn string, s
 	}
 	return &result, nil
 }
+
+func (s *OssBucketSuite) TestPutObjectWithCallbackResult(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
+		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+	callbackMap := map[string]string{}
+	callbackMap["callbackUrl"] = "www.aliyuncs.com"
+	callbackMap["callbackBody"] = "filename=${object}&size=${size}&mimeType=${mimeType}"
+	callbackMap["callbackBodyType"] = "application/x-www-form-urlencoded"
+	callbackBuffer := bytes.NewBuffer([]byte{})
+	callbackEncoder := json.NewEncoder(callbackBuffer)
+	callbackEncoder.SetEscapeHTML(false)
+	err := callbackEncoder.Encode(callbackMap)
+	c.Assert(err, IsNil)
+
+	callbackVal := base64.StdEncoding.EncodeToString(callbackBuffer.Bytes())
+	var pBody []byte
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue), Callback(callbackVal), CallbackResult(&pBody))
+	e, ok := err.(ServiceError)
+	c.Assert(ok, Equals, true)
+	c.Assert(e.StatusCode, Equals, 203)
+	c.Assert(e.Code, Equals, "CallbackFailed")
+	c.Assert(pBody, IsNil)
+
+	//Check
+	body, err := s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+}

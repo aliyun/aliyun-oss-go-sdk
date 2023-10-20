@@ -100,16 +100,26 @@ func (bucket Bucket) DoPutObject(request *PutObjectRequest, options []Option) (*
 	if err != nil {
 		return nil, err
 	}
-
 	if bucket.GetConfig().IsEnableCRC {
 		err = CheckCRC(resp, "DoPutObject")
 		if err != nil {
 			return resp, err
 		}
 	}
-
 	err = CheckRespCode(resp.StatusCode, []int{http.StatusOK})
-
+	body, _ := ioutil.ReadAll(resp.Body)
+	if len(body) > 0 {
+		if err != nil {
+			err = tryConvertServiceError(body, resp, err)
+		} else {
+			rb, _ := FindOption(options, responseBody, nil)
+			if rb != nil {
+				if rbody, ok := rb.(*[]byte); ok {
+					*rbody = body
+				}
+			}
+		}
+	}
 	return resp, err
 }
 
@@ -1109,18 +1119,15 @@ func (bucket Bucket) ProcessObject(objectKey string, process string, options ...
 	return out, err
 }
 
-//
 // AsyncProcessObject apply async process on the specified image file.
 //
 // The supported process includes resize, rotate, crop, watermark, format,
 // udf, customized style, etc.
 //
-//
 // objectKey	object key to process.
 // asyncProcess	process string, such as "image/resize,w_100|sys/saveas,o_dGVzdC5qcGc,b_dGVzdA"
 //
 // error    it's nil if no error, otherwise it's an error object.
-//
 func (bucket Bucket) AsyncProcessObject(objectKey string, asyncProcess string, options ...Option) (AsyncProcessObjectResult, error) {
 	var out AsyncProcessObjectResult
 	params, _ := GetRawParams(options)
@@ -1138,7 +1145,6 @@ func (bucket Bucket) AsyncProcessObject(objectKey string, asyncProcess string, o
 	return out, err
 }
 
-//
 // PutObjectTagging add tagging to object
 //
 // objectKey  object key to add tagging

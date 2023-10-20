@@ -1869,6 +1869,110 @@ func (s *OssTypeSuite) TestAsyncProcessResult(c *C) {
 	c.Assert(repResult.TaskId, Equals, "MediaConvert-58a8f19f-697f-4f8d-ae2c-0d7b15bef68d")
 }
 
+func (s *OssTypeSuite) TestPutResponseHeader(c *C) {
+	reqHeader := PutBucketResponseHeader{
+		Rule: []ResponseHeaderRule{
+			{
+				Name: "name1",
+				Filters: ResponseHeaderRuleFilters{
+					[]string{
+						"Put", "GetObject",
+					},
+				},
+				HideHeaders: ResponseHeaderRuleHeaders{
+					[]string{
+						"Last-Modified",
+					},
+				},
+			},
+		},
+	}
+	xmlData, err := xml.Marshal(reqHeader)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ResponseHeaderConfiguration><Rule><Name>name1</Name><Filters><Operation>Put</Operation><Operation>GetObject</Operation></Filters><HideHeaders><Header>Last-Modified</Header></HideHeaders></Rule></ResponseHeaderConfiguration>")
+
+	reqHeader = PutBucketResponseHeader{
+		Rule: []ResponseHeaderRule{
+			{
+				Name: "name1",
+				Filters: ResponseHeaderRuleFilters{
+					[]string{
+						"Put", "GetObject",
+					},
+				},
+				HideHeaders: ResponseHeaderRuleHeaders{
+					[]string{
+						"Last-Modified",
+					},
+				},
+			},
+			{
+				Name: "name2",
+				Filters: ResponseHeaderRuleFilters{
+					[]string{
+						"*",
+					},
+				},
+				HideHeaders: ResponseHeaderRuleHeaders{
+					[]string{
+						"Last-Modified",
+					},
+				},
+			},
+		},
+	}
+	xmlData, err = xml.Marshal(reqHeader)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ResponseHeaderConfiguration><Rule><Name>name1</Name><Filters><Operation>Put</Operation><Operation>GetObject</Operation></Filters><HideHeaders><Header>Last-Modified</Header></HideHeaders></Rule><Rule><Name>name2</Name><Filters><Operation>*</Operation></Filters><HideHeaders><Header>Last-Modified</Header></HideHeaders></Rule></ResponseHeaderConfiguration>")
+
+	reqHeader = PutBucketResponseHeader{
+		Rule: []ResponseHeaderRule{
+			{
+				Name: "name1",
+			},
+		},
+	}
+	xmlData, err = xml.Marshal(reqHeader)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ResponseHeaderConfiguration><Rule><Name>name1</Name><Filters><Operation>Put</Operation><Operation>GetObject</Operation></Filters><HideHeaders><Header>Last-Modified</Header></HideHeaders></Rule><Rule><Name>name2</Name><Filters><Operation>*</Operation></Filters><HideHeaders><Header>Last-Modified</Header></HideHeaders></Rule></ResponseHeaderConfiguration>")
+}
+
+func (s *OssTypeSuite) TestGetResponseHeaderResult(c *C) {
+	xmlData := `<ResponseHeaderConfiguration>
+    <Rule>
+        <Name>rule1</Name>
+        <Filters>
+            <Operation>Put</Operation>
+            <Operation>GetObject</Operation>
+        </Filters>
+        <HideHeaders>
+           	<Header>Last-Modified</Header>
+			<Header>x-oss-request-id</Header>
+        </HideHeaders>
+    </Rule>
+	<Rule>
+        <Name>rule2</Name>
+        <Filters>
+            <Operation>*</Operation>
+        </Filters>
+        <HideHeaders>
+           	<Header>Last-Modified</Header>
+			<Header>x-oss-request-id</Header>
+        </HideHeaders>
+    </Rule>
+</ResponseHeaderConfiguration>`
+	var repResult GetBucketResponseHeaderResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Rule[0].Name, Equals, "rule1")
+	c.Assert(repResult.Rule[0].Filters.Operation[0], Equals, "Put")
+	c.Assert(repResult.Rule[0].HideHeaders.Header[0], Equals, "Last-Modified")
+
+	c.Assert(repResult.Rule[1].Name, Equals, "rule2")
+	c.Assert(repResult.Rule[1].Filters.Operation[0], Equals, "*")
+	c.Assert(repResult.Rule[1].HideHeaders.Header[0], Equals, "Last-Modified")
+}
+
 func (s *OssTypeSuite) TestGetBucketCORSResult(c *C) {
 	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <CORSConfiguration>

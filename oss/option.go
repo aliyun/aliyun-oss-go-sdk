@@ -3,6 +3,7 @@ package oss
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -30,6 +31,7 @@ const (
 	responseHeader     = "x-response-header"
 	redundancyType     = "redundancy-type"
 	objectHashFunc     = "object-hash-func"
+	responseBody       = "x-response-body"
 	contextArg         = "x-context-arg"
 )
 
@@ -494,6 +496,11 @@ func GetResponseHeader(respHeader *http.Header) Option {
 	return addArg(responseHeader, respHeader)
 }
 
+// CallbackResult for get response of call back
+func CallbackResult(body *[]byte) Option {
+	return addArg(responseBody, body)
+}
+
 // ResponseContentType is an option to set response-content-type param
 func ResponseContentType(value string) Option {
 	return addParam("response-content-type", value)
@@ -695,4 +702,34 @@ func AllowSameActionOverLap(enabled bool) Option {
 	} else {
 		return setHeader(HTTPHeaderAllowSameActionOverLap, "false")
 	}
+}
+
+func GetCallbackBody(options []Option, resp *Response, callbackSet bool) error {
+	var err error
+
+	// get response body
+	if callbackSet {
+		err = setBody(options, resp)
+	} else {
+		callback, _ := FindOption(options, HTTPHeaderOssCallback, nil)
+		if callback != nil {
+			err = setBody(options, resp)
+		}
+	}
+	return err
+}
+
+func setBody(options []Option, resp *Response) error {
+	respBody, _ := FindOption(options, responseBody, nil)
+	if respBody != nil && resp != nil {
+		pRespBody := respBody.(*[]byte)
+		pBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		if pBody != nil {
+			*pRespBody = pBody
+		}
+	}
+	return nil
 }

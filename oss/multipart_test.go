@@ -3,10 +3,14 @@
 package oss
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	. "gopkg.in/check.v1"
 )
@@ -1005,4 +1009,70 @@ func shuffleArray(chunks []FileChunk) []FileChunk {
 		chunks[i], chunks[j] = chunks[j], chunks[i]
 	}
 	return chunks
+}
+
+func (s *OssBucketMultipartSuite) TestMultipartUploadWithCallbackResult(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	content := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
+		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+
+	imur, err := s.bucket.InitiateMultipartUpload(objectName)
+	var parts []UploadPart
+	part, err := s.bucket.UploadPart(imur, strings.NewReader(content), int64(len(content)), 1)
+	c.Assert(err, IsNil)
+	parts = append(parts, part)
+	testLogger.Println("parts:", parts)
+
+	callbackMap := map[string]string{}
+	callbackMap["callbackUrl"] = "www.aliyuncs.com"
+	callbackMap["callbackBody"] = "filename=${object}&size=${size}&mimeType=${mimeType}"
+	callbackMap["callbackBodyType"] = "application/x-www-form-urlencoded"
+
+	callbackBuffer := bytes.NewBuffer([]byte{})
+	callbackEncoder := json.NewEncoder(callbackBuffer)
+	callbackEncoder.SetEscapeHTML(false)
+	err = callbackEncoder.Encode(callbackMap)
+	c.Assert(err, IsNil)
+	callbackVal := base64.StdEncoding.EncodeToString(callbackBuffer.Bytes())
+	var body []byte
+	_, err = s.bucket.CompleteMultipartUpload(imur, parts, Callback(callbackVal), CallbackResult(&body))
+	e, ok := err.(ServiceError)
+	c.Assert(ok, Equals, true)
+	c.Assert(e.StatusCode, Equals, 203)
+	c.Assert(e.Code, Equals, "CallbackFailed")
+	c.Assert(body, IsNil)
+
+	pbody, err := s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err := readBody(pbody)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, content)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssBucketMultipartSuite) TestMultipartUploadNormal(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	content := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
+		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+
+	imur, err := s.bucket.InitiateMultipartUpload(objectName)
+	var parts []UploadPart
+	part, err := s.bucket.UploadPart(imur, strings.NewReader(content), int64(len(content)), 1)
+	c.Assert(err, IsNil)
+	parts = append(parts, part)
+	testLogger.Println("parts:", parts)
+	_, err = s.bucket.CompleteMultipartUpload(imur, parts)
+	c.Assert(err, IsNil)
+
+	body, err := s.bucket.GetObject(objectName)
+	c.Assert(err, IsNil)
+	str, err := readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, content)
+
+	err = s.bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
 }
