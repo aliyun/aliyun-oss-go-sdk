@@ -5805,3 +5805,51 @@ func (s *OssClientSuite) TestDescribeRegions(c *C) {
 	c.Assert(info.Regions[0].InternalEndpoint, Equals, "oss-cn-hangzhou-internal.aliyuncs.com")
 	c.Assert(info.Regions[0].AccelerateEndpoint, Equals, "oss-accelerate.aliyuncs.com")
 }
+
+// TestDescribeRegions
+func (s *OssClientSuite) TestBucketResponseHeader(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	reqHeader := PutBucketResponseHeader{
+		Rule: []ResponseHeaderRule{
+			{
+				Name: "name1",
+				Filters: ResponseHeaderRuleFilters{
+					[]string{
+						"Put", "GetObject",
+					},
+				},
+				HideHeaders: ResponseHeaderRuleHeaders{
+					[]string{
+						"Last-Modified",
+					},
+				},
+			},
+			{
+				Name: "name2",
+				Filters: ResponseHeaderRuleFilters{
+					[]string{
+						"*",
+					},
+				},
+				HideHeaders: ResponseHeaderRuleHeaders{
+					[]string{
+						"Last-Modified",
+					},
+				},
+			},
+		},
+	}
+	err = client.PutBucketResponseHeader(bucketName, reqHeader)
+	c.Assert(err, IsNil)
+
+	rule, err := client.GetBucketResponseHeader(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(len(rule.Rule), Equals, 2)
+	c.Assert(rule.Rule[0].Name, Equals, "name1")
+	c.Assert(rule.Rule[1].Name, Equals, "name2")
+	c.Assert(rule.Rule[0].Filters.Operation[0], Equals, "Put")
+	c.Assert(rule.Rule[0].Filters.Operation[1], Equals, "GetObject")
+	err = client.DeleteBucketResponseHeader(bucketName)
+	c.Assert(err, IsNil)
+}

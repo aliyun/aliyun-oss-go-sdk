@@ -1663,3 +1663,28 @@ type RegionInfoList struct {
 	XMLName xml.Name     `xml:"RegionInfoList"`
 	Regions []RegionInfo `xml:"RegionInfo"`
 }
+
+//PutBucketResponseHeader define the xml of bucket's response header config
+type PutBucketResponseHeader ResponseHeaderXml
+
+//GetBucketResponseHeaderResult define the xml of bucket's response header result
+type GetBucketResponseHeaderResult ResponseHeaderXml
+
+type ResponseHeaderXml struct {
+	XMLName xml.Name             `xml:"ResponseHeaderConfiguration"`
+	Rule    []ResponseHeaderRule `xml:Rule,omitempty"` // rule
+}
+
+type ResponseHeaderRule struct {
+	Name        string                    `xml:"Name"`                  // rule name
+	Filters     ResponseHeaderRuleFilters `xml:"Filters,omitempty"`     // rule filters Operation
+	HideHeaders ResponseHeaderRuleHeaders `xml:"HideHeaders,omitempty"` // rule hide header
+}
+
+type ResponseHeaderRuleFilters struct {
+	Operation []string `xml:"Operation,omitempty"`
+}
+
+type ResponseHeaderRuleHeaders struct {
+	Header []string `xml:"Header,omitempty"`
+}
