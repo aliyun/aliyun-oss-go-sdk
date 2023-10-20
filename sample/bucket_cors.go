@@ -27,7 +27,6 @@ func BucketCORSSample() {
 		ExposeHeader:  []string{},
 		MaxAgeSeconds: 100,
 	}
-
 	rule2 := oss.CORSRule{
 		AllowedOrigin: []string{"http://www.a.com", "http://www.b.com"},
 		AllowedMethod: []string{"GET"},
@@ -48,12 +47,31 @@ func BucketCORSSample() {
 		HandleError(err)
 	}
 
-	// Get the bucket's CORS
-	gbl, err := client.GetBucketCORS(bucketName)
+	// Case 3: Set the bucket CORS rules. if CORS rules exist, they will be overwritten.
+	isTrue := true
+	put := oss.PutBucketCORS{}
+	put.CORSRules = []oss.CORSRule{rule1, rule2}
+	put.ResponseVary = &isTrue
+	err = client.SetBucketCORSV2(bucketName, put)
 	if err != nil {
 		HandleError(err)
 	}
-	fmt.Println("Bucket CORS:", gbl.CORSRules)
+
+	// Get the bucket's CORS
+	corsRes, err := client.GetBucketCORS(bucketName)
+	if err != nil {
+		HandleError(err)
+	}
+	for _, rule := range corsRes.CORSRules {
+		fmt.Printf("Cors Rules Allowed Origin:%s\n", rule.AllowedOrigin)
+		fmt.Printf("Cors Rules Allowed Method:%s\n", rule.AllowedMethod)
+		fmt.Printf("Cors Rules Allowed Header:%s\n", rule.AllowedHeader)
+		fmt.Printf("Cors Rules Expose Header:%s\n", rule.ExposeHeader)
+		fmt.Printf("Cors Rules Max Age Seconds:%d\n", rule.MaxAgeSeconds)
+	}
+	if corsRes.ResponseVary != nil {
+		fmt.Printf("Cors Rules Response Vary:%t\n", *corsRes.ResponseVary)
+	}
 
 	// Delete bucket's CORS
 	err = client.DeleteBucketCORS(bucketName)
@@ -67,5 +85,5 @@ func BucketCORSSample() {
 		HandleError(err)
 	}
 
-	fmt.Println("BucketCORSSample completed")
+	fmt.Println("Bucket CORS Sample completed")
 }

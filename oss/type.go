@@ -324,8 +324,9 @@ type GetBucketWebsiteResult WebsiteXML
 
 // CORSXML defines CORS configuration
 type CORSXML struct {
-	XMLName   xml.Name   `xml:"CORSConfiguration"`
-	CORSRules []CORSRule `xml:"CORSRule"` // CORS rules
+	XMLName      xml.Name   `xml:"CORSConfiguration"`
+	CORSRules    []CORSRule `xml:"CORSRule"`               // CORS rules
+	ResponseVary *bool      `xml:"ResponseVary,omitempty"` // return Vary or not
 }
 
 // CORSRule defines CORS rules
@@ -340,6 +341,9 @@ type CORSRule struct {
 
 // GetBucketCORSResult defines the result from GetBucketCORS request.
 type GetBucketCORSResult CORSXML
+
+// PutBucketCORS defines the PutBucketCORS config xml.
+type PutBucketCORS CORSXML
 
 // GetBucketInfoResult defines the result from GetBucketInfo request.
 type GetBucketInfoResult struct {

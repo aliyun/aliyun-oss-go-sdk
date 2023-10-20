@@ -1972,3 +1972,68 @@ func (s *OssTypeSuite) TestGetResponseHeaderResult(c *C) {
 	c.Assert(repResult.Rule[1].Filters.Operation[0], Equals, "*")
 	c.Assert(repResult.Rule[1].HideHeaders.Header[0], Equals, "Last-Modified")
 }
+
+func (s *OssTypeSuite) TestGetBucketCORSResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<CORSConfiguration>
+    <CORSRule>
+      <AllowedOrigin>*</AllowedOrigin>
+      <AllowedMethod>PUT</AllowedMethod>
+      <AllowedMethod>GET</AllowedMethod>
+      <AllowedHeader>Authorization</AllowedHeader>
+    </CORSRule>
+    <CORSRule>
+      <AllowedOrigin>http://example.com</AllowedOrigin>
+      <AllowedOrigin>http://example.net</AllowedOrigin>
+      <AllowedMethod>GET</AllowedMethod>
+      <AllowedHeader>Authorization</AllowedHeader>
+      <ExposeHeader>x-oss-test</ExposeHeader>
+      <ExposeHeader>x-oss-test1</ExposeHeader>
+      <MaxAgeSeconds>100</MaxAgeSeconds>
+    </CORSRule>
+    <ResponseVary>false</ResponseVary>
+</CORSConfiguration>`
+	var repResult GetBucketCORSResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.CORSRules[0].AllowedOrigin[0], Equals, "*")
+	c.Assert(repResult.CORSRules[0].AllowedMethod[0], Equals, "PUT")
+	c.Assert(repResult.CORSRules[0].AllowedMethod[1], Equals, "GET")
+	c.Assert(repResult.CORSRules[0].AllowedHeader[0], Equals, "Authorization")
+
+	c.Assert(repResult.CORSRules[1].AllowedOrigin[0], Equals, "http://example.com")
+	c.Assert(repResult.CORSRules[1].AllowedOrigin[1], Equals, "http://example.net")
+	c.Assert(repResult.CORSRules[1].AllowedMethod[0], Equals, "GET")
+	c.Assert(repResult.CORSRules[1].AllowedHeader[0], Equals, "Authorization")
+	c.Assert(repResult.CORSRules[1].ExposeHeader[0], Equals, "x-oss-test")
+	c.Assert(repResult.CORSRules[1].ExposeHeader[1], Equals, "x-oss-test1")
+	c.Assert(repResult.CORSRules[1].MaxAgeSeconds, Equals, int(100))
+	c.Assert(*repResult.ResponseVary, Equals, false)
+}
+
+func (s *OssTypeSuite) TestPutBucketCORS(c *C) {
+	isTrue := true
+	rule1 := CORSRule{
+		AllowedOrigin: []string{"*"},
+		AllowedMethod: []string{"PUT", "GET", "POST"},
+		AllowedHeader: []string{},
+		ExposeHeader:  []string{},
+		MaxAgeSeconds: 100,
+	}
+
+	rule2 := CORSRule{
+		AllowedOrigin: []string{"http://www.a.com", "http://www.b.com"},
+		AllowedMethod: []string{"GET"},
+		AllowedHeader: []string{"Authorization"},
+		ExposeHeader:  []string{"x-oss-test", "x-oss-test1"},
+		MaxAgeSeconds: 100,
+	}
+
+	put := PutBucketCORS{}
+	put.CORSRules = []CORSRule{rule1, rule2}
+	put.ResponseVary = &isTrue
+
+	bs, err := xml.Marshal(put)
+	c.Assert(err, IsNil)
+	c.Assert(string(bs), Equals, "<CORSConfiguration><CORSRule><AllowedOrigin>*</AllowedOrigin><AllowedMethod>PUT</AllowedMethod><AllowedMethod>GET</AllowedMethod><AllowedMethod>POST</AllowedMethod><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><CORSRule><AllowedOrigin>http://www.a.com</AllowedOrigin><AllowedOrigin>http://www.b.com</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedHeader>Authorization</AllowedHeader><ExposeHeader>x-oss-test</ExposeHeader><ExposeHeader>x-oss-test1</ExposeHeader><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><ResponseVary>true</ResponseVary></CORSConfiguration>")
+}

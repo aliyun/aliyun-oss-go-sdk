@@ -2325,6 +2325,19 @@ func (s *OssClientSuite) TestSetBucketCORS(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(gbcr.CORSRules), Equals, 2)
 
+	isTrue := true
+	put := PutBucketCORS{}
+	put.CORSRules = []CORSRule{rule1, rule2}
+	put.ResponseVary = &isTrue
+	err = client.SetBucketCORSV2(bucketNameTest, put)
+	c.Assert(err, IsNil)
+
+	time.Sleep(timeoutInOperation)
+	gbcr, err = client.GetBucketCORS(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(len(gbcr.CORSRules), Equals, 2)
+	c.Assert(*gbcr.ResponseVary, Equals, isTrue)
+
 	err = client.DeleteBucketCORS(bucketNameTest)
 	c.Assert(err, IsNil)
 
