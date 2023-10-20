@@ -954,6 +954,22 @@ func (client Client) SetBucketCORS(bucketName string, corsRules []CORSRule, opti
 	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
 }
 
+// SetBucketCORSV2 sets the bucket's CORS rules
+//
+// bucketName    the bucket name
+// putBucketCORS    the CORS rules to set.
+//
+// error    it's nil if no error, otherwise it's an error object.
+//
+func (client Client) SetBucketCORSV2(bucketName string, putBucketCORS PutBucketCORS, options ...Option) error {
+	bs, err := xml.Marshal(putBucketCORS)
+	if err != nil {
+		return err
+	}
+	err = client.SetBucketCORSXml(bucketName, string(bs), options...)
+	return err
+}
+
 func (client Client) SetBucketCORSXml(bucketName string, xmlBody string, options ...Option) error {
 	buffer := new(bytes.Buffer)
 	buffer.Write([]byte(xmlBody))
