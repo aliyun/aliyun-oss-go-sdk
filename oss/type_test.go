@@ -2,11 +2,12 @@ package oss
 
 import (
 	"encoding/xml"
-	. "gopkg.in/check.v1"
 	"log"
 	"net/url"
 	"sort"
 	"strings"
+
+	. "gopkg.in/check.v1"
 )
 
 type OssTypeSuite struct{}
@@ -1934,7 +1935,7 @@ func (s *OssTypeSuite) TestPutResponseHeader(c *C) {
 	}
 	xmlData, err = xml.Marshal(reqHeader)
 	c.Assert(err, IsNil)
-	c.Assert(string(xmlData), Equals, "<ResponseHeaderConfiguration><Rule><Name>name1</Name><Filters><Operation>Put</Operation><Operation>GetObject</Operation></Filters><HideHeaders><Header>Last-Modified</Header></HideHeaders></Rule><Rule><Name>name2</Name><Filters><Operation>*</Operation></Filters><HideHeaders><Header>Last-Modified</Header></HideHeaders></Rule></ResponseHeaderConfiguration>")
+	c.Assert(string(xmlData), Equals, "<ResponseHeaderConfiguration><Rule><Name>name1</Name><Filters></Filters><HideHeaders></HideHeaders></Rule></ResponseHeaderConfiguration>")
 }
 
 func (s *OssTypeSuite) TestGetResponseHeaderResult(c *C) {

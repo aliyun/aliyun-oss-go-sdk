@@ -3820,10 +3820,18 @@ func (s *OssClientSuite) TestSetBucketInventory(c *C) {
 	err = client.CreateBucket(bucketName)
 	c.Assert(err, IsNil)
 
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+	err = bucket.PutObject("key", strings.NewReader(""), ServerSideEncryption("AES256"))
+
+	pros, err := bucket.GetObjectDetailedMeta("key")
+
+	bucket.DeleteObject("key")
+
 	// encryption config
 	var invSseOss InvSseOss
 	invSseKms := InvSseKms{
-		KmsId: kmsID,
+		KmsId: pros.Get("x-oss-server-side-encryption-key-id"),
 	}
 	var invEncryption InvEncryption
 
@@ -5865,4 +5873,5 @@ func (s *OssClientSuite) TestBucketResponseHeader(c *C) {
 	c.Assert(rule.Rule[0].Filters.Operation[1], Equals, "GetObject")
 	err = client.DeleteBucketResponseHeader(bucketName)
 	c.Assert(err, IsNil)
+	client.DeleteBucket(bucketName)
 }
