@@ -5831,6 +5831,12 @@ func (s *OssClientSuite) TestDescribeRegions(c *C) {
 func (s *OssClientSuite) TestBucketResponseHeader(c *C) {
 	client, err := New(endpoint, accessID, accessKey)
 	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + "-resp-" + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
 	reqHeader := PutBucketResponseHeader{
 		Rule: []ResponseHeaderRule{
 			{
