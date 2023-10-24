@@ -29,6 +29,7 @@ type BucketProperties struct {
 	Location     string    `xml:"Location"`     // Bucket datacenter
 	CreationDate time.Time `xml:"CreationDate"` // Bucket create time
 	StorageClass string    `xml:"StorageClass"` // Bucket storage class
+	Region       string    `xml:"Region"`       // Bucket region
 }
 
 // ListCloudBoxResult defines the result object from ListBuckets request
@@ -1616,10 +1617,10 @@ type Certificate struct {
 	ValidEndDate   string `xml:"ValidEndDate"`
 }
 
-//GetBucketResourceGroupResult define resource group for the bucket
+// GetBucketResourceGroupResult define resource group for the bucket
 type GetBucketResourceGroupResult BucketResourceGroupXml
 
-//PutBucketResourceGroup define the xml of bucket's resource group config
+// PutBucketResourceGroup define the xml of bucket's resource group config
 type PutBucketResourceGroup BucketResourceGroupXml
 
 // BucketResourceGroupXml define the information of the bucket's resource group
