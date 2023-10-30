@@ -54,6 +54,7 @@ const (
 	contentTypeHeader = "Content-Type"
 	contentMd5Header  = "Content-MD5"
 	ossHeaderPreifx   = "x-oss-"
+	ossDateHeader     = "x-oss-date"
 )
 
 type SignerV1 struct {
@@ -82,8 +83,14 @@ func (SignerV1) Sign(ctx context.Context, signingCtx *SigningContext) error {
 	request := signingCtx.Request
 	cred := signingCtx.Credentials
 
-	signingCtx.Time = time.Now().UTC()
-	request.Header.Set(dateHeader, signingCtx.Time.Format(http.TimeFormat))
+	date := request.Header.Get(ossDateHeader)
+	if len(date) == 0 {
+		signingCtx.Time = time.Now().UTC()
+		date = signingCtx.Time.Format(http.TimeFormat)
+	} else {
+		signingCtx.Time, _ = http.ParseTime(date)
+	}
+	request.Header.Set(dateHeader, date)
 
 	if cred.SessionToken != "" {
 		request.Header.Set(securityTokenHeader, cred.SessionToken)
@@ -91,7 +98,6 @@ func (SignerV1) Sign(ctx context.Context, signingCtx *SigningContext) error {
 
 	contentMd5 := request.Header.Get(contentMd5Header)
 	contentType := request.Header.Get(contentTypeHeader)
-	date := request.Header.Get(dateHeader)
 
 	//CanonicalizedOSSHeaders
 	var headers []string
