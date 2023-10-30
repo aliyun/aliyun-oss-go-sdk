@@ -245,7 +245,7 @@ const (
 
 	DefaultContentSha256 = "UNSIGNED-PAYLOAD" // for v4 signature
 
-	Version = "v2.2.8" // Go SDK version
+	Version = "v2.2.10" // Go SDK version
 )
 
 // FrameType

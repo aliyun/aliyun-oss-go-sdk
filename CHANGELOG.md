@@ -1,5 +1,12 @@
 # ChangeLog - Aliyun OSS SDK for Go
 
+## 版本号：v2.2.10 日期：2023-10-30
+### 变更内容
+- 增加：support return callback body.
+- 增加：support response header api
+- 增加：add region field in listBuckets
+- 增加：add ResponseVary field in CORSXML
+
 ## 版本号：v2.2.9 日期：2023-08-25
 ### 变更内容
 - 增加：support force path style option.
