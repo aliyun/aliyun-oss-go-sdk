@@ -6,29 +6,25 @@ import (
 	"time"
 )
 
-func init() {
-	RetriesAttemptedCelling = int(math.Log2(float64(math.MaxInt)))
-}
-
-var RetriesAttemptedCelling int
-
 type EqualJitterBackoff struct {
-	baseDelay  time.Duration
-	maxBackoff time.Duration
+	baseDelay      time.Duration
+	maxBackoff     time.Duration
+	attemptCelling int
 }
 
 func NewEqualJJitterBackoff(baseDelay time.Duration, maxBackoff time.Duration) *EqualJitterBackoff {
 	return &EqualJitterBackoff{
-		baseDelay:  baseDelay,
-		maxBackoff: maxBackoff,
+		baseDelay:      baseDelay,
+		maxBackoff:     maxBackoff,
+		attemptCelling: int(math.Log2(float64(math.MaxInt64 / baseDelay))),
 	}
 }
 
 func (j *EqualJitterBackoff) BackoffDelay(attempt int, err error) (time.Duration, error) {
 	// ceil = min(2 ^ attempts * baseDealy, maxBackoff)
 	// ceil/2 + [0.0, 1.0) *(ceil/2 + 1)
-	if attempt > RetriesAttemptedCelling {
-		attempt = RetriesAttemptedCelling
+	if attempt > j.attemptCelling {
+		attempt = j.attemptCelling
 	}
 	delayDuration := j.baseDelay * (1 << attempt)
 	if delayDuration > j.maxBackoff {
@@ -39,21 +35,23 @@ func (j *EqualJitterBackoff) BackoffDelay(attempt int, err error) (time.Duration
 }
 
 type FullJitterBackoff struct {
-	baseDelay  time.Duration
-	maxBackoff time.Duration
+	baseDelay      time.Duration
+	maxBackoff     time.Duration
+	attemptCelling int
 }
 
 func NewFullJitterBackoff(baseDelay time.Duration, maxBackoff time.Duration) *FullJitterBackoff {
 	return &FullJitterBackoff{
-		baseDelay:  baseDelay,
-		maxBackoff: maxBackoff,
+		baseDelay:      baseDelay,
+		maxBackoff:     maxBackoff,
+		attemptCelling: int(math.Log2(float64(math.MaxInt64 / baseDelay))),
 	}
 }
 
 func (j *FullJitterBackoff) BackoffDelay(attempt int, err error) (time.Duration, error) {
 	// [0.0, 1.0) * min(2 ^ attempts * baseDealy, maxBackoff)
-	if attempt > RetriesAttemptedCelling {
-		attempt = RetriesAttemptedCelling
+	if attempt > j.attemptCelling {
+		attempt = j.attemptCelling
 	}
 	delayDuration := j.baseDelay * (1 << attempt)
 	if delayDuration > j.maxBackoff {
