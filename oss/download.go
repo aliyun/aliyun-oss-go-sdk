@@ -56,11 +56,15 @@ func (bucket Bucket) DownloadFile(objectKey, filePath string, partSize int64, op
 }
 
 func getDownloadCpFilePath(cpConf *cpConfig, srcBucket, srcObject, versionId, destFile string) string {
-	if cpConf.FilePath == "" && cpConf.DirPath != "" {
+	if cpConf.FilePath == "" {
 		src := fmt.Sprintf("oss://%v/%v", srcBucket, srcObject)
 		absPath, _ := filepath.Abs(destFile)
 		cpFileName := getCpFileName(src, absPath, versionId)
-		cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
+		if cpConf.DirPath != "" {
+			cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
+		} else {
+			cpConf.FilePath = cpFileName
+		}
 	}
 	return cpConf.FilePath
 }

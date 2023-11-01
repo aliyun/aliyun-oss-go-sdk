@@ -291,6 +291,160 @@ func (s *OssDownloadSuite) TestDownloadRoutineWithRecovery(c *C) {
 	c.Assert(err, IsNil)
 }
 
+// TestDownloadWithEmptyPoint multi-routine resumable download with empty file path
+func (s *OssDownloadSuite) TestDownloadWithEmptyFilePath(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "../sample/BingWallpaper-2015-11-07.jpg"
+	newFile := RandStr(8) + ".jpg"
+
+	// Upload a file
+	err := s.bucket.UploadFile(objectName, fileName, 100*1024, Routines(3))
+	c.Assert(err, IsNil)
+
+	// Download a file with default checkpoint
+	downloadPartHooker = DownErrorHooker
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	downloadPartHooker = defaultDownloadPartHook
+
+	// Check
+	dcp := downloadCheckpoint{}
+	cpConf := cpConfig{IsEnable: true, FilePath: ""}
+	cpFilePath := getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "", newFile)
+	err = dcp.load(cpFilePath)
+	c.Assert(err, IsNil)
+	c.Assert(dcp.Magic, Equals, downloadCpMagic)
+	c.Assert(len(dcp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
+	c.Assert(dcp.FilePath, Equals, newFile)
+	c.Assert(dcp.ObjStat.Size, Equals, int64(482048))
+	c.Assert(len(dcp.ObjStat.LastModified) > 0, Equals, true)
+	c.Assert(dcp.ObjStat.Etag, Equals, "\"2351E662233817A7AE974D8C5B0876DD-5\"")
+	c.Assert(dcp.Object, Equals, objectName)
+	c.Assert(len(dcp.Parts), Equals, 5)
+	c.Assert(len(dcp.todoParts()), Equals, 1)
+
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""))
+	c.Assert(err, IsNil)
+	//download success, checkpoint file has been deleted
+	err = dcp.load(cpFilePath)
+	c.Assert(err, NotNil)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	// Download a file with default checkpoint
+	downloadPartHooker = DownErrorHooker
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""), CheckpointDir(true, "../"))
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	downloadPartHooker = defaultDownloadPartHook
+
+	// Check
+	cpConf = cpConfig{IsEnable: true, FilePath: "", DirPath: "../"}
+	cpFilePath = getDownloadCpFilePath(&cpConf, s.bucket.BucketName, objectName, "", newFile)
+	err = dcp.load(cpFilePath)
+	c.Assert(err, IsNil)
+	c.Assert(dcp.Magic, Equals, downloadCpMagic)
+	c.Assert(len(dcp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
+	c.Assert(dcp.FilePath, Equals, newFile)
+	c.Assert(dcp.ObjStat.Size, Equals, int64(482048))
+	c.Assert(len(dcp.ObjStat.LastModified) > 0, Equals, true)
+	c.Assert(dcp.ObjStat.Etag, Equals, "\"2351E662233817A7AE974D8C5B0876DD-5\"")
+	c.Assert(dcp.Object, Equals, objectName)
+	c.Assert(len(dcp.Parts), Equals, 5)
+	c.Assert(len(dcp.todoParts()), Equals, 1)
+
+	err = s.bucket.DownloadFile(objectName, newFile, 100*1024, Checkpoint(true, ""), CheckpointDir(true, "../"))
+	c.Assert(err, IsNil)
+	//download success, checkpoint file has been deleted
+	err = dcp.load(cpFilePath)
+	c.Assert(err, NotNil)
+
+	eq, err = compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(newFile)
+	os.Remove(cpFilePath)
+}
+
+// TestDownloadWithEmptyPoint multi-routine resumable download version id with empty file path
+func (s *OssDownloadSuite) TestVersioningDownloadWithEmptyFilePathCheckPoint(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	// put bucket version:enabled
+	var versioningConfig VersioningConfig
+	versioningConfig.Status = string(VersionEnabled)
+	err = client.SetBucketVersioning(bucketName, versioningConfig)
+	c.Assert(err, IsNil)
+	time.Sleep(timeoutInOperation)
+
+	// begin test
+	objectName := objectNamePrefix + RandStr(8)
+	fileName := "test-file-" + RandStr(8)
+	fileData := RandStr(500 * 1024)
+	CreateFile(fileName, fileData, c)
+	newFile := RandStr(8) + ".jpg"
+
+	// Upload a file
+	var respHeader http.Header
+	options := []Option{Routines(3), GetResponseHeader(&respHeader)}
+	err = bucket.UploadFile(objectName, fileName, 100*1024, options...)
+	c.Assert(err, IsNil)
+	versionId := GetVersionId(respHeader)
+	c.Assert(len(versionId) > 0, Equals, true)
+
+	// Resumable download with checkpoint dir
+	os.Remove(newFile)
+	downloadPartHooker = DownErrorHooker
+	options = []Option{CheckpointDir(true, "./"), VersionId(versionId)}
+
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "ErrorHooker")
+	downloadPartHooker = defaultDownloadPartHook
+	// Check
+	dcp := downloadCheckpoint{}
+	cpConf := cpConfig{IsEnable: true, DirPath: "./"}
+	cpFilePath := getDownloadCpFilePath(&cpConf, bucketName, objectName, versionId, newFile)
+	err = dcp.load(cpFilePath)
+	c.Assert(err, IsNil)
+	c.Assert(dcp.Magic, Equals, downloadCpMagic)
+	c.Assert(len(dcp.MD5), Equals, len("LC34jZU5xK4hlxi3Qn3XGQ=="))
+	c.Assert(dcp.FilePath, Equals, newFile)
+	c.Assert(dcp.ObjStat.Size, Equals, int64(512000))
+	c.Assert(len(dcp.ObjStat.LastModified) > 0, Equals, true)
+	c.Assert(dcp.Object, Equals, objectName)
+	c.Assert(len(dcp.Parts), Equals, 5)
+	c.Assert(len(dcp.todoParts()), Equals, 1)
+
+	options = []Option{CheckpointDir(true, "./"), VersionId(versionId), GetResponseHeader(&respHeader)}
+	err = bucket.DownloadFile(objectName, newFile, 100*1024, options...)
+	c.Assert(err, IsNil)
+	c.Assert(GetVersionId(respHeader), Equals, versionId)
+
+	eq, err := compareFiles(fileName, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+
+	os.Remove(fileName)
+	os.Remove(newFile)
+	os.Remove(cpFilePath)
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
 // TestDownloadOption options
 func (s *OssDownloadSuite) TestDownloadOption(c *C) {
 	objectName := objectNamePrefix + RandStr(8)
