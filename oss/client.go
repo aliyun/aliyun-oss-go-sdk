@@ -2666,6 +2666,70 @@ func (client Client) DescribeRegionsXml(options ...Option) (string, error) {
 	return out, err
 }
 
+// PutBucketHttpsConfig set bucket https config
+// bucketName    the bucket name.
+// httpsConfig	 the https config in struct format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketHttpsConfig(bucketName string, httpsConfig PutBucketHttpsConfig, options ...Option) error {
+	bs, err := xml.Marshal(httpsConfig)
+	if err != nil {
+		return err
+	}
+	err = client.PutBucketHttpsConfigXml(bucketName, string(bs), options...)
+	return err
+}
+
+// PutBucketHttpsConfigXml set bucket https config
+// bucketName    the bucket name.
+// xmlData		 the bucket https config in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketHttpsConfigXml(bucketName, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["httpsConfig"] = nil
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketHttpsConfig get bucket's https config.
+// bucketName    the bucket name.
+// GetBucketHttpsConfigResult  the https config result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketHttpsConfig(bucketName string, options ...Option) (GetBucketHttpsConfigResult, error) {
+	var out GetBucketHttpsConfigResult
+	body, err := client.GetBucketHttpsConfigXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketHttpsConfigXml get bucket's https config.
+// bucketName    the bucket name.
+// string  the https config of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketHttpsConfigXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["httpsConfig"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
