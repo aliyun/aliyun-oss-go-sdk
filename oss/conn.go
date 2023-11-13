@@ -337,8 +337,16 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 	if conn.config.AuthVersion == AuthV4 {
 		req.Header.Set(HttpHeaderOssContentSha256, DefaultContentSha256)
 	}
-
-	akIf := conn.config.GetCredentials()
+	var akIf Credentials
+	credProvider := conn.config.CredentialsProvider
+	if providerE, ok := credProvider.(CredentialsProviderE); ok {
+		akIf, err = providerE.GetCredentials()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		akIf = credProvider.(CredentialsProvider).GetCredentials()
+	}
 	if akIf.GetSecurityToken() != "" {
 		req.Header.Set(HTTPHeaderOssSecurityToken, akIf.GetSecurityToken())
 	}
@@ -349,7 +357,7 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 		}
 	}
 
-	conn.signHeader(req, canonicalizedResource)
+	conn.signHeader(req, canonicalizedResource, &akIf)
 
 	// Transfer started
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength, 0)
@@ -382,7 +390,13 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 }
 
 func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) string {
-	akIf := conn.config.GetCredentials()
+	var akIf Credentials
+	credProvider := conn.config.CredentialsProvider
+	if providerE, ok := credProvider.(CredentialsProviderE); ok {
+		akIf, _ = providerE.GetCredentials()
+	} else {
+		akIf = credProvider.(CredentialsProvider).GetCredentials()
+	}
 	if akIf.GetSecurityToken() != "" {
 		params[HTTPParamSecurityToken] = akIf.GetSecurityToken()
 	}
@@ -441,7 +455,13 @@ func (conn Conn) signRtmpURL(bucketName, channelName, playlistName string, expir
 	expireStr := strconv.FormatInt(expiration, 10)
 	params[HTTPParamExpires] = expireStr
 
-	akIf := conn.config.GetCredentials()
+	var akIf Credentials
+	credProvider := conn.config.CredentialsProvider
+	if providerE, ok := credProvider.(CredentialsProviderE); ok {
+		akIf, _ = providerE.GetCredentials()
+	} else {
+		akIf = credProvider.(CredentialsProvider).GetCredentials()
+	}
 	if akIf.GetAccessKeyID() != "" {
 		params[HTTPParamAccessKeyID] = akIf.GetAccessKeyID()
 		if akIf.GetSecurityToken() != "" {

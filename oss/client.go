@@ -2846,7 +2846,7 @@ func SetLogger(Logger *log.Logger) ClientOption {
 }
 
 // SetCredentialsProvider sets function for get the user's ak
-func SetCredentialsProvider(provider CredentialsProvider) ClientOption {
+func SetCredentialsProvider(provider interface{}) ClientOption {
 	return func(client *Client) {
 		client.Config.CredentialsProvider = provider
 	}

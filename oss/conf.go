@@ -37,16 +37,20 @@ type HTTPMaxConns struct {
 	MaxConnsPerHost     int
 }
 
-// CredentialInf is interface for get AccessKeyID,AccessKeySecret,SecurityToken
+// Credentials are interface for get AccessKeyID,AccessKeySecret,SecurityToken
 type Credentials interface {
 	GetAccessKeyID() string
 	GetAccessKeySecret() string
 	GetSecurityToken() string
 }
 
-// CredentialInfBuild is interface for get CredentialInf
+// CredentialsProvider is interface for get Credential Info
 type CredentialsProvider interface {
 	GetCredentials() Credentials
+}
+
+type CredentialsProviderE interface {
+	GetCredentials() (Credentials, error)
 }
 
 type defaultCredentials struct {
@@ -137,42 +141,42 @@ func NewEnvironmentVariableCredentialsProvider() (EnvironmentVariableCredentials
 
 // Config defines oss configuration
 type Config struct {
-	Endpoint            string              // OSS endpoint
-	AccessKeyID         string              // AccessId
-	AccessKeySecret     string              // AccessKey
-	RetryTimes          uint                // Retry count by default it's 5.
-	UserAgent           string              // SDK name/version/system information
-	IsDebug             bool                // Enable debug mode. Default is false.
-	Timeout             uint                // Timeout in seconds. By default it's 60.
-	SecurityToken       string              // STS Token
-	IsCname             bool                // If cname is in the endpoint.
-	IsPathStyle         bool                // If Path Style is in the endpoint.
-	HTTPTimeout         HTTPTimeout         // HTTP timeout
-	HTTPMaxConns        HTTPMaxConns        // Http max connections
-	IsUseProxy          bool                // Flag of using proxy.
-	ProxyHost           string              // Flag of using proxy host.
-	IsAuthProxy         bool                // Flag of needing authentication.
-	ProxyUser           string              // Proxy user
-	ProxyPassword       string              // Proxy password
-	IsEnableMD5         bool                // Flag of enabling MD5 for upload.
-	MD5Threshold        int64               // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
-	IsEnableCRC         bool                // Flag of enabling CRC for upload.
-	LogLevel            int                 // Log level
-	Logger              *log.Logger         // For write log
-	UploadLimitSpeed    int                 // Upload limit speed:KB/s, 0 is unlimited
-	UploadLimiter       *OssLimiter         // Bandwidth limit reader for upload
-	DownloadLimitSpeed  int                 // Download limit speed:KB/s, 0 is unlimited
-	DownloadLimiter     *OssLimiter         // Bandwidth limit reader for download
-	CredentialsProvider CredentialsProvider // User provides interface to get AccessKeyID, AccessKeySecret, SecurityToken
-	LocalAddr           net.Addr            // local client host info
-	UserSetUa           bool                // UserAgent is set by user or not
-	AuthVersion         AuthVersionType     //  v1 or v2, v4 signature,default is v1
-	AdditionalHeaders   []string            //  special http headers needed to be sign
-	RedirectEnabled     bool                //  only effective from go1.7 onward, enable http redirect or not
-	InsecureSkipVerify  bool                //  for https, Whether to skip verifying the server certificate file
-	Region              string              //  such as cn-hangzhou
-	CloudBoxId          string              //
-	Product             string              //  oss or oss-cloudbox, default is oss
+	Endpoint            string          // OSS endpoint
+	AccessKeyID         string          // AccessId
+	AccessKeySecret     string          // AccessKey
+	RetryTimes          uint            // Retry count by default it's 5.
+	UserAgent           string          // SDK name/version/system information
+	IsDebug             bool            // Enable debug mode. Default is false.
+	Timeout             uint            // Timeout in seconds. By default it's 60.
+	SecurityToken       string          // STS Token
+	IsCname             bool            // If cname is in the endpoint.
+	IsPathStyle         bool            // If Path Style is in the endpoint.
+	HTTPTimeout         HTTPTimeout     // HTTP timeout
+	HTTPMaxConns        HTTPMaxConns    // Http max connections
+	IsUseProxy          bool            // Flag of using proxy.
+	ProxyHost           string          // Flag of using proxy host.
+	IsAuthProxy         bool            // Flag of needing authentication.
+	ProxyUser           string          // Proxy user
+	ProxyPassword       string          // Proxy password
+	IsEnableMD5         bool            // Flag of enabling MD5 for upload.
+	MD5Threshold        int64           // Memory footprint threshold for each MD5 computation (16MB is the default), in byte. When the data is more than that, temp file is used.
+	IsEnableCRC         bool            // Flag of enabling CRC for upload.
+	LogLevel            int             // Log level
+	Logger              *log.Logger     // For write log
+	UploadLimitSpeed    int             // Upload limit speed:KB/s, 0 is unlimited
+	UploadLimiter       *OssLimiter     // Bandwidth limit reader for upload
+	DownloadLimitSpeed  int             // Download limit speed:KB/s, 0 is unlimited
+	DownloadLimiter     *OssLimiter     // Bandwidth limit reader for download
+	CredentialsProvider interface{}     // User provides interface to get AccessKeyID, AccessKeySecret, SecurityToken
+	LocalAddr           net.Addr        // local client host info
+	UserSetUa           bool            // UserAgent is set by user or not
+	AuthVersion         AuthVersionType //  v1 or v2, v4 signature,default is v1
+	AdditionalHeaders   []string        //  special http headers needed to be sign
+	RedirectEnabled     bool            //  only effective from go1.7 onward, enable http redirect or not
+	InsecureSkipVerify  bool            //  for https, Whether to skip verifying the server certificate file
+	Region              string          //  such as cn-hangzhou
+	CloudBoxId          string          //
+	Product             string          //  oss or oss-cloudbox, default is oss
 }
 
 // LimitUploadSpeed uploadSpeed:KB/s, 0 is unlimited,default is 0
@@ -225,7 +229,7 @@ func (config *Config) WriteLog(LogLevel int, format string, a ...interface{}) {
 
 // for get Credentials
 func (config *Config) GetCredentials() Credentials {
-	return config.CredentialsProvider.GetCredentials()
+	return config.CredentialsProvider.(CredentialsProvider).GetCredentials()
 }
 
 // for get Sign Product

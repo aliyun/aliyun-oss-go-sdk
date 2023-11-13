@@ -128,7 +128,10 @@ func (s *OssConnSuite) TestAuth(c *C) {
 	req.Header.Set("X-OSS-Magic", "abracadabra")
 	req.Header.Set("Content-Md5", "ODBGOERFMDMzQTczRUY3NUE3NzA5QzdFNUYzMDQxNEM=")
 
-	conn.signHeader(req, conn.getResource("bucket", "object", ""))
+	var akIf Credentials
+	credProvider := conn.config.CredentialsProvider
+	akIf = credProvider.(CredentialsProvider).GetCredentials()
+	conn.signHeader(req, conn.getResource("bucket", "object", ""), &akIf)
 	testLogger.Println("AUTHORIZATION:", req.Header.Get(HTTPHeaderAuthorization))
 }
 
