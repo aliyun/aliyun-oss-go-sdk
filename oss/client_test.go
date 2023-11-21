@@ -5881,3 +5881,79 @@ func (s *OssClientSuite) TestBucketResponseHeader(c *C) {
 	c.Assert(err, IsNil)
 	client.DeleteBucket(bucketName)
 }
+
+// TestReservedCapacity
+func (s *OssClientSuite) TestReservedCapacity(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-rc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	var ctcConfig CreateReservedCapacity
+	name := "rc-" + RandLowStr(12)
+	ctcConfig.Name = name
+	ctcConfig.ReservedCapacity = 10240
+	ctcConfig.DataRedundancyType = string(RedundancyLRS)
+	var respHeader http.Header
+	err = client.CreateReservedCapacity(ctcConfig, GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	id := respHeader.Get("X-Oss-Reserved-Capacity-Id")
+	var urcConfig UpdateReservedCapacity
+	urcConfig.Status = "Enabled"
+	urcConfig.ReservedCapacity = 10240
+	urcConfig.AutoExpansionSize = 100
+	urcConfig.AutoExpansionMaxSize = 20480
+	err = client.UpdateReservedCapacity(id, urcConfig)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	record, err := client.GetReservedCapacity(id)
+	c.Assert(err, IsNil)
+	c.Assert(record.InstanceId, Equals, id)
+	c.Assert(record.Name, Equals, name)
+	c.Assert(record.Owner.ID != "", Equals, true)
+	c.Assert(record.Owner.DisplayName != "", Equals, true)
+	c.Assert(record.Owner.DisplayName != "", Equals, true)
+	c.Assert(record.Region != "", Equals, true)
+	c.Assert(record.Status, Equals, "Enabled")
+	c.Assert(record.DataRedundancyType, Equals, string(RedundancyLRS))
+	c.Assert(record.ReservedCapacity, Equals, int64(10240))
+	c.Assert(record.AutoExpansionSize, Equals, int64(100))
+	c.Assert(record.AutoExpansionMaxSize, Equals, int64(20480))
+	c.Assert(record.CreateTime != 0, Equals, true)
+	c.Assert(record.LastModifyTime != 0, Equals, true)
+	c.Assert(record.EnableTime != 0, Equals, true)
+
+	list, err := client.ListBucketWithReservedCapacity(id)
+	c.Assert(err, IsNil)
+	c.Assert(list.InstanceId, Equals, id)
+	c.Assert(len(list.BucketList), Equals, 0)
+
+	rs, err := client.ListReservedCapacity()
+	c.Assert(err, IsNil)
+	c.Assert(len(rs.ReservedCapacityRecord) > 0, Equals, true)
+
+	err = client.CreateBucket(bucketNameTest, StorageClass(StorageReservedCapacity), ReservedCapacityInstanceId(id), RedundancyType(RedundancyLRS))
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	list, err = client.ListBucketWithReservedCapacity(id)
+	c.Assert(err, IsNil)
+	c.Assert(list.InstanceId, Equals, id)
+	c.Assert(len(list.BucketList), Equals, 1)
+
+	res, err := client.GetBucketInfo(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.ReservedCapacityInstanceId, Equals, id)
+
+	stat, err := client.GetBucketStat(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(stat.ReservedCapacityStorage, Equals, int64(0))
+	c.Assert(stat.ReservedCapacityObjectCount, Equals, int64(0))
+	c.Assert(stat.DeepColdArchiveStorage, Equals, int64(0))
+	c.Assert(stat.DeepColdArchiveRealStorage, Equals, int64(0))
+	c.Assert(stat.DeepColdArchiveObjectCount, Equals, int64(0))
+
+	ForceDeleteBucket(client, bucketNameTest, c)
+}

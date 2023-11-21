@@ -572,6 +572,53 @@ func (s *OssTypeSuite) TestGetBucketStatResult(c *C) {
 	c.Assert(res.ColdArchiveStorage, Equals, int64(2359296))
 	c.Assert(res.ColdArchiveRealStorage, Equals, int64(360))
 	c.Assert(res.ColdArchiveObjectCount, Equals, int64(36))
+
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<BucketStat>
+  <Storage>1600</Storage>
+  <ObjectCount>230</ObjectCount>
+  <MultipartUploadCount>40</MultipartUploadCount>
+  <LiveChannelCount>4</LiveChannelCount>
+  <LastModifiedTime>1643341269</LastModifiedTime>
+  <StandardStorage>430</StandardStorage>
+  <StandardObjectCount>66</StandardObjectCount>
+  <InfrequentAccessStorage>2359296</InfrequentAccessStorage>
+  <InfrequentAccessRealStorage>360</InfrequentAccessRealStorage>
+  <InfrequentAccessObjectCount>54</InfrequentAccessObjectCount>
+  <ArchiveStorage>2949120</ArchiveStorage>
+  <ArchiveRealStorage>450</ArchiveRealStorage>
+  <ArchiveObjectCount>74</ArchiveObjectCount>
+  <ColdArchiveStorage>2359296</ColdArchiveStorage>
+  <ColdArchiveRealStorage>360</ColdArchiveRealStorage>
+  <ColdArchiveObjectCount>36</ColdArchiveObjectCount>
+  <ReservedCapacityStorage>450</ReservedCapacityStorage>
+  <ReservedCapacityObjectCount>80</ReservedCapacityObjectCount>
+  <DeepColdArchiveStorage>2359297</DeepColdArchiveStorage>
+  <DeepColdArchiveRealStorage>361</DeepColdArchiveRealStorage>
+  <DeepColdArchiveObjectCount>35</DeepColdArchiveObjectCount>
+</BucketStat>`)
+	err = xml.Unmarshal(xmlData, &res)
+	c.Assert(res.Storage, Equals, int64(1600))
+	c.Assert(res.ObjectCount, Equals, int64(230))
+	c.Assert(res.MultipartUploadCount, Equals, int64(40))
+	c.Assert(res.LiveChannelCount, Equals, int64(4))
+	c.Assert(res.LastModifiedTime, Equals, int64(1643341269))
+	c.Assert(res.StandardStorage, Equals, int64(430))
+	c.Assert(res.StandardObjectCount, Equals, int64(66))
+	c.Assert(res.InfrequentAccessStorage, Equals, int64(2359296))
+	c.Assert(res.InfrequentAccessRealStorage, Equals, int64(360))
+	c.Assert(res.InfrequentAccessObjectCount, Equals, int64(54))
+	c.Assert(res.ArchiveStorage, Equals, int64(2949120))
+	c.Assert(res.ArchiveRealStorage, Equals, int64(450))
+	c.Assert(res.ArchiveObjectCount, Equals, int64(74))
+	c.Assert(res.ColdArchiveStorage, Equals, int64(2359296))
+	c.Assert(res.ColdArchiveRealStorage, Equals, int64(360))
+	c.Assert(res.ColdArchiveObjectCount, Equals, int64(36))
+	c.Assert(res.ReservedCapacityStorage, Equals, int64(450))
+	c.Assert(res.ReservedCapacityObjectCount, Equals, int64(80))
+	c.Assert(res.DeepColdArchiveStorage, Equals, int64(2359297))
+	c.Assert(res.DeepColdArchiveRealStorage, Equals, int64(361))
+	c.Assert(res.DeepColdArchiveObjectCount, Equals, int64(35))
 }
 
 // test delete object struct turn to xml string
@@ -688,6 +735,42 @@ func (s *OssTypeSuite) TestBucketInfoWithAccessMonitor(c *C) {
 	err = xml.Unmarshal(xmlData, &res)
 	c.Assert(err, IsNil)
 	c.Assert(res.BucketInfo.AccessMonitor, Equals, "Disabled")
+
+	xmlData = []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<BucketInfo>
+  <Bucket>
+    <CreationDate>2023-02-14T06:56:02.000Z</CreationDate>
+    <CrossRegionReplication>Disabled</CrossRegionReplication>
+    <DataRedundancyType>LRS</DataRedundancyType>
+    <ExtranetEndpoint>11.158.239.225</ExtranetEndpoint>
+    <IntranetEndpoint>11.158.239.225</IntranetEndpoint>
+    <Location>oss-cn-hangzhou-pocarchive</Location>
+    <Name>mxx-testrc1</Name>
+    <ReservedCapacityInstanceId>7e6cb0c5-efaf-45f4-bc39-ab8e342cbf1c</ReservedCapacityInstanceId>
+    <StorageClass>ReservedCapacity</StorageClass>
+    <TransferAcceleration>Disabled</TransferAcceleration>
+    <Owner>
+      <DisplayName>1422558957716563</DisplayName>
+      <ID>1422558957716563</ID>
+    </Owner>
+    <AccessControlList>
+      <Grant>private</Grant>
+    </AccessControlList>
+    <ServerSideEncryptionRule>
+      <SSEAlgorithm>None</SSEAlgorithm>
+    </ServerSideEncryptionRule>
+    <BucketPolicy>
+      <LogBucket></LogBucket>
+      <LogPrefix></LogPrefix>
+    </BucketPolicy>
+  </Bucket>
+</BucketInfo>
+`)
+	err = xml.Unmarshal(xmlData, &res)
+	c.Assert(err, IsNil)
+	c.Assert(res.BucketInfo.ReservedCapacityInstanceId, Equals, "7e6cb0c5-efaf-45f4-bc39-ab8e342cbf1c")
+	c.Assert(res.BucketInfo.StorageClass, Equals, "ReservedCapacity")
+
 }
 
 func (s *OssTypeSuite) TestValidateLifeCycleRulesWithAccessTime(c *C) {
@@ -2037,4 +2120,136 @@ func (s *OssTypeSuite) TestPutBucketCORS(c *C) {
 	bs, err := xml.Marshal(put)
 	c.Assert(err, IsNil)
 	c.Assert(string(bs), Equals, "<CORSConfiguration><CORSRule><AllowedOrigin>*</AllowedOrigin><AllowedMethod>PUT</AllowedMethod><AllowedMethod>GET</AllowedMethod><AllowedMethod>POST</AllowedMethod><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><CORSRule><AllowedOrigin>http://www.a.com</AllowedOrigin><AllowedOrigin>http://www.b.com</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedHeader>Authorization</AllowedHeader><ExposeHeader>x-oss-test</ExposeHeader><ExposeHeader>x-oss-test1</ExposeHeader><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><ResponseVary>true</ResponseVary></CORSConfiguration>")
+}
+
+func (s *OssTypeSuite) TestCreateReservedCapacity(c *C) {
+	var crcConfig CreateReservedCapacity
+	crcConfig.Name = "your-rc-name"
+	xmlData, err := xml.Marshal(crcConfig)
+	c.Assert(err, IsNil)
+	xmlBody := "<ReservedCapacityConfiguration><Name>your-rc-name</Name></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+
+	crcConfig.DataRedundancyType = string(RedundancyLRS)
+	xmlData, err = xml.Marshal(crcConfig)
+	c.Assert(err, IsNil)
+	xmlBody = "<ReservedCapacityConfiguration><Name>your-rc-name</Name><DataRedundancyType>LRS</DataRedundancyType></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+	crcConfig.DataRedundancyType = string(RedundancyLRS)
+
+	crcConfig.ReservedCapacity = 10240
+	xmlData, err = xml.Marshal(crcConfig)
+	c.Assert(err, IsNil)
+	xmlBody = "<ReservedCapacityConfiguration><Name>your-rc-name</Name><DataRedundancyType>LRS</DataRedundancyType><ReservedCapacity>10240</ReservedCapacity></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+}
+
+func (s *OssTypeSuite) TestUpdateReservedCapacity(c *C) {
+	var urcConfig UpdateReservedCapacity
+	urcConfig.Status = "Enabled"
+	xmlData, err := xml.Marshal(urcConfig)
+	c.Assert(err, IsNil)
+	xmlBody := "<ReservedCapacityConfiguration><Status>Enabled</Status></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+
+	urcConfig.Status = "Init"
+	xmlData, err = xml.Marshal(urcConfig)
+	c.Assert(err, IsNil)
+	xmlBody = "<ReservedCapacityConfiguration><Status>Init</Status></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+
+	urcConfig.ReservedCapacity = 10240
+	xmlData, err = xml.Marshal(urcConfig)
+	c.Assert(err, IsNil)
+	xmlBody = "<ReservedCapacityConfiguration><Status>Init</Status><ReservedCapacity>10240</ReservedCapacity></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+
+	urcConfig.AutoExpansionSize = 100
+	xmlData, err = xml.Marshal(urcConfig)
+	c.Assert(err, IsNil)
+	xmlBody = "<ReservedCapacityConfiguration><Status>Init</Status><ReservedCapacity>10240</ReservedCapacity><AutoExpansionSize>100</AutoExpansionSize></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+
+	urcConfig.AutoExpansionMaxSize = 20480
+	xmlData, err = xml.Marshal(urcConfig)
+	c.Assert(err, IsNil)
+	xmlBody = "<ReservedCapacityConfiguration><Status>Init</Status><ReservedCapacity>10240</ReservedCapacity><AutoExpansionSize>100</AutoExpansionSize><AutoExpansionMaxSize>20480</AutoExpansionMaxSize></ReservedCapacityConfiguration>"
+	c.Assert(string(xmlData), Equals, xmlBody)
+}
+
+func (s *OssTypeSuite) TestGetReservedCapacityResult(c *C) {
+	var out GetReservedCapacityResult
+	xmlBody := "<ReservedCapacityRecord>\n  <InstanceId>dd67179e-77b7-415f-a571-e3396e926356</InstanceId>\n  <Name>test-rc1</Name>\n  <Owner>\n    <ID>ut_test_put_bucket</ID>\n    <DisplayName>ut_test_put_bucket</DisplayName>\n  </Owner>\n  <Region>oss-cn-hangzhou</Region>\n  <Status>Enabled</Status>\n  <DataRedundancyType>LRS</DataRedundancyType>\n  <ReservedCapacity>20480</ReservedCapacity>\n  <AutoExpansionSize>100</AutoExpansionSize>\n  <AutoExpansionMaxSize>20480</AutoExpansionMaxSize>\n  <CreateTime>1676106931</CreateTime>\n  <LastModifyTime>1676224171</LastModifyTime>\n  <EnableTime>0</EnableTime>\n</ReservedCapacityRecord>"
+
+	err := xmlUnmarshal(strings.NewReader(xmlBody), &out)
+	c.Assert(err, IsNil)
+	c.Assert(out.InstanceId, Equals, "dd67179e-77b7-415f-a571-e3396e926356")
+	c.Assert(out.Name, Equals, "test-rc1")
+	c.Assert(out.Owner.ID, Equals, "ut_test_put_bucket")
+	c.Assert(out.Owner.DisplayName, Equals, "ut_test_put_bucket")
+	c.Assert(out.Region, Equals, "oss-cn-hangzhou")
+	c.Assert(out.Status, Equals, "Enabled")
+	c.Assert(out.DataRedundancyType, Equals, "LRS")
+	c.Assert(out.ReservedCapacity, Equals, int64(20480))
+	c.Assert(out.AutoExpansionSize, Equals, int64(100))
+	c.Assert(out.AutoExpansionMaxSize, Equals, int64(20480))
+	c.Assert(out.CreateTime, Equals, int64(1676106931))
+	c.Assert(out.LastModifyTime, Equals, int64(1676224171))
+	c.Assert(out.EnableTime, Equals, int64(0))
+
+	var out1 GetReservedCapacityResult
+	xmlBody1 := "<ReservedCapacityRecord></ReservedCapacityRecord>"
+	err = xmlUnmarshal(strings.NewReader(xmlBody1), &out1)
+	c.Assert(out.ReservedCapacity, Equals, int64(0))
+	c.Assert(out.AutoExpansionSize, Equals, int64(0))
+	c.Assert(out.AutoExpansionMaxSize, Equals, int64(0))
+	c.Assert(out.EnableTime, Equals, int64(0))
+}
+
+func (s *OssTypeSuite) TestListReservedCapacityResult(c *C) {
+	var list ListReservedCapacityResult
+	xmlBody := "<ReservedCapacityRecordList>\n  <ReservedCapacityRecord>\n    <InstanceId>e72beabd-33ed-4c21-8069-0b6cf8a0dfc2</InstanceId>\n    <Name>test-rc</Name>\n    <Owner>\n      <ID>ut_test_put_bucket</ID>\n      <DisplayName>ut_test_put_bucket</DisplayName>\n    </Owner>\n    <Region>oss-cn-hangzhou</Region>\n    <Status>Init</Status>\n    <DataRedundancyType>ZRS</DataRedundancyType>\n    <ReservedCapacity>20480</ReservedCapacity>\n    <CreateTime>1676106871</CreateTime>\n    <LastModifyTime>1676106871</LastModifyTime>\n    <EnableTime>0</EnableTime>\n  </ReservedCapacityRecord>\n  <ReservedCapacityRecord>\n    <InstanceId>dd67179e-77b7-415f-a571-e3396e926356</InstanceId>\n    <Name>test-rc1</Name>\n    <Owner>\n      <ID>ut_test_put_bucket</ID>\n      <DisplayName>ut_test_put_bucket</DisplayName>\n    </Owner>\n    <Region>oss-cn-hangzhou</Region>\n    <Status>Enabled</Status>\n    <DataRedundancyType>LRS</DataRedundancyType>\n    <ReservedCapacity>20480</ReservedCapacity>\n    <CreateTime>1676106931</CreateTime>\n    <LastModifyTime>1676224171</LastModifyTime>\n    <EnableTime>0</EnableTime>\n  </ReservedCapacityRecord>\n  <ReservedCapacityRecord>\n    <InstanceId>db682d06-215a-4079-8022-31d1e0746b36</InstanceId>\n    <Name>test-rc1</Name>\n    <Owner>\n      <ID>ut_test_put_bucket</ID>\n      <DisplayName>ut_test_put_bucket</DisplayName>\n    </Owner>\n    <Region>oss-cn-hangzhou</Region>\n    <Status>Init</Status>\n    <DataRedundancyType>LRS</DataRedundancyType>\n    <ReservedCapacity>10240</ReservedCapacity>\n<AutoExpansionSize>100</AutoExpansionSize>\n  <AutoExpansionMaxSize>20480</AutoExpansionMaxSize><CreateTime>1676221694</CreateTime>\n    <LastModifyTime>1676221694</LastModifyTime>\n    <EnableTime>0</EnableTime>\n  </ReservedCapacityRecord>\n</ReservedCapacityRecordList>"
+
+	err := xmlUnmarshal(strings.NewReader(xmlBody), &list)
+	c.Assert(err, IsNil)
+	out := list.ReservedCapacityRecord[0]
+	c.Assert(out.InstanceId, Equals, "e72beabd-33ed-4c21-8069-0b6cf8a0dfc2")
+	c.Assert(out.Name, Equals, "test-rc")
+	c.Assert(out.Owner.ID, Equals, "ut_test_put_bucket")
+	c.Assert(out.Owner.DisplayName, Equals, "ut_test_put_bucket")
+	c.Assert(out.Region, Equals, "oss-cn-hangzhou")
+	c.Assert(out.Status, Equals, "Init")
+	c.Assert(out.DataRedundancyType, Equals, "ZRS")
+	c.Assert(out.ReservedCapacity, Equals, int64(20480))
+	c.Assert(out.AutoExpansionSize, Equals, int64(0))
+	c.Assert(out.AutoExpansionMaxSize, Equals, int64(0))
+	c.Assert(out.CreateTime, Equals, int64(1676106871))
+	c.Assert(out.LastModifyTime, Equals, int64(1676106871))
+	c.Assert(out.EnableTime, Equals, int64(0))
+
+	out1 := list.ReservedCapacityRecord[2]
+	c.Assert(out1.InstanceId, Equals, "db682d06-215a-4079-8022-31d1e0746b36")
+	c.Assert(out1.Name, Equals, "test-rc1")
+	c.Assert(out1.Owner.ID, Equals, "ut_test_put_bucket")
+	c.Assert(out1.Owner.DisplayName, Equals, "ut_test_put_bucket")
+	c.Assert(out1.Region, Equals, "oss-cn-hangzhou")
+	c.Assert(out1.Status, Equals, "Init")
+	c.Assert(out1.DataRedundancyType, Equals, "LRS")
+	c.Assert(out1.ReservedCapacity, Equals, int64(10240))
+	c.Assert(out1.AutoExpansionSize, Equals, int64(100))
+	c.Assert(out1.AutoExpansionMaxSize, Equals, int64(20480))
+	c.Assert(out1.CreateTime, Equals, int64(1676221694))
+	c.Assert(out1.LastModifyTime, Equals, int64(1676221694))
+	c.Assert(out1.EnableTime, Equals, int64(0))
+}
+
+func (s *OssTypeSuite) TestListBucketWithReservedCapacityResult(c *C) {
+	xmlData := "<ReservedCapacityBucketList>\n  <InstanceId>dd67179e-77b7-415f-a571-e3396e926356</InstanceId>\n  <BucketList>\n    <Bucket>test-rc</Bucket>\n    <Bucket>mxx-test-rc</Bucket>\n  </BucketList>\n</ReservedCapacityBucketList>"
+	var out ListBucketWithReservedCapacityResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &out)
+	c.Assert(err, IsNil)
+
+	c.Assert(out.InstanceId, Equals, "dd67179e-77b7-415f-a571-e3396e926356")
+	c.Assert(out.BucketList[0], Equals, "test-rc")
+	c.Assert(out.BucketList[1], Equals, "mxx-test-rc")
 }
