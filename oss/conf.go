@@ -37,16 +37,21 @@ type HTTPMaxConns struct {
 	MaxConnsPerHost     int
 }
 
-// CredentialInf is interface for get AccessKeyID,AccessKeySecret,SecurityToken
+// Credentials is interface for get AccessKeyID,AccessKeySecret,SecurityToken
 type Credentials interface {
 	GetAccessKeyID() string
 	GetAccessKeySecret() string
 	GetSecurityToken() string
 }
 
-// CredentialInfBuild is interface for get CredentialInf
+// CredentialsProvider is interface for get Credential Info
 type CredentialsProvider interface {
 	GetCredentials() Credentials
+}
+
+type CredentialsProviderE interface {
+	CredentialsProvider
+	GetCredentialsE() (Credentials, error)
 }
 
 type defaultCredentials struct {

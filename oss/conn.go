@@ -338,7 +338,15 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 		req.Header.Set(HttpHeaderOssContentSha256, DefaultContentSha256)
 	}
 
-	akIf := conn.config.GetCredentials()
+	var akIf Credentials
+	if providerE, ok := conn.config.CredentialsProvider.(CredentialsProviderE); ok {
+		if akIf, err = providerE.GetCredentialsE(); err != nil {
+			return nil, err
+		}
+	} else {
+		akIf = conn.config.GetCredentials()
+	}
+
 	if akIf.GetSecurityToken() != "" {
 		req.Header.Set(HTTPHeaderOssSecurityToken, akIf.GetSecurityToken())
 	}
@@ -349,7 +357,7 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 		}
 	}
 
-	conn.signHeader(req, canonicalizedResource)
+	conn.signHeader(req, canonicalizedResource, akIf)
 
 	// Transfer started
 	event := newProgressEvent(TransferStartedEvent, 0, req.ContentLength, 0)
@@ -381,8 +389,17 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 	return conn.handleResponse(resp, crc)
 }
 
-func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) string {
-	akIf := conn.config.GetCredentials()
+func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expiration int64, params map[string]interface{}, headers map[string]string) (string, error) {
+	var akIf Credentials
+	var err error
+	if providerE, ok := conn.config.CredentialsProvider.(CredentialsProviderE); ok {
+		if akIf, err = providerE.GetCredentialsE(); err != nil {
+			return "", err
+		}
+	} else {
+		akIf = conn.config.GetCredentials()
+	}
+
 	if akIf.GetSecurityToken() != "" {
 		params[HTTPParamSecurityToken] = akIf.GetSecurityToken()
 	}
@@ -430,7 +447,7 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 		params[HTTPParamSignatureV2] = signedStr
 	}
 	urlParams := conn.getURLParams(params)
-	return conn.url.getSignURL(bucketName, objectName, urlParams)
+	return conn.url.getSignURL(bucketName, objectName, urlParams), nil
 }
 
 func (conn Conn) signRtmpURL(bucketName, channelName, playlistName string, expiration int64) string {

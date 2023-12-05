@@ -6022,3 +6022,102 @@ func (s *OssBucketSuite) TestPutObjectWithCallbackResult(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
 }
+
+type TestCredentialsProviderError struct {
+	AccessKeyId     string
+	AccessKeySecret string
+	SecurityToken   string
+}
+
+func (testInfBuild *TestCredentialsProviderError) GetCredentials() Credentials {
+	cred, _ := testInfBuild.GetCredentialsE()
+	return cred
+}
+
+func (testInfBuild *TestCredentialsProviderError) GetCredentialsE() (Credentials, error) {
+	var provider *TestCredentials
+	keyId := testInfBuild.AccessKeyId
+	if keyId == "" {
+		return provider, fmt.Errorf("access key id is empty!")
+	}
+	secret := testInfBuild.AccessKeySecret
+	if secret == "" {
+		return provider, fmt.Errorf("access key secret is empty!")
+	}
+	return &envCredentials{
+		AccessKeyId:     keyId,
+		AccessKeySecret: secret,
+		SecurityToken:   "",
+	}, nil
+}
+
+func (s *OssBucketSuite) TestCredentialsProviderError(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	// Create
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
+		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+
+	// Put string
+	var respHeader http.Header
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+
+	var defaultBuild TestCredentialsProviderError
+	defaultBuild.AccessKeyId = ""
+	defaultBuild.AccessKeySecret = accessKey
+	client, err = New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key id is empty!")
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key id is empty!")
+
+	channelName := "test-sign-rtmp-url"
+	playlistName := "playlist.m3u8"
+	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
+	c.Assert(err, IsNil)
+
+	defaultBuild.AccessKeyId = accessID
+	defaultBuild.AccessKeySecret = ""
+	client, err = New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key secret is empty!")
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key secret is empty!")
+
+	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
+	c.Assert(err, IsNil)
+
+	defaultBuild.AccessKeyId = accessID
+	defaultBuild.AccessKeySecret = accessKey
+	client, err = New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+
+	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
+	c.Assert(err, IsNil)
+}
