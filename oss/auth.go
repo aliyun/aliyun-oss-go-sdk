@@ -72,8 +72,8 @@ func (conn Conn) getAdditionalHeaderKeysV4(req *http.Request) ([]string, map[str
 }
 
 // signHeader signs the header and sets it as the authorization header.
-func (conn Conn) signHeader(req *http.Request, canonicalizedResource string) {
-	akIf := conn.config.GetCredentials()
+func (conn Conn) signHeader(req *http.Request, canonicalizedResource string, credentials Credentials) {
+	akIf := credentials
 	authorizationStr := ""
 	if conn.config.AuthVersion == AuthV4 {
 		strDay := ""
