@@ -913,7 +913,7 @@ func (bucket Bucket) SignURL(objectKey string, method HTTPMethod, expiredInSec i
 		return "", err
 	}
 
-	return bucket.Client.Conn.signURL(method, bucket.BucketName, objectKey, expiration, params, headers), nil
+	return bucket.Client.Conn.signURL(method, bucket.BucketName, objectKey, expiration, params, headers)
 }
 
 // PutObjectWithURL uploads an object with the URL. If the object exists, it will be overwritten.
