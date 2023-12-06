@@ -462,10 +462,12 @@ func GetReaderLen(reader io.Reader) (int64, error) {
 	case *os.File:
 		fInfo, fError := v.Stat()
 		if fError != nil {
-			err = fmt.Errorf("can't get reader content length,%s", fError.Error())
-		} else {
-			contentLength = fInfo.Size()
+			err = fmt.Errorf("can't get reader content length: %s", fError.Error())
 		}
+		if !isRegularFile(fInfo) {
+			err = fmt.Errorf("can't get reader content length: not a regular file")
+		}
+		contentLength = fInfo.Size()
 	case *io.LimitedReader:
 		contentLength = int64(v.N)
 	case *LimitedReadCloser:
@@ -474,6 +476,10 @@ func GetReaderLen(reader io.Reader) (int64, error) {
 		err = fmt.Errorf("can't get reader content length,unkown reader type")
 	}
 	return contentLength, err
+}
+
+func isRegularFile(fInfo os.FileInfo) bool {
+	return fInfo.Mode()&os.ModeType == 0
 }
 
 func LimitReadCloser(r io.Reader, n int64) io.Reader {
