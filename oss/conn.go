@@ -314,6 +314,11 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 	if ctx != nil {
 		req = req.WithContext(ctx)
 	}
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
 	tracker := &readerTracker{completedBytes: 0}
 	fd, crc := conn.handleBody(req, data, initCRC, listener, tracker)
 	if fd != nil {
@@ -342,13 +347,6 @@ func (conn Conn) doRequest(ctx context.Context, method string, uri *url.URL, can
 	if akIf.GetSecurityToken() != "" {
 		req.Header.Set(HTTPHeaderOssSecurityToken, akIf.GetSecurityToken())
 	}
-
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
-	}
-
 	conn.signHeader(req, canonicalizedResource)
 
 	// Transfer started
@@ -461,12 +459,17 @@ func (conn Conn) handleBody(req *http.Request, body io.Reader, initCRC uint64,
 	var file *os.File
 	var crc hash.Hash64
 	reader := body
-	readerLen, err := GetReaderLen(reader)
-	if err == nil {
-		req.ContentLength = readerLen
+	contentLength := req.Header.Get(HTTPHeaderContentLength)
+	if contentLength != "" {
+		length, _ := strconv.ParseInt(contentLength, 10, 64)
+		req.ContentLength = length
+	} else {
+		readerLen, err := GetReaderLen(reader)
+		if err == nil {
+			req.ContentLength = readerLen
+		}
+		req.Header.Set(HTTPHeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
 	}
-	req.Header.Set(HTTPHeaderContentLength, strconv.FormatInt(req.ContentLength, 10))
-
 	// MD5
 	if body != nil && conn.config.IsEnableMD5 && req.Header.Get(HTTPHeaderContentMD5) == "" {
 		md5 := ""

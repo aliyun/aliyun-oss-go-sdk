@@ -6022,3 +6022,47 @@ func (s *OssBucketSuite) TestPutObjectWithCallbackResult(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
 }
+
+func (s *OssBucketSuite) TestPutObjectWithContentLength(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(1023)
+	err := s.bucket.PutObject(objectName, strings.NewReader(objectValue), ContentLength(100))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), " transport connection broken"), Equals, true)
+
+	length := int64(len(objectValue))
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue), ContentLength(length))
+	c.Assert(err, IsNil)
+
+	length = int64(100)
+	fd := strings.NewReader(objectValue)
+	err = s.bucket.PutObject(objectName, fd, ContentLength(length))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), " transport connection broken"), Equals, true)
+
+	fd2 := io.LimitReader(strings.NewReader(objectValue), length)
+	err = s.bucket.PutObject(objectName, fd2, ContentLength(length))
+	c.Assert(err, IsNil)
+
+	client, err := New(endpoint, accessID, accessKey, EnableMD5(true), EnableCRC(true))
+	c.Assert(err, IsNil)
+	s.client = client
+
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue), ContentLength(100))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), " transport connection broken"), Equals, true)
+
+	length = int64(len(objectValue))
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue), ContentLength(length))
+	c.Assert(err, IsNil)
+
+	length = int64(100)
+	fd = strings.NewReader(objectValue)
+	err = s.bucket.PutObject(objectName, fd, ContentLength(length))
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), " transport connection broken"), Equals, true)
+
+	fd2 = io.LimitReader(strings.NewReader(objectValue), length)
+	err = s.bucket.PutObject(objectName, fd2, ContentLength(length))
+	c.Assert(err, IsNil)
+}
