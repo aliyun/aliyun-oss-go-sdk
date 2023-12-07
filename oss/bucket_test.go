@@ -6498,3 +6498,151 @@ func (s *OssBucketSuite) TestCredentialsProviderError(c *C) {
 	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
 	c.Assert(err, IsNil)
 }
+
+func (s *OssBucketSuite) TestVerifyObjectStrictAuthV1(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName := "?" + objectNamePrefix + RandStr(8)
+
+	// Sign
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is invalid, can't start with '?'")
+
+	//
+	objectName = ""
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	//Disable VerifyObjectStrictFlag
+	client, err = New(endpoint, accessID, accessKey, VerifyObjectStrict(false))
+	c.Assert(err, IsNil)
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err := bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?Expires="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?Expires="), Equals, true)
+
+	objectName = "123?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/123%3F?Expires="), Equals, true)
+}
+
+func (s *OssBucketSuite) TestVerifyObjectStrictAuthV2(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey, AuthVersion(AuthV2))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	//
+	objectName := ""
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	// Sign
+	objectName = "?" + objectNamePrefix + RandStr(8)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err := bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-access-key-id="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-access-key-id="), Equals, true)
+
+	//Disable VerifyObjectStrictFlag
+	client, err = New(endpoint, accessID, accessKey, AuthVersion(AuthV2), VerifyObjectStrict(false))
+	c.Assert(err, IsNil)
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-access-key-id="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-access-key-id="), Equals, true)
+
+	objectName = "123?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/123%3F?x-oss-access-key-id="), Equals, true)
+}
+
+func (s *OssBucketSuite) TestVerifyObjectStrictAuthV4(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey, AuthVersion(AuthV4))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	//
+	objectName := ""
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	// Sign
+	objectName = "?" + objectNamePrefix + RandStr(8)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err := bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-credential="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-credential="), Equals, true)
+
+	//Disable VerifyObjectStrictFlag
+	client, err = New(endpoint, accessID, accessKey, AuthVersion(AuthV4), VerifyObjectStrict(false))
+	c.Assert(err, IsNil)
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-credential="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-credential="), Equals, true)
+
+	objectName = "123?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/123%3F?x-oss-credential="), Equals, true)
+}

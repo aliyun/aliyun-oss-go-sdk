@@ -449,6 +449,18 @@ func CheckObjectName(objectName string) error {
 	return nil
 }
 
+func CheckObjectNameEx(objectName string, strict bool) error {
+	if err := CheckObjectName(objectName); err != nil {
+		return err
+	}
+
+	if strict && strings.HasPrefix(objectName, "?") {
+		return fmt.Errorf("object name is invalid, can't start with '?'")
+	}
+
+	return nil
+}
+
 /*
 	func GetReaderLen(reader io.Reader) (int64, error) {
 		var contentLength int64
@@ -477,6 +489,7 @@ func CheckObjectName(objectName string) error {
 		return contentLength, err
 	}
 */
+
 func GetReaderLen(reader io.Reader) (int64, error) {
 	var contentLength int64
 	var err error
@@ -645,4 +658,14 @@ func isInCharacterRange(r rune) (inrange bool) {
 		r >= 0x20 && r <= 0xD7FF ||
 		r >= 0xE000 && r <= 0xFFFD ||
 		r >= 0x10000 && r <= 0x10FFFF
+}
+
+func isVerifyObjectStrict(config *Config) bool {
+	if config != nil {
+		if config.AuthVersion == AuthV2 || config.AuthVersion == AuthV4 {
+			return false
+		}
+		return config.VerifyObjectStrict
+	}
+	return true
 }

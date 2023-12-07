@@ -323,3 +323,62 @@ func (s *OssUtilsSuite) TestEscapeXml(c *C) {
 	esc = string(escLT) + string(escGT) + string(escAmp) + string(escQuot) + string(escApos)
 	c.Assert(str, Equals, esc)
 }
+
+func (s *OssUtilsSuite) TestCheckObjectNameEx(c *C) {
+	err := CheckObjectNameEx("?", true)
+	c.Assert("object name is invalid, can't start with '?'", Equals, err.Error())
+
+	err = CheckObjectNameEx("?123", true)
+	c.Assert("object name is invalid, can't start with '?'", Equals, err.Error())
+
+	err = CheckObjectNameEx("?", false)
+	c.Assert(err, IsNil)
+
+	err = CheckObjectNameEx("?123", false)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssUtilsSuite) TestisVerifyObjectStrict(c *C) {
+	//default
+	config := getDefaultOssConfig()
+	flag := isVerifyObjectStrict(config)
+	c.Assert(true, Equals, flag)
+
+	config = &Config{}
+	flag = isVerifyObjectStrict(config)
+	c.Assert(false, Equals, flag)
+	c.Assert(false, Equals, config.VerifyObjectStrict)
+
+	config = &Config{}
+	config.VerifyObjectStrict = true
+	flag = isVerifyObjectStrict(config)
+	c.Assert(true, Equals, flag)
+	c.Assert(true, Equals, config.VerifyObjectStrict)
+
+	flag = isVerifyObjectStrict(nil)
+	c.Assert(true, Equals, flag)
+
+	config = getDefaultOssConfig()
+	config.AuthVersion = AuthV2
+	flag = isVerifyObjectStrict(config)
+	c.Assert(false, Equals, flag)
+	c.Assert(true, Equals, config.VerifyObjectStrict)
+
+	config.AuthVersion = AuthV4
+	flag = isVerifyObjectStrict(config)
+	c.Assert(false, Equals, flag)
+	c.Assert(true, Equals, config.VerifyObjectStrict)
+
+	config.AuthVersion = ""
+	flag = isVerifyObjectStrict(config)
+	c.Assert(true, Equals, flag)
+	c.Assert(true, Equals, config.VerifyObjectStrict)
+
+	//
+	config = getDefaultOssConfig()
+	config.VerifyObjectStrict = false
+	flag = isVerifyObjectStrict(config)
+	c.Assert(false, Equals, flag)
+	c.Assert(false, Equals, config.VerifyObjectStrict)
+	c.Assert(AuthV1, Equals, config.AuthVersion)
+}
