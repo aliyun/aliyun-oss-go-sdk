@@ -1222,7 +1222,7 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 
 	err = s.bucket.GetObjectToFile(objectName, newFile, NormalizedRange("-10"))
 	c.Assert(err, IsNil)
-	eq, err = compareFileData(newFile, val[(len(val)-10):len(val)])
+	eq, err = compareFileData(newFile, val[(len(val)-10):])
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 	os.Remove(newFile)
@@ -4364,8 +4364,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds := []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4395,8 +4395,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4415,8 +4415,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4470,8 +4470,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: ""},
-		DeleteObject{Key: objectName2, VersionId: ""}}
+	versionIds := []DeleteObject{{Key: objectName1, VersionId: ""},
+		{Key: objectName2, VersionId: ""}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
@@ -4500,14 +4500,14 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(len(listResult.ObjectVersions), Equals, 2)
 
 	// delete version object
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
 	// delete deleteMark object
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
-		DeleteObject{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
+		{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
@@ -5113,7 +5113,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 
 	// ObjectTagging v1
 	var tagging1 Tagging
-	tagging1.Tags = []Tag{Tag{Key: "testkey1", Value: "testvalue1"}}
+	tagging1.Tags = []Tag{{Key: "testkey1", Value: "testvalue1"}}
 	err = bucket.PutObjectTagging(objectName, tagging1, VersionId(versionIdV1))
 	c.Assert(err, IsNil)
 	getResult, err := bucket.GetObjectTagging(objectName, VersionId(versionIdV1))
@@ -5123,7 +5123,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 
 	// ObjectTagging v2
 	var tagging2 Tagging
-	tagging2.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
+	tagging2.Tags = []Tag{{Key: "testkey2", Value: "testvalue2"}}
 	err = bucket.PutObjectTagging(objectName, tagging2, VersionId(versionIdV2))
 	c.Assert(err, IsNil)
 	getResult, err = bucket.GetObjectTagging(objectName, VersionId(versionIdV2))
@@ -6120,4 +6120,58 @@ func (s *OssBucketSuite) TestCredentialsProviderError(c *C) {
 
 	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
 	c.Assert(err, IsNil)
+}
+
+func (s *OssBucketSuite) TestVerifyObjectStrict(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	// Create
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName := "?" + objectNamePrefix + RandStr(8)
+	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
+		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+
+	// Put string
+	var respHeader http.Header
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+
+	// Sign
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is invalid, can't start with '?'")
+
+	//
+	objectName = ""
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	//Disable VerifyObjectStrictFlag
+	client, err = New(endpoint, accessID, accessKey, VerifyObjectStrict(false))
+	c.Assert(err, IsNil)
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err := bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?Expires="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?Expires="), Equals, true)
+
+	objectName = "123?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/123%3F?Expires="), Equals, true)
 }
