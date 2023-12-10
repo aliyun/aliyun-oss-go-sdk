@@ -23,6 +23,7 @@ var _ = Suite(&OssCrcSuite{})
 
 // SetUpSuite runs once when the suite starts running
 func (s *OssCrcSuite) SetUpSuite(c *C) {
+	bucketName = bucketNamePrefix + RandLowStr(6)
 	if cloudboxControlEndpoint == "" {
 		client, err := New(endpoint, accessID, accessKey)
 		c.Assert(err, IsNil)
