@@ -53,6 +53,12 @@ var signKeyList = []string{"acl", "uploads", "location", "cors",
 	"metaQuery", "resourceGroup", "rtc", "x-oss-async-process", "responseHeader",
 }
 
+const (
+	timeFormatV4       = "20060102T150405Z"
+	shortTimeFormatV4  = "20060102"
+	signingAlgorithmV4 = "OSS4-HMAC-SHA256"
+)
+
 // init initializes Conn
 func (conn *Conn) init(config *Config, urlMaker *urlMaker, client *http.Client) error {
 	if client == nil {
@@ -400,10 +406,6 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 		akIf = conn.config.GetCredentials()
 	}
 
-	if akIf.GetSecurityToken() != "" {
-		params[HTTPParamSecurityToken] = akIf.GetSecurityToken()
-	}
-
 	m := strings.ToUpper(string(method))
 	req := &http.Request{
 		Method: m,
@@ -416,36 +418,72 @@ func (conn Conn) signURL(method HTTPMethod, bucketName, objectName string, expir
 		req.Header.Set("Proxy-Authorization", basic)
 	}
 
-	req.Header.Set(HTTPHeaderDate, strconv.FormatInt(expiration, 10))
-	req.Header.Set(HTTPHeaderUserAgent, conn.config.UserAgent)
-
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
+	if conn.config.AuthVersion == AuthV4 {
+		if akIf.GetSecurityToken() != "" {
+			params[HTTPParamOssSecurityToken] = akIf.GetSecurityToken()
 		}
-	}
 
-	if conn.config.AuthVersion == AuthV2 {
-		params[HTTPParamSignatureVersion] = "OSS2"
-		params[HTTPParamExpiresV2] = strconv.FormatInt(expiration, 10)
-		params[HTTPParamAccessKeyIDV2] = conn.config.AccessKeyID
+		if headers != nil {
+			for k, v := range headers {
+				req.Header.Set(k, v)
+			}
+		}
+
+		now := time.Now().UTC()
+		expires := expiration - now.Unix()
+		product := conn.config.GetSignProduct()
+		region := conn.config.GetSignRegion()
+		strDay := now.Format(shortTimeFormatV4)
 		additionalList, _ := conn.getAdditionalHeaderKeys(req)
+
+		params[HTTPParamSignatureVersion] = signingAlgorithmV4
+		params[HTTPParamCredential] = fmt.Sprintf("%s/%s/%s/%s/aliyun_v4_request", akIf.GetAccessKeyID(), strDay, region, product)
+		params[HTTPParamDate] = now.Format(timeFormatV4)
+		params[HTTPParamExpiresV2] = strconv.FormatInt(expires, 10)
 		if len(additionalList) > 0 {
 			params[HTTPParamAdditionalHeadersV2] = strings.Join(additionalList, ";")
 		}
+
+		subResource := conn.getSubResource(params)
+		canonicalizedResource := conn.getResourceV4(bucketName, objectName, subResource)
+		authorizationStr := conn.getSignedStrV4(req, canonicalizedResource, akIf.GetAccessKeySecret(), &now)
+		params[HTTPParamSignatureV2] = authorizationStr
+	} else {
+		if akIf.GetSecurityToken() != "" {
+			params[HTTPParamSecurityToken] = akIf.GetSecurityToken()
+		}
+
+		req.Header.Set(HTTPHeaderDate, strconv.FormatInt(expiration, 10))
+
+		if headers != nil {
+			for k, v := range headers {
+				req.Header.Set(k, v)
+			}
+		}
+
+		if conn.config.AuthVersion == AuthV2 {
+			params[HTTPParamSignatureVersion] = "OSS2"
+			params[HTTPParamExpiresV2] = strconv.FormatInt(expiration, 10)
+			params[HTTPParamAccessKeyIDV2] = conn.config.AccessKeyID
+			additionalList, _ := conn.getAdditionalHeaderKeys(req)
+			if len(additionalList) > 0 {
+				params[HTTPParamAdditionalHeadersV2] = strings.Join(additionalList, ";")
+			}
+		}
+
+		subResource := conn.getSubResource(params)
+		canonicalizedResource := conn.getResource(bucketName, objectName, subResource)
+		signedStr := conn.getSignedStr(req, canonicalizedResource, akIf.GetAccessKeySecret())
+
+		if conn.config.AuthVersion == AuthV1 {
+			params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
+			params[HTTPParamAccessKeyID] = akIf.GetAccessKeyID()
+			params[HTTPParamSignature] = signedStr
+		} else if conn.config.AuthVersion == AuthV2 {
+			params[HTTPParamSignatureV2] = signedStr
+		}
 	}
 
-	subResource := conn.getSubResource(params)
-	canonicalizedResource := conn.getResource(bucketName, objectName, subResource)
-	signedStr := conn.getSignedStr(req, canonicalizedResource, akIf.GetAccessKeySecret())
-
-	if conn.config.AuthVersion == AuthV1 {
-		params[HTTPParamExpires] = strconv.FormatInt(expiration, 10)
-		params[HTTPParamAccessKeyID] = akIf.GetAccessKeyID()
-		params[HTTPParamSignature] = signedStr
-	} else if conn.config.AuthVersion == AuthV2 {
-		params[HTTPParamSignatureV2] = signedStr
-	}
 	urlParams := conn.getURLParams(params)
 	return conn.url.getSignURL(bucketName, objectName, urlParams), nil
 }
