@@ -83,10 +83,9 @@ func (conn Conn) signHeader(req *http.Request, canonicalizedResource string, cre
 			t, _ := time.Parse(http.TimeFormat, strDate)
 			strDay = t.Format("20060102")
 		} else {
-			t, _ := time.Parse(iso8601DateFormatSecond, strDate)
+			t, _ := time.Parse(timeFormatV4, strDate)
 			strDay = t.Format("20060102")
 		}
-
 		signHeaderProduct := conn.config.GetSignProduct()
 		signHeaderRegion := conn.config.GetSignRegion()
 
@@ -202,7 +201,7 @@ func (conn Conn) getSignedStrV4(req *http.Request, canonicalizedResource string,
 
 		if ossDate := req.Header.Get(HttpHeaderOssDate); ossDate != "" {
 			signDate = ossDate
-			t, _ = time.Parse(iso8601DateFormatSecond, ossDate)
+			t, _ = time.Parse(timeFormatV4, ossDate)
 		}
 
 		strDay = t.Format("20060102")
@@ -243,7 +242,7 @@ func (conn Conn) getSignedStrV4(req *http.Request, canonicalizedResource string,
 	hashedRequest := hex.EncodeToString(rh.Sum(nil))
 
 	if conn.config.LogLevel >= Debug {
-		conn.config.WriteLog(Debug, "[Req:%p]signStr:%s\n", req, EscapeLFString(canonicalReuqest))
+		conn.config.WriteLog(Debug, "[Req:%p]CanonicalRequest:%s\n", req, EscapeLFString(canonicalReuqest))
 	}
 
 	// Product & Region
