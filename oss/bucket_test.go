@@ -1599,7 +1599,7 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 
 	err = s.bucket.GetObjectToFile(objectName, newFile, NormalizedRange("-10"))
 	c.Assert(err, IsNil)
-	eq, err = compareFileData(newFile, val[(len(val)-10):len(val)])
+	eq, err = compareFileData(newFile, val[(len(val)-10):])
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 	os.Remove(newFile)
@@ -4741,8 +4741,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds := []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4772,8 +4772,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4792,8 +4792,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4847,8 +4847,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: ""},
-		DeleteObject{Key: objectName2, VersionId: ""}}
+	versionIds := []DeleteObject{{Key: objectName1, VersionId: ""},
+		{Key: objectName2, VersionId: ""}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
@@ -4877,14 +4877,14 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(len(listResult.ObjectVersions), Equals, 2)
 
 	// delete version object
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
 	// delete deleteMark object
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
-		DeleteObject{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
+		{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
@@ -5490,7 +5490,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 
 	// ObjectTagging v1
 	var tagging1 Tagging
-	tagging1.Tags = []Tag{Tag{Key: "testkey1", Value: "testvalue1"}}
+	tagging1.Tags = []Tag{{Key: "testkey1", Value: "testvalue1"}}
 	err = bucket.PutObjectTagging(objectName, tagging1, VersionId(versionIdV1))
 	c.Assert(err, IsNil)
 	getResult, err := bucket.GetObjectTagging(objectName, VersionId(versionIdV1))
@@ -5500,7 +5500,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 
 	// ObjectTagging v2
 	var tagging2 Tagging
-	tagging2.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
+	tagging2.Tags = []Tag{{Key: "testkey2", Value: "testvalue2"}}
 	err = bucket.PutObjectTagging(objectName, tagging2, VersionId(versionIdV2))
 	c.Assert(err, IsNil)
 	getResult, err = bucket.GetObjectTagging(objectName, VersionId(versionIdV2))
