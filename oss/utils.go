@@ -449,6 +449,18 @@ func CheckObjectName(objectName string) error {
 	return nil
 }
 
+func CheckObjectNameEx(objectName string, strict bool) error {
+	if err := CheckObjectName(objectName); err != nil {
+		return err
+	}
+
+	if strict && strings.HasPrefix(objectName, "?") {
+		return fmt.Errorf("object name is invalid, can't start with '?'")
+	}
+
+	return nil
+}
+
 func GetReaderLen(reader io.Reader) (int64, error) {
 	var contentLength int64
 	var err error
