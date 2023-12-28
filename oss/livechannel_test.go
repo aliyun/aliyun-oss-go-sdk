@@ -425,10 +425,14 @@ func getPlayURL(bucketName, channelName, playlistName string) string {
 		host = endpoint
 	}
 
+	var url string
+
 	if useHTTPS {
-		return fmt.Sprintf("https://%s.%s/%s/%s", bucketName, host, channelName, playlistName)
+		url = fmt.Sprintf("https://%s.%s/%s/%s", bucketName, host, channelName, playlistName)
 	}
-	return fmt.Sprintf("http://%s.%s/%s/%s", bucketName, host, channelName, playlistName)
+	url = fmt.Sprintf("http://%s.%s/%s/%s", bucketName, host, channelName, playlistName)
+	strings.Replace(url, "-internal.aliyuncs.com", ".aliyuncs.com", -1)
+	return url
 }
 
 // getPublistURL Get the push url of the live stream channel
@@ -442,7 +446,9 @@ func getPublishURL(bucketName, channelName string) string {
 		host = endpoint
 	}
 
-	return fmt.Sprintf("rtmp://%s.%s/live/%s", bucketName, host, channelName)
+	url := fmt.Sprintf("rtmp://%s.%s/live/%s", bucketName, host, channelName)
+	strings.Replace(url, "-internal.aliyuncs.com", ".aliyuncs.com", -1)
+	return url
 }
 
 func compareListResult(result ListLiveChannelResult, prefix, marker, nextMarker string, maxKey int, isTruncated bool, count int) bool {

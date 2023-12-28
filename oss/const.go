@@ -227,6 +227,9 @@ const (
 	HTTPParamAccessKeyIDV2       = "x-oss-access-key-id"
 	HTTPParamSignatureV2         = "x-oss-signature"
 	HTTPParamAdditionalHeadersV2 = "x-oss-additional-headers"
+	HTTPParamCredential          = "x-oss-credential"
+	HTTPParamDate                = "x-oss-date"
+	HTTPParamOssSecurityToken    = "x-oss-security-token"
 )
 
 // Other constants

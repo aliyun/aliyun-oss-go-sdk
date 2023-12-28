@@ -463,6 +463,384 @@ func (s *OssBucketSuite) SignURLTestFunc(c *C, authVersion AuthVersionType, extr
 	s.bucket.Client.Config.AdditionalHeaders = oldHeaders
 }
 
+func (s *OssBucketSuite) TestSignURLWithSignV4(c *C) {
+	client, err := New(endpoint, accessID, accessKey, Region(envRegion), AuthVersion(AuthV4))
+	c.Assert(err, IsNil)
+	bucketName := bucketNamePrefix + RandLowStr(10)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(20)
+	filePath := RandLowStr(10)
+	content := "复写object"
+	CreateFile(filePath, content, c)
+	notExistfilePath := RandLowStr(10)
+	os.Remove(notExistfilePath)
+
+	// Sign URL for put
+	str, err := bucket.SignURL(objectName, HTTPPut, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS4-HMAC-SHA256"), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamDate+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamCredential+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	// Error put object with URL
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue), ContentType("image/tiff"))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	err = bucket.PutObjectFromFileWithURL(str, filePath, ContentType("image/tiff"))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	// Put object with URL
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+	acl, err := bucket.GetObjectACL(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(acl.ACL, Equals, "default")
+	// Get object meta
+	meta, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get(HTTPHeaderContentType), Equals, "application/octet-stream")
+	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "")
+	// Sign URL for function GetObjectWithURL
+	str, err = bucket.SignURL(objectName, HTTPGet, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS4-HMAC-SHA256"), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamDate+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamCredential+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	// Get object with URL
+	body, err := bucket.GetObjectWithURL(str)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+	// Sign URL for function PutObjectWithURL
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		Meta("myprop", "mypropval"),
+		ContentType("image/tiff"),
+		ResponseContentEncoding("deflate"),
+	}
+	str, err = bucket.SignURL(objectName, HTTPPut, 600, options...)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS4-HMAC-SHA256"), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamDate+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamCredential+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	// Put object with URL from file
+	// Without option, error
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+
+	err = bucket.PutObjectFromFileWithURL(str, filePath)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+
+	// With option, error file
+	err = bucket.PutObjectFromFileWithURL(str, notExistfilePath, options...)
+	c.Assert(err, NotNil)
+
+	// With option
+	err = bucket.PutObjectFromFileWithURL(str, filePath, options...)
+	c.Assert(err, IsNil)
+
+	// Get object meta
+	meta, err = bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "mypropval")
+	c.Assert(meta.Get(HTTPHeaderContentType), Equals, "image/tiff")
+
+	acl, err = bucket.GetObjectACL(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(acl.ACL, Equals, string(ACLPublicRead))
+
+	// Sign URL for function GetObjectToFileWithURL
+	str, err = bucket.SignURL(objectName, HTTPGet, 60)
+	c.Assert(err, IsNil)
+
+	// Get object to file with URL
+	newFile := RandStr(10)
+	err = bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, IsNil)
+	eq, err := compareFiles(filePath, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	os.Remove(newFile)
+
+	// Get object to file error
+	err = bucket.GetObjectToFileWithURL(str, newFile, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	_, err = os.Stat(newFile)
+	c.Assert(err, NotNil)
+
+	// Get object error
+	body, err = bucket.GetObjectWithURL(str, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	c.Assert(body, IsNil)
+
+	// Sign URL for function GetObjectToFileWithURL
+	options = []Option{
+		Expires(futureDate),
+		ObjectACL(ACLPublicRead),
+		Meta("myprop", "mypropval"),
+		ContentType("image/tiff"),
+		ResponseContentEncoding("deflate"),
+	}
+	str, err = bucket.SignURL(objectName, HTTPGet, 60, options...)
+	c.Assert(err, IsNil)
+
+	// Get object to file with URL and options
+	err = bucket.GetObjectToFileWithURL(str, newFile, options...)
+	c.Assert(err, IsNil)
+	eq, err = compareFiles(filePath, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	os.Remove(newFile)
+
+	// Get object to file error
+	err = bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	_, err = os.Stat(newFile)
+	c.Assert(err, NotNil)
+
+	// Get object error
+	body, err = bucket.GetObjectWithURL(str)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	c.Assert(body, IsNil)
+
+	err = bucket.PutObjectFromFile(objectName, "../sample/The Go Programming Language.html")
+	c.Assert(err, IsNil)
+	str, err = bucket.SignURL(objectName, HTTPGet, 3600, AcceptEncoding("gzip"))
+	c.Assert(err, IsNil)
+	bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, IsNil)
+
+	os.Remove(filePath)
+	os.Remove(newFile)
+
+	// Sign URL error
+	str, err = bucket.SignURL(objectName, HTTPGet, -1)
+	c.Assert(err, NotNil)
+
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Invalid URL parse
+	str = RandStr(20)
+
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, NotNil)
+
+	err = bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, NotNil)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
+func (s *OssBucketSuite) TestSignURLWithSignV4WithToken(c *C) {
+	resp, err := stsAssumeRole(stsaccessID, stsaccessKey, stsARN, "oss_test_sess", 1800)
+	c.Assert(err, IsNil)
+	fmt.Print(resp)
+
+	client, err := New(endpoint, resp.Credentials.AccessKeyId, resp.Credentials.AccessKeySecret,
+		SecurityToken(resp.Credentials.SecurityToken), Region(envRegion), AuthVersion(AuthV4))
+	c.Assert(err, IsNil)
+
+	c.Assert(err, IsNil)
+	bucketName := bucketNamePrefix + RandLowStr(10)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	bucket, err := client.Bucket(bucketName)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(20)
+	filePath := RandLowStr(10)
+	content := "复写object"
+	CreateFile(filePath, content, c)
+	notExistfilePath := RandLowStr(10)
+	os.Remove(notExistfilePath)
+
+	// Sign URL for put
+	str, err := bucket.SignURL(objectName, HTTPPut, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS4-HMAC-SHA256"), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamDate+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamCredential+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	// Error put object with URL
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue), ContentType("image/tiff"))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	err = bucket.PutObjectFromFileWithURL(str, filePath, ContentType("image/tiff"))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	// Put object with URL
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, IsNil)
+	acl, err := bucket.GetObjectACL(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(acl.ACL, Equals, "default")
+	// Get object meta
+	meta, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get(HTTPHeaderContentType), Equals, "application/octet-stream")
+	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "")
+	// Sign URL for function GetObjectWithURL
+	str, err = bucket.SignURL(objectName, HTTPGet, 60)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS4-HMAC-SHA256"), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamDate+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamCredential+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	// Get object with URL
+	body, err := bucket.GetObjectWithURL(str)
+	c.Assert(err, IsNil)
+	str, err = readBody(body)
+	c.Assert(err, IsNil)
+	c.Assert(str, Equals, objectValue)
+	// Sign URL for function PutObjectWithURL
+	options := []Option{
+		ObjectACL(ACLPublicRead),
+		Meta("myprop", "mypropval"),
+		ContentType("image/tiff"),
+		ResponseContentEncoding("deflate"),
+	}
+	str, err = bucket.SignURL(objectName, HTTPPut, 60, options...)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(str, HTTPParamSignatureVersion+"=OSS4-HMAC-SHA256"), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamExpiresV2+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamDate+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamCredential+"="), Equals, true)
+	c.Assert(strings.Contains(str, HTTPParamSignatureV2+"="), Equals, true)
+	// Put object with URL from file
+	// Without option, error
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+
+	err = bucket.PutObjectFromFileWithURL(str, filePath)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+
+	// With option, error file
+	err = bucket.PutObjectFromFileWithURL(str, notExistfilePath, options...)
+	c.Assert(err, NotNil)
+
+	// With option
+	err = bucket.PutObjectFromFileWithURL(str, filePath, options...)
+	c.Assert(err, IsNil)
+
+	// Get object meta
+	meta, err = bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("X-Oss-Meta-Myprop"), Equals, "mypropval")
+	c.Assert(meta.Get(HTTPHeaderContentType), Equals, "image/tiff")
+
+	acl, err = bucket.GetObjectACL(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(acl.ACL, Equals, string(ACLPublicRead))
+
+	// Sign URL for function GetObjectToFileWithURL
+	str, err = bucket.SignURL(objectName, HTTPGet, 60)
+	c.Assert(err, IsNil)
+
+	// Get object to file with URL
+	newFile := RandStr(10)
+	err = bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, IsNil)
+	eq, err := compareFiles(filePath, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	os.Remove(newFile)
+
+	// Get object to file error
+	err = bucket.GetObjectToFileWithURL(str, newFile, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	_, err = os.Stat(newFile)
+	c.Assert(err, NotNil)
+
+	// Get object error
+	body, err = bucket.GetObjectWithURL(str, options...)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	c.Assert(body, IsNil)
+
+	// Sign URL for function GetObjectToFileWithURL
+	options = []Option{
+		Expires(futureDate),
+		ObjectACL(ACLPublicRead),
+		Meta("myprop", "mypropval"),
+		ContentType("image/tiff"),
+		ResponseContentEncoding("deflate"),
+	}
+	str, err = bucket.SignURL(objectName, HTTPGet, 60, options...)
+	c.Assert(err, IsNil)
+
+	// Get object to file with URL and options
+	err = bucket.GetObjectToFileWithURL(str, newFile, options...)
+	c.Assert(err, IsNil)
+	eq, err = compareFiles(filePath, newFile)
+	c.Assert(err, IsNil)
+	c.Assert(eq, Equals, true)
+	os.Remove(newFile)
+
+	// Get object to file error
+	err = bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	_, err = os.Stat(newFile)
+	c.Assert(err, NotNil)
+
+	// Get object error
+	body, err = bucket.GetObjectWithURL(str)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "SignatureDoesNotMatch")
+	c.Assert(body, IsNil)
+
+	err = bucket.PutObjectFromFile(objectName, "../sample/The Go Programming Language.html")
+	c.Assert(err, IsNil)
+	str, err = bucket.SignURL(objectName, HTTPGet, 3600, AcceptEncoding("gzip"))
+	c.Assert(err, IsNil)
+	bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, IsNil)
+
+	os.Remove(filePath)
+	os.Remove(newFile)
+
+	// Sign URL error
+	str, err = bucket.SignURL(objectName, HTTPGet, -1)
+	c.Assert(err, NotNil)
+
+	err = bucket.DeleteObject(objectName)
+	c.Assert(err, IsNil)
+
+	// Invalid URL parse
+	str = RandStr(20)
+
+	err = bucket.PutObjectWithURL(str, strings.NewReader(objectValue))
+	c.Assert(err, NotNil)
+
+	err = bucket.GetObjectToFileWithURL(str, newFile)
+	c.Assert(err, NotNil)
+
+	ForceDeleteBucket(client, bucketName, c)
+}
+
 func (s *OssBucketSuite) TestSignURL(c *C) {
 	s.SignURLTestFunc(c, AuthV1, []string{})
 	s.SignURLTestFunc(c, AuthV2, []string{})
@@ -793,7 +1171,6 @@ func (s *OssBucketSuite) TestQueryStringAuthV2(c *C) {
 	c.Assert(resp.StatusCode, Equals, 404)
 	ForceDeleteBucket(client, bucketName, c)
 }
-
 func (s *OssBucketSuite) TestQueryStringAuthV4(c *C) {
 	// set oss v4 signatrue
 	options := []ClientOption{
@@ -1222,7 +1599,7 @@ func (s *OssBucketSuite) TestGetObjectToFile(c *C) {
 
 	err = s.bucket.GetObjectToFile(objectName, newFile, NormalizedRange("-10"))
 	c.Assert(err, IsNil)
-	eq, err = compareFileData(newFile, val[(len(val)-10):len(val)])
+	eq, err = compareFileData(newFile, val[(len(val)-10):])
 	c.Assert(err, IsNil)
 	c.Assert(eq, Equals, true)
 	os.Remove(newFile)
@@ -4364,8 +4741,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds := []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4395,8 +4772,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4415,8 +4792,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 	c.Assert(len(deleteResult.DeletedObjectsDetail), Equals, 2)
@@ -4470,8 +4847,8 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(versionIdV1 != versionIdV2, Equals, true)
 
 	//batch delete objects
-	versionIds := []DeleteObject{DeleteObject{Key: objectName1, VersionId: ""},
-		DeleteObject{Key: objectName2, VersionId: ""}}
+	versionIds := []DeleteObject{{Key: objectName1, VersionId: ""},
+		{Key: objectName2, VersionId: ""}}
 	deleteResult, err := bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
@@ -4500,14 +4877,14 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	c.Assert(len(listResult.ObjectVersions), Equals, 2)
 
 	// delete version object
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: versionIdV1},
-		DeleteObject{Key: objectName2, VersionId: versionIdV2}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
 	// delete deleteMark object
-	versionIds = []DeleteObject{DeleteObject{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
-		DeleteObject{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
+		{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
 	c.Assert(err, IsNil)
 
@@ -5113,7 +5490,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 
 	// ObjectTagging v1
 	var tagging1 Tagging
-	tagging1.Tags = []Tag{Tag{Key: "testkey1", Value: "testvalue1"}}
+	tagging1.Tags = []Tag{{Key: "testkey1", Value: "testvalue1"}}
 	err = bucket.PutObjectTagging(objectName, tagging1, VersionId(versionIdV1))
 	c.Assert(err, IsNil)
 	getResult, err := bucket.GetObjectTagging(objectName, VersionId(versionIdV1))
@@ -5123,7 +5500,7 @@ func (s *OssBucketSuite) TestVersioningObjectTagging(c *C) {
 
 	// ObjectTagging v2
 	var tagging2 Tagging
-	tagging2.Tags = []Tag{Tag{Key: "testkey2", Value: "testvalue2"}}
+	tagging2.Tags = []Tag{{Key: "testkey2", Value: "testvalue2"}}
 	err = bucket.PutObjectTagging(objectName, tagging2, VersionId(versionIdV2))
 	c.Assert(err, IsNil)
 	getResult, err = bucket.GetObjectTagging(objectName, VersionId(versionIdV2))
@@ -6021,4 +6398,288 @@ func (s *OssBucketSuite) TestPutObjectWithCallbackResult(c *C) {
 	str, err := readBody(body)
 	c.Assert(err, IsNil)
 	c.Assert(str, Equals, objectValue)
+}
+
+type TestCredentialsProviderError struct {
+	AccessKeyId     string
+	AccessKeySecret string
+	SecurityToken   string
+}
+
+func (testInfBuild *TestCredentialsProviderError) GetCredentials() Credentials {
+	cred, _ := testInfBuild.GetCredentialsE()
+	return cred
+}
+
+func (testInfBuild *TestCredentialsProviderError) GetCredentialsE() (Credentials, error) {
+	var provider *TestCredentials
+	keyId := testInfBuild.AccessKeyId
+	if keyId == "" {
+		return provider, fmt.Errorf("access key id is empty!")
+	}
+	secret := testInfBuild.AccessKeySecret
+	if secret == "" {
+		return provider, fmt.Errorf("access key secret is empty!")
+	}
+	return &envCredentials{
+		AccessKeyId:     keyId,
+		AccessKeySecret: secret,
+		SecurityToken:   "",
+	}, nil
+}
+
+func (s *OssBucketSuite) TestCredentialsProviderError(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+	// Create
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := "大江东去，浪淘尽，千古风流人物。 故垒西边，人道是、三国周郎赤壁。 乱石穿空，惊涛拍岸，卷起千堆雪。 江山如画，一时多少豪杰。" +
+		"遥想公谨当年，小乔初嫁了，雄姿英发。 羽扇纶巾，谈笑间、樯橹灰飞烟灭。故国神游，多情应笑我，早生华发，人生如梦，一尊还酹江月。"
+
+	// Put string
+	var respHeader http.Header
+	err = s.bucket.PutObject(objectName, strings.NewReader(objectValue), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+
+	var defaultBuild TestCredentialsProviderError
+	defaultBuild.AccessKeyId = ""
+	defaultBuild.AccessKeySecret = accessKey
+	client, err = New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key id is empty!")
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key id is empty!")
+
+	channelName := "test-sign-rtmp-url"
+	playlistName := "playlist.m3u8"
+	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
+	c.Assert(err, IsNil)
+
+	defaultBuild.AccessKeyId = accessID
+	defaultBuild.AccessKeySecret = ""
+	client, err = New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key secret is empty!")
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "access key secret is empty!")
+
+	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
+	c.Assert(err, IsNil)
+
+	defaultBuild.AccessKeyId = accessID
+	defaultBuild.AccessKeySecret = accessKey
+	client, err = New(endpoint, "", "", SetCredentialsProvider(&defaultBuild))
+	c.Assert(err, IsNil)
+	err = client.DeleteBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+
+	_, err = bucket.SignRtmpURL(channelName, playlistName, 3600)
+	c.Assert(err, IsNil)
+}
+
+func (s *OssBucketSuite) TestVerifyObjectStrictAuthV1(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName := "?" + objectNamePrefix + RandStr(8)
+
+	// Sign
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is invalid, can't start with '?'")
+
+	//
+	objectName = ""
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	//Disable VerifyObjectStrictFlag
+	client, err = New(endpoint, accessID, accessKey, VerifyObjectStrict(false))
+	c.Assert(err, IsNil)
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err := bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?Expires="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?Expires="), Equals, true)
+
+	objectName = "123?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/123%3F?Expires="), Equals, true)
+}
+
+func (s *OssBucketSuite) TestVerifyObjectStrictAuthV2(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey, AuthVersion(AuthV2))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	//
+	objectName := ""
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	// Sign
+	objectName = "?" + objectNamePrefix + RandStr(8)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err := bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-access-key-id="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-access-key-id="), Equals, true)
+
+	//Disable VerifyObjectStrictFlag
+	client, err = New(endpoint, accessID, accessKey, AuthVersion(AuthV2), VerifyObjectStrict(false))
+	c.Assert(err, IsNil)
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-access-key-id="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-access-key-id="), Equals, true)
+
+	objectName = "123?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/123%3F?x-oss-access-key-id="), Equals, true)
+}
+
+func (s *OssBucketSuite) TestVerifyObjectStrictAuthV4(c *C) {
+	var bucketNameTest = bucketNamePrefix + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey, AuthVersion(AuthV4))
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	//
+	objectName := ""
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "object name is empty")
+
+	// Sign
+	objectName = "?" + objectNamePrefix + RandStr(8)
+	_, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err := bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-credential="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-credential="), Equals, true)
+
+	//Disable VerifyObjectStrictFlag
+	client, err = New(endpoint, accessID, accessKey, AuthVersion(AuthV4), VerifyObjectStrict(false))
+	c.Assert(err, IsNil)
+
+	bucket, err = client.Bucket(bucketNameTest)
+	c.Assert(err, IsNil)
+
+	objectName = "?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F?x-oss-credential="), Equals, true)
+
+	objectName = "?123"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/%3F123?x-oss-credential="), Equals, true)
+
+	objectName = "123?"
+	url, err = bucket.SignURL(objectName, http.MethodGet, 3600)
+	c.Assert(err, IsNil)
+	c.Assert(strings.Contains(url, "/123%3F?x-oss-credential="), Equals, true)
+}
+
+type readerLenStub struct {
+	r io.Reader
+	n int
+}
+
+func (r *readerLenStub) Read(p []byte) (n int, err error) {
+	return r.r.Read(p)
+}
+
+func (r *readerLenStub) Len() int {
+	return r.n
+}
+
+func (s *OssBucketSuite) TestPutObjectWithLimitReaderLen(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(1023)
+	sr := strings.NewReader(objectValue)
+	rlen := &readerLenStub{
+		r: sr,
+		n: 100,
+	}
+	err := s.bucket.PutObject(objectName, rlen)
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), " transport connection broken"), Equals, true)
+	header, err := s.bucket.GetObjectMeta(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchKey")
+
+	rlen.n = 1023
+	sr.Seek(0, io.SeekStart)
+	err = s.bucket.PutObject(objectName, rlen)
+	c.Assert(err, IsNil)
+	header, err = s.bucket.GetObjectMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert("1023", Equals, header.Get("Content-Length"))
 }
