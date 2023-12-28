@@ -1,7 +1,11 @@
 package oss
 
 import (
+	"bytes"
+	"errors"
+	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	. "gopkg.in/check.v1"
@@ -381,4 +385,133 @@ func (s *OssUtilsSuite) TestisVerifyObjectStrict(c *C) {
 	c.Assert(false, Equals, flag)
 	c.Assert(false, Equals, config.VerifyObjectStrict)
 	c.Assert(AuthV1, Equals, config.AuthVersion)
+}
+
+type seekerReaderStub struct {
+	r    io.ReadSeeker
+	bErr bool
+	cErr bool
+	eErr bool
+}
+
+func (r *seekerReaderStub) Read(p []byte) (n int, err error) {
+	return r.r.Read(p)
+}
+
+func (r *seekerReaderStub) Seek(offset int64, whence int) (int64, error) {
+	switch whence {
+	case io.SeekStart:
+		if r.bErr {
+			return 0, errors.New("SeekStart error")
+		}
+	case io.SeekCurrent:
+		if r.cErr {
+			return 0, errors.New("SeekCurrent error")
+		}
+	case io.SeekEnd:
+		if r.eErr {
+			return 0, errors.New("SeekEnd error")
+		}
+	}
+	return r.r.Seek(offset, whence)
+}
+
+func (s *OssUtilsSuite) TestGetReaderLen(c *C) {
+	data := "hello world"
+
+	// bytes.Buffer
+	b := bytes.NewBuffer([]byte(data))
+	n, err := GetReaderLen(b)
+	c.Assert(err, IsNil)
+	c.Assert(int64(len(data)), Equals, n)
+
+	// bytes.Reader
+	br := bytes.NewReader([]byte(data))
+	n, err = GetReaderLen(br)
+	c.Assert(err, IsNil)
+	c.Assert(int64(len(data)), Equals, n)
+
+	// strings.Reader
+	sr := strings.NewReader(data)
+	n, err = GetReaderLen(sr)
+	c.Assert(err, IsNil)
+	c.Assert(int64(len(data)), Equals, n)
+
+	// os.File
+	filePath := RandLowStr(10)
+	CreateFile(filePath, data, c)
+	f, err := os.Open(filePath)
+	c.Assert(err, IsNil)
+	n, err = GetReaderLen(f)
+	c.Assert(err, IsNil)
+	c.Assert(int64(len(data)), Equals, n)
+
+	f.Seek(0, io.SeekEnd)
+	n, err = GetReaderLen(f)
+	c.Assert(err, IsNil)
+	c.Assert(int64(0), Equals, n)
+
+	f.Seek(2, io.SeekStart)
+	n, err = GetReaderLen(f)
+	c.Assert(err, IsNil)
+	c.Assert(int64(len(data)-2), Equals, n)
+
+	//io.LimitedReader
+	b = bytes.NewBuffer([]byte(data))
+	lr := io.LimitReader(b, 3)
+	n, err = GetReaderLen(lr)
+	c.Assert(err, IsNil)
+	c.Assert(int64(3), Equals, n)
+
+	//LimitedReadCloser
+	b = bytes.NewBuffer([]byte(data))
+	lrc := LimitReadCloser(b, 4)
+	n, err = GetReaderLen(lrc)
+	c.Assert(err, IsNil)
+	c.Assert(int64(4), Equals, n)
+
+	// err
+	n, err = GetReaderLen(nil)
+	c.Assert(err, NotNil)
+	c.Assert(err.Error(), Equals, "can't get reader content length,unkown reader type")
+	c.Assert(int64(0), Equals, n)
+
+	f.Seek(0, io.SeekEnd)
+	f.Seek(2, io.SeekCurrent)
+	n, err = GetReaderLen(f)
+	c.Assert(err.Error(), Equals, "can't get reader content length,unkown reader type")
+	c.Assert(int64(0), Equals, n)
+
+	//has not Len() , Seek(), N
+	b = bytes.NewBuffer([]byte(data))
+	bc := io.NopCloser(b)
+	n, err = GetReaderLen(bc)
+	c.Assert(err.Error(), Equals, "can't get reader content length,unkown reader type")
+	c.Assert(int64(0), Equals, n)
+
+	//Seek error
+	sef := &seekerReaderStub{
+		r: f,
+	}
+	sef.Seek(0, io.SeekStart)
+	n, err = GetReaderLen(sef)
+	c.Assert(err, IsNil)
+	c.Assert(int64(len(data)), Equals, n)
+
+	sef.bErr = true
+	n, err = GetReaderLen(sef)
+	c.Assert(err.Error(), Equals, "SeekStart error")
+	c.Assert(int64(0), Equals, n)
+
+	sef.bErr = false
+	sef.cErr = true
+	n, err = GetReaderLen(sef)
+	c.Assert(err.Error(), Equals, "SeekCurrent error")
+	c.Assert(int64(0), Equals, n)
+
+	sef.cErr = false
+	sef.eErr = true
+	n, err = GetReaderLen(sef)
+	c.Assert(err.Error(), Equals, "SeekEnd error")
+	c.Assert(int64(0), Equals, n)
 }

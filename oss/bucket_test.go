@@ -6646,3 +6646,40 @@ func (s *OssBucketSuite) TestVerifyObjectStrictAuthV4(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(strings.Contains(url, "/123%3F?x-oss-credential="), Equals, true)
 }
+
+type readerLenStub struct {
+	r io.Reader
+	n int
+}
+
+func (r *readerLenStub) Read(p []byte) (n int, err error) {
+	return r.r.Read(p)
+}
+
+func (r *readerLenStub) Len() int {
+	return r.n
+}
+
+func (s *OssBucketSuite) TestPutObjectWithLimitReaderLen(c *C) {
+	objectName := objectNamePrefix + RandStr(8)
+	objectValue := RandStr(1023)
+	sr := strings.NewReader(objectValue)
+	rlen := &readerLenStub{
+		r: sr,
+		n: 100,
+	}
+	err := s.bucket.PutObject(objectName, rlen)
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), " transport connection broken"), Equals, true)
+	header, err := s.bucket.GetObjectMeta(objectName)
+	c.Assert(err, NotNil)
+	c.Assert(err.(ServiceError).Code, Equals, "NoSuchKey")
+
+	rlen.n = 1023
+	sr.Seek(0, io.SeekStart)
+	err = s.bucket.PutObject(objectName, rlen)
+	c.Assert(err, IsNil)
+	header, err = s.bucket.GetObjectMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert("1023", Equals, header.Get("Content-Length"))
+}

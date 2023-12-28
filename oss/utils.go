@@ -520,7 +520,10 @@ func GetReaderLen(reader io.Reader) (int64, error) {
 			if err != nil {
 				return 0, err
 			}
-			return endOffset - curOffset, nil
+			n := endOffset - curOffset
+			if n >= 0 {
+				return n, nil
+			}
 		}
 		//
 		err = fmt.Errorf("can't get reader content length,unkown reader type")
