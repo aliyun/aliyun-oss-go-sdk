@@ -1,5 +1,11 @@
 # ChangeLog - Aliyun OSS SDK for Go
 
+## 版本号：v3.0.2 日期：2023-12-28
+### 变更内容
+- 增加：presign 支持 oss v4签名规则
+- 增加：credentials provider supports GetCredentialsE interface
+- 修改：fix GetReaderLen
+
 ## 版本号：v2.2.10 日期：2023-10-30
 ### 变更内容
 - 增加：support return callback body.
