@@ -1693,3 +1693,15 @@ type ResponseHeaderRuleFilters struct {
 type ResponseHeaderRuleHeaders struct {
 	Header []string `xml:"Header,omitempty"`
 }
+
+// GetBucketArchiveDirectReadResult define config for get bucket's archive direct read
+type GetBucketArchiveDirectReadResult BucketArchiveDirectReadXml
+
+// PutBucketArchiveDirectRead define the xml of bucket's archive direct read
+type PutBucketArchiveDirectRead BucketArchiveDirectReadXml
+
+// BucketArchiveDirectReadXml define get bucket's archive direct read
+type BucketArchiveDirectReadXml struct {
+	XMLName xml.Name `xml:"ArchiveDirectReadConfiguration"`
+	Enabled bool     `xml:"Enabled"`
+}
