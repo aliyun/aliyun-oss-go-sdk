@@ -354,21 +354,22 @@ type GetBucketInfoResult struct {
 
 // BucketInfo defines Bucket information
 type BucketInfo struct {
-	XMLName                xml.Name  `xml:"Bucket"`
-	Name                   string    `xml:"Name"`                     // Bucket name
-	AccessMonitor          string    `xml:"AccessMonitor"`            // Bucket Access Monitor
-	Location               string    `xml:"Location"`                 // Bucket datacenter
-	CreationDate           time.Time `xml:"CreationDate"`             // Bucket creation time
-	ExtranetEndpoint       string    `xml:"ExtranetEndpoint"`         // Bucket external endpoint
-	IntranetEndpoint       string    `xml:"IntranetEndpoint"`         // Bucket internal endpoint
-	ACL                    string    `xml:"AccessControlList>Grant"`  // Bucket ACL
-	RedundancyType         string    `xml:"DataRedundancyType"`       // Bucket DataRedundancyType
-	Owner                  Owner     `xml:"Owner"`                    // Bucket owner
-	StorageClass           string    `xml:"StorageClass"`             // Bucket storage class
-	SseRule                SSERule   `xml:"ServerSideEncryptionRule"` // Bucket ServerSideEncryptionRule
-	Versioning             string    `xml:"Versioning"`               // Bucket Versioning
-	TransferAcceleration   string    `xml:"TransferAcceleration"`     // bucket TransferAcceleration
-	CrossRegionReplication string    `xml:"CrossRegionReplication"`   // bucket CrossRegionReplication
+	XMLName                    xml.Name  `xml:"Bucket"`
+	Name                       string    `xml:"Name"`                       // Bucket name
+	AccessMonitor              string    `xml:"AccessMonitor"`              // Bucket Access Monitor
+	Location                   string    `xml:"Location"`                   // Bucket datacenter
+	CreationDate               time.Time `xml:"CreationDate"`               // Bucket creation time
+	ExtranetEndpoint           string    `xml:"ExtranetEndpoint"`           // Bucket external endpoint
+	IntranetEndpoint           string    `xml:"IntranetEndpoint"`           // Bucket internal endpoint
+	ACL                        string    `xml:"AccessControlList>Grant"`    // Bucket ACL
+	RedundancyType             string    `xml:"DataRedundancyType"`         // Bucket DataRedundancyType
+	Owner                      Owner     `xml:"Owner"`                      // Bucket owner
+	StorageClass               string    `xml:"StorageClass"`               // Bucket storage class
+	SseRule                    SSERule   `xml:"ServerSideEncryptionRule"`   // Bucket ServerSideEncryptionRule
+	Versioning                 string    `xml:"Versioning"`                 // Bucket Versioning
+	TransferAcceleration       string    `xml:"TransferAcceleration"`       // bucket TransferAcceleration
+	CrossRegionReplication     string    `xml:"CrossRegionReplication"`     // bucket CrossRegionReplication
+	ReservedCapacityInstanceId string    `xml:"ReservedCapacityInstanceId"` // bucket ReservedCapacityInstanceId
 }
 
 type SSERule struct {
@@ -840,10 +841,11 @@ func marshalDeleteObjectToXml(dxml deleteXML) string {
 
 // createBucketConfiguration defines the configuration for creating a bucket.
 type createBucketConfiguration struct {
-	XMLName            xml.Name           `xml:"CreateBucketConfiguration"`
-	StorageClass       StorageClassType   `xml:"StorageClass,omitempty"`
-	DataRedundancyType DataRedundancyType `xml:"DataRedundancyType,omitempty"`
-	ObjectHashFunction ObjecthashFuncType `xml:"ObjectHashFunction,omitempty"`
+	XMLName                    xml.Name           `xml:"CreateBucketConfiguration"`
+	StorageClass               StorageClassType   `xml:"StorageClass,omitempty"`
+	DataRedundancyType         DataRedundancyType `xml:"DataRedundancyType,omitempty"`
+	ObjectHashFunction         ObjecthashFuncType `xml:"ObjectHashFunction,omitempty"`
+	ReservedCapacityInstanceId string             `xml:"ReservedCapacityInstanceId,omitempty"`
 }
 
 // LiveChannelConfiguration defines the configuration for live-channel
@@ -1003,6 +1005,11 @@ type BucketStat struct {
 	ColdArchiveStorage          int64    `xml:"ColdArchiveStorage"`
 	ColdArchiveRealStorage      int64    `xml:"ColdArchiveRealStorage"`
 	ColdArchiveObjectCount      int64    `xml:"ColdArchiveObjectCount"`
+	ReservedCapacityStorage     int64    `xml:"ReservedCapacityStorage"`
+	ReservedCapacityObjectCount int64    `xml:"ReservedCapacityObjectCount"`
+	DeepColdArchiveStorage      int64    `xml:"DeepColdArchiveStorage"`
+	DeepColdArchiveRealStorage  int64    `xml:"DeepColdArchiveRealStorage"`
+	DeepColdArchiveObjectCount  int64    `xml:"DeepColdArchiveObjectCount"`
 }
 type GetBucketStatResult BucketStat
 
@@ -1692,4 +1699,66 @@ type ResponseHeaderRuleFilters struct {
 
 type ResponseHeaderRuleHeaders struct {
 	Header []string `xml:"Header,omitempty"`
+}
+
+// CreateReservedCapacity defines create the reserved capacity xml
+type CreateReservedCapacity CreateReservedCapacityXML
+
+// UpdateReservedCapacity defines create the reserved capacity xml
+type UpdateReservedCapacity UpdateReservedCapacityXML
+
+// GetReservedCapacityResult get the reserved capacity result
+type GetReservedCapacityResult GetReservedCapacityXML
+
+// ListReservedCapacityResult list of the reserved capacity result
+type ListReservedCapacityResult ListReservedCapacityXML
+
+// ListBucketWithReservedCapacityResult the list of buckets created on the reserved capacity
+type ListBucketWithReservedCapacityResult ListBucketWithReservedCapacityXml
+
+// CreateReservedCapacityXML defines create the reserved capacity
+type CreateReservedCapacityXML struct {
+	XMLName            xml.Name `xml:"ReservedCapacityConfiguration"`
+	Name               string   `xml:"Name"`
+	DataRedundancyType string   `xml:"DataRedundancyType,omitempty"`
+	ReservedCapacity   int64    `xml:"ReservedCapacity,omitempty"`
+}
+
+// UpdateReservedCapacityXML defines update the reserved capacity
+type UpdateReservedCapacityXML struct {
+	XMLName              xml.Name `xml:"ReservedCapacityConfiguration"`
+	Status               string   `xml:"Status"`
+	ReservedCapacity     int64    `xml:"ReservedCapacity,omitempty"`
+	AutoExpansionSize    int64    `xml:"AutoExpansionSize,omitempty"`
+	AutoExpansionMaxSize int64    `xml:"AutoExpansionMaxSize,omitempty"`
+}
+
+// GetReservedCapacityXML defines get the reserved capacity
+type GetReservedCapacityXML struct {
+	XMLName              xml.Name `xml:"ReservedCapacityRecord"`
+	InstanceId           string   `xml:"InstanceId"`
+	Name                 string   `xml:"Name"`
+	Owner                Owner    `xml:"Owner"`
+	Region               string   `xml:"Region"`
+	Status               string   `xml:"Status"`
+	DataRedundancyType   string   `xml:"DataRedundancyType"`
+	ReservedCapacity     int64    `xml:"ReservedCapacity"`
+	AutoExpansionSize    int64    `xml:"AutoExpansionSize,omitempty"`
+	AutoExpansionMaxSize int64    `xml:"AutoExpansionMaxSize,omitempty"`
+	CreateTime           int64    `xml:"CreateTime"`
+	LastModifyTime       int64    `xml:"LastModifyTime"`
+	EnableTime           int64    `xml:"EnableTime,omitempty"`
+}
+
+// ListReservedCapacityXML defines list of the reserved capacity
+type ListReservedCapacityXML struct {
+	XMLName                xml.Name                 `xml:"ReservedCapacityRecordList"`
+	ReservedCapacityRecord []GetReservedCapacityXML `xml:"ReservedCapacityRecord,omitempty"`
+}
+
+// ListBucketWithReservedCapacityXml defines the list of buckets created on the reserved capacity
+type ListBucketWithReservedCapacityXml struct {
+	XMLName    xml.Name `xml:"ReservedCapacityBucketList"`
+	InstanceId string   `xml:"InstanceId"`
+	BucketList []string `xml:"BucketList>Bucket,omitempty"`
 }
