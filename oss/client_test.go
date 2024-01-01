@@ -5881,3 +5881,46 @@ func (s *OssClientSuite) TestBucketResponseHeader(c *C) {
 	c.Assert(err, IsNil)
 	client.DeleteBucket(bucketName)
 }
+
+func (s *OssClientSuite) TestBucketHttpsConfig(c *C) {
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + "-https-" + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	_, err = client.GetBucketHttpsConfig(bucketName)
+	c.Assert(err, NotNil)
+	c.Assert(strings.Contains(err.Error(), "The specified bucket does not have a https configuration."), Equals, true)
+
+	config := PutBucketHttpsConfig{
+		TLS: HttpsConfigTLS{
+			Enable:     true,
+			TLSVersion: []string{"TLSv1.2", "TLSv1.3"},
+		},
+	}
+	err = client.PutBucketHttpsConfig(bucketName, config)
+	c.Assert(err, IsNil)
+
+	result, err := client.GetBucketHttpsConfig(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(result.TLS.Enable, Equals, true)
+	c.Assert(result.TLS.TLSVersion[0], Equals, "TLSv1.2")
+	c.Assert(result.TLS.TLSVersion[1], Equals, "TLSv1.3")
+
+	config = PutBucketHttpsConfig{
+		TLS: HttpsConfigTLS{
+			Enable: false,
+		},
+	}
+	err = client.PutBucketHttpsConfig(bucketName, config)
+	c.Assert(err, IsNil)
+
+	result, err = client.GetBucketHttpsConfig(bucketName)
+	c.Assert(err, IsNil)
+	c.Assert(result.TLS.Enable, Equals, false)
+
+	client.DeleteBucket(bucketName)
+}
