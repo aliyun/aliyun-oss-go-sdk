@@ -526,7 +526,12 @@ func (bucket Bucket) DeleteMultipleObjectsXml(xmlData string, options ...Option)
 	options = append(options, ContentMD5(b64))
 	params := map[string]interface{}{}
 	params["delete"] = nil
-	params["encoding-type"] = "url"
+	isOptSet, encoding, _ := IsOptionSet(options, "encoding-type")
+	if isOptSet {
+		params["encoding-type"] = encoding.(string)
+	} else {
+		params["encoding-type"] = "url"
+	}
 	resp, err := bucket.doInner("POST", "", params, options, buffer, nil)
 	if err != nil {
 		return "", err

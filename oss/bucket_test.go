@@ -2080,6 +2080,21 @@ func (s *OssBucketSuite) TestDeleteObjectsNormal(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(len(ress.Objects), Equals, 0)
 
+	key = objectNamePrefix + "\f"
+	err = s.bucket.PutObject(key, strings.NewReader("value \f"))
+	c.Assert(err, IsNil)
+
+	key = objectNamePrefix + "\v"
+	err = s.bucket.PutObject(key, strings.NewReader("value \v"))
+	c.Assert(err, IsNil)
+
+	_, err = s.bucket.DeleteObjects([]string{url.QueryEscape(objectNamePrefix + "\f"), url.QueryEscape(objectNamePrefix + "\v")}, EncodingType("url2"))
+	c.Assert(err, IsNil)
+
+	ress, err = s.bucket.ListObjects(Prefix(objectNamePrefix))
+	c.Assert(err, IsNil)
+	c.Assert(len(ress.Objects), Equals, 0)
+
 	key = "\x01\x02\x03\x04\x05\x06\a\b\t\n\v\f\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"
 	err = s.bucket.PutObject(key, strings.NewReader("value test 0x20 \v"))
 	c.Assert(err, IsNil)
@@ -4886,6 +4901,55 @@ func (s *OssBucketSuite) TestVersioningBatchDeleteDefaultVersionObjects(c *C) {
 	versionIds = []DeleteObject{{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
 		{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
 	deleteResult, err = bucket.DeleteObjectVersions(versionIds)
+	c.Assert(err, IsNil)
+
+	err = bucket.PutObject(objectName1, strings.NewReader(contextV1), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV1 = GetVersionId(respHeader)
+
+	err = bucket.PutObject(objectName2, strings.NewReader(contextV2), GetResponseHeader(&respHeader))
+	c.Assert(err, IsNil)
+	versionIdV2 = GetVersionId(respHeader)
+
+	//batch delete objects
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: ""},
+		{Key: objectName2, VersionId: ""}}
+	deleteResult, err = bucket.DeleteObjectVersions(versionIds, EncodingType("url2"))
+	c.Assert(err, IsNil)
+
+	// check delete detail info:key
+	deleteDetailMap = map[string]DeletedKeyInfo{}
+	deleteDetailMap[deleteResult.DeletedObjectsDetail[0].Key] = deleteResult.DeletedObjectsDetail[0]
+	deleteDetailMap[deleteResult.DeletedObjectsDetail[1].Key] = deleteResult.DeletedObjectsDetail[1]
+	keyInfo1, ok = deleteDetailMap[objectName1]
+	c.Assert(ok, Equals, true)
+	c.Assert(keyInfo1.Key, Equals, objectName1)
+	c.Assert(keyInfo1.VersionId, Equals, "")
+	c.Assert(keyInfo1.DeleteMarker, Equals, true)
+	c.Assert(keyInfo1.DeleteMarkerVersionId != versionIdV1, Equals, true)
+
+	keyInfo2, ok = deleteDetailMap[objectName2]
+	c.Assert(ok, Equals, true)
+	c.Assert(keyInfo2.Key, Equals, objectName2)
+	c.Assert(keyInfo2.VersionId, Equals, "")
+	c.Assert(keyInfo2.DeleteMarker, Equals, true)
+	c.Assert(keyInfo2.DeleteMarkerVersionId != versionIdV2, Equals, true)
+
+	// list bucket versions
+	listResult, err = bucket.ListObjectVersions()
+	c.Assert(err, IsNil)
+	c.Assert(len(listResult.ObjectDeleteMarkers), Equals, 2)
+	c.Assert(len(listResult.ObjectVersions), Equals, 2)
+
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: versionIdV1},
+		{Key: objectName2, VersionId: versionIdV2}}
+	deleteResult, err = bucket.DeleteObjectVersions(versionIds, EncodingType("url2"))
+	c.Assert(err, IsNil)
+
+	// delete deleteMark object
+	versionIds = []DeleteObject{{Key: objectName1, VersionId: keyInfo1.DeleteMarkerVersionId},
+		{Key: objectName2, VersionId: keyInfo2.DeleteMarkerVersionId}}
+	deleteResult, err = bucket.DeleteObjectVersions(versionIds, EncodingType("url2"))
 	c.Assert(err, IsNil)
 
 	ForceDeleteBucket(client, bucketName, c)
