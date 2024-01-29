@@ -197,17 +197,17 @@ func (bucket Bucket) UploadPartCopy(imur InitiateMultipartUploadResult, srcBucke
 func (bucket Bucket) CompleteMultipartUpload(imur InitiateMultipartUploadResult,
 	parts []UploadPart, options ...Option) (CompleteMultipartUploadResult, error) {
 	var out CompleteMultipartUploadResult
-
-	sort.Sort(UploadParts(parts))
-	cxml := completeMultipartUploadXML{}
-	cxml.Part = parts
-	bs, err := xml.Marshal(cxml)
-	if err != nil {
-		return out, err
-	}
 	buffer := new(bytes.Buffer)
-	buffer.Write(bs)
-
+	if len(parts) > 0 {
+		sort.Sort(UploadParts(parts))
+		cxml := completeMultipartUploadXML{}
+		cxml.Part = parts
+		bs, err := xml.Marshal(cxml)
+		if err != nil {
+			return out, err
+		}
+		buffer.Write(bs)
+	}
 	params := map[string]interface{}{}
 	params["uploadId"] = imur.UploadID
 	resp, err := bucket.do("POST", imur.Key, params, options, buffer, nil)

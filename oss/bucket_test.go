@@ -5318,6 +5318,60 @@ func (s *OssBucketSuite) TestVersioningCompleteMultipartUpload(c *C) {
 	ForceDeleteBucket(client, bucketName, c)
 }
 
+func (s *OssBucketSuite) TestCompleteMultipartUploadWithCompleteAll(c *C) {
+	// create a bucket with default proprety
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	bucketName := bucketNamePrefix + RandLowStr(6)
+	err = client.CreateBucket(bucketName)
+	c.Assert(err, IsNil)
+
+	bucket, err := client.Bucket(bucketName)
+
+	objectName := objectNamePrefix + RandStr(8)
+	var fileName = "test-file-" + RandStr(8)
+	content := RandStr(500 * 1024)
+	CreateFile(fileName, content, c)
+
+	chunks, err := SplitFileByPartNum(fileName, 3)
+	c.Assert(err, IsNil)
+
+	options := []Option{
+		Expires(futureDate), Meta("my", "myprop"),
+	}
+
+	fd, err := os.Open(fileName)
+	c.Assert(err, IsNil)
+	defer fd.Close()
+
+	imur, err := bucket.InitiateMultipartUpload(objectName, options...)
+	c.Assert(err, IsNil)
+	var parts []UploadPart
+	for _, chunk := range chunks {
+		fd.Seek(chunk.Offset, os.SEEK_SET)
+		part, err := bucket.UploadPart(imur, fd, chunk.Size, chunk.Number)
+		c.Assert(err, IsNil)
+		parts = append(parts, part)
+	}
+
+	var respHeader http.Header
+	_, err = bucket.CompleteMultipartUpload(imur, parts, GetResponseHeader(&respHeader), CompleteAll("yes"))
+	c.Assert(err, NotNil)
+
+	_, err = bucket.CompleteMultipartUpload(imur, nil, GetResponseHeader(&respHeader), CompleteAll("yes"))
+	c.Assert(err, IsNil)
+
+	meta, err := bucket.GetObjectDetailedMeta(objectName)
+	c.Assert(err, IsNil)
+	c.Assert(meta.Get("X-Oss-Meta-My"), Equals, "myprop")
+	c.Assert(meta.Get("Expires"), Equals, futureDate.Format(http.TimeFormat))
+	c.Assert(meta.Get("X-Oss-Object-Type"), Equals, "Multipart")
+	os.Remove(fileName)
+	bucket.DeleteObject(objectName)
+	ForceDeleteBucket(client, bucketName, c)
+}
+
 func (s *OssBucketSuite) TestVersioningUploadPartCopy(c *C) {
 	// create a bucket with default proprety
 	client, err := New(endpoint, accessID, accessKey)
