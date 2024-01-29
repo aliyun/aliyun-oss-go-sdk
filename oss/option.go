@@ -237,6 +237,11 @@ func RequestPayer(payerType PayerType) Option {
 	return setHeader(HTTPHeaderOssRequester, strings.ToLower(string(payerType)))
 }
 
+// CompleteAll is an option to set X-Oss-Complete-All header
+func CompleteAll(value string) Option {
+	return setHeader(HTTPHeaderOssCompleteAll, value)
+}
+
 // RequestPayerParam is an option to set payer who pay for the request
 func RequestPayerParam(payerType PayerType) Option {
 	return addParam(strings.ToLower(HTTPHeaderOssRequester), strings.ToLower(string(payerType)))
