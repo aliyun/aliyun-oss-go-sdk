@@ -175,7 +175,9 @@ func verifyLifecycleRules(rules []LifecycleRule) error {
 		if rule.Status != "Enabled" && rule.Status != "Disabled" {
 			return fmt.Errorf("invalid rule, the value of status must be Enabled or Disabled")
 		}
-
+		if len(rule.Prefix) != 0 && rule.Prefix[0] == '/' {
+			return fmt.Errorf("invalid rule, the value of prefix can't start with /")
+		}
 		abortMPU := rule.AbortMultipartUpload
 		if abortMPU != nil {
 			if (abortMPU.Days != 0 && abortMPU.CreatedBeforeDate != "") || (abortMPU.Days == 0 && abortMPU.CreatedBeforeDate == "") {
@@ -1669,10 +1671,10 @@ type RegionInfoList struct {
 	Regions []RegionInfo `xml:"RegionInfo"`
 }
 
-//PutBucketResponseHeader define the xml of bucket's response header config
+// PutBucketResponseHeader define the xml of bucket's response header config
 type PutBucketResponseHeader ResponseHeaderXml
 
-//GetBucketResponseHeaderResult define the xml of bucket's response header result
+// GetBucketResponseHeaderResult define the xml of bucket's response header result
 type GetBucketResponseHeaderResult ResponseHeaderXml
 
 type ResponseHeaderXml struct {
