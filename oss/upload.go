@@ -43,11 +43,15 @@ func (bucket Bucket) UploadFile(objectKey, filePath string, partSize int64, opti
 }
 
 func getUploadCpFilePath(cpConf *cpConfig, srcFile, destBucket, destObject string) string {
-	if cpConf.FilePath == "" && cpConf.DirPath != "" {
+	if cpConf.FilePath == "" {
 		dest := fmt.Sprintf("oss://%v/%v", destBucket, destObject)
 		absPath, _ := filepath.Abs(srcFile)
 		cpFileName := getCpFileName(absPath, dest, "")
-		cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
+		if cpConf.DirPath != "" {
+			cpConf.FilePath = cpConf.DirPath + string(os.PathSeparator) + cpFileName
+		} else {
+			cpConf.FilePath = cpFileName
+		}
 	}
 	return cpConf.FilePath
 }
