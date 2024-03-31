@@ -253,8 +253,10 @@ type WebsiteXML struct {
 
 // IndexDocument defines the index page info
 type IndexDocument struct {
-	XMLName xml.Name `xml:"IndexDocument"`
-	Suffix  string   `xml:"Suffix"` // The file name for the index page
+	XMLName       xml.Name `xml:"IndexDocument"`
+	Suffix        string   `xml:"Suffix"`        // The file name for the index page
+	SupportSubDir *bool    `xml:"SupportSubDir"` // Specifies whether to search for the default homepage of a subfolder when you access the subfolder.
+	Type          *int     `xml:"Type"`          // The operation type when the default homepage of a subfolder doesn't exist, it has 0, 1, 2
 }
 
 // ErrorDocument defines the 404 error page info
@@ -275,7 +277,8 @@ type RoutingRule struct {
 // Condition defines codition in the RoutingRule
 type Condition struct {
 	XMLName                     xml.Name        `xml:"Condition"`
-	KeyPrefixEquals             string          `xml:"KeyPrefixEquals,omitempty"`             // Matching objcet prefix
+	KeyPrefixEquals             string          `xml:"KeyPrefixEquals,omitempty"`             // Matching object prefix
+	KeySuffixEquals             string          `xml:"KeySuffixEquals,omitempty"`             // Matching object suffix
 	HTTPErrorCodeReturnedEquals int             `xml:"HttpErrorCodeReturnedEquals,omitempty"` // The rule is for Accessing to the specified object
 	IncludeHeader               []IncludeHeader `xml:"IncludeHeader"`                         // The rule is for request which include header
 }
