@@ -6,6 +6,12 @@
 
 ## [README in English](https://github.com/aliyun/aliyun-oss-go-sdk/blob/master/README.md)
 
+## 关于 OSS SDK for Go V2
+> - OSS SDK for Go V2([alibabacloud-oss-go-sdk-v2](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2)) 已发布, 是对V1（aliyun-oss-go-sdk）代码库的重大改写。
+> - V2是一个全新的版本，简化了底层操作例如身份验证、自动请求重试及错误处理等；提供了灵活友好的参数配置以及丰富的高级接口，例如分页器、传输管理器 、File-like接口等，全面提升了开发效率和体验。
+> - 开始使用V2，请参见 [开发者指南](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2/blob/master/DEVGUIDE-CN.md)。
+> - 从V1升级为V2，请参见 [迁移指南](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2/blob/master/DEVGUIDE-CN.md#%E8%BF%81%E7%A7%BB%E6%8C%87%E5%8D%97)。
+
 ## 关于
 > - 此Go SDK基于[阿里云对象存储服务](http://www.aliyun.com/product/oss/)官方API构建。
 > - 阿里云对象存储（Object Storage Service，简称OSS），是阿里云对外提供的海量，安全，低成本，高可靠的云存储服务。
