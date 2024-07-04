@@ -6,6 +6,12 @@
 
 ## [README in Chinese](https://github.com/aliyun/aliyun-oss-go-sdk/blob/master/README-CN.md)
 
+## About OSS SDK for Go V2
+> - OSS SDK for Go V2([alibabacloud-oss-go-sdk-v2](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2)) has been released, it is a major rewrite of OSS SDK for Go V1 (aliyun-oss-go-sdk).
+> - V2 simplifies underlying operations such as identification authentication, automatic retry of failed requests, and error handling. It provides flexible parameter configuration methods and rich advanced operations, such as paginator, transmission managers, and File-like operations. This comprehensively improves development efficiency and experience.
+> - How to get started with V2, visit [Developer Guide](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2/blob/master/DEVGUIDE.md).
+> - How to migrate to V2, visit [Migration Guide](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2/blob/master/DEVGUIDE.md#migration-guide).
+
 ## About
 > - This Go SDK is based on the official APIs of [Alibaba Cloud OSS](http://www.aliyun.com/product/oss/).
 > - Alibaba Cloud Object Storage Service (OSS) is a cloud storage service provided by Alibaba Cloud, featuring massive capacity, security, a low cost, and high reliability. 
