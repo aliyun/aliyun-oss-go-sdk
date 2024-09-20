@@ -33,5 +33,10 @@ func BucketStatSample() {
 	fmt.Println("Bucket Stat Cold Archive Storage:", stat.ColdArchiveStorage)
 	fmt.Println("Bucket Stat Cold Archive Real Storage:", stat.ColdArchiveRealStorage)
 	fmt.Println("Bucket Stat Cold Archive Object Count:", stat.ColdArchiveObjectCount)
+	fmt.Println("Bucket Stat Cold Archive Reserved Capacity Storage:", stat.ReservedCapacityStorage)
+	fmt.Println("Bucket Stat Cold Archive Reserved Capacity Object Count:", stat.ReservedCapacityObjectCount)
+	fmt.Println("Bucket Stat Cold Archive Deep Cold Archive Storage:", stat.DeepColdArchiveStorage)
+	fmt.Println("Bucket Stat Cold Archive Deep Cold Archive Real Storage:", stat.DeepColdArchiveRealStorage)
+	fmt.Println("Bucket Stat Cold Archive Deep Cold Archive Object Count:", stat.DeepColdArchiveObjectCount)
 	fmt.Println("BucketStatSample completed")
 }
