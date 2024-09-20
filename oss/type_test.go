@@ -2038,3 +2038,30 @@ func (s *OssTypeSuite) TestPutBucketCORS(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(string(bs), Equals, "<CORSConfiguration><CORSRule><AllowedOrigin>*</AllowedOrigin><AllowedMethod>PUT</AllowedMethod><AllowedMethod>GET</AllowedMethod><AllowedMethod>POST</AllowedMethod><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><CORSRule><AllowedOrigin>http://www.a.com</AllowedOrigin><AllowedOrigin>http://www.b.com</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedHeader>Authorization</AllowedHeader><ExposeHeader>x-oss-test</ExposeHeader><ExposeHeader>x-oss-test1</ExposeHeader><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><ResponseVary>true</ResponseVary></CORSConfiguration>")
 }
+
+func (s *OssTypeSuite) TestPutBucketArchiveDirectRead(c *C) {
+	var put PutBucketArchiveDirectRead
+	put.Enabled = true
+	xmlData, err := xml.Marshal(put)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData), Equals, "<ArchiveDirectReadConfiguration><Enabled>true</Enabled></ArchiveDirectReadConfiguration>")
+
+	var put1 PutBucketArchiveDirectRead
+	put1.Enabled = false
+	xmlData1, err := xml.Marshal(put1)
+	c.Assert(err, IsNil)
+	c.Assert(string(xmlData1), Equals, "<ArchiveDirectReadConfiguration><Enabled>false</Enabled></ArchiveDirectReadConfiguration>")
+}
+
+func (s *OssTypeSuite) TestGetBucketArchiveDirectReadResult(c *C) {
+	var repResult GetBucketArchiveDirectReadResult
+	xmlData := "<ArchiveDirectReadConfiguration><Enabled>true</Enabled></ArchiveDirectReadConfiguration>"
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Enabled, Equals, true)
+
+	xmlData = "<ArchiveDirectReadConfiguration><Enabled>false</Enabled></ArchiveDirectReadConfiguration>"
+	err = xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.Enabled, Equals, false)
+}

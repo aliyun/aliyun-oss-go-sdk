@@ -5881,3 +5881,44 @@ func (s *OssClientSuite) TestBucketResponseHeader(c *C) {
 	c.Assert(err, IsNil)
 	client.DeleteBucket(bucketName)
 }
+
+// TestBucketArchiveDirectRead
+func (s *OssClientSuite) TestBucketArchiveDirectRead(c *C) {
+	var bucketNameTest = bucketNamePrefix + "-acc-" + RandLowStr(6)
+	client, err := New(endpoint, accessID, accessKey)
+	c.Assert(err, IsNil)
+
+	err = client.CreateBucket(bucketNameTest)
+	c.Assert(err, IsNil)
+	time.Sleep(3 * time.Second)
+
+	res, err := client.GetBucketArchiveDirectRead(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.Enabled, Equals, false)
+
+	var req PutBucketArchiveDirectRead
+	req.Enabled = true
+	err = client.PutBucketArchiveDirectRead(bucketNameTest, req)
+	c.Assert(err, IsNil)
+
+	time.Sleep(3 * time.Second)
+
+	res, err = client.GetBucketArchiveDirectRead(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.Enabled, Equals, true)
+
+	req.Enabled = false
+	err = client.PutBucketArchiveDirectRead(bucketNameTest, req)
+	c.Assert(err, IsNil)
+
+	res, err = client.GetBucketArchiveDirectRead(bucketNameTest)
+	c.Assert(err, IsNil)
+	c.Assert(res.Enabled, Equals, false)
+
+	err = client.PutBucketArchiveDirectRead("bucket-not-exist", req)
+	c.Assert(err, NotNil)
+
+	_, err = client.GetBucketArchiveDirectRead("bucket-not-exist")
+	c.Assert(err, NotNil)
+
+}

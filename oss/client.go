@@ -2666,6 +2666,70 @@ func (client Client) DescribeRegionsXml(options ...Option) (string, error) {
 	return out, err
 }
 
+// PutBucketArchiveDirectRead set bucket's archive direct read
+// bucketName    the bucket name.
+// archiveDirectRead the archive direct read content in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketArchiveDirectRead(bucketName string, archiveDirectRead PutBucketArchiveDirectRead, options ...Option) error {
+	bs, err := xml.Marshal(archiveDirectRead)
+	if err != nil {
+		return err
+	}
+	err = client.PutBucketArchiveDirectReadXml(bucketName, string(bs), options...)
+	return err
+}
+
+// PutBucketArchiveDirectReadXml set bucket's archive direct read
+// bucketName    the bucket name.
+// xmlData		 the archive direct read content in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutBucketArchiveDirectReadXml(bucketName, xmlData string, options ...Option) error {
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlData))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	params := map[string]interface{}{}
+	params["bucketArchiveDirectRead"] = nil
+	resp, err := client.do("PUT", bucketName, params, nil, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetBucketArchiveDirectRead get bucket's archive direct read
+// bucketName    the bucket name.
+// GetBucketStyleResult  the style result of bucket.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketArchiveDirectRead(bucketName string, options ...Option) (GetBucketArchiveDirectReadResult, error) {
+	var out GetBucketArchiveDirectReadResult
+	body, err := client.GetBucketArchiveDirectReadXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketArchiveDirectReadXml get bucket's archive direct read
+// bucketName    the bucket name.
+// string  the style result of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketArchiveDirectReadXml(bucketName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["bucketArchiveDirectRead"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
 // LimitUploadSpeed set upload bandwidth limit speed,default is 0,unlimited
 // upSpeed KB/s, 0 is unlimited,default is 0
 // error it's nil if success, otherwise failure
