@@ -2038,3 +2038,51 @@ func (s *OssTypeSuite) TestPutBucketCORS(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(string(bs), Equals, "<CORSConfiguration><CORSRule><AllowedOrigin>*</AllowedOrigin><AllowedMethod>PUT</AllowedMethod><AllowedMethod>GET</AllowedMethod><AllowedMethod>POST</AllowedMethod><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><CORSRule><AllowedOrigin>http://www.a.com</AllowedOrigin><AllowedOrigin>http://www.b.com</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedHeader>Authorization</AllowedHeader><ExposeHeader>x-oss-test</ExposeHeader><ExposeHeader>x-oss-test1</ExposeHeader><MaxAgeSeconds>100</MaxAgeSeconds></CORSRule><ResponseVary>true</ResponseVary></CORSConfiguration>")
 }
+
+func (s *OssTypeSuite) TestGetBucketHttpsConfigResult(c *C) {
+	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+<HttpsConfiguration>
+  <TLS>
+    <Enable>true</Enable>
+    <TLSVersion>TLSv1.2</TLSVersion>
+    <TLSVersion>TLSv1.3</TLSVersion>
+  </TLS>
+</HttpsConfiguration>`
+	var repResult GetBucketHttpsConfigResult
+	err := xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.TLS.Enable, Equals, true)
+	c.Assert(repResult.TLS.TLSVersion[0], Equals, "TLSv1.2")
+	c.Assert(repResult.TLS.TLSVersion[1], Equals, "TLSv1.3")
+
+	xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<HttpsConfiguration>
+ <TLS>
+   <Enable>false</Enable>
+ </TLS>
+</HttpsConfiguration>`
+	err = xmlUnmarshal(strings.NewReader(xmlData), &repResult)
+	c.Assert(err, IsNil)
+	c.Assert(repResult.TLS.Enable, Equals, false)
+}
+
+func (s *OssTypeSuite) TestPutBucketHttpsConfig(c *C) {
+	config := PutBucketHttpsConfig{
+		TLS: HttpsConfigTLS{
+			Enable:     true,
+			TLSVersion: []string{"TLSv1.2", "TLSv1.3"},
+		},
+	}
+	bs, err := xml.Marshal(config)
+	c.Assert(err, IsNil)
+	c.Assert(string(bs), Equals, "<HttpsConfiguration><TLS><Enable>true</Enable><TLSVersion>TLSv1.2</TLSVersion><TLSVersion>TLSv1.3</TLSVersion></TLS></HttpsConfiguration>")
+
+	config = PutBucketHttpsConfig{
+		TLS: HttpsConfigTLS{
+			Enable: false,
+		},
+	}
+	bs, err = xml.Marshal(config)
+	c.Assert(err, IsNil)
+	c.Assert(string(bs), Equals, "<HttpsConfiguration><TLS><Enable>false</Enable></TLS></HttpsConfiguration>")
+}

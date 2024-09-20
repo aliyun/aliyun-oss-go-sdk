@@ -1693,3 +1693,19 @@ type ResponseHeaderRuleFilters struct {
 type ResponseHeaderRuleHeaders struct {
 	Header []string `xml:"Header,omitempty"`
 }
+
+// PutBucketHttpsConfig define the xml of bucket's https config
+type PutBucketHttpsConfig HttpsConfigXml
+
+// GetBucketHttpsConfig define the xml of bucket's https config result
+type GetBucketHttpsConfigResult HttpsConfigXml
+
+type HttpsConfigXml struct {
+	XMLName xml.Name       `xml:"HttpsConfiguration"`
+	TLS     HttpsConfigTLS `xml:"TLS,omitempty"` // The container that stores TLS version configurations
+}
+
+type HttpsConfigTLS struct {
+	Enable     bool     `xml:"Enable"`               // Specifies whether to enable TLS version management for the bucket
+	TLSVersion []string `xml:"TLSVersion,omitempty"` // The TLS version
+}
