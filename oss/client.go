@@ -2632,6 +2632,192 @@ func (client Client) DeleteBucketResponseHeader(bucketName string, options ...Op
 	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
 }
 
+// CreateBucketAccessPoint create access point for bucket
+// bucketName    the bucket name.
+// create   CreateBucketAccessPoint.
+// CreateBucketAccessPointResult response in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) CreateBucketAccessPoint(bucketName string, create CreateBucketAccessPoint, options ...Option) (CreateBucketAccessPointResult, error) {
+	var out CreateBucketAccessPointResult
+	bs, err := xml.Marshal(create)
+	if err != nil {
+		return out, err
+	}
+	body, err := client.CreateBucketAccessPointXml(bucketName, string(bs), options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// CreateBucketAccessPointXml map a custom domain name to a bucket
+// bucketName    the bucket name.
+// xmlBody the cname configuration in xml format
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) CreateBucketAccessPointXml(bucketName string, xmlBody string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["accessPoint"] = nil
+
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(xmlBody))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+
+	resp, err := client.do("PUT", bucketName, params, headers, buffer, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// GetBucketAccessPoint get access point for bucket
+// bucketName    the bucket name.
+// GetBucketAccessPointResult result in struct format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketAccessPoint(bucketName, apName string, options ...Option) (GetBucketAccessPointResult, error) {
+	var out GetBucketAccessPointResult
+	body, err := client.GetBucketAccessPointXml(bucketName, apName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// GetBucketAccessPointXml get bucket's access point
+// bucketName    the bucket name.
+// string  the access point of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetBucketAccessPointXml(bucketName, apName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["accessPoint"] = nil
+	headers := map[string]string{}
+	headers[HTTPHeaderOssAccessPointName] = apName
+	resp, err := client.do("GET", bucketName, params, headers, nil, options...)
+	defer resp.Body.Close()
+	if err != nil {
+		return "", err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// DeleteBucketAccessPoint delete bucket's access point
+// bucketName    the bucket name.
+// apName the access point name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DeleteBucketAccessPoint(bucketName, apName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["accessPoint"] = nil
+	headers := map[string]string{}
+	headers[HTTPHeaderOssAccessPointName] = apName
+	resp, err := client.do("DELETE", bucketName, params, headers, nil, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
+// ListBucketAccessPointXml get bucket's access point list
+// bucketName    the bucket name.
+// string  the access point of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketAccessPoint(bucketName string, options ...Option) (ListBucketAccessPointsResult, error) {
+	var out ListBucketAccessPointsResult
+	body, err := client.ListBucketAccessPointXml(bucketName, options...)
+	if err != nil {
+		return out, err
+	}
+	err = xmlUnmarshal(strings.NewReader(body), &out)
+	return out, err
+}
+
+// ListBucketAccessPointXml get bucket's access point list
+// bucketName    the bucket name.
+// string  the access point of bucket in xml format.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) ListBucketAccessPointXml(bucketName string, options ...Option) (string, error) {
+	params, err := GetRawParams(options)
+	if err != nil {
+		return "", err
+	}
+	params["accessPoint"] = nil
+	resp, err := client.do("GET", bucketName, params, nil, nil, options...)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// PutBucketAccessPointPolicy create access point policy for bucket
+// name    the bucket name or the access point alias name.
+// apName the access point name.
+// policy   the access point policy.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) PutAccessPointPolicy(name, apName, policy string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["accessPointPolicy"] = nil
+
+	buffer := new(bytes.Buffer)
+	buffer.Write([]byte(policy))
+	contentType := http.DetectContentType(buffer.Bytes())
+	headers := map[string]string{}
+	headers[HTTPHeaderContentType] = contentType
+	headers[HTTPHeaderOssAccessPointName] = apName
+	resp, err := client.do("PUT", name, params, headers, buffer, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusOK})
+}
+
+// GetAccessPointPolicy get bucket's access point policy
+// name    the bucket name or the access point alias name.
+// apName  the access point name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) GetAccessPointPolicy(name, apName string, options ...Option) (string, error) {
+	params := map[string]interface{}{}
+	params["accessPointPolicy"] = nil
+	headers := map[string]string{}
+	headers[HTTPHeaderOssAccessPointName] = apName
+	resp, err := client.do("GET", name, params, headers, nil, options...)
+	defer resp.Body.Close()
+	if err != nil {
+		return "", err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	out := string(body)
+	return out, err
+}
+
+// DeleteAccessPointPolicy delete bucket's access point policy
+// name    the bucket name or the access point alias name.
+// apName the access point name.
+// error    it's nil if no error, otherwise it's an error object.
+func (client Client) DeleteAccessPointPolicy(name, apName string, options ...Option) error {
+	params := map[string]interface{}{}
+	params["accessPointPolicy"] = nil
+	headers := map[string]string{}
+	headers[HTTPHeaderOssAccessPointName] = apName
+	resp, err := client.do("DELETE", name, params, headers, nil, options...)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return CheckRespCode(resp.StatusCode, []int{http.StatusNoContent})
+}
+
 // DescribeRegions get describe regions
 // GetDescribeRegionsResult  the  result of bucket in xml format.
 // error    it's nil if no error, otherwise it's an error object.
